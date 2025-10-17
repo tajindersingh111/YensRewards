@@ -123,3 +123,62 @@ Preferred communication style: Simple, everyday language.
 - Interface-based storage allowing migration from memory to database
 - Serverless-ready with Neon PostgreSQL
 - Stateless API design with session storage externalized to database
+
+## Recent Changes (October 17, 2025)
+
+### Database Schema Implementation
+- Created comprehensive PostgreSQL schema with Drizzle ORM:
+  - `customers` table: id, phone, name, email, points, tier, birthdate, photo, referredBy, joinDate
+  - `transactions` table: id, customerId, type, amount, points, location, receiptUrl, createdAt
+  - `promotions` table: id, title, description, targetTier, message, sentAt, createdAt
+  - `referrals` table: id, referrerId, referredId, pointsEarned, createdAt
+- Successfully pushed schema to Neon PostgreSQL database
+- Implemented insert/select schemas with Zod validation for type safety
+
+### Backend API Implementation
+- **Authentication System**: Integrated Replit Auth for barista/admin login with session management
+- **Customer Endpoints**:
+  - GET `/api/customers/:id` - Fetch customer profile by ID
+  - GET `/api/customers/phone/:phone` - Fetch customer by phone number for login
+  - GET `/api/customers/:id/transactions` - Fetch customer transaction history
+  - POST `/api/customers` - Create new customer account
+- **Transaction Endpoints**:
+  - POST `/api/transactions` - Create purchase transaction (temporarily without auth for testing)
+  - Validates data with Zod schemas before database insertion
+  - Auto-calculates points (1 point per ฿10 spent)
+- **Referral & Promotion Endpoints**: Structure in place, to be implemented
+- All endpoints return proper error responses with status codes
+
+### Frontend Integration
+- **Customer App** (`/customer`):
+  - Connected to real backend API with phone-based login
+  - Real-time data fetching for points, tier, and transaction history
+  - QR code display for barista scanning (currently shows customer ID)
+  - Points card, transaction list, referral tracking all live
+- **Barista App** (`/barista`):
+  - Multi-step transaction flow: Scan → Verify → Capture Receipt → Confirm → Success
+  - Customer verification with real API data (name, photo, points, tier)
+  - Receipt amount entry with auto-calculated points display
+  - Transaction confirmation and API submission working end-to-end
+  - Location selector for multi-location tracking
+  - Success feedback with 2-second auto-reset to scanner
+- **Admin Dashboard** (`/admin`): UI complete, backend integration pending
+
+### Current Status
+- ✅ Database schema and migrations complete
+- ✅ Core API endpoints functional for customers and transactions
+- ✅ Customer App fully connected to backend
+- ✅ Barista App fully connected to backend with complete transaction flow
+- ⏳ Admin Dashboard needs backend integration
+- ⏳ QR code generation/scanning needs real implementation (currently using mock customer ID)
+- ⏳ Receipt photo upload to Object Storage pending
+- ⏳ OCR integration for receipt scanning pending
+- ⏳ Twilio SMS integration for promotions pending
+- ⏳ Barista authentication needs to be re-enabled for production
+
+### Testing & Validation
+- Customer lookup by phone works correctly
+- Transaction creation persists to PostgreSQL successfully
+- Points calculation (฿10 = 1 point) verified
+- Multi-step barista workflow tested end-to-end
+- Auto-invalidation of customer queries after transaction ensures fresh data
