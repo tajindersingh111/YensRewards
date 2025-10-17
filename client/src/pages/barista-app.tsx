@@ -1,26 +1,43 @@
 import { useState } from "react";
 import QRScanner from "@/components/QRScanner";
+import CustomerVerification from "@/components/CustomerVerification";
 import ReceiptCapture from "@/components/ReceiptCapture";
 import TransactionConfirm from "@/components/TransactionConfirm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
-type Step = "scan" | "capture" | "confirm" | "success";
+type Step = "scan" | "verify" | "capture" | "confirm" | "success";
 
 export default function BaristaApp() {
   //todo: remove mock functionality
   const [step, setStep] = useState<Step>("scan");
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerPoints, setCustomerPoints] = useState(0);
+  const [customerTier, setCustomerTier] = useState<"bronze" | "silver" | "gold">("bronze");
   const [amount, setAmount] = useState(0);
   const [receiptUrl, setReceiptUrl] = useState("");
   const [location, setLocation] = useState("Main Store");
 
   const handleScan = (id: string) => {
     setCustomerId(id);
-    setCustomerName("Somchai");
+    setCustomerName("Somchai Prasert");
+    setCustomerPoints(1250);
+    setCustomerTier("gold");
+    setStep("verify");
+  };
+
+  const handleVerifyConfirm = () => {
     setStep("capture");
+  };
+
+  const handleVerifyReject = () => {
+    setStep("scan");
+    setCustomerId("");
+    setCustomerName("");
+    setCustomerPoints(0);
+    setCustomerTier("bronze");
   };
 
   const handleReceiptSubmit = (amt: number, url: string) => {
@@ -44,6 +61,8 @@ export default function BaristaApp() {
     setStep("scan");
     setCustomerId("");
     setCustomerName("");
+    setCustomerPoints(0);
+    setCustomerTier("bronze");
     setAmount(0);
     setReceiptUrl("");
   };
@@ -94,6 +113,18 @@ export default function BaristaApp() {
         {step === "scan" && (
           <div className="max-w-md mx-auto">
             <QRScanner onScan={handleScan} />
+          </div>
+        )}
+
+        {step === "verify" && (
+          <div className="max-w-md mx-auto">
+            <CustomerVerification
+              customerName={customerName}
+              points={customerPoints}
+              tier={customerTier}
+              onConfirm={handleVerifyConfirm}
+              onReject={handleVerifyReject}
+            />
           </div>
         )}
 

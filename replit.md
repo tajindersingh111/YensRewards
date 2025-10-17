@@ -1,0 +1,125 @@
+# Yens Thai Ice Cream Loyalty System
+
+## Overview
+
+A multi-interface loyalty management system for Yens Thai Ice Cream, consisting of three interconnected applications:
+
+1. **Customer App** - Mobile-first interface for customers to view points, QR codes, transactions, referrals, and leaderboards
+2. **Barista App** - Point-of-sale interface for scanning customer QR codes, capturing receipts, and processing transactions
+3. **Admin Dashboard** - Management interface for viewing KPIs, customer data, sales analytics, and sending targeted promotions
+
+The system enables customers to earn points through purchases, track their loyalty tier (Bronze/Silver/Gold), and redeem rewards. Baristas scan customer QR codes to verify identity and award points based on purchase amounts. Admins monitor business metrics and engage customers with tier-based promotional campaigns.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+
+**Technology Stack:**
+- React 18 with TypeScript for type safety
+- Vite as the build tool and dev server
+- Wouter for client-side routing (lightweight React Router alternative)
+- TanStack Query (React Query) for server state management
+- Shadcn UI components built on Radix UI primitives for accessible, composable UI
+
+**Design System:**
+- Tailwind CSS for utility-first styling with custom theme configuration
+- Color palette featuring Yens Yellow (primary), Yens Blue (secondary), with tier-specific colors (Bronze/Silver/Gold)
+- Inter font family from Google Fonts for consistent typography
+- Mobile-first responsive design with light mode only (no dark mode required)
+- Custom CSS variables for theme colors and elevation effects (hover/active states)
+
+**Component Architecture:**
+- Atomic design pattern with reusable UI components in `/client/src/components/ui/`
+- Feature-specific components for each app (QR scanner, points card, KPI cards, etc.)
+- Example components provided in `/client/src/components/examples/` for reference
+- Path aliases configured (`@/`, `@shared/`, `@assets/`) for clean imports
+
+**State Management:**
+- React Query for API data fetching and caching with customized query client
+- Local component state with React hooks for UI-only state
+- Toast notifications for user feedback using Shadcn toast component
+
+### Backend Architecture
+
+**Technology Stack:**
+- Node.js with Express.js for REST API server
+- TypeScript throughout with ES modules
+- Drizzle ORM for type-safe database operations
+- Neon serverless PostgreSQL for production database
+
+**Server Structure:**
+- Express middleware for JSON parsing, URL encoding, and request logging
+- Centralized error handling middleware with status code mapping
+- Vite integration for development with HMR and production static serving
+- Custom request logging with duration tracking for API endpoints
+
+**Storage Layer:**
+- In-memory storage implementation (`MemStorage`) for development/testing
+- Interface-based design (`IStorage`) allowing swap between memory and database persistence
+- Currently implements basic user CRUD operations
+- Database schema defined in `/shared/schema.ts` using Drizzle ORM with Zod validation
+
+**API Design:**
+- RESTful endpoints prefixed with `/api`
+- Centralized API request helper with automatic error handling
+- Custom query functions for React Query integration
+- Credential-based authentication (cookies/sessions) prepared via connect-pg-simple
+
+### External Dependencies
+
+**UI Component Library:**
+- Radix UI primitives (20+ components) for accessible, unstyled components
+- Shadcn UI pattern for customizable component variants
+- Lucide React for consistent iconography
+- date-fns for date formatting and manipulation
+
+**Database & ORM:**
+- Neon serverless PostgreSQL (@neondatabase/serverless) with WebSocket support
+- Drizzle ORM for schema definition and queries
+- Drizzle Kit for migrations
+- Drizzle Zod for runtime validation schemas
+
+**Development Tools:**
+- Vite plugins: React, runtime error overlay, Replit-specific tooling (cartographer, dev banner)
+- TypeScript with strict mode and path resolution
+- PostCSS with Tailwind and Autoprefixer
+
+**Form & Validation:**
+- React Hook Form with @hookform/resolvers for form state
+- Zod schemas for validation shared between client and server
+
+**Session Management:**
+- connect-pg-simple for PostgreSQL session storage (configured but not yet implemented)
+- Express session handling prepared for authentication flow
+
+**Utilities:**
+- clsx and tailwind-merge for conditional class merging
+- class-variance-authority for component variant styling
+- nanoid for unique ID generation
+
+## Key Architectural Decisions
+
+**Monorepo Structure:**
+- `/client` - Frontend React application
+- `/server` - Express backend
+- `/shared` - Shared types and schemas between client/server
+- Enables code sharing while maintaining separation of concerns
+
+**Progressive Enhancement:**
+- Mock functionality throughout (`//todo: remove mock functionality` comments)
+- Allows UI development and testing without full backend implementation
+- Real implementations to be added incrementally
+
+**Type Safety:**
+- End-to-end TypeScript with shared schema definitions
+- Drizzle Zod schemas generate both runtime validators and TypeScript types
+- Path aliases ensure clean, maintainable imports
+
+**Scalability Preparation:**
+- Interface-based storage allowing migration from memory to database
+- Serverless-ready with Neon PostgreSQL
+- Stateless API design with session storage externalized to database
