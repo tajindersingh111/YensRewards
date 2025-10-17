@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import KPICard from "@/components/KPICard";
 import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
@@ -7,30 +9,55 @@ import CustomerImportExport from "@/components/CustomerImportExport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, Users, TrendingUp, Award } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
+import { useToast } from "@/hooks/use-toast";
+import type { Customer } from "@shared/schema";
 
 export default function AdminDashboard() {
-  //todo: remove mock functionality
   const [activeTab, setActiveTab] = useState("overview");
+  const { toast } = useToast();
 
-  const mockCustomers = [
-    { id: "1", name: "Somchai", phone: "+66 81 234 5678", points: 1250, tier: "gold" as const, totalSpent: 12500 },
-    { id: "2", name: "Jaruwan", phone: "+66 82 345 6789", points: 980, tier: "silver" as const, totalSpent: 9800 },
-    { id: "3", name: "Orapan", phone: "+66 83 456 7890", points: 875, tier: "silver" as const, totalSpent: 8750 },
-    { id: "4", name: "Phongthep", phone: "+66 84 567 8901", points: 720, tier: "bronze" as const, totalSpent: 7200 },
-    { id: "5", name: "Wanida", phone: "+66 85 678 9012", points: 450, tier: "bronze" as const, totalSpent: 4500 },
-  ];
+  // Fetch analytics data
+  const { data: analytics, isLoading: analyticsLoading } = useQuery<{
+    totalSales: number;
+    totalCustomers: number;
+    avgTransaction: number;
+    pointsRedeemed: number;
+    salesByLocation: Array<{ label: string; value: number }>;
+  }>({
+    queryKey: ['/api/admin/analytics'],
+  });
 
-  const salesData = [
-    { label: "Main Store", value: 15400 },
-    { label: "Night Bazaar", value: 6800 },
-    { label: "Weekend Market", value: 2380 },
-  ];
+  // Fetch all customers
+  const { data: customersData = [], isLoading: customersLoading } = useQuery<any[]>({
+    queryKey: ['/api/admin/customers'],
+  });
 
-  const categoryData = [
-    { label: "Ice Cream", value: 12500 },
-    { label: "Beverages", value: 8900 },
-    { label: "Toppings", value: 3180 },
-  ];
+  // Transform customers to ensure proper tier types
+  const customers = customersData.map(c => ({
+    ...c,
+    tier: (c.tier || 'bronze') as 'bronze' | 'silver' | 'gold',
+  }));
+
+  // Create promotion mutation
+  const createPromotion = useMutation({
+    mutationFn: async (data: { title: string; description: string; targetTier: string; message: string }) => {
+      return await apiRequest('POST', '/api/admin/promotions', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/promotions'] });
+      toast({
+        title: "Success",
+        description: "Promotion sent successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send promotion",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleImportCSV = (file: File) => {
     //todo: remove mock functionality
@@ -38,9 +65,8 @@ export default function AdminDashboard() {
   };
 
   const handleExportCSV = () => {
-    //todo: remove mock functionality
-    const csvContent = mockCustomers
-      .map((c) => `${c.name},${c.phone},"",""`)
+    const csvContent = customers
+      .map((c) => `${c.name},${c.phone},${c.email || ""},${c.birthday || ""}`)
       .join("\n");
     const blob = new Blob([`name,phone,email,birthday\n${csvContent}`], {
       type: "text/csv",
@@ -51,6 +77,15 @@ export default function AdminDashboard() {
     a.download = `yens-customers-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleSendPromotion = (message: string, tier?: string) => {
+    createPromotion.mutate({
+      title: "Special Promotion",
+      description: `Promotion for ${tier || 'all'} tier customers`,
+      targetTier: tier || 'all',
+      message,
+    });
   };
 
   return (
@@ -82,42 +117,47 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <KPICard
                 title="Total Sales"
-                value="฿24,580"
+                value={analyticsLoading ? "..." : `฿${analytics?.totalSales.toLocaleString() || 0}`}
                 icon={DollarSign}
-                trend={{ value: 12.5, isPositive: true }}
-                subtitle="This month"
+                subtitle="All time"
+                data-testid="kpi-total-sales"
               />
               <KPICard
                 title="Total Customers"
-                value="156"
+                value={analyticsLoading ? "..." : String(analytics?.totalCustomers || 0)}
                 icon={Users}
-                trend={{ value: 8.3, isPositive: true }}
                 subtitle="Active members"
+                data-testid="kpi-total-customers"
               />
               <KPICard
                 title="Avg. Transaction"
-                value="฿158"
+                value={analyticsLoading ? "..." : `฿${Math.round(analytics?.avgTransaction || 0)}`}
                 icon={TrendingUp}
-                trend={{ value: 5.2, isPositive: true }}
+                data-testid="kpi-avg-transaction"
               />
               <KPICard
                 title="Points Redeemed"
-                value="2,340"
+                value={analyticsLoading ? "..." : String(analytics?.pointsRedeemed || 0)}
                 icon={Award}
-                subtitle="This month"
+                subtitle="All time"
+                data-testid="kpi-points-redeemed"
               />
             </div>
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SalesChart data={salesData} title="Sales by Location" />
-              <SalesChart data={categoryData} title="Sales by Category" />
+              <SalesChart 
+                data={analytics?.salesByLocation || []} 
+                title="Sales by Location" 
+                data-testid="chart-sales-location"
+              />
             </div>
 
             {/* Recent Customers */}
             <CustomerTable
-              customers={mockCustomers.slice(0, 3)}
+              customers={customers.slice(0, 5)}
               onMessage={(id) => console.log("Message customer:", id)}
+              data-testid="table-recent-customers"
             />
           </TabsContent>
 
@@ -125,18 +165,21 @@ export default function AdminDashboard() {
             <CustomerImportExport
               onImport={handleImportCSV}
               onExport={handleExportCSV}
-              customerCount={mockCustomers.length}
+              customerCount={customers.length}
+              data-testid="customer-import-export"
             />
             <CustomerTable
-              customers={mockCustomers}
+              customers={customers}
               onMessage={(id) => console.log("Message customer:", id)}
+              data-testid="table-all-customers"
             />
           </TabsContent>
 
           <TabsContent value="promotions" className="space-y-6">
             <div className="max-w-2xl">
               <PromotionCreator
-                onSend={(message, tier) => console.log("Send promotion:", { message, tier })}
+                onSend={handleSendPromotion}
+                data-testid="promotion-creator"
               />
             </div>
           </TabsContent>

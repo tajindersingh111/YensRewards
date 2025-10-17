@@ -33,6 +33,16 @@ export interface IStorage {
   // Promotion methods
   createPromotion(promotion: InsertPromotion): Promise<Promotion>;
   getAllPromotions(): Promise<Promotion[]>;
+  
+  // Analytics methods
+  getAnalytics(): Promise<{
+    totalSales: number;
+    totalCustomers: number;
+    avgTransaction: number;
+    pointsRedeemed: number;
+    salesByLocation: Array<{ label: string; value: number }>;
+    recentTransactions: Transaction[];
+  }>;
 }
 
 export class DbStorage implements IStorage {
@@ -152,6 +162,56 @@ export class DbStorage implements IStorage {
 
   async getAllPromotions(): Promise<Promotion[]> {
     return await db.select().from(promotions).orderBy(desc(promotions.sentAt));
+  }
+
+  // Analytics methods
+  async getAnalytics(): Promise<{
+    totalSales: number;
+    totalCustomers: number;
+    avgTransaction: number;
+    pointsRedeemed: number;
+    salesByLocation: Array<{ label: string; value: number }>;
+    recentTransactions: Transaction[];
+  }> {
+    // Get all transactions for this month
+    const allTransactions = await db.select().from(transactions);
+    const totalSales = allTransactions.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+    
+    // Get total customers
+    const allCustomers = await db.select().from(customers);
+    const totalCustomers = allCustomers.length;
+    
+    // Calculate average transaction
+    const avgTransaction = allTransactions.length > 0 ? totalSales / allTransactions.length : 0;
+    
+    // Get points redeemed (count redemption transactions)
+    const redemptionTransactions = allTransactions.filter(t => t.type === 'redemption');
+    const pointsRedeemed = redemptionTransactions.reduce((sum, t) => sum + t.points, 0);
+    
+    // Group sales by location
+    const locationMap = new Map<string, number>();
+    allTransactions.forEach(t => {
+      const current = locationMap.get(t.location) || 0;
+      locationMap.set(t.location, current + parseFloat(t.amount.toString()));
+    });
+    
+    const salesByLocation = Array.from(locationMap.entries()).map(([label, value]) => ({ label, value }));
+    
+    // Get recent transactions
+    const recentTransactions = await db
+      .select()
+      .from(transactions)
+      .orderBy(desc(transactions.createdAt))
+      .limit(10);
+    
+    return {
+      totalSales,
+      totalCustomers,
+      avgTransaction,
+      pointsRedeemed,
+      salesByLocation,
+      recentTransactions,
+    };
   }
 }
 
