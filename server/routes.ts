@@ -154,6 +154,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import customers from CSV
+  // TODO: Add admin authentication in production
+  app.post('/api/admin/import-customers', async (req, res) => {
+    try {
+      const { customers } = req.body;
+      
+      if (!Array.isArray(customers) || customers.length === 0) {
+        return res.status(400).json({ message: "Invalid customer data" });
+      }
+      
+      let imported = 0;
+      let skipped = 0;
+      
+      for (const customerData of customers) {
+        try {
+          // Check if customer already exists by phone
+          const existing = await storage.getCustomerByPhone(customerData.phone);
+          if (existing) {
+            skipped++;
+            continue;
+          }
+          
+          // Validate and create customer
+          const validatedData = insertCustomerSchema.parse(customerData);
+          await storage.createCustomer(validatedData);
+          imported++;
+        } catch (error) {
+          console.error("Error importing customer:", error);
+          skipped++;
+        }
+      }
+      
+      res.json({ 
+        imported, 
+        skipped, 
+        total: customers.length,
+        message: `Successfully imported ${imported} customers, skipped ${skipped}` 
+      });
+    } catch (error) {
+      console.error("Error importing customers:", error);
+      res.status(500).json({ message: "Failed to import customers" });
+    }
+  });
+
   // Create promotion
   // TODO: Add admin authentication in production
   app.post('/api/admin/promotions', async (req, res) => {
