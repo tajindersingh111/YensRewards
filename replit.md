@@ -168,12 +168,14 @@ Preferred communication style: Simple, everyday language.
 - ✅ Database schema and migrations complete
 - ✅ Core API endpoints functional for customers and transactions
 - ✅ Customer App fully connected to backend
+- ✅ Customer self-registration flow (new users can create accounts via phone)
 - ✅ Barista App fully connected to backend with complete transaction flow
 - ✅ Admin Dashboard fully connected to backend with real-time analytics
 - ✅ Phone lookup feature for baristas (alternative to QR scanning)
 - ✅ CSV export for customer data
 - ✅ Real-time KPI dashboard (sales, customers, avg transaction, points redeemed)
 - ✅ Complete user journey tested end-to-end
+- ✅ PWA installation with QR code system for easy customer onboarding
 - ⏳ QR code generation/scanning needs real implementation (phone lookup works as alternative)
 - ⏳ Receipt photo upload to Object Storage pending
 - ⏳ OCR integration for receipt scanning pending
@@ -209,3 +211,9 @@ Preferred communication style: Simple, everyday language.
      - Customers scan with phone camera → tap notification → install app instantly
      - Includes step-by-step visual guide for staff
      - Print-optimized layout for physical posters
+7. **Customer Self-Registration**:
+   - New customers can create accounts directly from the app
+   - Enter phone number → If not found, shows registration form
+   - Collects name (required), email (optional), birthday (optional)
+   - Auto-generates referral code and sets initial points to 0
+   - Seamless onboarding: signup → immediate access to rewards interface
