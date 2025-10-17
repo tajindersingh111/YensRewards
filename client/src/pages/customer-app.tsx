@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Customer, Transaction } from "@shared/schema";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
 import PointsCard from "@/components/PointsCard";
@@ -12,13 +13,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Home, Award, Users, User, LogOut } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Home, Award, Users, User, LogOut, UserPlus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
 export default function CustomerApp() {
   const [activeTab, setActiveTab] = useState("home");
   const [phone, setPhone] = useState<string | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
+  const [showSignup, setShowSignup] = useState(false);
+  const [signupData, setSignupData] = useState({
+    name: "",
+    email: "",
+    birthday: "",
+  });
+  const { toast } = useToast();
 
   // Load phone from localStorage on mount
   useEffect(() => {
@@ -51,6 +61,47 @@ export default function CustomerApp() {
     localStorage.removeItem("customer_phone");
     setPhone(null);
     setPhoneInput("");
+    setShowSignup(false);
+    setSignupData({ name: "", email: "", birthday: "" });
+  };
+
+  // Create customer mutation
+  const createCustomer = useMutation({
+    mutationFn: async (data: { name: string; phone: string; email?: string; birthday?: string }) => {
+      return await apiRequest('POST', '/api/customers', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/phone', phone] });
+      toast({
+        title: "Welcome to Yen's Rewards! 🎉",
+        description: "Your account has been created successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSignup = () => {
+    if (!signupData.name.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your name to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCustomer.mutate({
+      name: signupData.name,
+      phone: phone!,
+      email: signupData.email || undefined,
+      birthday: signupData.birthday || undefined,
+    });
   };
 
   // Login screen
@@ -105,16 +156,90 @@ export default function CustomerApp() {
     );
   }
 
-  // Customer not found
+  // Customer not found - Show signup form
   if (!customer) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-8 space-y-6 text-center">
-          <h2 className="text-xl font-bold text-foreground">Customer Not Found</h2>
-          <p className="text-muted-foreground">No account found with phone: {phone}</p>
-          <Button onClick={handleLogout} data-testid="button-back">
-            Try Different Number
-          </Button>
+        <Card className="w-full max-w-md p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <UserPlus className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">Create Your Account</h2>
+            <p className="text-muted-foreground">
+              Welcome! Let's set up your Yen's Rewards account
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Phone: <span className="font-semibold text-foreground">{phone}</span>
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-foreground">
+                Your Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Enter your name"
+                value={signupData.name}
+                onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                data-testid="input-name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground">
+                Email (Optional)
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={signupData.email}
+                onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                data-testid="input-email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="birthday" className="text-foreground">
+                Birthday (Optional)
+              </Label>
+              <Input
+                id="birthday"
+                type="date"
+                value={signupData.birthday}
+                onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
+                data-testid="input-birthday"
+              />
+              <p className="text-xs text-muted-foreground">Get bonus points on your birthday!</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Button 
+              onClick={handleSignup} 
+              className="w-full"
+              disabled={createCustomer.isPending}
+              data-testid="button-create-account"
+            >
+              {createCustomer.isPending ? "Creating Account..." : "Create Account"}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleLogout} 
+              className="w-full"
+              data-testid="button-back"
+            >
+              Use Different Number
+            </Button>
+          </div>
+
+          <p className="text-xs text-center text-muted-foreground">
+            By creating an account, you'll start earning points on every purchase!
+          </p>
         </Card>
       </div>
     );
