@@ -18,6 +18,7 @@ function Router() {
       <Route path="/customer" component={CustomerApp} />
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/qr/:appType" component={QRDisplay} />
       <Route path="/qr" component={QRDisplay} />
       <Route component={NotFound} />
     </Switch>
