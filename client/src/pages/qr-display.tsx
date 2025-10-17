@@ -16,6 +16,9 @@ const APP_CONFIG = {
     posterSubtitle: "Scan to Download Our App",
     posterDescription: "Earn points on every purchase! • Track your rewards • Get exclusive offers",
     route: "/customer",
+    bgColor: "bg-[#FCD34D]",
+    textColor: "text-gray-900",
+    borderColor: "border-[#FCD34D]",
   },
   barista: {
     title: "Barista App QR Codes",
@@ -26,6 +29,9 @@ const APP_CONFIG = {
     posterSubtitle: "Scan to Download",
     posterDescription: "Process customer transactions • Scan QR codes • Award loyalty points",
     route: "/barista",
+    bgColor: "bg-[#1E40AF]",
+    textColor: "text-white",
+    borderColor: "border-[#1E40AF]",
   },
   admin: {
     title: "Admin Dashboard QR Codes",
@@ -36,6 +42,9 @@ const APP_CONFIG = {
     posterSubtitle: "Scan to Download",
     posterDescription: "View analytics • Manage customers • Send promotions • Export reports",
     route: "/admin",
+    bgColor: "bg-[#059669]",
+    textColor: "text-white",
+    borderColor: "border-[#059669]",
   },
 };
 
@@ -55,33 +64,47 @@ export default function QRDisplay() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header - Hide on print */}
-        <div className="print:hidden space-y-4">
+    <div className="min-h-screen bg-background">
+      {/* Colored Banner - Hide on print */}
+      <div className={`print:hidden ${config.bgColor} ${config.textColor} py-12 px-8`}>
+        <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{config.title}</h1>
-              <p className="text-muted-foreground">{config.subtitle}</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <img src={logoUrl} alt="Yens Logo" className="w-16 h-16 rounded-full bg-white p-2" />
+                <div>
+                  <h1 className="text-4xl font-bold">{config.title}</h1>
+                  <p className="text-lg opacity-90 mt-1">{config.subtitle}</p>
+                </div>
+              </div>
             </div>
-            <Button onClick={handlePrint} size="lg" data-testid="button-print">
+            <Button 
+              onClick={handlePrint} 
+              size="lg" 
+              variant="outline"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              data-testid="button-print"
+            >
               <Printer className="w-5 h-5 mr-2" />
               Print
             </Button>
           </div>
         </div>
+      </div>
+      
+      <div className="max-w-4xl mx-auto p-8 space-y-8">
 
         {/* Main QR Code Display */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Large Display QR Code */}
-          <Card className="p-8 text-center space-y-6">
+          <Card className={`p-8 text-center space-y-6 border-4 ${config.borderColor}`}>
             <div className="space-y-2">
               <img src={logoUrl} alt="Yens Logo" className="w-20 h-20 rounded-full mx-auto" />
               <h2 className="text-2xl font-bold text-foreground">{config.qrTitle}</h2>
               <p className="text-muted-foreground">{config.qrSubtitle}</p>
             </div>
             
-            <div className="bg-white p-6 rounded-xl inline-block">
+            <div className={`bg-white p-6 rounded-xl inline-block border-2 ${config.borderColor}`}>
               {appUrl && (
                 <QRCode
                   value={appUrl}
@@ -162,7 +185,7 @@ export default function QRDisplay() {
               <p className="text-3xl text-muted-foreground">{config.posterSubtitle}</p>
             </div>
 
-            <div className="bg-white p-12 rounded-xl inline-block border-4 border-primary">
+            <div className={`bg-white p-12 rounded-xl inline-block border-4 ${config.borderColor}`}>
               {appUrl && (
                 <QRCode
                   value={appUrl}
