@@ -203,14 +203,19 @@ Preferred communication style: Simple, everyday language.
    - One-tap installation on iOS and Android devices
    - Dynamic manifest loading based on current route
    - Each app installs as a standalone app with unique name and theme color
+   - All apps use Yens logo as app icon for easy identification on phone home screens
    - Installation guide on home page with step-by-step instructions
    - Install prompts appear automatically when browser supports PWA installation
-   - **QR Code Installation System** (`/qr` route):
-     - Generates QR code linking directly to customer app
+   - **QR Code Installation System** (dynamic routes):
+     - `/qr` or `/qr/customer` - Customer app QR code
+     - `/qr/barista` - Barista app QR code
+     - `/qr/admin` - Admin dashboard QR code
+     - Each QR code links to the respective app route
      - Staff can display on screen or print as poster
-     - Customers scan with phone camera → tap notification → install app instantly
+     - Users scan with phone camera → tap notification → install app instantly
      - Includes step-by-step visual guide for staff
      - Print-optimized layout for physical posters
+     - Custom messages and branding for each app type
 7. **Customer Self-Registration**:
    - New customers can create accounts directly from the app
    - Enter phone number → If not found, shows registration form
