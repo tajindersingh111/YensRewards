@@ -5,6 +5,7 @@ import TransactionList from "@/components/TransactionList";
 import ReferralCard from "@/components/ReferralCard";
 import LeaderboardCard from "@/components/LeaderboardCard";
 import PromotionCard from "@/components/PromotionCard";
+import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Home, Award, Users, User } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
@@ -154,6 +155,9 @@ export default function CustomerApp() {
           </button>
         </div>
       </nav>
+
+      {/* Install Prompt */}
+      <InstallPrompt />
     </div>
   );
 }

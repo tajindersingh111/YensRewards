@@ -3,6 +3,7 @@ import QRScanner from "@/components/QRScanner";
 import CustomerVerification from "@/components/CustomerVerification";
 import ReceiptCapture from "@/components/ReceiptCapture";
 import TransactionConfirm from "@/components/TransactionConfirm";
+import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
@@ -158,6 +159,9 @@ export default function BaristaApp() {
           </div>
         )}
       </main>
+
+      {/* Install Prompt */}
+      <InstallPrompt />
     </div>
   );
 }
