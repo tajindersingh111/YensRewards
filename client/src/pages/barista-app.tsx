@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, MapPin } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
-type Step = "scan" | "verify" | "capture" | "confirm" | "success";
+type Step = "scan" | "verify" | "capture" | "confirm" | "success" | "register";
 
 export default function BaristaApp() {
   const { toast } = useToast();
@@ -27,6 +27,29 @@ export default function BaristaApp() {
   const { data: customer, isLoading: customerLoading } = useQuery<Customer>({
     queryKey: ['/api/customers', customerId],
     enabled: !!customerId && step === "verify",
+  });
+
+  // Create customer mutation
+  const createCustomer = useMutation({
+    mutationFn: async (data: { phone: string; name: string; email?: string; birthdate?: string }) => {
+      return await apiRequest('POST', '/api/customers', data);
+    },
+    onSuccess: (data: Customer) => {
+      toast({
+        title: "Customer Created!",
+        description: `${data.name} has been registered successfully`,
+      });
+      // Auto-select the new customer for transaction
+      setCustomerId(data.id.toString());
+      setStep("verify");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create customer",
+        variant: "destructive",
+      });
+    },
   });
 
   // Create transaction mutation
@@ -144,6 +167,115 @@ export default function BaristaApp() {
         {step === "scan" && (
           <div className="flex flex-col items-center gap-6 pt-8">
             <QRScanner onScan={handleScan} />
+            <div className="w-full max-w-md">
+              <Card className="p-6 text-center space-y-4">
+                <h3 className="font-semibold text-foreground">New Customer?</h3>
+                <p className="text-sm text-muted-foreground">Register them manually if they need help</p>
+                <Button 
+                  onClick={() => setStep("register")} 
+                  variant="outline" 
+                  className="w-full"
+                  data-testid="button-register-customer"
+                >
+                  Register New Customer
+                </Button>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {step === "register" && (
+          <div className="pt-8">
+            <Card className="p-6 space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Register New Customer</h2>
+                <p className="text-sm text-muted-foreground">Help customers create their account</p>
+              </div>
+              
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const phone = formData.get('phone') as string;
+                  const name = formData.get('name') as string;
+                  const email = formData.get('email') as string;
+                  const birthdate = formData.get('birthdate') as string;
+                  
+                  createCustomer.mutate({
+                    phone,
+                    name,
+                    email: email || undefined,
+                    birthdate: birthdate || undefined,
+                  });
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Phone Number *</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="+66 81 234 5678"
+                    required
+                    className="w-full px-4 py-2 rounded-md border border-input bg-background"
+                    data-testid="input-register-phone"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Full Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Customer name"
+                    required
+                    className="w-full px-4 py-2 rounded-md border border-input bg-background"
+                    data-testid="input-register-name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Email (Optional)</label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="customer@example.com"
+                    className="w-full px-4 py-2 rounded-md border border-input bg-background"
+                    data-testid="input-register-email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Birthday (Optional)</label>
+                  <input
+                    type="date"
+                    name="birthdate"
+                    className="w-full px-4 py-2 rounded-md border border-input bg-background"
+                    data-testid="input-register-birthdate"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep("scan")}
+                    className="flex-1"
+                    data-testid="button-cancel-register"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={createCustomer.isPending}
+                    data-testid="button-submit-register"
+                  >
+                    {createCustomer.isPending ? "Creating..." : "Create Account"}
+                  </Button>
+                </div>
+              </form>
+            </Card>
           </div>
         )}
 
