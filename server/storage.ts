@@ -5,12 +5,18 @@ import {
   type InsertTransaction,
   type Promotion,
   type InsertPromotion,
+  type User,
+  type UpsertUser,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions } from "@shared/schema";
+import { customers, transactions, promotions, users } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
+  // Auth methods (required for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  
   // Customer methods
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
@@ -30,6 +36,27 @@ export interface IStorage {
 }
 
 export class DbStorage implements IStorage {
+  // Auth methods (required for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const result = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result[0];
+  }
+
   // Customer methods
   async getCustomer(id: string): Promise<Customer | undefined> {
     const result = await db.select().from(customers).where(eq(customers.id, id));

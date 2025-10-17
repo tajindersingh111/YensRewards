@@ -1,7 +1,31 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, decimal, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Staff users table for Replit Auth (baristas and admins)
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: text("role").notNull().default("barista"), // barista or admin
+  location: text("location"), // for baristas
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // Customers table - loyalty program members
 export const customers = pgTable("customers", {
@@ -41,23 +65,6 @@ export const promotions = pgTable("promotions", {
   sentCount: integer("sent_count").notNull().default(0),
 });
 
-// Admin users table
-export const adminUsers = pgTable("admin_users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
-  role: text("role").notNull().default("admin"), // admin, barista
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-// Barista users table (staff who process transactions)
-export const baristaUsers = pgTable("barista_users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
-  location: text("location").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -80,14 +87,10 @@ export const insertPromotionSchema = createInsertSchema(promotions).omit({
   sentCount: true,
 });
 
-export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
-});
-
-export const insertBaristaUserSchema = createInsertSchema(baristaUsers).omit({
-  id: true,
-  createdAt: true,
+  updatedAt: true,
 });
 
 // Types
@@ -100,8 +103,6 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Promotion = typeof promotions.$inferSelect;
 export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 
-export type AdminUser = typeof adminUsers.$inferSelect;
-export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
-
-export type BaristaUser = typeof baristaUsers.$inferSelect;
-export type InsertBaristaUser = z.infer<typeof insertBaristaUserSchema>;
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = typeof users.$inferInsert;
