@@ -3,16 +3,52 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useParams } from "wouter";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
+const APP_CONFIG = {
+  customer: {
+    title: "Customer App QR Codes",
+    subtitle: "Display these QR codes for customers to scan and install the app",
+    qrTitle: "Scan to Get the App!",
+    qrSubtitle: "Join Yen's Rewards Program",
+    posterTitle: "Join Yen's Rewards!",
+    posterSubtitle: "Scan to Download Our App",
+    posterDescription: "Earn points on every purchase! • Track your rewards • Get exclusive offers",
+    route: "/customer",
+  },
+  barista: {
+    title: "Barista App QR Codes",
+    subtitle: "Display these QR codes for staff to scan and install the barista app",
+    qrTitle: "Scan to Get Barista App!",
+    qrSubtitle: "Process Transactions & Award Points",
+    posterTitle: "Barista App",
+    posterSubtitle: "Scan to Download",
+    posterDescription: "Process customer transactions • Scan QR codes • Award loyalty points",
+    route: "/barista",
+  },
+  admin: {
+    title: "Admin Dashboard QR Codes",
+    subtitle: "Display these QR codes for managers to scan and install the admin dashboard",
+    qrTitle: "Scan to Get Admin App!",
+    qrSubtitle: "Manage Your Business",
+    posterTitle: "Admin Dashboard",
+    posterSubtitle: "Scan to Download",
+    posterDescription: "View analytics • Manage customers • Send promotions • Export reports",
+    route: "/admin",
+  },
+};
+
 export default function QRDisplay() {
+  const params = useParams();
+  const appType = (params.appType || "customer") as keyof typeof APP_CONFIG;
+  const config = APP_CONFIG[appType] || APP_CONFIG.customer;
   const [appUrl, setAppUrl] = useState("");
 
   useEffect(() => {
-    // Get the current app URL
     const baseUrl = window.location.origin;
-    setAppUrl(`${baseUrl}/customer`);
-  }, []);
+    setAppUrl(`${baseUrl}${config.route}`);
+  }, [config.route]);
 
   const handlePrint = () => {
     window.print();
@@ -25,8 +61,8 @@ export default function QRDisplay() {
         <div className="print:hidden space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Customer App QR Codes</h1>
-              <p className="text-muted-foreground">Display these QR codes for customers to scan and install the app</p>
+              <h1 className="text-3xl font-bold text-foreground">{config.title}</h1>
+              <p className="text-muted-foreground">{config.subtitle}</p>
             </div>
             <Button onClick={handlePrint} size="lg" data-testid="button-print">
               <Printer className="w-5 h-5 mr-2" />
@@ -41,8 +77,8 @@ export default function QRDisplay() {
           <Card className="p-8 text-center space-y-6">
             <div className="space-y-2">
               <img src={logoUrl} alt="Yens Logo" className="w-20 h-20 rounded-full mx-auto" />
-              <h2 className="text-2xl font-bold text-foreground">Scan to Get the App!</h2>
-              <p className="text-muted-foreground">Join Yen's Rewards Program</p>
+              <h2 className="text-2xl font-bold text-foreground">{config.qrTitle}</h2>
+              <p className="text-muted-foreground">{config.qrSubtitle}</p>
             </div>
             
             <div className="bg-white p-6 rounded-xl inline-block">
@@ -122,8 +158,8 @@ export default function QRDisplay() {
             <img src={logoUrl} alt="Yens Logo" className="w-32 h-32 rounded-full mx-auto" />
             
             <div>
-              <h1 className="text-6xl font-bold text-foreground mb-4">Join Yen's Rewards!</h1>
-              <p className="text-3xl text-muted-foreground">Scan to Download Our App</p>
+              <h1 className="text-6xl font-bold text-foreground mb-4">{config.posterTitle}</h1>
+              <p className="text-3xl text-muted-foreground">{config.posterSubtitle}</p>
             </div>
 
             <div className="bg-white p-12 rounded-xl inline-block border-4 border-primary">
@@ -138,7 +174,7 @@ export default function QRDisplay() {
 
             <div className="space-y-4 text-2xl text-muted-foreground">
               <p className="font-semibold">📱 Open Camera → Point at QR Code → Tap Link → Install App</p>
-              <p className="text-xl">Earn points on every purchase! • Track your rewards • Get exclusive offers</p>
+              <p className="text-xl">{config.posterDescription}</p>
             </div>
 
             <div className="text-xl text-muted-foreground">
