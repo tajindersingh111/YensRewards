@@ -6,6 +6,7 @@ import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
 import PromotionCreator from "@/components/PromotionCreator";
 import CustomerImportExport from "@/components/CustomerImportExport";
+import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, Users, TrendingUp, Award } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
@@ -185,6 +186,7 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+      <InstallPrompt />
     </div>
   );
 }

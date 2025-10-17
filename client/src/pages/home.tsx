@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Smartphone, ScanLine, BarChart3 } from "lucide-react";
+import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
@@ -70,6 +70,51 @@ export default function Home() {
             </Card>
           ))}
         </div>
+
+        {/* Installation Instructions */}
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Download className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold text-foreground">Install on Your Phone</h2>
+            </div>
+            <p className="text-muted-foreground">
+              For the best experience, install each app on your phone like a native app:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Smartphone className="w-4 h-4" />
+                  iOS (iPhone/iPad)
+                </h3>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Open the app page in Safari</li>
+                  <li>Tap the Share button <span className="inline-block">📤</span></li>
+                  <li>Scroll down and tap "Add to Home Screen"</li>
+                  <li>Tap "Add" to confirm</li>
+                </ol>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Smartphone className="w-4 h-4" />
+                  Android
+                </h3>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Open the app page in Chrome</li>
+                  <li>Tap the menu (⋮) or install banner</li>
+                  <li>Tap "Add to Home screen" or "Install"</li>
+                  <li>Tap "Add" to confirm</li>
+                </ol>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 p-3 bg-primary/10 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-primary mt-0.5" />
+              <p className="text-sm text-foreground">
+                Once installed, each app will open like a native app with its own icon on your home screen!
+              </p>
+            </div>
+          </div>
+        </Card>
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground">
