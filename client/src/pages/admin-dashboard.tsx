@@ -3,6 +3,7 @@ import KPICard from "@/components/KPICard";
 import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
 import PromotionCreator from "@/components/PromotionCreator";
+import CustomerImportExport from "@/components/CustomerImportExport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, Users, TrendingUp, Award } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
@@ -30,6 +31,27 @@ export default function AdminDashboard() {
     { label: "Beverages", value: 8900 },
     { label: "Toppings", value: 3180 },
   ];
+
+  const handleImportCSV = (file: File) => {
+    //todo: remove mock functionality
+    console.log("Importing CSV:", file.name);
+  };
+
+  const handleExportCSV = () => {
+    //todo: remove mock functionality
+    const csvContent = mockCustomers
+      .map((c) => `${c.name},${c.phone},"",""`)
+      .join("\n");
+    const blob = new Blob([`name,phone,email,birthday\n${csvContent}`], {
+      type: "text/csv",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `yens-customers-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,6 +122,11 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="customers" className="space-y-6">
+            <CustomerImportExport
+              onImport={handleImportCSV}
+              onExport={handleExportCSV}
+              customerCount={mockCustomers.length}
+            />
             <CustomerTable
               customers={mockCustomers}
               onMessage={(id) => console.log("Message customer:", id)}

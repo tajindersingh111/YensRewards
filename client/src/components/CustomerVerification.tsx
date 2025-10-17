@@ -13,9 +13,9 @@ interface CustomerVerificationProps {
 }
 
 const tierColors = {
-  bronze: "bg-[hsl(30,60%,50%)]",
-  silver: "bg-[hsl(0,0%,63%)]",
-  gold: "bg-[hsl(45,93%,47%)]",
+  bronze: "bg-primary/70",
+  silver: "bg-primary/50",
+  gold: "bg-primary",
 };
 
 export default function CustomerVerification({
