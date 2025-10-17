@@ -1,38 +1,131 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import {
+  type Customer,
+  type InsertCustomer,
+  type Transaction,
+  type InsertTransaction,
+  type Promotion,
+  type InsertPromotion,
+} from "@shared/schema";
+import { db } from "./db";
+import { customers, transactions, promotions } from "@shared/schema";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Customer methods
+  getCustomer(id: string): Promise<Customer | undefined>;
+  getCustomerByPhone(phone: string): Promise<Customer | undefined>;
+  getCustomerByReferralCode(code: string): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer | undefined>;
+  getAllCustomers(): Promise<Customer[]>;
+  
+  // Transaction methods
+  getTransaction(id: string): Promise<Transaction | undefined>;
+  getCustomerTransactions(customerId: string): Promise<Transaction[]>;
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  
+  // Promotion methods
+  createPromotion(promotion: InsertPromotion): Promise<Promotion>;
+  getAllPromotions(): Promise<Promotion[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DbStorage implements IStorage {
+  // Customer methods
+  async getCustomer(id: string): Promise<Customer | undefined> {
+    const result = await db.select().from(customers).where(eq(customers.id, id));
+    return result[0];
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
+    const result = await db.select().from(customers).where(eq(customers.phone, phone));
+    return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getCustomerByReferralCode(code: string): Promise<Customer | undefined> {
+    const result = await db.select().from(customers).where(eq(customers.referralCode, code));
+    return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
+    // Generate unique referral code
+    const referralCode = `YENS${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    
+    const result = await db
+      .insert(customers)
+      .values({ ...insertCustomer, referralCode })
+      .returning();
+    
+    return result[0];
+  }
+
+  async updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer | undefined> {
+    const result = await db
+      .update(customers)
+      .set(customer)
+      .where(eq(customers.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async getAllCustomers(): Promise<Customer[]> {
+    return await db.select().from(customers).orderBy(desc(customers.createdAt));
+  }
+
+  // Transaction methods
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    const result = await db.select().from(transactions).where(eq(transactions.id, id));
+    return result[0];
+  }
+
+  async getCustomerTransactions(customerId: string): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.customerId, customerId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const result = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
+    
+    // Update customer points and total spent
+    const customer = await this.getCustomer(insertTransaction.customerId);
+    if (customer) {
+      const newPoints = customer.points + insertTransaction.points;
+      const newTotalSpent = parseFloat(customer.totalSpent) + parseFloat(insertTransaction.amount.toString());
+      
+      // Determine tier based on points
+      let tier = "bronze";
+      if (newPoints >= 1000) tier = "gold";
+      else if (newPoints >= 500) tier = "silver";
+      
+      await this.updateCustomer(insertTransaction.customerId, {
+        points: newPoints,
+        totalSpent: newTotalSpent.toString(),
+        tier,
+      });
+    }
+    
+    return result[0];
+  }
+
+  // Promotion methods
+  async createPromotion(insertPromotion: InsertPromotion): Promise<Promotion> {
+    const result = await db
+      .insert(promotions)
+      .values(insertPromotion)
+      .returning();
+    
+    return result[0];
+  }
+
+  async getAllPromotions(): Promise<Promotion[]> {
+    return await db.select().from(promotions).orderBy(desc(promotions.sentAt));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();
