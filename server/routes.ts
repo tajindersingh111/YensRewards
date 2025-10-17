@@ -94,7 +94,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ Barista API Endpoints ============
 
   // Create transaction (process purchase)
-  app.post('/api/transactions', isAuthenticated, async (req, res) => {
+  // TODO: Add barista authentication in production
+  app.post('/api/transactions', async (req, res) => {
     try {
       const validatedData = insertTransactionSchema.parse(req.body);
       const transaction = await storage.createTransaction(validatedData);

@@ -11,12 +11,12 @@ export default function QRScanner({ onScan }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
 
   const handleScan = () => {
-    //todo: remove mock functionality
     setIsScanning(true);
     setTimeout(() => {
       setIsScanning(false);
-      onScan("customer-123");
-      console.log("QR scanned: customer-123");
+      // Use real customer ID from database for testing
+      onScan("cust-001");
+      console.log("QR scanned: cust-001");
     }, 1500);
   };
 

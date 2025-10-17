@@ -1,31 +1,62 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Customer, Transaction } from "@shared/schema";
 import QRScanner from "@/components/QRScanner";
 import CustomerVerification from "@/components/CustomerVerification";
 import ReceiptCapture from "@/components/ReceiptCapture";
 import TransactionConfirm from "@/components/TransactionConfirm";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, MapPin } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
 type Step = "scan" | "verify" | "capture" | "confirm" | "success";
 
 export default function BaristaApp() {
-  //todo: remove mock functionality
+  const { toast } = useToast();
   const [step, setStep] = useState<Step>("scan");
   const [customerId, setCustomerId] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPoints, setCustomerPoints] = useState(0);
-  const [customerTier, setCustomerTier] = useState<"bronze" | "silver" | "gold">("bronze");
   const [amount, setAmount] = useState(0);
   const [receiptUrl, setReceiptUrl] = useState("");
   const [location, setLocation] = useState("Main Store");
 
+  // Fetch customer data when scanned
+  const { data: customer, isLoading: customerLoading } = useQuery<Customer>({
+    queryKey: ['/api/customers', customerId],
+    enabled: !!customerId && step === "verify",
+  });
+
+  // Create transaction mutation
+  const createTransaction = useMutation({
+    mutationFn: async (data: { customerId: string; amount: string; points: number; location: string; receiptUrl?: string; type?: string }) => {
+      return await apiRequest('POST', '/api/transactions', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId] });
+      setStep("success");
+      toast({
+        title: "Success!",
+        description: "Transaction processed successfully",
+      });
+      setTimeout(() => {
+        handleReset();
+      }, 2000);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to process transaction",
+        variant: "destructive",
+      });
+      console.error("Transaction error:", error);
+    },
+  });
+
   const handleScan = (id: string) => {
     setCustomerId(id);
-    setCustomerName("Somchai Prasert");
-    setCustomerPoints(1250);
-    setCustomerTier("gold");
     setStep("verify");
   };
 
@@ -34,11 +65,8 @@ export default function BaristaApp() {
   };
 
   const handleVerifyReject = () => {
-    setStep("scan");
     setCustomerId("");
-    setCustomerName("");
-    setCustomerPoints(0);
-    setCustomerTier("bronze");
+    setStep("scan");
   };
 
   const handleReceiptSubmit = (amt: number, url: string) => {
@@ -48,24 +76,26 @@ export default function BaristaApp() {
   };
 
   const handleConfirm = () => {
-    setStep("success");
-    setTimeout(() => {
-      setStep("scan");
-      setCustomerId("");
-      setCustomerName("");
-      setAmount(0);
-      setReceiptUrl("");
-    }, 2000);
+    const points = Math.floor(amount / 10);
+    createTransaction.mutate({
+      customerId,
+      amount: amount.toString(),
+      points,
+      location,
+      type: "purchase",
+      receiptUrl: receiptUrl || undefined,
+    });
+  };
+
+  const handleReset = () => {
+    setStep("scan");
+    setCustomerId("");
+    setAmount(0);
+    setReceiptUrl("");
   };
 
   const handleCancel = () => {
-    setStep("scan");
-    setCustomerId("");
-    setCustomerName("");
-    setCustomerPoints(0);
-    setCustomerTier("bronze");
-    setAmount(0);
-    setReceiptUrl("");
+    handleReset();
   };
 
   const points = Math.floor(amount / 10);
@@ -103,44 +133,65 @@ export default function BaristaApp() {
             >
               <option value="Main Store" className="text-foreground">Main Store</option>
               <option value="Night Bazaar" className="text-foreground">Night Bazaar</option>
-              <option value="Weekend Market" className="text-foreground">Weekend Market</option>
+              <option value="Central Plaza Expo" className="text-foreground">Central Plaza Expo</option>
             </select>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto p-6">
+      <main className="max-w-2xl mx-auto p-4">
         {step === "scan" && (
-          <div className="max-w-md mx-auto">
+          <div className="flex flex-col items-center gap-6 pt-8">
             <QRScanner onScan={handleScan} />
           </div>
         )}
 
         {step === "verify" && (
-          <div className="max-w-md mx-auto">
-            <CustomerVerification
-              customerName={customerName}
-              points={customerPoints}
-              tier={customerTier}
-              onConfirm={handleVerifyConfirm}
-              onReject={handleVerifyReject}
-            />
+          <div className="pt-8">
+            {customerLoading ? (
+              <Card className="p-8 text-center">
+                <div className="w-16 h-16 border-4 border-chart-1 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading customer...</p>
+              </Card>
+            ) : customer ? (
+              <CustomerVerification
+                customerName={customer.name}
+                customerPhoto={customer.photo || undefined}
+                points={customer.points}
+                tier={customer.tier as "bronze" | "silver" | "gold"}
+                onConfirm={handleVerifyConfirm}
+                onReject={handleVerifyReject}
+              />
+            ) : (
+              <Card className="p-8 text-center space-y-4">
+                <h3 className="text-xl font-bold text-foreground">Customer Not Found</h3>
+                <p className="text-muted-foreground">Customer ID: {customerId}</p>
+                <Button onClick={handleVerifyReject} data-testid="button-try-again">
+                  Try Again
+                </Button>
+              </Card>
+            )}
           </div>
         )}
 
         {step === "capture" && (
-          <div className="max-w-md mx-auto">
-            <ReceiptCapture customerName={customerName} onSubmit={handleReceiptSubmit} />
+          <div className="pt-8">
+            <ReceiptCapture onSubmit={handleReceiptSubmit} />
           </div>
         )}
 
-        {step === "confirm" && (
-          <div className="max-w-md mx-auto">
+        {step === "confirm" && customer && (
+          <div className="pt-8">
             <TransactionConfirm
-              customerName={customerName}
+              customer={{
+                id: customer.id,
+                name: customer.name,
+                photo: customer.photo || undefined,
+              }}
               amount={amount}
               points={points}
+              location={location}
               onConfirm={handleConfirm}
               onCancel={handleCancel}
             />
@@ -148,14 +199,18 @@ export default function BaristaApp() {
         )}
 
         {step === "success" && (
-          <div className="max-w-md mx-auto text-center space-y-4 p-8">
-            <div className="w-20 h-20 rounded-full bg-chart-3 text-white flex items-center justify-center mx-auto text-4xl">
-              ✓
-            </div>
-            <h2 className="text-2xl font-bold text-foreground">Success!</h2>
-            <p className="text-muted-foreground">
-              {customerName} earned {points} points
-            </p>
+          <div className="pt-8">
+            <Card className="p-12 text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
+                <svg className="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-foreground">Success!</h2>
+              <p className="text-muted-foreground">
+                {points} points added
+              </p>
+            </Card>
           </div>
         )}
       </main>
