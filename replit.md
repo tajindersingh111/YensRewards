@@ -169,16 +169,30 @@ Preferred communication style: Simple, everyday language.
 - ✅ Core API endpoints functional for customers and transactions
 - ✅ Customer App fully connected to backend
 - ✅ Barista App fully connected to backend with complete transaction flow
-- ⏳ Admin Dashboard needs backend integration
-- ⏳ QR code generation/scanning needs real implementation (currently using mock customer ID)
+- ✅ Admin Dashboard fully connected to backend with real-time analytics
+- ✅ Phone lookup feature for baristas (alternative to QR scanning)
+- ✅ CSV export for customer data
+- ✅ Real-time KPI dashboard (sales, customers, avg transaction, points redeemed)
+- ✅ Complete user journey tested end-to-end
+- ⏳ QR code generation/scanning needs real implementation (phone lookup works as alternative)
 - ⏳ Receipt photo upload to Object Storage pending
 - ⏳ OCR integration for receipt scanning pending
 - ⏳ Twilio SMS integration for promotions pending
-- ⏳ Barista authentication needs to be re-enabled for production
+- ⏳ Barista/Admin authentication needs to be re-enabled for production
 
 ### Testing & Validation
-- Customer lookup by phone works correctly
-- Transaction creation persists to PostgreSQL successfully
-- Points calculation (฿10 = 1 point) verified
-- Multi-step barista workflow tested end-to-end
-- Auto-invalidation of customer queries after transaction ensures fresh data
+- ✅ Complete user journey tested: Customer signup → Barista transaction → Admin analytics
+- ✅ Customer lookup by phone works correctly (both customer app and barista app)
+- ✅ Transaction creation persists to PostgreSQL successfully
+- ✅ Points calculation (฿10 = 1 point) verified and updates customer records
+- ✅ Multi-step barista workflow tested end-to-end with phone lookup
+- ✅ Admin dashboard KPIs update in real-time from database
+- ✅ Customer list and CSV export working correctly
+- ✅ Auto-invalidation of customer queries after transaction ensures fresh data
+
+### Key Features Implemented (October 17, 2025)
+1. **Phone Lookup for Baristas**: Added "Lookup by Phone" button in QR scanner as alternative to QR code scanning
+2. **Admin Analytics API**: Real-time KPIs including total sales, customers, average transaction, points redeemed
+3. **Sales by Location Chart**: Visual breakdown of revenue by store/market location
+4. **Customer Management**: Full CRUD with CSV export capability
+5. **Promotion System**: Backend ready for tier-based SMS campaigns (Twilio integration pending)
