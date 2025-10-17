@@ -203,3 +203,9 @@ Preferred communication style: Simple, everyday language.
    - Each app installs as a standalone app with unique name and theme color
    - Installation guide on home page with step-by-step instructions
    - Install prompts appear automatically when browser supports PWA installation
+   - **QR Code Installation System** (`/qr` route):
+     - Generates QR code linking directly to customer app
+     - Staff can display on screen or print as poster
+     - Customers scan with phone camera → tap notification → install app instantly
+     - Includes step-by-step visual guide for staff
+     - Print-optimized layout for physical posters
