@@ -133,11 +133,8 @@ export default function CustomerApp() {
             </Button>
           </div>
           
-          <div className="text-sm text-muted-foreground text-center">
-            <p>Test accounts:</p>
-            <p>+66812345678 (Somchai - Gold)</p>
-            <p>+66898765432 (Jaruwan - Bronze)</p>
-            <p>+66823456789 (Orapan - Silver)</p>
+          <div className="text-xs text-muted-foreground text-center">
+            <p>New customer? Enter your phone number and we'll set up your account!</p>
           </div>
         </Card>
       </div>
