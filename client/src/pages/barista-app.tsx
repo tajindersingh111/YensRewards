@@ -31,8 +31,9 @@ export default function BaristaApp() {
 
   // Create customer mutation
   const createCustomer = useMutation({
-    mutationFn: async (data: { phone: string; name: string; email?: string; birthdate?: string }) => {
-      return await apiRequest('POST', '/api/customers', data);
+    mutationFn: async (data: { phone: string; name: string; email?: string; birthdate?: string }): Promise<Customer> => {
+      const response = await apiRequest('POST', '/api/customers', data);
+      return await response.json();
     },
     onSuccess: (data: Customer) => {
       toast({
@@ -307,23 +308,21 @@ export default function BaristaApp() {
           </div>
         )}
 
-        {step === "capture" && (
+        {step === "capture" && customer && (
           <div className="pt-8">
-            <ReceiptCapture onSubmit={handleReceiptSubmit} />
+            <ReceiptCapture 
+              customerName={customer.name}
+              onSubmit={handleReceiptSubmit} 
+            />
           </div>
         )}
 
         {step === "confirm" && customer && (
           <div className="pt-8">
             <TransactionConfirm
-              customer={{
-                id: customer.id,
-                name: customer.name,
-                photo: customer.photo || undefined,
-              }}
+              customerName={customer.name}
               amount={amount}
               points={points}
-              location={location}
               onConfirm={handleConfirm}
               onCancel={handleCancel}
             />
