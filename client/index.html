@@ -5,8 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
     <meta name="description" content="Loyalty rewards system for Yens Thai Ice Cream - Nakhon Sawan, Thailand" />
     
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <!-- PWA Manifest (dynamically loaded based on route) -->
+    <link rel="manifest" id="app-manifest" href="/manifest.json" />
+    <script>
+      // Dynamically load the correct manifest and update meta tags based on route
+      (function() {
+        const path = window.location.pathname;
+        const manifestLink = document.getElementById('app-manifest');
+        
+        if (path.startsWith('/customer')) {
+          manifestLink.href = '/manifest-customer.json';
+          document.title = 'Yens Customer';
+          document.querySelector('meta[name="theme-color"]').content = '#FCD34D';
+          document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Yens Customer';
+        } else if (path.startsWith('/barista')) {
+          manifestLink.href = '/manifest-barista.json';
+          document.title = 'Yens Barista';
+          document.querySelector('meta[name="theme-color"]').content = '#1E40AF';
+          document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Yens Barista';
+        } else if (path.startsWith('/admin')) {
+          manifestLink.href = '/manifest-admin.json';
+          document.title = 'Yens Admin';
+          document.querySelector('meta[name="theme-color"]').content = '#1E40AF';
+          document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Yens Admin';
+        } else {
+          manifestLink.href = '/manifest.json';
+        }
+      })();
+    </script>
     
     <!-- Theme Colors -->
     <meta name="theme-color" content="#FCD34D" />
