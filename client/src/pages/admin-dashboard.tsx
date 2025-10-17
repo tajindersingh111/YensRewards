@@ -60,9 +60,55 @@ export default function AdminDashboard() {
     },
   });
 
+  const importCustomers = useMutation({
+    mutationFn: async (customers: Array<{ phone: string; name: string; email?: string; birthdate?: string }>) => {
+      return await apiRequest('POST', '/api/admin/import-customers', { customers });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
+      toast({
+        title: "Import Successful",
+        description: `${data.imported || 0} customers imported successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Import Failed",
+        description: error.message || "Failed to import customers",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleImportCSV = (file: File) => {
-    //todo: remove mock functionality
-    console.log("Importing CSV:", file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      // Skip header row and parse data
+      const customers = lines.slice(1).map(line => {
+        const [name, phone, email, birthdate] = line.split(',').map(s => s.trim());
+        return {
+          phone,
+          name,
+          email: email || undefined,
+          birthdate: birthdate || undefined,
+        };
+      }).filter(c => c.name && c.phone); // Filter out invalid rows
+      
+      if (customers.length === 0) {
+        toast({
+          title: "No Valid Data",
+          description: "CSV file contains no valid customer data",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      importCustomers.mutate(customers);
+    };
+    reader.readAsText(file);
   };
 
   const handleExportCSV = () => {
