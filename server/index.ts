@@ -51,6 +51,10 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    // Serve static files from public directory in development mode
+    const path = await import("path");
+    app.use(express.static(path.resolve(import.meta.dirname, "..", "public")));
+    
     await setupVite(app, server);
   } else {
     serveStatic(app);
