@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2 } from "lucide-react";
+import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2, QrCode } from "lucide-react";
 import { useLocation } from "wouter";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
@@ -71,12 +71,33 @@ export default function Home() {
           ))}
         </div>
 
+        {/* QR Code for Easy Installation */}
+        <Card className="p-6 bg-primary text-primary-foreground">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <QrCode className="w-12 h-12" />
+              <div>
+                <h2 className="text-2xl font-bold">Get Customers to Install</h2>
+                <p className="opacity-90">Show them a QR code - they scan, tap, and it's installed!</p>
+              </div>
+            </div>
+            <Button 
+              size="lg" 
+              variant="secondary"
+              onClick={() => setLocation('/qr')}
+              data-testid="button-show-qr"
+            >
+              Show QR Code
+            </Button>
+          </div>
+        </Card>
+
         {/* Installation Instructions */}
         <Card className="p-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Download className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">Install on Your Phone</h2>
+              <h2 className="text-xl font-bold text-foreground">Or Install Manually</h2>
             </div>
             <p className="text-muted-foreground">
               For the best experience, install each app on your phone like a native app:

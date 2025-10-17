@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import CustomerApp from "@/pages/customer-app";
 import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
+import QRDisplay from "@/pages/qr-display";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/customer" component={CustomerApp} />
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/qr" component={QRDisplay} />
       <Route component={NotFound} />
     </Switch>
   );
