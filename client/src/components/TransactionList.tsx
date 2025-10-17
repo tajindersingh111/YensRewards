@@ -8,7 +8,7 @@ interface Transaction {
   points: number;
   location: string;
   date: Date;
-  type: "purchase" | "reward";
+  type: string;
 }
 
 interface TransactionListProps {

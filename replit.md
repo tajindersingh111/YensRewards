@@ -196,3 +196,10 @@ Preferred communication style: Simple, everyday language.
 3. **Sales by Location Chart**: Visual breakdown of revenue by store/market location
 4. **Customer Management**: Full CRUD with CSV export capability
 5. **Promotion System**: Backend ready for tier-based SMS campaigns (Twilio integration pending)
+6. **PWA Installation**: 
+   - Separate web app manifests for Customer, Barista, and Admin apps
+   - One-tap installation on iOS and Android devices
+   - Dynamic manifest loading based on current route
+   - Each app installs as a standalone app with unique name and theme color
+   - Installation guide on home page with step-by-step instructions
+   - Install prompts appear automatically when browser supports PWA installation

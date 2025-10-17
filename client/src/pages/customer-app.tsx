@@ -126,7 +126,7 @@ export default function CustomerApp() {
     points: t.points,
     location: t.location,
     date: new Date(t.createdAt),
-    type: t.type as "purchase" | "reward" | "birthday_bonus" | "referral",
+    type: t.type,
   })) || [];
 
   const mockLeaderboard = [
