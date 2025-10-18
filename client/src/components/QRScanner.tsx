@@ -49,6 +49,9 @@ export default function QRScanner({ onScan }: QRScannerProps) {
     isScannedRef.current = false;
 
     try {
+      // Request camera permissions first
+      await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+
       if (!scannerRef.current) {
         scannerRef.current = new Html5Qrcode("qr-reader");
       }
@@ -69,9 +72,19 @@ export default function QRScanner({ onScan }: QRScannerProps) {
           console.log("QR scan error:", errorMessage);
         }
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error starting scanner:", err);
-      setError("Camera not available. Please use phone lookup below.");
+      let errorMsg = "Camera not available. Please use phone lookup below.";
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMsg = "Camera access denied. Please enable camera permissions in your browser settings, then try again. Use phone lookup as backup.";
+      } else if (err.name === 'NotFoundError') {
+        errorMsg = "No camera found. Please use phone lookup below.";
+      } else if (err.name === 'NotReadableError') {
+        errorMsg = "Camera is in use by another app. Close other apps and try again, or use phone lookup.";
+      }
+      
+      setError(errorMsg);
       setIsScanning(false);
     }
   };
