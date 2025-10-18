@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -11,6 +11,7 @@ import LeaderboardCard from "@/components/LeaderboardCard";
 import PromotionCard from "@/components/PromotionCard";
 import InstallPrompt from "@/components/InstallPrompt";
 import ProfilePhotoCapture from "@/components/ProfilePhotoCapture";
+import Celebration from "@/components/Celebration";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,9 @@ export default function CustomerApp() {
     birthday: "",
     photo: "",
   });
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationType, setCelebrationType] = useState<"points" | "tier-upgrade">("points");
+  const previousDataRef = useRef<{ points: number; tier: string } | null>(null);
   const { toast } = useToast();
 
   // Load phone from localStorage on mount
@@ -48,6 +52,51 @@ export default function CustomerApp() {
     queryKey: ['/api/customers/phone', phone],
     enabled: !!phone,
   });
+
+  // Celebration effect - Trigger when points or tier changes
+  useEffect(() => {
+    if (!customer) {
+      previousDataRef.current = null;
+      return;
+    }
+
+    const currentPoints = customer.points || 0;
+    const currentTier = customer.tier || "bronze";
+
+    // Check if this is an update (not initial load)
+    if (previousDataRef.current) {
+      const previousPoints = previousDataRef.current.points;
+      const previousTier = previousDataRef.current.tier;
+
+      // Check for tier upgrade (BIG celebration!)
+      if (currentTier !== previousTier) {
+        console.log("🎆 TIER UPGRADE!", previousTier, "→", currentTier);
+        setCelebrationType("tier-upgrade");
+        setShowCelebration(true);
+        toast({
+          title: `🎉 Tier Upgraded to ${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}!`,
+          description: "Congratulations! You've reached a new level!",
+        });
+      }
+      // Check for points increase (regular celebration)
+      else if (currentPoints > previousPoints) {
+        const earnedPoints = currentPoints - previousPoints;
+        console.log("⭐ Points earned!", earnedPoints);
+        setCelebrationType("points");
+        setShowCelebration(true);
+        toast({
+          title: `+${earnedPoints} Points Earned! 🎊`,
+          description: `You now have ${currentPoints} points!`,
+        });
+      }
+    }
+
+    // Update previous data
+    previousDataRef.current = {
+      points: currentPoints,
+      tier: currentTier,
+    };
+  }, [customer?.points, customer?.tier, toast]);
 
   // Fetch transactions
   const { data: transactions, isLoading: transactionsLoading } = useQuery<Transaction[]>({
@@ -492,6 +541,14 @@ export default function CustomerApp() {
 
       {/* Install Prompt */}
       <InstallPrompt />
+
+      {/* Celebration Animation */}
+      {showCelebration && (
+        <Celebration
+          type={celebrationType}
+          onComplete={() => setShowCelebration(false)}
+        />
+      )}
     </div>
   );
 }
