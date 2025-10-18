@@ -1,31 +1,48 @@
-// Service worker disabled - always fetch from network for development
-const CACHE_NAME = 'yens-loyalty-DISABLED';
+const CACHE_NAME = 'yens-loyalty-v20';
+const urlsToCache = [
+  '/',
+  '/customer',
+  '/barista',
+  '/admin',
+  '/pwa-icon-192.png',
+  '/pwa-icon-512.png',
+  '/apple-touch-icon.png',
+  '/manifest.json',
+  '/manifest-customer.json',
+  '/manifest-barista.json',
+  '/manifest-admin.json',
+];
 
 self.addEventListener('install', (event) => {
-  // Clear ALL caches on install
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => caches.delete(cacheName))
-      );
-    }).then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', (event) => {
-  // Clear ALL caches on activate
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => caches.delete(cacheName))
-      );
-    }).then(() => self.clients.claim())
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  // ALWAYS fetch from network - no caching
   event.respondWith(
-    fetch(event.request)
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });

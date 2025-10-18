@@ -36,18 +36,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-chart-1/5 flex items-center justify-center p-4">
-      {/* VERSION BANNER - IMPOSSIBLE TO MISS */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white text-center py-6 text-3xl font-bold animate-pulse">
-        🚀 VERSION 11 UPDATED - CAMERA FIXES INSTALLED 🚀
-      </div>
-      
-      <div className="max-w-4xl w-full space-y-8 mt-20">
+      <div className="max-w-4xl w-full space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <img src={logoUrl} alt="Yens Logo" className="w-24 h-24 mx-auto rounded-full" />
           <h1 className="text-4xl font-bold text-foreground">
-            Yen's Loyalty System v11
-            <span className="inline-block ml-3 text-5xl animate-pulse" style={{ color: '#ff0000' }}>★</span>
+            Yen's Loyalty System
           </h1>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
