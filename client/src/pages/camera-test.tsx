@@ -29,7 +29,10 @@ export default function CameraTest() {
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-      <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>Camera Test Page</h1>
+      <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>
+        Camera Test Page 
+        <span style={{ color: '#ff0000', fontSize: '32px', marginLeft: '10px' }}>★</span>
+      </h1>
       
       <div style={{ marginBottom: "20px", padding: "20px", border: "2px solid #ccc", borderRadius: "8px" }}>
         <h2 style={{ fontSize: "18px", marginBottom: "10px" }}>Test 1: Native File Input</h2>

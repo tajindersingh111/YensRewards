@@ -144,6 +144,8 @@ export default function BaristaApp() {
               </Button>
               <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
               <h1 className="text-xl font-bold">Barista App</h1>
+              {/* RED STAR - Updated Version Indicator */}
+              <span className="text-3xl animate-pulse" style={{ color: '#ff0000' }}>★</span>
             </div>
             {step !== "scan" && (
               <Button
