@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yens-loyalty-v37-ICON-FILENAME-CHANGE';
+const CACHE_NAME = 'yens-loyalty-v38-MUCH-BIGGER-TEXT';
 const urlsToCache = [
   '/',
   '/customer',

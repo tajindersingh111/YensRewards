@@ -2,21 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mobile-first: Significantly larger base font for better readability on phones */
+/* Mobile-first: MUCH larger base font for better readability */
 html {
-  font-size: 18px; /* Desktop base */
+  font-size: 20px; /* Desktop base */
 }
 
-/* Much larger base font for mobile devices */
+/* EXTRA LARGE for all mobile devices and tablets */
+@media (max-width: 1024px) {
+  html {
+    font-size: 28px; /* Large for tablets */
+  }
+}
+
 @media (max-width: 768px) {
   html {
-    font-size: 26px; /* 44% larger for tablets and phones */
+    font-size: 34px; /* Extra large for phones */
   }
 }
 
 @media (max-width: 640px) {
   html {
-    font-size: 32px; /* 78% larger for phones - EXTRA LARGE */
+    font-size: 38px; /* SUPER LARGE for small phones */
   }
 }
 
