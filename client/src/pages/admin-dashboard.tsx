@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import KPICard from "@/components/KPICard";
 import SalesChart from "@/components/SalesChart";
@@ -8,12 +9,14 @@ import PromotionCreator from "@/components/PromotionCreator";
 import CustomerImportExport from "@/components/CustomerImportExport";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, Users, TrendingUp, Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Users, TrendingUp, Award, ArrowLeft } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@shared/schema";
 
 export default function AdminDashboard() {
+  const [, setLocationPath] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
@@ -140,6 +143,15 @@ export default function AdminDashboard() {
       <header className="bg-card border-b border-border p-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setLocationPath("/")}
+              variant="ghost"
+              size="icon"
+              className="hover-elevate"
+              data-testid="button-back-home"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div>
               <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>

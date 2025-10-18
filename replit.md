@@ -135,7 +135,8 @@ Preferred communication style: Simple, everyday language.
 - **Service Worker Update**: Bumped cache version to v2 and added icon files to precache list
 - **Improved Service Worker**: Added `skipWaiting()` and `clients.claim()` for immediate updates
 - **Android QR Code Optimization**: Increased QR code size to 300px and changed error correction to Medium for better Android camera compatibility
-- **Result**: PWA now properly installs on both Android and iOS devices and persists after signup
+- **Back Button Navigation**: Added back/home button in header of all three apps (Customer, Barista, Admin) to exit PWA and return to home page
+- **Result**: PWA now properly installs on both Android and iOS devices, persists after signup, and users can easily navigate back to home
 
 ### Notification Badge System (October 18, 2025)
 - **WhatsApp-style Notification Badges**: Added red circular badge on Customer App's Rewards tab showing unread promotion count

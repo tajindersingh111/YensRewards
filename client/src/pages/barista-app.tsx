@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Customer, Transaction } from "@shared/schema";
 import QRScanner from "@/components/QRScanner";
@@ -10,12 +11,13 @@ import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Home } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
 type Step = "scan" | "verify" | "capture" | "confirm" | "success" | "register";
 
 export default function BaristaApp() {
+  const [, setLocationPath] = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("scan");
   const [customerId, setCustomerId] = useState("");
@@ -131,6 +133,15 @@ export default function BaristaApp() {
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
+              <Button
+                onClick={() => setLocationPath("/")}
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                data-testid="button-home"
+              >
+                <Home className="w-5 h-5" />
+              </Button>
               <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
               <h1 className="text-xl font-bold">Barista App</h1>
             </div>

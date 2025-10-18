@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Customer, Transaction, Promotion } from "@shared/schema";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
@@ -15,11 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Home, Award, Users, User, LogOut, UserPlus } from "lucide-react";
+import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
 export default function CustomerApp() {
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("home");
   const [phone, setPhone] = useState<string | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
@@ -315,13 +317,22 @@ export default function CustomerApp() {
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50">
         <div className="max-w-md mx-auto flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setLocation("/")}
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+            data-testid="button-back-home"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
           <div className="flex items-center gap-3">
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <h1 className="text-xl font-bold">Yen's Rewards</h1>
           </div>
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="icon" 
             onClick={handleLogout}
             className="text-primary-foreground hover:bg-primary-foreground/20"
             data-testid="button-logout"
