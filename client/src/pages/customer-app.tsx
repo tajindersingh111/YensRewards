@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Customer, Transaction } from "@shared/schema";
+import type { Customer, Transaction, Promotion } from "@shared/schema";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
 import PointsCard from "@/components/PointsCard";
 import TransactionList from "@/components/TransactionList";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Home, Award, Users, User, LogOut, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/yens logo_1760702216221.png";
@@ -49,6 +50,55 @@ export default function CustomerApp() {
     queryKey: ['/api/customers', customer?.id, 'transactions'],
     enabled: !!customer?.id,
   });
+
+  // Fetch promotions with read status
+  const { data: promotions } = useQuery<Array<Promotion & { isRead: boolean }>>({
+    queryKey: ['/api/customers', customer?.id, 'promotions'],
+    enabled: !!customer?.id,
+  });
+
+  // Fetch unread notification count
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ['/api/customers', customer?.id, 'notifications', 'unread-count'],
+    enabled: !!customer?.id,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const unreadCount = unreadData?.count || 0;
+
+  // Update PWA badge when unread count changes
+  useEffect(() => {
+    if ('setAppBadge' in navigator && customer) {
+      if (unreadCount > 0) {
+        (navigator as any).setAppBadge(unreadCount).catch((err: Error) => {
+          console.log('Failed to set app badge:', err);
+        });
+      } else {
+        (navigator as any).clearAppBadge().catch((err: Error) => {
+          console.log('Failed to clear app badge:', err);
+        });
+      }
+    }
+  }, [unreadCount, customer]);
+
+  // Mark all promotions as read mutation
+  const markAllRead = useMutation({
+    mutationFn: async () => {
+      if (!customer) return;
+      return await apiRequest('POST', `/api/customers/${customer.id}/promotions/read-all`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers', customer?.id, 'promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers', customer?.id, 'notifications', 'unread-count'] });
+    },
+  });
+
+  // Mark all as read when user views Rewards tab
+  useEffect(() => {
+    if (activeTab === "rewards" && customer && unreadCount > 0) {
+      markAllRead.mutate();
+    }
+  }, [activeTab, customer?.id]);
 
   const handleLogin = () => {
     if (phoneInput.trim()) {
@@ -301,22 +351,22 @@ export default function CustomerApp() {
           </TabsContent>
 
           <TabsContent value="rewards" className="p-4 space-y-6 mt-0">
-            <PromotionCard
-              title="Birthday Bonus!"
-              description="Get 100 extra points on your birthday month"
-              validUntil={new Date(2025, 2, 31)}
-              isNew={true}
-            />
-            <PromotionCard
-              title="Double Points Weekend"
-              description="Earn 2x points on all purchases this Saturday & Sunday"
-              validUntil={new Date(2025, 1, 20)}
-            />
-            <PromotionCard
-              title="New Flavor Alert!"
-              description="Try our new Mango Sticky Rice ice cream - only 30 points"
-              validUntil={new Date(2025, 1, 28)}
-            />
+            {promotions && promotions.length > 0 ? (
+              promotions.map((promo) => (
+                <PromotionCard
+                  key={promo.id}
+                  title={promo.title}
+                  description={promo.message}
+                  validUntil={new Date(promo.sentAt)}
+                  isNew={!promo.isRead}
+                />
+              ))
+            ) : (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">No promotions available yet</p>
+                <p className="text-sm text-muted-foreground mt-2">Check back soon for special offers!</p>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="referrals" className="p-4 space-y-6 mt-0">
@@ -367,13 +417,21 @@ export default function CustomerApp() {
           </button>
           <button
             onClick={() => setActiveTab("rewards")}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${
+            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 relative ${
               activeTab === "rewards" ? "text-primary" : "text-muted-foreground"
             }`}
             data-testid="button-nav-rewards"
           >
             <Award className="w-6 h-6" />
             <span className="text-xs">Rewards</span>
+            {unreadCount > 0 && (
+              <Badge 
+                className="absolute top-1 right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs font-bold rounded-full"
+                data-testid="badge-unread-count"
+              >
+                {unreadCount}
+              </Badge>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("referrals")}
