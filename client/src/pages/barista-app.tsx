@@ -153,7 +153,12 @@ export default function BaristaApp() {
                 <Home className="w-5 h-5" />
               </Button>
               <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-              <h1 className="text-xl font-bold">Barista App</h1>
+              <div>
+                <h1 className="text-xl font-bold">Barista App</h1>
+                <span className="inline-block bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                  v25
+                </span>
+              </div>
             </div>
             {step !== "scan" && (
               <Button
