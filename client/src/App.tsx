@@ -10,6 +10,7 @@ import CustomerMenu from "@/pages/customer-menu";
 import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
 import QRDisplay from "@/pages/qr-display";
+import CameraTest from "@/pages/camera-test";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/qr/:appType" component={QRDisplay} />
       <Route path="/qr" component={QRDisplay} />
+      <Route path="/camera-test" component={CameraTest} />
       <Route component={NotFound} />
     </Switch>
   );
