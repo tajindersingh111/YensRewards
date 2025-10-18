@@ -89,21 +89,21 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             </div>
 
             <div className="grid grid-cols-1 gap-2 mt-2">
-              {/* Visible file input styled as button - MOST RELIABLE for Android PWA */}
-              <div className="relative">
+              {/* DEBUG: Fully visible file input to test if it's working */}
+              <div className="w-full">
+                <p className="text-xs text-muted-foreground mb-1">Tap the button below to open camera:</p>
                 <input
                   id="receipt-file-input"
                   type="file"
                   accept="image/*"
                   capture="environment"
                   onChange={handleFileSelect}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  className="w-full h-12 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
                   data-testid="input-file-receipt"
                 />
-                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-12 px-4 py-2 w-full bg-primary text-primary-foreground pointer-events-none">
-                  <Camera className="w-5 h-5 mr-2" />
-                  {imagePreview ? "Retake Photo" : "Take Receipt Photo"}
-                </div>
+                {imagePreview && (
+                  <p className="text-xs text-green-600 mt-1">✓ Photo captured!</p>
+                )}
               </div>
             </div>
           </div>

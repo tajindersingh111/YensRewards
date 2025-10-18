@@ -106,20 +106,32 @@ export default function ProfilePhotoCapture({
           </AvatarFallback>
         </Avatar>
         
-        {/* Camera button overlay - Visible file input for maximum Android PWA compatibility */}
-        <div className="absolute bottom-0 right-0 h-9 w-9 rounded-full overflow-hidden">
+        {/* DEBUG: Visible camera button to test */}
+        <div className="absolute bottom-0 right-0">
           <input
             id="profile-photo-input"
             type="file"
             accept="image/*"
             capture="user"
             onChange={handleFileSelect}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            className="h-9 w-9 cursor-pointer opacity-0 absolute"
             data-testid="input-file-profile-photo"
           />
-          <div className="rounded-full bg-primary text-primary-foreground shadow-lg inline-flex items-center justify-center h-9 w-9 pointer-events-none">
+          <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center">
             <Camera className="w-4 h-4" />
           </div>
+        </div>
+        
+        {/* Fallback: Direct visible file input below avatar */}
+        <div className="mt-2">
+          <label className="text-xs text-muted-foreground block mb-1">Or tap here:</label>
+          <input
+            type="file"
+            accept="image/*"
+            capture="user"
+            onChange={handleFileSelect}
+            className="text-xs w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-primary-foreground cursor-pointer"
+          />
         </div>
       </div>
 
