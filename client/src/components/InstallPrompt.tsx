@@ -71,16 +71,13 @@ export default function InstallPrompt() {
   // iOS Instructions
   if (isIOS && !deferredPrompt) {
     return (
-      <Card className="fixed top-4 left-4 right-4 p-5 shadow-lg z-50 bg-[#FCD34D] border-4 border-[#F59E0B]" data-testid="card-install-prompt-ios">
-        <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <Download className="w-8 h-8 text-gray-800" />
-              <h3 className="font-bold text-xl text-gray-800">Install Yens App</h3>
-            </div>
+      <Card className="fixed top-4 left-4 right-4 p-6 shadow-lg z-50 bg-[#FCD34D] border-4 border-[#F59E0B]" data-testid="card-install-prompt-ios">
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-2xl text-gray-800">📱 Install App</h3>
             <button
               onClick={handleDismiss}
-              className="p-1.5 rounded-full hover:bg-white/30"
+              className="p-2 rounded-full hover:bg-white/30"
               data-testid="button-close-install"
             >
               <X className="w-6 h-6 text-gray-800" />
@@ -88,41 +85,30 @@ export default function InstallPrompt() {
           </div>
 
           <div className="space-y-3">
-            <div className="bg-white/80 p-4 rounded-lg border-2 border-gray-300">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-lg">1</div>
-                <p className="font-bold text-lg text-gray-800">At the VERY BOTTOM</p>
-              </div>
-              <div className="ml-11 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Share className="w-6 h-6 text-blue-600" />
-                  <p className="text-base text-gray-700">Tap <span className="font-bold text-blue-600">square box with arrow ↑</span></p>
+            <div className="bg-white p-4 rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">1</div>
+                <div className="flex items-center gap-3">
+                  <Share className="w-7 h-7 text-blue-600 flex-shrink-0" />
+                  <p className="text-lg font-bold text-gray-800">Tap share button at bottom</p>
                 </div>
-                <p className="text-sm text-gray-600 italic">(Between tabs and bookmarks buttons)</p>
               </div>
             </div>
 
-            <div className="bg-white/80 p-4 rounded-lg border-2 border-gray-300">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-lg">2</div>
-                <p className="font-bold text-lg text-gray-800">Swipe DOWN in menu</p>
-              </div>
-              <div className="ml-11 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Plus className="w-6 h-6 text-blue-600" />
-                  <p className="text-base text-gray-700">Find <span className="font-bold text-blue-600">"Add to Home Screen"</span></p>
+            <div className="bg-white p-4 rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">2</div>
+                <div className="flex items-center gap-3">
+                  <Plus className="w-7 h-7 text-blue-600 flex-shrink-0" />
+                  <p className="text-lg font-bold text-gray-800">Tap "Add to Home Screen"</p>
                 </div>
-                <p className="text-sm text-gray-600 italic">(It's below the sharing apps - keep scrolling!)</p>
               </div>
             </div>
 
-            <div className="bg-white/80 p-4 rounded-lg border-2 border-gray-300">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-lg">3</div>
-                <p className="font-bold text-lg text-gray-800">Tap "Add" at top right</p>
-              </div>
-              <div className="ml-11">
-                <p className="text-base text-green-700 font-bold">✓ Done! Look for Yens icon on home screen</p>
+            <div className="bg-white p-4 rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">3</div>
+                <p className="text-lg font-bold text-gray-800">Tap "Add" → Done! ✓</p>
               </div>
             </div>
           </div>
