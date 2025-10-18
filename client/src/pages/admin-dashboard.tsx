@@ -41,7 +41,7 @@ export default function AdminDashboard() {
 
   // Create promotion mutation
   const createPromotion = useMutation({
-    mutationFn: async (data: { title: string; description: string; targetTier: string; message: string }) => {
+    mutationFn: async (data: { title: string; targetTier?: string; message: string }) => {
       return await apiRequest('POST', '/api/admin/promotions', data);
     },
     onSuccess: () => {
@@ -129,8 +129,7 @@ export default function AdminDashboard() {
   const handleSendPromotion = (message: string, tier?: string) => {
     createPromotion.mutate({
       title: "Special Promotion",
-      description: `Promotion for ${tier || 'all'} tier customers`,
-      targetTier: tier || 'all',
+      targetTier: tier === 'all' ? undefined : tier,
       message,
     });
   };
