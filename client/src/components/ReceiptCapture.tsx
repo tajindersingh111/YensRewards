@@ -2,8 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { Camera, Upload, CheckCircle, Image as ImageIcon } from "lucide-react";
+import { useState, useRef } from "react";
 
 interface ReceiptCaptureProps {
   customerName: string;
@@ -13,12 +13,21 @@ interface ReceiptCaptureProps {
 export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptureProps) {
   const [amount, setAmount] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCapture = () => {
-    //todo: remove mock functionality
-    const mockImage = "https://placehold.co/400x600/FCD34D/003DA5?text=Receipt";
-    setImagePreview(mockImage);
-    console.log("Camera opened");
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCaptureClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleSubmit = () => {
@@ -43,8 +52,19 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label className="text-base font-semibold">Receipt Photo</Label>
-              <span className="text-xs text-destructive font-medium">* Required</span>
+              <span className="text-sm text-destructive font-medium">* Required</span>
             </div>
+            
+            {/* Hidden file input for camera/gallery */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+              data-testid="input-file-receipt"
+            />
             
             <div className="aspect-[2/3] bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border relative">
               {imagePreview ? (
@@ -57,21 +77,24 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
               ) : (
                 <div className="text-center p-4">
                   <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium text-foreground">Receipt photo required</p>
-                  <p className="text-xs text-muted-foreground mt-1">Tap button below to capture</p>
+                  <p className="text-base font-medium text-foreground">Receipt photo required</p>
+                  <p className="text-sm text-muted-foreground mt-1">Take photo or choose from gallery</p>
                 </div>
               )}
             </div>
 
-            <Button
-              onClick={handleCapture}
-              variant={imagePreview ? "outline" : "default"}
-              className="w-full mt-2"
-              data-testid="button-capture"
-            >
-              <Camera className="w-4 h-4 mr-2" />
-              {imagePreview ? "Retake Photo" : "Take Receipt Photo"}
-            </Button>
+            <div className="grid grid-cols-1 gap-2 mt-2">
+              <Button
+                onClick={handleCaptureClick}
+                variant={imagePreview ? "outline" : "default"}
+                size="lg"
+                className="w-full"
+                data-testid="button-capture"
+              >
+                <Camera className="w-5 h-5 mr-2" />
+                {imagePreview ? "Retake Photo" : "Take Receipt Photo"}
+              </Button>
+            </div>
           </div>
 
           {/* Amount Input */}
@@ -105,7 +128,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             size="lg"
             data-testid="button-submit-receipt"
           >
-            <Upload className="w-4 h-4 mr-2" />
+            <Upload className="w-5 h-5 mr-2" />
             {!imagePreview && !amount 
               ? "Add Receipt Photo & Amount"
               : !imagePreview 
