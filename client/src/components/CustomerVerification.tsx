@@ -34,39 +34,39 @@ export default function CustomerVerification({
     .slice(0, 2);
 
   return (
-    <Card className="p-6 sm:p-8" data-testid="card-customer-verification">
+    <Card className="p-8" data-testid="card-customer-verification">
       <div className="flex flex-col items-center gap-6">
         <div className="text-center">
-          <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">Verify Customer</h3>
-          <p className="text-base sm:text-lg text-muted-foreground">
+          <h3 className="text-2xl font-bold text-foreground mb-2">Verify Customer</h3>
+          <p className="text-sm text-muted-foreground">
             Confirm this is the correct customer
           </p>
         </div>
 
-        <Avatar className="w-28 h-28 sm:w-32 sm:h-32 border-4 border-primary" data-testid="avatar-customer">
+        <Avatar className="w-32 h-32 border-4 border-primary" data-testid="avatar-customer">
           <AvatarImage src={customerPhoto} alt={customerName} />
-          <AvatarFallback className={`text-3xl sm:text-4xl font-bold text-white ${tierColors[tier]}`}>
+          <AvatarFallback className={`text-4xl font-bold text-white ${tierColors[tier]}`}>
             {initials}
           </AvatarFallback>
         </Avatar>
 
-        <div className="text-center space-y-3">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground" data-testid="text-customer-name">
+        <div className="text-center space-y-2">
+          <h2 className="text-3xl font-bold text-foreground" data-testid="text-customer-name">
             {customerName}
           </h2>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-3">
             <div className="text-center">
-              <p className="text-2xl sm:text-3xl font-bold text-primary" data-testid="text-customer-points">
+              <p className="text-2xl font-bold text-primary" data-testid="text-customer-points">
                 {points}
               </p>
-              <p className="text-sm sm:text-base text-muted-foreground">Points</p>
+              <p className="text-xs text-muted-foreground">Points</p>
             </div>
-            <div className="w-px h-12 bg-border" />
+            <div className="w-px h-10 bg-border" />
             <div className="text-center">
-              <p className="text-base sm:text-lg font-semibold text-foreground capitalize" data-testid="text-customer-tier">
+              <p className="text-sm font-semibold text-foreground capitalize" data-testid="text-customer-tier">
                 {tier}
               </p>
-              <p className="text-sm sm:text-base text-muted-foreground">Tier</p>
+              <p className="text-xs text-muted-foreground">Tier</p>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@ export default function CustomerVerification({
           <Button
             onClick={onConfirm}
             size="lg"
-            className="w-full min-h-14 text-base sm:text-lg"
+            className="w-full h-14 text-lg"
             data-testid="button-confirm-customer"
           >
             <CheckCircle className="w-6 h-6 mr-2" />
@@ -89,7 +89,7 @@ export default function CustomerVerification({
               onClick={onReject}
               variant="outline"
               size="sm"
-              className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground min-h-10 text-sm sm:text-base"
+              className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
               data-testid="button-reject"
             >
               <XCircle className="w-4 h-4 mr-1" />
