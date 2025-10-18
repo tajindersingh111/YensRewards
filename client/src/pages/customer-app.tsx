@@ -47,10 +47,11 @@ export default function CustomerApp() {
     }
   }, []);
 
-  // Fetch customer data
+  // Fetch customer data - Poll every 3 seconds to detect new points for celebrations!
   const { data: customer, isLoading: customerLoading } = useQuery<Customer>({
     queryKey: ['/api/customers/phone', phone],
     enabled: !!phone,
+    refetchInterval: 3000, // Poll every 3 seconds to trigger celebrations
   });
 
   // Celebration effect - Trigger when points or tier changes

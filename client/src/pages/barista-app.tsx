@@ -139,9 +139,9 @@ export default function BaristaApp() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-chart-1 text-white p-4 sticky top-0 z-50">
+      <header className="bg-chart-1 text-white p-3 sticky top-0 z-50">
         <div className="w-full">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <Button
                 onClick={() => setLocationPath("/")}
@@ -153,10 +153,10 @@ export default function BaristaApp() {
                 <Home className="w-5 h-5" />
               </Button>
               <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-              <div>
-                <h1 className="text-xl font-bold">Barista App</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold whitespace-nowrap">Barista App</h1>
                 <span className="inline-block bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  v29
+                  v30
                 </span>
               </div>
             </div>
