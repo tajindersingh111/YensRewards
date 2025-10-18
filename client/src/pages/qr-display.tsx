@@ -104,12 +104,14 @@ export default function QRDisplay() {
               <p className="text-muted-foreground">{config.qrSubtitle}</p>
             </div>
             
-            <div className={`bg-white p-6 rounded-xl inline-block border-2 ${config.borderColor}`}>
+            <div className={`bg-white p-8 rounded-xl inline-block border-2 ${config.borderColor}`}>
               {appUrl && (
                 <QRCode
                   value={appUrl}
-                  size={256}
-                  level="H"
+                  size={300}
+                  level="M"
+                  bgColor="#FFFFFF"
+                  fgColor="#000000"
                 />
               )}
             </div>
@@ -189,8 +191,10 @@ export default function QRDisplay() {
               {appUrl && (
                 <QRCode
                   value={appUrl}
-                  size={400}
-                  level="H"
+                  size={450}
+                  level="M"
+                  bgColor="#FFFFFF"
+                  fgColor="#000000"
                 />
               )}
             </div>
