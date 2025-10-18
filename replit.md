@@ -8,6 +8,14 @@ A multi-interface loyalty management system for Yens Thai Ice Cream, designed to
 
 Preferred communication style: Simple, everyday language.
 
+## Development Status
+
+**CUSTOMER APP - LOCKED AT v41** 🔒
+- Customer App is finalized and locked - NO changes until next development stage
+- Final features: 400px QR code, 34-38px mobile text, real Yens logo icons (v38), Menu page matching yensthai.com
+- Version: v41
+- Status: Production ready, deployed, DO NOT MODIFY
+
 ## System Architecture
 
 ### UI/UX Decisions
