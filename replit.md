@@ -23,13 +23,14 @@ Preferred communication style: Simple, everyday language.
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
 - **Authentication:** Replit Auth integrated for barista/admin login, session management using `connect-pg-simple`.
-- **Database Schema:** Comprehensive PostgreSQL schema including `customers`, `transactions`, `promotions`, and `referrals` tables, managed with Drizzle ORM.
+- **Database Schema:** Comprehensive PostgreSQL schema including `customers`, `transactions`, `promotions`, `products`, and `referrals` tables, managed with Drizzle ORM.
 - **Core Features:**
     - **Customer Loyalty:** Point accumulation (1 point per ฿10), tier management (Bronze/Silver/Gold).
     - **Transaction Processing:** Barista app with multi-step transaction flow, customer verification via QR or phone lookup, receipt amount entry, and point calculation.
     - **Customer Management:** Self-registration, profile management, transaction history, referral tracking.
     - **Admin Analytics:** Real-time KPIs (sales, customers, average transaction, points redeemed), sales by location, customer list management with CSV export.
     - **Promotions:** Tier-based promotion system with in-app notification badges and PWA badge API integration.
+    - **Product Menu System:** Visual product catalog with categories (Soft Serve, Milk Tea, Fruit Tea, Shakes, Sundaes, Float Drinks), promotional badges (New, Popular, Limited Time, On Sale), featured items, and admin CRUD interface for menu management. Accessible to customers via `/menu` route with category filtering and responsive card layout.
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas for both client and server.
