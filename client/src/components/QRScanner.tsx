@@ -70,7 +70,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
       );
     } catch (err) {
       console.error("Error starting scanner:", err);
-      setError("Unable to access camera. Please check permissions.");
+      setError("Unable to access camera. Please allow camera access when prompted, or grant permissions in your browser settings.");
       setIsScanning(false);
     }
   };
