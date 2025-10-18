@@ -6,10 +6,69 @@ interface CelebrationProps {
   onComplete?: () => void;
 }
 
+// Play celebration sound using Web Audio API
+function playCelebrationSound(type: "points" | "tier-upgrade") {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    if (type === "tier-upgrade") {
+      // EPIC fanfare for tier upgrades
+      const times = [0, 0.15, 0.3, 0.5, 0.7];
+      const frequencies = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+      
+      times.forEach((time, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequencies[index];
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + time);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + time + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + time + 0.4);
+        
+        oscillator.start(audioContext.currentTime + time);
+        oscillator.stop(audioContext.currentTime + time + 0.4);
+      });
+    } else {
+      // Happy "ding-ding!" for points
+      const playNote = (frequency: number, startTime: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime + startTime);
+        oscillator.stop(audioContext.currentTime + startTime + 0.3);
+      };
+      
+      // Two cheerful notes
+      playNote(880, 0);      // A5
+      playNote(1174.66, 0.15); // D6
+    }
+  } catch (error) {
+    console.log('Could not play sound:', error);
+  }
+}
+
 export default function Celebration({ type, onComplete }: CelebrationProps) {
   useEffect(() => {
     const duration = type === "tier-upgrade" ? 3000 : 2000;
     const animationEnd = Date.now() + duration;
+
+    // Play celebration sound
+    playCelebrationSound(type);
 
     // Yens brand colors
     const yensYellow = "#FFD700";
