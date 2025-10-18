@@ -37,12 +37,8 @@ export default function InstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    // For iOS - show manual instructions after 1 second if not already installed
-    if (iOS && !standalone) {
-      setTimeout(() => {
-        setShowPrompt(true);
-      }, 1000);
-    }
+    // For iOS - do NOT show install banner (removed per user request)
+    // iOS users will use the app in Safari browser without installing
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
@@ -65,57 +61,8 @@ export default function InstallPrompt() {
     setShowPrompt(false);
   };
 
-  // Don't show if already installed
-  if (isStandalone || !showPrompt) return null;
-
-  // iOS Instructions
-  if (isIOS && !deferredPrompt) {
-    return (
-      <Card className="fixed top-4 left-4 right-4 p-6 shadow-lg z-50 bg-[#FCD34D] border-4 border-[#F59E0B]" data-testid="card-install-prompt-ios">
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-2xl text-gray-800">📱 Install App</h3>
-            <button
-              onClick={handleDismiss}
-              className="p-2 rounded-full hover:bg-white/30"
-              data-testid="button-close-install"
-            >
-              <X className="w-6 h-6 text-gray-800" />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            <div className="bg-white p-4 rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">1</div>
-                <div className="flex items-center gap-3">
-                  <Share className="w-7 h-7 text-blue-600 flex-shrink-0" />
-                  <p className="text-lg font-bold text-gray-800">Tap share button at bottom</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">2</div>
-                <div className="flex items-center gap-3">
-                  <Plus className="w-7 h-7 text-blue-600 flex-shrink-0" />
-                  <p className="text-lg font-bold text-gray-800">Tap "Add to Home Screen"</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">3</div>
-                <p className="text-lg font-bold text-gray-800">Tap "Add" → Done! ✓</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
+  // Don't show if already installed or on iOS
+  if (isStandalone || !showPrompt || isIOS) return null;
 
   // Android Auto-Prompt (already triggered automatically)
   return (
