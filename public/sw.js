@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yens-loyalty-v20';
+const CACHE_NAME = 'yens-loyalty-v21-FORCE-CLEAR';
 const urlsToCache = [
   '/',
   '/customer',
