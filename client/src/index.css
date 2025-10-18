@@ -2,30 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mobile-first: Much larger base font for better readability on phones */
+/* Mobile-first: Significantly larger base font for better readability on phones */
 html {
-  font-size: 16px;
+  font-size: 18px; /* Desktop base */
+}
+
+/* Much larger base font for mobile devices */
+@media (max-width: 768px) {
+  html {
+    font-size: 22px; /* 22% larger for tablets and phones */
+  }
 }
 
 @media (max-width: 640px) {
   html {
-    font-size: 20px; /* 25% larger base font for mobile */
+    font-size: 24px; /* 33% larger for phones */
   }
 }
 
 /* Ensure minimum touch target sizes on mobile */
 @media (max-width: 640px) {
   button, a, input, select, textarea {
-    min-height: 48px; /* Larger touch targets */
-  }
-  
-  /* Make specific UI elements even more prominent */
-  h1, h2, h3 {
-    font-size: 1.2em !important;
-  }
-  
-  p, div, span {
-    font-size: 1em !important;
+    min-height: 44px; /* iOS standard touch target */
   }
 }
 
