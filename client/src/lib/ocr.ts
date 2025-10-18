@@ -29,7 +29,7 @@ export async function extractAmountFromReceipt(imageDataUrl: string): Promise<nu
     const amounts: number[] = [];
 
     for (const pattern of patterns) {
-      const matches = text.matchAll(new RegExp(pattern, 'gm'));
+      const matches = Array.from(text.matchAll(new RegExp(pattern, 'gm')));
       for (const match of matches) {
         const numStr = match[1]?.replace(/,/g, '');
         if (numStr) {

@@ -2,8 +2,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, CheckCircle, Image as ImageIcon } from "lucide-react";
+import { Camera, Upload, CheckCircle, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
+import { extractAmountFromReceipt } from "@/lib/ocr";
 
 interface ReceiptCaptureProps {
   customerName: string;
@@ -13,17 +14,39 @@ interface ReceiptCaptureProps {
 export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptureProps) {
   const [amount, setAmount] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrDetected, setOcrDetected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log("File input changed!", e.target.files);
     const file = e.target.files?.[0];
     if (file) {
       console.log("File selected:", file.name, file.type, file.size);
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         console.log("File loaded successfully");
-        setImagePreview(event.target?.result as string);
+        const dataUrl = event.target?.result as string;
+        setImagePreview(dataUrl);
+        
+        // Start OCR processing
+        setIsProcessing(true);
+        setOcrDetected(false);
+        
+        try {
+          const detectedAmount = await extractAmountFromReceipt(dataUrl);
+          if (detectedAmount !== null) {
+            setAmount(detectedAmount.toString());
+            setOcrDetected(true);
+            console.log("OCR detected amount:", detectedAmount);
+          } else {
+            console.log("OCR could not detect amount");
+          }
+        } catch (error) {
+          console.error("OCR processing failed:", error);
+        } finally {
+          setIsProcessing(false);
+        }
       };
       reader.onerror = (error) => {
         console.error("Error reading file:", error);
@@ -114,17 +137,36 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
               <Label htmlFor="amount" className="text-base font-semibold">Purchase Amount (฿)</Label>
               <span className="text-sm text-destructive font-medium">* Required</span>
             </div>
+            
+            {isProcessing && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">Reading receipt...</span>
+              </div>
+            )}
+            
             <Input
               id="amount"
               type="number"
               step="0.01"
-              placeholder="0.00"
+              placeholder={isProcessing ? "Reading receipt..." : "0.00"}
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setOcrDetected(false);
+              }}
+              disabled={isProcessing}
               className="text-lg h-12"
               data-testid="input-amount"
             />
-            {amount && (
+            
+            {ocrDetected && amount && (
+              <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                ✓ Amount detected automatically - you can edit if needed
+              </p>
+            )}
+            
+            {amount && !isProcessing && (
               <p className="text-base text-muted-foreground">
                 Points to earn: <span className="font-semibold text-foreground text-lg">{Math.floor(parseFloat(amount) / 10)}</span>
               </p>
