@@ -1,4 +1,4 @@
-import { QrCode } from "lucide-react";
+import QRCode from "react-qr-code";
 
 interface QRCodeDisplayProps {
   customerId: string;
@@ -9,10 +9,11 @@ export default function QRCodeDisplay({ customerId, customerName }: QRCodeDispla
   return (
     <div className="flex flex-col items-center gap-4 p-6 bg-background rounded-xl" data-testid="qr-code-container">
       <h3 className="text-lg font-semibold text-foreground">Your QR Code</h3>
-      <div className="w-48 h-48 bg-white rounded-lg flex items-center justify-center border-4 border-primary">
-        <QrCode className="w-40 h-40 text-foreground" data-testid="qr-code-icon" />
+      <div className="w-48 h-48 bg-white rounded-lg flex items-center justify-center p-4 border-4 border-primary">
+        <QRCode value={customerId} size={160} data-testid="qr-code" />
       </div>
       <p className="text-sm text-muted-foreground">Show this to the barista</p>
+      <p className="text-xs text-muted-foreground">ID: {customerId}</p>
     </div>
   );
 }

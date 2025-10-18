@@ -1,9 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScanLine, Camera, Phone } from "lucide-react";
-import { useState } from "react";
+import { ScanLine, Camera, Phone, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface QRScannerProps {
   onScan: (customerId: string) => void;
@@ -13,6 +14,9 @@ export default function QRScanner({ onScan }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [phoneMode, setPhoneMode] = useState(false);
   const [phone, setPhone] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isScannedRef = useRef(false);
 
   const lookupCustomer = useMutation({
     mutationFn: async (phoneNumber: string) => {
@@ -30,13 +34,66 @@ export default function QRScanner({ onScan }: QRScannerProps) {
     },
   });
 
-  const handleScan = () => {
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(console.error);
+      }
+    };
+  }, []);
+
+  const handleStartScan = async () => {
+    setError(null);
     setIsScanning(true);
-    setTimeout(() => {
+    isScannedRef.current = false;
+
+    try {
+      if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode("qr-reader");
+      }
+
+      await scannerRef.current.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        (decodedText) => {
+          if (!isScannedRef.current) {
+            isScannedRef.current = true;
+            handleScanSuccess(decodedText);
+          }
+        },
+        (errorMessage) => {
+          console.log("QR scan error:", errorMessage);
+        }
+      );
+    } catch (err) {
+      console.error("Error starting scanner:", err);
+      setError("Unable to access camera. Please check permissions.");
       setIsScanning(false);
-      // Use mock customer ID for QR scanning (to be replaced with real QR scanner)
-      onScan("cust-001");
-    }, 1500);
+    }
+  };
+
+  const handleScanSuccess = async (decodedText: string) => {
+    console.log("Scanned QR code:", decodedText);
+    
+    if (scannerRef.current) {
+      await scannerRef.current.stop();
+      scannerRef.current = null;
+    }
+    
+    setIsScanning(false);
+    onScan(decodedText);
+  };
+
+  const handleStopScan = async () => {
+    if (scannerRef.current) {
+      await scannerRef.current.stop();
+      scannerRef.current = null;
+    }
+    setIsScanning(false);
+    setError(null);
   };
 
   const handlePhoneLookup = () => {
@@ -50,43 +107,62 @@ export default function QRScanner({ onScan }: QRScannerProps) {
       <div className="flex flex-col items-center gap-6">
         {!phoneMode ? (
           <>
-            <div className="w-64 h-64 border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30 relative">
+            <div className="w-full max-w-md">
               {isScanning ? (
-                <ScanLine className="w-32 h-32 text-primary animate-pulse" />
+                <div className="space-y-4">
+                  <div id="qr-reader" className="rounded-xl overflow-hidden"></div>
+                  <Button
+                    onClick={handleStopScan}
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    data-testid="button-stop-scan"
+                  >
+                    <X className="w-5 h-5 mr-2" />
+                    Stop Scanning
+                  </Button>
+                </div>
               ) : (
-                <Camera className="w-32 h-32 text-muted-foreground" />
+                <>
+                  <div className="w-full aspect-square border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30 relative">
+                    <Camera className="w-32 h-32 text-muted-foreground" />
+                  </div>
+
+                  <div className="text-center space-y-2 mt-6">
+                    <h3 className="text-xl font-bold text-foreground">
+                      Scan Customer QR
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Position the QR code within the camera frame
+                    </p>
+                    {error && (
+                      <p className="text-sm text-destructive">{error}</p>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={handleStartScan}
+                    size="lg"
+                    className="w-full mt-4"
+                    data-testid="button-scan"
+                  >
+                    <ScanLine className="w-5 h-5 mr-2" />
+                    Start Scan
+                  </Button>
+
+                  <Button
+                    onClick={() => setPhoneMode(true)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    data-testid="button-phone-lookup"
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    Lookup by Phone
+                  </Button>
+                </>
               )}
             </div>
-
-            <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold text-foreground">
-                {isScanning ? "Scanning..." : "Scan Customer QR"}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Position the QR code within the frame
-              </p>
-            </div>
-
-            <Button
-              onClick={handleScan}
-              disabled={isScanning}
-              size="lg"
-              className="w-full max-w-xs"
-              data-testid="button-scan"
-            >
-              <ScanLine className="w-5 h-5 mr-2" />
-              {isScanning ? "Scanning..." : "Start Scan"}
-            </Button>
-
-            <Button
-              onClick={() => setPhoneMode(true)}
-              variant="outline"
-              size="sm"
-              data-testid="button-phone-lookup"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              Lookup by Phone
-            </Button>
           </>
         ) : (
           <>
