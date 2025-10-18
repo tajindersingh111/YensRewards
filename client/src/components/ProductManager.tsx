@@ -257,14 +257,14 @@ export default function ProductManager() {
                 <div>
                   <Label htmlFor="badge">Promotional Badge</Label>
                   <Select
-                    value={formData.badge}
-                    onValueChange={(value) => setFormData({ ...formData, badge: value })}
+                    value={formData.badge || "none"}
+                    onValueChange={(value) => setFormData({ ...formData, badge: value === "none" ? "" : value })}
                   >
                     <SelectTrigger id="badge" data-testid="select-product-badge">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {BADGES.map((badge) => (
                         <SelectItem key={badge.value} value={badge.value}>
                           {badge.label}
