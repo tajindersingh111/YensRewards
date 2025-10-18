@@ -1,5 +1,5 @@
 {
-  "name": "Yens Barista App",
+  "name": "Yens Loyalty - Barista",
   "short_name": "Yens Barista",
   "description": "Process customer transactions and award points",
   "start_url": "/barista",
@@ -10,13 +10,13 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/barista-icon-192.png?v=2.0",
+      "src": "/barista-icon-192.png?v=3.0",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/barista-icon-512.png?v=2.0",
+      "src": "/barista-icon-512.png?v=3.0",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

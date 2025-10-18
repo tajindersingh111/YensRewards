@@ -156,7 +156,7 @@ export default function BaristaApp() {
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold whitespace-nowrap">Barista App</h1>
                 <span className="inline-block bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  v32.1
+                  v33
                 </span>
               </div>
             </div>

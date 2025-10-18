@@ -250,12 +250,14 @@ export default function CustomerApp() {
   // Login screen
   if (!phone) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <img src={logoUrl} alt="Yens Logo" className="w-20 h-20 rounded-full mx-auto" />
-            <h1 className="text-2xl font-bold text-foreground">Yen's Rewards</h1>
-            <p className="text-muted-foreground">Enter your phone number to access your rewards</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-md p-6 sm:p-8 space-y-8">
+          <div className="text-center space-y-4">
+            <img src={logoUrl} alt="Yens Logo" className="w-24 h-24 rounded-full mx-auto" />
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-foreground">Yen's Rewards</h1>
+              <p className="text-base text-muted-foreground">Enter your phone number to access your rewards</p>
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -265,18 +267,20 @@ export default function CustomerApp() {
               value={phoneInput}
               onChange={(e) => setPhoneInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              className="text-lg h-12"
               data-testid="input-phone"
             />
             <Button 
               onClick={() => { enableAudio(); handleLogin(); }} 
-              className="w-full"
+              className="w-full text-lg"
+              size="lg"
               data-testid="button-login"
             >
               Access My Rewards
             </Button>
           </div>
           
-          <div className="text-xs text-muted-foreground text-center">
+          <div className="text-sm text-muted-foreground text-center">
             <p>New customer? Enter your phone number and we'll set up your account!</p>
           </div>
         </Card>
