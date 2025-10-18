@@ -71,26 +71,71 @@ export default function Home() {
           ))}
         </div>
 
-        {/* QR Code for Easy Installation */}
-        <Card className="p-6 bg-primary text-primary-foreground">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <QrCode className="w-12 h-12" />
-              <div>
-                <h2 className="text-2xl font-bold">Get Customers to Install</h2>
-                <p className="opacity-90">Show them a QR code - they scan, tap, and it's installed!</p>
+        {/* QR Code Banners for Easy Installation */}
+        <div className="space-y-4">
+          {/* Customer QR Code */}
+          <Card className="p-6 bg-primary text-primary-foreground">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <QrCode className="w-12 h-12" />
+                <div>
+                  <h2 className="text-2xl font-bold">Customer App QR Code</h2>
+                  <p className="opacity-90">Show customers this QR code - they scan, tap, and it's installed!</p>
+                </div>
               </div>
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => setLocation('/qr/customer')}
+                data-testid="button-show-qr-customer"
+              >
+                Show QR Code
+              </Button>
             </div>
-            <Button 
-              size="lg" 
-              variant="secondary"
-              onClick={() => setLocation('/qr')}
-              data-testid="button-show-qr"
-            >
-              Show QR Code
-            </Button>
-          </div>
-        </Card>
+          </Card>
+
+          {/* Barista QR Code */}
+          <Card className="p-6 bg-chart-1 text-white">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <QrCode className="w-12 h-12" />
+                <div>
+                  <h2 className="text-2xl font-bold">Barista App QR Code</h2>
+                  <p className="opacity-90">For staff to install the point-of-sale app on their devices</p>
+                </div>
+              </div>
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => setLocation('/qr/barista')}
+                data-testid="button-show-qr-barista"
+              >
+                Show QR Code
+              </Button>
+            </div>
+          </Card>
+
+          {/* Admin QR Code */}
+          <Card className="p-6 bg-chart-3 text-white">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <QrCode className="w-12 h-12" />
+                <div>
+                  <h2 className="text-2xl font-bold">Admin Dashboard QR Code</h2>
+                  <p className="opacity-90">For managers to access analytics, reports, and promotions</p>
+                </div>
+              </div>
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => setLocation('/qr/admin')}
+                data-testid="button-show-qr-admin"
+              >
+                Show QR Code
+              </Button>
+            </div>
+          </Card>
+        </div>
 
         {/* Installation Instructions */}
         <Card className="p-6">
