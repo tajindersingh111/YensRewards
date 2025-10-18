@@ -124,7 +124,23 @@ Preferred communication style: Simple, everyday language.
 - Serverless-ready with Neon PostgreSQL
 - Stateless API design with session storage externalized to database
 
-## Recent Changes (October 17, 2025)
+## Recent Changes
+
+### Notification Badge System (October 18, 2025)
+- **WhatsApp-style Notification Badges**: Added red circular badge on Customer App's Rewards tab showing unread promotion count
+- **PWA Badge API Integration**: Uses `navigator.setAppBadge()` to display unread count on app icon when installed as PWA
+- **customer_notifications Table**: Tracks which promotions each customer has seen with read/unread status
+- **Auto Mark as Read**: When customer opens Rewards tab, all promotions automatically marked as read and badge clears
+- **Real Promotions Display**: Customer App now shows actual promotions from database with read status instead of mock data
+- **Notification API Endpoints**:
+  - GET `/api/customers/:id/promotions` - Fetch customer promotions with read status
+  - GET `/api/customers/:id/notifications/unread-count` - Get count of unread promotions
+  - POST `/api/customers/:id/promotions/read-all` - Mark all promotions as read
+  - POST `/api/customers/:customerId/promotions/:promotionId/read` - Mark single promotion as read
+- **Admin Promotion Bug Fix**: Fixed promotion creation to send correct data structure (removed invalid `description` field, fixed `targetTier` handling)
+- **Textarea Border Confirmed**: Admin promotion textarea has visible `border border-input` styling as requested
+
+### Manual Registration & CSV Import (October 17, 2025)
 
 ### Database Schema Implementation
 - Created comprehensive PostgreSQL schema with Drizzle ORM:
