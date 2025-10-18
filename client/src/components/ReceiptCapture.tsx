@@ -16,18 +16,34 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("File input changed!", e.target.files);
     const file = e.target.files?.[0];
     if (file) {
+      console.log("File selected:", file.name, file.type, file.size);
       const reader = new FileReader();
       reader.onload = (event) => {
+        console.log("File loaded successfully");
         setImagePreview(event.target?.result as string);
       };
+      reader.onerror = (error) => {
+        console.error("Error reading file:", error);
+        alert("Error loading image - please try again");
+      };
       reader.readAsDataURL(file);
+    } else {
+      console.log("No file selected");
     }
   };
 
   const handleCaptureClick = () => {
-    fileInputRef.current?.click();
+    console.log("Camera button clicked!");
+    if (fileInputRef.current) {
+      console.log("File input found, triggering click...");
+      fileInputRef.current.click();
+    } else {
+      console.error("File input ref is null!");
+      alert("Camera button error - please refresh the app");
+    }
   };
 
   const handleSubmit = () => {
