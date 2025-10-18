@@ -9,8 +9,8 @@ export default function QRCodeDisplay({ customerId, customerName }: QRCodeDispla
   return (
     <div className="flex flex-col items-center gap-4 p-6 bg-background rounded-xl" data-testid="qr-code-container">
       <h3 className="text-lg font-semibold text-foreground">Your QR Code</h3>
-      <div className="w-[304px] h-[304px] bg-white rounded-lg flex items-center justify-center p-3 border-4 border-primary">
-        <QRCode value={customerId} size={280} data-testid="qr-code" />
+      <div className="w-[424px] h-[424px] bg-white rounded-lg flex items-center justify-center p-3 border-4 border-primary">
+        <QRCode value={customerId} size={400} data-testid="qr-code" />
       </div>
       <p className="text-sm text-muted-foreground">Show this to the barista</p>
       <p className="text-xs text-muted-foreground">ID: {customerId}</p>
