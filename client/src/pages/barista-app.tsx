@@ -139,52 +139,43 @@ export default function BaristaApp() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-chart-1 text-white p-3 sticky top-0 z-50">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+      <header className="bg-chart-1 text-white p-2 sticky top-0 z-50">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <Button
+            onClick={() => setLocationPath("/")}
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20"
+            data-testid="button-home"
+          >
+            <Home className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full" />
+            <h1 className="text-base font-bold">Barista</h1>
+          </div>
+          <div className="flex items-center gap-1">
+            <select
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="bg-transparent border-b border-white/30 outline-none text-xs py-0"
+              data-testid="select-location"
+            >
+              <option value="Main Store" className="text-foreground">Main</option>
+              <option value="Night Bazaar" className="text-foreground">Bazaar</option>
+              <option value="Central Plaza Expo" className="text-foreground">Expo</option>
+            </select>
+            {step !== "scan" && (
               <Button
-                onClick={() => setLocationPath("/")}
+                onClick={handleCancel}
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20 h-8 w-8"
-                data-testid="button-home"
+                className="text-white hover:bg-white/20"
+                data-testid="button-back"
               >
-                <Home className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4" />
               </Button>
-              <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full" />
-              <div className="flex items-center gap-1">
-                <h1 className="text-lg font-bold">Barista</h1>
-                <span className="inline-block bg-green-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
-                  v44
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-3 h-3" />
-              <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="bg-transparent border-b border-white/30 outline-none text-xs py-0.5"
-                data-testid="select-location"
-              >
-                <option value="Main Store" className="text-foreground">Main</option>
-                <option value="Night Bazaar" className="text-foreground">Bazaar</option>
-                <option value="Central Plaza Expo" className="text-foreground">Expo</option>
-              </select>
-              {step !== "scan" && (
-                <Button
-                  onClick={handleCancel}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20 h-8"
-                  data-testid="button-back"
-                >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  <span className="text-xs">Back</span>
-                </Button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </header>
