@@ -7,6 +7,7 @@ import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
 import PromotionCreator from "@/components/PromotionCreator";
 import CustomerImportExport from "@/components/CustomerImportExport";
+import ProductManager from "@/components/ProductManager";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -167,6 +168,7 @@ export default function AdminDashboard() {
           <TabsList className="mb-6">
             <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="customers" data-testid="tab-customers">Customers</TabsTrigger>
+            <TabsTrigger value="products" data-testid="tab-products">Products</TabsTrigger>
             <TabsTrigger value="promotions" data-testid="tab-promotions">Promotions</TabsTrigger>
           </TabsList>
 
@@ -231,6 +233,10 @@ export default function AdminDashboard() {
               onMessage={(id) => console.log("Message customer:", id)}
               data-testid="table-all-customers"
             />
+          </TabsContent>
+
+          <TabsContent value="products" className="space-y-6">
+            <ProductManager />
           </TabsContent>
 
           <TabsContent value="promotions" className="space-y-6">
