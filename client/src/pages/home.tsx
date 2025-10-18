@@ -72,7 +72,6 @@ export default function Home() {
         </div>
 
         {/* QR Code Banners for Easy Installation */}
-        <h2 className="text-3xl font-bold text-center text-destructive">🔴 TEST: THREE BANNERS BELOW 🔴</h2>
         <div className="space-y-4">
           {/* Customer QR Code */}
           <Card className="p-6 bg-primary text-primary-foreground">
