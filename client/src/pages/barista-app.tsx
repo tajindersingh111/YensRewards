@@ -139,23 +139,23 @@ export default function BaristaApp() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-chart-1 text-white p-3 sticky top-0 z-50">
+      <header className="bg-chart-1 text-white p-2 sticky top-0 z-50">
         <div className="w-full">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={() => setLocationPath("/")}
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-8 w-8"
                 data-testid="button-home"
               >
-                <Home className="w-5 h-5" />
+                <Home className="w-4 h-4" />
               </Button>
-              <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold whitespace-nowrap">Barista App</h1>
-                <span className="inline-block bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+              <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full" />
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base font-bold whitespace-nowrap">Barista App</h1>
+                <span className="inline-block bg-green-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
                   v42
                 </span>
               </div>
@@ -165,20 +165,20 @@ export default function BaristaApp() {
                 onClick={handleCancel}
                 variant="ghost"
                 size="sm"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-8"
                 data-testid="button-back"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-4 h-4 mr-1" />
                 Back
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-2 text-base">
-            <MapPin className="w-5 h-5" />
+          <div className="flex items-center gap-1.5 text-sm">
+            <MapPin className="w-4 h-4" />
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="bg-transparent border-b border-white/30 outline-none text-base py-1"
+              className="bg-transparent border-b border-white/30 outline-none text-sm py-0.5"
               data-testid="select-location"
             >
               <option value="Main Store" className="text-foreground">Main Store</option>
