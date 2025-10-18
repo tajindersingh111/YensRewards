@@ -89,24 +89,22 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             </div>
 
             <div className="grid grid-cols-1 gap-2 mt-2">
-              {/* Direct file input styled as button - MORE RELIABLE on Android PWA */}
-              <label 
-                htmlFor="receipt-file-input"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-12 px-4 py-2 w-full cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
-                data-testid="button-capture-receipt"
-              >
-                <Camera className="w-5 h-5 mr-2" />
-                {imagePreview ? "Retake Photo" : "Take Receipt Photo"}
-              </label>
-              <input
-                id="receipt-file-input"
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileSelect}
-                className="hidden"
-                data-testid="input-file-receipt"
-              />
+              {/* Visible file input styled as button - MOST RELIABLE for Android PWA */}
+              <div className="relative">
+                <input
+                  id="receipt-file-input"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileSelect}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  data-testid="input-file-receipt"
+                />
+                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium h-12 px-4 py-2 w-full bg-primary text-primary-foreground pointer-events-none">
+                  <Camera className="w-5 h-5 mr-2" />
+                  {imagePreview ? "Retake Photo" : "Take Receipt Photo"}
+                </div>
+              </div>
             </div>
           </div>
 
