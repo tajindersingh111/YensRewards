@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAManager from "@/components/PWAManager";
 import Home from "@/pages/home";
 import CustomerApp from "@/pages/customer-app";
+import CustomerMenu from "@/pages/customer-menu";
 import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
 import QRDisplay from "@/pages/qr-display";
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/customer" component={CustomerApp} />
+      <Route path="/menu" component={CustomerMenu} />
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/qr/:appType" component={QRDisplay} />

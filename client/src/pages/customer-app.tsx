@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft } from "lucide-react";
+import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
@@ -330,15 +330,26 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <h1 className="text-xl font-bold">Yen's Rewards</h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleLogout}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-            data-testid="button-logout"
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setLocation("/menu")}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              data-testid="button-menu"
+            >
+              <UtensilsCrossed className="w-5 h-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
