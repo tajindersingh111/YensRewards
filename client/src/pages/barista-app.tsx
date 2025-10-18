@@ -150,15 +150,15 @@ export default function BaristaApp() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-            <h1 className="text-xl font-bold">Barista</h1>
+          <div className="flex items-center gap-2">
+            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full" />
+            <h1 className="text-base font-bold">Barista</h1>
           </div>
           <div className="flex items-center gap-2">
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="bg-transparent border-b border-white/30 outline-none text-sm py-0.5"
+              className="bg-transparent border-b border-white/30 outline-none text-xs py-0.5"
               data-testid="select-location"
             >
               <option value="Main Store" className="text-foreground">Main</option>
