@@ -73,7 +73,10 @@ export default function QRDisplay() {
               <div className="flex items-center gap-4">
                 <img src={logoUrl} alt="Yens Logo" className="w-16 h-16 rounded-full bg-white p-2" />
                 <div>
-                  <h1 className="text-4xl font-bold">{config.title}</h1>
+                  <h1 className="text-4xl font-bold">
+                    {config.title}
+                    <span className="inline-block ml-3 text-5xl animate-pulse" style={{ color: '#ff0000' }}>★</span>
+                  </h1>
                   <p className="text-lg opacity-90 mt-1">{config.subtitle}</p>
                 </div>
               </div>

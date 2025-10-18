@@ -40,7 +40,10 @@ export default function Home() {
         {/* Header */}
         <div className="text-center space-y-4">
           <img src={logoUrl} alt="Yens Logo" className="w-24 h-24 mx-auto rounded-full" />
-          <h1 className="text-4xl font-bold text-foreground">Yen's Loyalty System</h1>
+          <h1 className="text-4xl font-bold text-foreground">
+            Yen's Loyalty System
+            <span className="inline-block ml-3 text-5xl animate-pulse" style={{ color: '#ff0000' }}>★</span>
+          </h1>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
           </p>
