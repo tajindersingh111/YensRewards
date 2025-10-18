@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v47 - Balanced Barista Header! 🍦✨
+            v48 - Barista = Customer EXACT Match! 🍦✨
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
@@ -108,10 +108,10 @@ export default function Home() {
                   <div className="flex items-center gap-2 mb-1">
                     <h2 className="text-2xl font-bold">Barista App QR Code</h2>
                     <span className="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                      v47
+                      v48
                     </span>
                   </div>
-                  <p className="opacity-90">Smaller logo & text - balanced with location dropdown!</p>
+                  <p className="opacity-90">IDENTICAL to Customer - same logo, same text!</p>
                 </div>
               </div>
               <Button 
