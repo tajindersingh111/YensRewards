@@ -153,7 +153,12 @@ export default function BaristaApp() {
                 <Home className="w-4 h-4" />
               </Button>
               <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full" />
-              <h1 className="text-lg font-bold">Barista</h1>
+              <div className="flex items-center gap-1">
+                <h1 className="text-lg font-bold">Barista</h1>
+                <span className="inline-block bg-green-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
+                  v44
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-3 h-3" />

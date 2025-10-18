@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yens-loyalty-v43-BARISTA-CLEAN';
+const CACHE_NAME = 'yens-loyalty-v44-BARISTA-PROPORTIONAL';
 const urlsToCache = [
   '/',
   '/customer',
