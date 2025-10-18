@@ -22,9 +22,9 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
   };
 
   const handleSubmit = () => {
-    //todo: remove mock functionality
-    if (amount && imagePreview) {
-      onSubmit(parseFloat(amount), imagePreview);
+    if (amount) {
+      const receiptUrl = imagePreview || "";
+      onSubmit(parseFloat(amount), receiptUrl);
       console.log("Receipt submitted:", { amount, imagePreview });
     }
   };
@@ -73,7 +73,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
 
           <Button
             onClick={handleSubmit}
-            disabled={!amount || !imagePreview}
+            disabled={!amount}
             className="w-full"
             size="lg"
             data-testid="button-submit-receipt"
