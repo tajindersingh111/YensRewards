@@ -11,6 +11,7 @@ import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
 import QRDisplay from "@/pages/qr-display";
 import CameraTest from "@/pages/camera-test";
+import VersionCheck from "@/pages/version-check";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/qr/:appType" component={QRDisplay} />
       <Route path="/qr" component={QRDisplay} />
       <Route path="/camera-test" component={CameraTest} />
+      <Route path="/version-check" component={VersionCheck} />
       <Route component={NotFound} />
     </Switch>
   );
