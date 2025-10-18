@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
 interface ReceiptCaptureProps {
@@ -22,12 +22,13 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
   };
 
   const handleSubmit = () => {
-    if (amount) {
-      const receiptUrl = imagePreview || "";
-      onSubmit(parseFloat(amount), receiptUrl);
+    if (amount && imagePreview) {
+      onSubmit(parseFloat(amount), imagePreview);
       console.log("Receipt submitted:", { amount, imagePreview });
     }
   };
+
+  const canSubmit = amount && imagePreview;
 
   return (
     <Card className="p-6" data-testid="card-receipt-capture">
@@ -38,49 +39,86 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
         </div>
 
         <div className="space-y-4">
-          <div className="aspect-[2/3] bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Receipt" className="w-full h-full object-cover rounded-lg" />
-            ) : (
-              <div className="text-center">
-                <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No receipt captured</p>
-              </div>
-            )}
+          {/* Receipt Photo - REQUIRED */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-base font-semibold">Receipt Photo</Label>
+              <span className="text-xs text-destructive font-medium">* Required</span>
+            </div>
+            
+            <div className="aspect-[2/3] bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border relative">
+              {imagePreview ? (
+                <>
+                  <img src={imagePreview} alt="Receipt" className="w-full h-full object-cover rounded-lg" />
+                  <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                </>
+              ) : (
+                <div className="text-center p-4">
+                  <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm font-medium text-foreground">Receipt photo required</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tap button below to capture</p>
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={handleCapture}
+              variant={imagePreview ? "outline" : "default"}
+              className="w-full mt-2"
+              data-testid="button-capture"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              {imagePreview ? "Retake Photo" : "Take Receipt Photo"}
+            </Button>
           </div>
 
-          <Button
-            onClick={handleCapture}
-            variant="outline"
-            className="w-full"
-            data-testid="button-capture"
-          >
-            <Camera className="w-4 h-4 mr-2" />
-            {imagePreview ? "Retake Photo" : "Take Photo (Optional)"}
-          </Button>
-
+          {/* Amount Input */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Purchase Amount (฿)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="amount" className="text-base font-semibold">Purchase Amount (฿)</Label>
+              <span className="text-xs text-destructive font-medium">* Required</span>
+            </div>
             <Input
               id="amount"
               type="number"
+              step="0.01"
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               data-testid="input-amount"
             />
+            {amount && (
+              <p className="text-sm text-muted-foreground">
+                Points to earn: <span className="font-semibold text-foreground">{Math.floor(parseFloat(amount) / 10)}</span>
+              </p>
+            )}
           </div>
 
+          {/* Submit Button */}
           <Button
             onClick={handleSubmit}
-            disabled={!amount}
+            disabled={!canSubmit}
             className="w-full"
             size="lg"
             data-testid="button-submit-receipt"
           >
             <Upload className="w-4 h-4 mr-2" />
-            Submit Transaction
+            {!imagePreview && !amount 
+              ? "Add Receipt Photo & Amount"
+              : !imagePreview 
+                ? "Add Receipt Photo First"
+                : !amount
+                  ? "Enter Amount to Continue"
+                  : "Submit Transaction"}
           </Button>
+
+          {!canSubmit && (
+            <p className="text-xs text-center text-muted-foreground">
+              Both receipt photo and amount are required to track purchases and calculate points
+            </p>
+          )}
         </div>
       </div>
     </Card>
