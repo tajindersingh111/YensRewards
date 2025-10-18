@@ -9,10 +9,12 @@ import {
   type UpsertUser,
   type CustomerNotification,
   type InsertCustomerNotification,
+  type Product,
+  type InsertProduct,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications } from "@shared/schema";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { customers, transactions, promotions, users, customerNotifications, products } from "@shared/schema";
+import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Auth methods (required for Replit Auth)
@@ -52,6 +54,14 @@ export interface IStorage {
     salesByLocation: Array<{ label: string; value: number }>;
     recentTransactions: Transaction[];
   }>;
+  
+  // Product methods
+  getAllProducts(): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  getProductsByCategory(category: string): Promise<Product[]>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: string, product: Partial<Product>): Promise<Product | undefined>;
+  deleteProduct(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -321,6 +331,47 @@ export class DbStorage implements IStorage {
       salesByLocation,
       recentTransactions,
     };
+  }
+
+  // Product methods
+  async getAllProducts(): Promise<Product[]> {
+    return await db.select().from(products).orderBy(asc(products.sortOrder), asc(products.name));
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    const result = await db.select().from(products).where(eq(products.id, id));
+    return result[0];
+  }
+
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    return await db
+      .select()
+      .from(products)
+      .where(eq(products.category, category))
+      .orderBy(asc(products.sortOrder), asc(products.name));
+  }
+
+  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    const result = await db
+      .insert(products)
+      .values(insertProduct)
+      .returning();
+    
+    return result[0];
+  }
+
+  async updateProduct(id: string, product: Partial<Product>): Promise<Product | undefined> {
+    const result = await db
+      .update(products)
+      .set({ ...product, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    await db.delete(products).where(eq(products.id, id));
   }
 }
 

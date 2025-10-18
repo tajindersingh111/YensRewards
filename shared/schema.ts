@@ -75,6 +75,22 @@ export const customerNotifications = pgTable("customer_notifications", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Products table - menu items
+export const products = pgTable("products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  category: text("category").notNull(), // soft_serve, milk_tea, fruit_tea, shakes, sundaes, float_drinks
+  imageUrl: text("image_url"),
+  badge: text("badge"), // new, popular, limited, sale, null
+  featured: boolean("featured").notNull().default(false),
+  available: boolean("available").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -110,6 +126,12 @@ export const insertCustomerNotificationSchema = createInsertSchema(customerNotif
   readAt: true,
 });
 
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -123,6 +145,9 @@ export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = z.infer<typeof insertProductSchema>;
 
 export type CustomerNotification = typeof customerNotifications.$inferSelect;
 export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificationSchema>;
