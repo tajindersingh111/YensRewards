@@ -150,9 +150,9 @@ export default function BaristaApp() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-            <h1 className="text-xl font-bold">Barista</h1>
+            <h1 className="text-sm font-bold">Barista</h1>
           </div>
           <div className="flex items-center gap-2">
             <select
