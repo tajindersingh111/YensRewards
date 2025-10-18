@@ -37,7 +37,27 @@ export default function CustomerApp() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationType, setCelebrationType] = useState<"points" | "tier-upgrade">("points");
   const previousDataRef = useRef<{ points: number; tier: string } | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const { toast } = useToast();
+
+  // Enable audio on first user interaction (iOS requirement)
+  const enableAudio = () => {
+    if (!audioEnabled) {
+      // Initialize audio context by playing silence
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = 0.001; // Nearly silent
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.start(0);
+      oscillator.stop(0.001);
+      
+      setAudioEnabled(true);
+      console.log("🔊 Audio enabled for celebrations!");
+    }
+  };
 
   // Load phone from localStorage on mount
   useEffect(() => {
@@ -239,7 +259,7 @@ export default function CustomerApp() {
               data-testid="input-phone"
             />
             <Button 
-              onClick={handleLogin} 
+              onClick={() => { enableAudio(); handleLogin(); }} 
               className="w-full"
               data-testid="button-login"
             >
@@ -499,7 +519,7 @@ export default function CustomerApp() {
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
         <div className="max-w-md mx-auto flex justify-around p-2">
           <button
-            onClick={() => setActiveTab("home")}
+            onClick={() => { enableAudio(); setActiveTab("home"); }}
             className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${
               activeTab === "home" ? "text-primary" : "text-muted-foreground"
             }`}

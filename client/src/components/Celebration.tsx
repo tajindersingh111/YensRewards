@@ -6,10 +6,28 @@ interface CelebrationProps {
   onComplete?: () => void;
 }
 
+// Global AudioContext for iOS compatibility
+let audioContext: AudioContext | null = null;
+
+// Initialize AudioContext (iOS requires user interaction first)
+function initAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    console.log("🎵 AudioContext initialized");
+  }
+  // Resume if suspended (iOS requirement)
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().then(() => {
+      console.log("🎵 AudioContext resumed");
+    });
+  }
+  return audioContext;
+}
+
 // Play celebration sound using Web Audio API
 function playCelebrationSound(type: "points" | "tier-upgrade") {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = initAudioContext();
     
     if (type === "tier-upgrade") {
       // EPIC fanfare for tier upgrades
@@ -17,40 +35,40 @@ function playCelebrationSound(type: "points" | "tier-upgrade") {
       const frequencies = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
       
       times.forEach((time, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
         
         oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        gainNode.connect(ctx.destination);
         
         oscillator.frequency.value = frequencies[index];
         oscillator.type = 'sine';
         
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime + time);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + time + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + time + 0.4);
+        gainNode.gain.setValueAtTime(0, ctx.currentTime + time);
+        gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + time + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + 0.4);
         
-        oscillator.start(audioContext.currentTime + time);
-        oscillator.stop(audioContext.currentTime + time + 0.4);
+        oscillator.start(ctx.currentTime + time);
+        oscillator.stop(ctx.currentTime + time + 0.4);
       });
     } else {
       // Happy "ding-ding!" for points
       const playNote = (frequency: number, startTime: number) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
         
         oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        gainNode.connect(ctx.destination);
         
         oscillator.frequency.value = frequency;
         oscillator.type = 'sine';
         
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + 0.3);
+        gainNode.gain.setValueAtTime(0, ctx.currentTime + startTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + startTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startTime + 0.3);
         
-        oscillator.start(audioContext.currentTime + startTime);
-        oscillator.stop(audioContext.currentTime + startTime + 0.3);
+        oscillator.start(ctx.currentTime + startTime);
+        oscillator.stop(ctx.currentTime + startTime + 0.3);
       };
       
       // Two cheerful notes
