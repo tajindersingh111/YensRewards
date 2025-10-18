@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScanLine, Phone, X } from "lucide-react";
+import { ScanLine, Phone, X, Camera } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Html5Qrcode } from "html5-qrcode";
@@ -13,6 +13,7 @@ interface QRScannerProps {
 
 export default function QRScanner({ onScan }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
+  const [phoneMode, setPhoneMode] = useState(false);
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -27,6 +28,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
     onSuccess: (customer) => {
       onScan(customer.id);
       setPhone("");
+      setPhoneMode(false);
     },
     onError: () => {
       alert("Customer not found. Please check the phone number.");
@@ -69,7 +71,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
       );
     } catch (err) {
       console.error("Error starting scanner:", err);
-      setError("Camera not available. Please use phone lookup instead.");
+      setError("Camera not available. Please use phone lookup below.");
       setIsScanning(false);
     }
   };
@@ -110,7 +112,56 @@ export default function QRScanner({ onScan }: QRScannerProps) {
   return (
     <Card className="p-8" data-testid="card-qr-scanner">
       <div className="flex flex-col items-center gap-6">
-        {isScanning ? (
+        {phoneMode ? (
+          // Phone Lookup Mode (Backup Option)
+          <div className="w-full max-w-sm space-y-4">
+            <div className="text-center space-y-2">
+              <Phone className="w-12 h-12 text-primary mx-auto" />
+              <h3 className="text-xl font-bold text-foreground">
+                Customer Lookup
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Enter customer's phone number
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="0812345678"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                onKeyPress={handleKeyPress}
+                autoFocus
+                data-testid="input-phone-lookup"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handlePhoneLookup}
+                disabled={!phone || lookupCustomer.isPending}
+                className="flex-1"
+                data-testid="button-lookup-submit"
+              >
+                {lookupCustomer.isPending ? "Looking up..." : "Find Customer"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setPhoneMode(false);
+                  setPhone("");
+                }}
+                variant="outline"
+                data-testid="button-lookup-cancel"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : isScanning ? (
+          // Scanning Mode
           <div className="w-full max-w-md space-y-4">
             <div id="qr-reader" className="rounded-xl overflow-hidden"></div>
             {error && (
@@ -128,45 +179,38 @@ export default function QRScanner({ onScan }: QRScannerProps) {
             </Button>
           </div>
         ) : (
-          <div className="w-full max-w-sm space-y-6">
-            {/* Phone Lookup - Primary Method */}
+          // QR Scanner Mode (Primary Option)
+          <div className="w-full max-w-md space-y-6">
             <div className="space-y-4">
+              <div className="w-full aspect-square max-w-xs mx-auto border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30">
+                <Camera className="w-32 h-32 text-primary" />
+              </div>
+
               <div className="text-center space-y-2">
-                <Phone className="w-12 h-12 text-primary mx-auto" />
                 <h3 className="text-xl font-bold text-foreground">
-                  Find Customer
+                  Scan Customer QR
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Enter customer's phone number
+                  Point camera at customer's QR code
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="0812345678"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  autoFocus
-                  data-testid="input-phone-lookup"
-                />
-              </div>
-
               <Button
-                onClick={handlePhoneLookup}
-                disabled={!phone || lookupCustomer.isPending}
-                className="w-full"
+                onClick={handleStartScan}
                 size="lg"
-                data-testid="button-lookup-submit"
+                className="w-full"
+                data-testid="button-scan"
               >
-                {lookupCustomer.isPending ? "Looking up..." : "Find Customer"}
+                <ScanLine className="w-5 h-5 mr-2" />
+                Start Camera
               </Button>
+
+              {error && (
+                <p className="text-sm text-destructive text-center">{error}</p>
+              )}
             </div>
 
-            {/* QR Scan - Alternative Method */}
+            {/* Phone Lookup - Backup Method */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
@@ -177,19 +221,15 @@ export default function QRScanner({ onScan }: QRScannerProps) {
             </div>
 
             <Button
-              onClick={handleStartScan}
+              onClick={() => setPhoneMode(true)}
               variant="outline"
               size="lg"
               className="w-full"
-              data-testid="button-scan"
+              data-testid="button-phone-lookup"
             >
-              <ScanLine className="w-5 h-5 mr-2" />
-              Scan QR Code
+              <Phone className="w-5 h-5 mr-2" />
+              Lookup by Phone
             </Button>
-
-            {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
-            )}
           </div>
         )}
       </div>
