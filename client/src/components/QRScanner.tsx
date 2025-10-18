@@ -129,17 +129,17 @@ export default function QRScanner({ onScan }: QRScannerProps) {
           // Phone Lookup Mode (Backup Option)
           <div className="w-full space-y-4">
             <div className="text-center space-y-2">
-              <Phone className="w-16 h-16 text-primary mx-auto" />
-              <h3 className="text-2xl font-bold text-foreground">
+              <Phone className="w-12 h-12 sm:w-16 sm:h-16 text-primary mx-auto" />
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground">
                 Customer Lookup
               </h3>
-              <p className="text-base text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground">
                 Enter customer's phone number
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-base">Phone Number</Label>
+              <Label htmlFor="phone" className="text-base sm:text-lg font-semibold">Phone Number</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -148,7 +148,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
                 onChange={(e) => setPhone(e.target.value)}
                 onKeyPress={handleKeyPress}
                 autoFocus
-                className="text-lg h-12"
+                className="text-base sm:text-lg min-h-12"
                 data-testid="input-phone-lookup"
               />
             </div>
@@ -157,7 +157,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
               <Button
                 onClick={handlePhoneLookup}
                 disabled={!phone || lookupCustomer.isPending}
-                className="flex-1"
+                className="flex-1 text-base sm:text-lg min-h-12"
                 size="lg"
                 data-testid="button-lookup-submit"
               >
@@ -170,6 +170,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
                 }}
                 variant="outline"
                 size="lg"
+                className="min-h-12"
                 data-testid="button-lookup-cancel"
               >
                 Cancel
@@ -196,17 +197,17 @@ export default function QRScanner({ onScan }: QRScannerProps) {
           </div>
         ) : (
           // QR Scanner Mode (Primary Option)
-          <div className="w-full space-y-6">
-            <div className="space-y-4">
-              <div className="w-full aspect-square max-w-sm mx-auto border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30">
-                <Camera className="w-32 h-32 text-primary" />
+          <div className="w-full space-y-4">
+            <div className="space-y-3">
+              <div className="w-full aspect-square max-w-[280px] mx-auto border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30">
+                <Camera className="w-24 h-24 text-primary" />
               </div>
 
-              <div className="text-center space-y-2">
-                <h3 className="text-2xl font-bold text-foreground">
+              <div className="text-center space-y-1">
+                <h3 className="text-xl sm:text-2xl font-bold text-foreground">
                   Scan Customer QR
                 </h3>
-                <p className="text-base text-muted-foreground">
+                <p className="text-base sm:text-lg text-muted-foreground">
                   Point camera at customer's QR code
                 </p>
               </div>
@@ -214,7 +215,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
               <Button
                 onClick={handleStartScan}
                 size="lg"
-                className="w-full text-lg"
+                className="w-full text-base sm:text-lg min-h-12"
                 data-testid="button-scan"
               >
                 <ScanLine className="w-5 h-5 mr-2" />
@@ -240,7 +241,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
               onClick={() => setPhoneMode(true)}
               variant="outline"
               size="lg"
-              className="w-full text-lg"
+              className="w-full text-base sm:text-lg min-h-12"
               data-testid="button-phone-lookup"
             >
               <Phone className="w-5 h-5 mr-2" />
