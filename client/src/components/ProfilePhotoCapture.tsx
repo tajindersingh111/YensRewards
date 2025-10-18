@@ -90,17 +90,6 @@ export default function ProfilePhotoCapture({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Hidden file input for camera/gallery */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        onChange={handleFileSelect}
-        className="hidden"
-        data-testid="input-file-profile-photo"
-      />
-
       {/* Hidden canvas for image processing */}
       <canvas ref={canvasRef} className="hidden" />
 
@@ -117,15 +106,23 @@ export default function ProfilePhotoCapture({
           </AvatarFallback>
         </Avatar>
         
-        {/* Camera button overlay */}
-        <Button
-          onClick={handleCaptureClick}
-          size="icon"
-          className="absolute bottom-0 right-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+        {/* Camera button overlay - Direct label approach for better Android PWA support */}
+        <label 
+          htmlFor="profile-photo-input"
+          className="absolute bottom-0 right-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg cursor-pointer inline-flex items-center justify-center h-9 w-9"
           data-testid="button-capture-profile-photo"
         >
           <Camera className="w-4 h-4" />
-        </Button>
+        </label>
+        <input
+          id="profile-photo-input"
+          type="file"
+          accept="image/*"
+          capture="user"
+          onChange={handleFileSelect}
+          className="hidden"
+          data-testid="input-file-profile-photo"
+        />
       </div>
 
       {/* Instructions */}

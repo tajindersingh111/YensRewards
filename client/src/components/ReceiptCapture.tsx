@@ -71,17 +71,6 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
               <span className="text-sm text-destructive font-medium">* Required</span>
             </div>
             
-            {/* Hidden file input for camera/gallery */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileSelect}
-              className="hidden"
-              data-testid="input-file-receipt"
-            />
-            
             <div className="aspect-[2/3] bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border relative">
               {imagePreview ? (
                 <>
@@ -100,16 +89,24 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             </div>
 
             <div className="grid grid-cols-1 gap-2 mt-2">
-              <Button
-                onClick={handleCaptureClick}
-                variant={imagePreview ? "outline" : "default"}
-                size="lg"
-                className="w-full"
-                data-testid="button-capture"
+              {/* Direct file input styled as button - MORE RELIABLE on Android PWA */}
+              <label 
+                htmlFor="receipt-file-input"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-12 px-4 py-2 w-full cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+                data-testid="button-capture-receipt"
               >
                 <Camera className="w-5 h-5 mr-2" />
                 {imagePreview ? "Retake Photo" : "Take Receipt Photo"}
-              </Button>
+              </label>
+              <input
+                id="receipt-file-input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileSelect}
+                className="hidden"
+                data-testid="input-file-receipt"
+              />
             </div>
           </div>
 
