@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v24 - Auto Receipt Reading! 🤖✨
+            v25 - Compact Layout + OCR! 📱✨
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
