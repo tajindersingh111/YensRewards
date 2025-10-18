@@ -62,8 +62,12 @@ export default function CustomerApp() {
   // Load phone from localStorage on mount
   useEffect(() => {
     const savedPhone = localStorage.getItem("customer_phone");
+    console.log("📱 Checking saved phone on mount:", savedPhone);
     if (savedPhone) {
+      console.log("✅ Auto-logging in with saved phone:", savedPhone);
       setPhone(savedPhone);
+    } else {
+      console.log("❌ No saved phone found - showing login");
     }
   }, []);
 
@@ -185,8 +189,13 @@ export default function CustomerApp() {
 
   const handleLogin = () => {
     if (phoneInput.trim()) {
+      console.log("💾 Saving phone to localStorage:", phoneInput.trim());
       localStorage.setItem("customer_phone", phoneInput.trim());
       setPhone(phoneInput.trim());
+      
+      // Double-check it saved
+      const saved = localStorage.getItem("customer_phone");
+      console.log("✅ Verified saved phone:", saved);
     }
   };
 
