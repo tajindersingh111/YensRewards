@@ -71,26 +71,31 @@ export default function CustomerVerification({
           </div>
         </div>
 
-        <div className="flex gap-3 w-full max-w-md">
-          <Button
-            onClick={onReject}
-            variant="outline"
-            size="lg"
-            className="flex-1 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            data-testid="button-reject"
-          >
-            <XCircle className="w-5 h-5 mr-2" />
-            Wrong Customer
-          </Button>
+        <div className="w-full max-w-md space-y-3">
+          {/* Primary Action: Confirm (Large, Prominent) */}
           <Button
             onClick={onConfirm}
             size="lg"
-            className="flex-1"
+            className="w-full h-14 text-lg"
             data-testid="button-confirm-customer"
           >
-            <CheckCircle className="w-5 h-5 mr-2" />
+            <CheckCircle className="w-6 h-6 mr-2" />
             Confirm
           </Button>
+          
+          {/* Secondary Action: Wrong Customer (Small, Right Edge) */}
+          <div className="flex justify-end">
+            <Button
+              onClick={onReject}
+              variant="outline"
+              size="sm"
+              className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              data-testid="button-reject"
+            >
+              <XCircle className="w-4 h-4 mr-1" />
+              Wrong Customer
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
