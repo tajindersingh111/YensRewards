@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yens-loyalty-v38-MUCH-BIGGER-TEXT';
+const CACHE_NAME = 'yens-loyalty-v39-BIGGER-QR-CODE';
 const urlsToCache = [
   '/',
   '/customer',
