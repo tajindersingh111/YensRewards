@@ -1,15 +1,23 @@
-const CACHE_NAME = 'yens-loyalty-v1';
+const CACHE_NAME = 'yens-loyalty-v2';
 const urlsToCache = [
   '/',
   '/customer',
   '/barista',
   '/admin',
+  '/pwa-icon-192.png',
+  '/pwa-icon-512.png',
+  '/apple-touch-icon.png',
+  '/manifest.json',
+  '/manifest-customer.json',
+  '/manifest-barista.json',
+  '/manifest-admin.json',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -35,6 +43,6 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });

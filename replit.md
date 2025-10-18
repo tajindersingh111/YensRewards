@@ -126,6 +126,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### PWA Installation Fix (October 18, 2025)
+- **CRITICAL FIX: App Now Persists on Phones**: Created missing PWA icon files that prevented app from installing properly
+- **Icon Generation**: Generated required icon sizes from Yens logo:
+  - `pwa-icon-192.png` (192x192) - Android standard icon
+  - `pwa-icon-512.png` (512x512) - Android maskable icon
+  - `apple-touch-icon.png` (180x180) - iOS home screen icon
+- **Service Worker Update**: Bumped cache version to v2 and added icon files to precache list
+- **Improved Service Worker**: Added `skipWaiting()` and `clients.claim()` for immediate updates
+- **Android QR Code Optimization**: Increased QR code size to 300px and changed error correction to Medium for better Android camera compatibility
+- **Result**: PWA now properly installs on both Android and iOS devices and persists after signup
+
 ### Notification Badge System (October 18, 2025)
 - **WhatsApp-style Notification Badges**: Added red circular badge on Customer App's Rewards tab showing unread promotion count
 - **PWA Badge API Integration**: Uses `navigator.setAppBadge()` to display unread count on app icon when installed as PWA
