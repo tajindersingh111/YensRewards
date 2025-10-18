@@ -105,8 +105,13 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <QrCode className="w-12 h-12" />
                 <div>
-                  <h2 className="text-2xl font-bold">Barista App QR Code</h2>
-                  <p className="opacity-90">For staff to install the point-of-sale app on their devices</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-2xl font-bold">Barista App QR Code</h2>
+                    <span className="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                      v25
+                    </span>
+                  </div>
+                  <p className="opacity-90">Compact layout + Auto receipt reading! No scrolling needed 🎯</p>
                 </div>
               </div>
               <Button 
