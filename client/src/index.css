@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-first: Larger base font for better readability on phones */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 18px; /* Larger base font for mobile */
+  }
+}
+
+/* Ensure minimum touch target sizes on mobile */
+@media (max-width: 640px) {
+  button, a, input, select, textarea {
+    min-height: 44px; /* iOS recommended minimum */
+  }
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);
