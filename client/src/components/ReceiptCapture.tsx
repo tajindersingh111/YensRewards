@@ -16,6 +16,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrDetected, setOcrDetected] = useState(false);
+  const [ocrDebugText, setOcrDebugText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,18 +33,26 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
         // Start OCR processing
         setIsProcessing(true);
         setOcrDetected(false);
+        setOcrDebugText("");
         
         try {
-          const detectedAmount = await extractAmountFromReceipt(dataUrl);
-          if (detectedAmount !== null) {
-            setAmount(detectedAmount.toString());
+          console.log("=== OCR START ===");
+          const result = await extractAmountFromReceipt(dataUrl);
+          console.log("=== OCR RESULT ===", result);
+          
+          if (result && result.amount !== null) {
+            console.log("✅ OCR SUCCESS - Setting amount:", result.amount);
+            setAmount(result.amount.toString());
             setOcrDetected(true);
-            console.log("OCR detected amount:", detectedAmount);
+            setOcrDebugText(`Found: ฿${result.amount} from text`);
           } else {
-            console.log("OCR could not detect amount");
+            console.log("❌ OCR FAILED - No amount detected");
+            console.log("Extracted text:", result?.text || "none");
+            setOcrDebugText(result?.text ? "Could not find amount in receipt" : "Could not read receipt");
           }
         } catch (error) {
-          console.error("OCR processing failed:", error);
+          console.error("❌ OCR ERROR:", error);
+          setOcrDebugText("OCR failed: " + (error as Error).message);
         } finally {
           setIsProcessing(false);
         }
@@ -151,7 +160,13 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             
             {ocrDetected && amount && (
               <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                ✓ Auto-detected
+                ✓ Auto-detected from receipt
+              </p>
+            )}
+            
+            {!ocrDetected && !isProcessing && ocrDebugText && (
+              <p className="text-xs text-orange-600 dark:text-orange-400">
+                {ocrDebugText}
               </p>
             )}
             

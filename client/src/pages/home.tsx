@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v26 - Better Verification UX! ✅
+            v27 - OCR Debug Fix! 🔍
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
@@ -108,10 +108,10 @@ export default function Home() {
                   <div className="flex items-center gap-2 mb-1">
                     <h2 className="text-2xl font-bold">Barista App QR Code</h2>
                     <span className="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                      v26
+                      v27
                     </span>
                   </div>
-                  <p className="opacity-90">Big Confirm button + Compact layout + Auto OCR! Fast workflow 🎯</p>
+                  <p className="opacity-90">OCR improved + Big Confirm + Compact layout! 🎯</p>
                 </div>
               </div>
               <Button 
