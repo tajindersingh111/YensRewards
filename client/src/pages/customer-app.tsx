@@ -10,6 +10,7 @@ import ReferralCard from "@/components/ReferralCard";
 import LeaderboardCard from "@/components/LeaderboardCard";
 import PromotionCard from "@/components/PromotionCard";
 import InstallPrompt from "@/components/InstallPrompt";
+import ProfilePhotoCapture from "@/components/ProfilePhotoCapture";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ export default function CustomerApp() {
     name: "",
     email: "",
     birthday: "",
+    photo: "",
   });
   const { toast } = useToast();
 
@@ -114,12 +116,12 @@ export default function CustomerApp() {
     setPhone(null);
     setPhoneInput("");
     setShowSignup(false);
-    setSignupData({ name: "", email: "", birthday: "" });
+    setSignupData({ name: "", email: "", birthday: "", photo: "" });
   };
 
   // Create customer mutation
   const createCustomer = useMutation({
-    mutationFn: async (data: { name: string; phone: string; email?: string; birthday?: string }) => {
+    mutationFn: async (data: { name: string; phone: string; email?: string; birthday?: string; photo?: string }) => {
       return await apiRequest('POST', '/api/customers', data);
     },
     onSuccess: () => {
@@ -153,6 +155,7 @@ export default function CustomerApp() {
       phone: phone!,
       email: signupData.email || undefined,
       birthday: signupData.birthday || undefined,
+      photo: signupData.photo || undefined,
     });
   };
 
@@ -223,47 +226,56 @@ export default function CustomerApp() {
             </p>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-foreground">
-                Your Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter your name"
-                value={signupData.name}
-                onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
-                data-testid="input-name"
-              />
-            </div>
+          <div className="space-y-6">
+            {/* Profile Photo */}
+            <ProfilePhotoCapture
+              currentPhoto={signupData.photo}
+              onPhotoCapture={(photoData) => setSignupData({ ...signupData, photo: photoData })}
+              userName={signupData.name}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">
-                Email (Optional)
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={signupData.email}
-                onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                data-testid="input-email"
-              />
-            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-foreground">
+                  Your Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={signupData.name}
+                  onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                  data-testid="input-name"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="birthday" className="text-foreground">
-                Birthday (Optional)
-              </Label>
-              <Input
-                id="birthday"
-                type="date"
-                value={signupData.birthday}
-                onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
-                data-testid="input-birthday"
-              />
-              <p className="text-xs text-muted-foreground">Get bonus points on your birthday!</p>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-foreground">
+                  Email (Optional)
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={signupData.email}
+                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                  data-testid="input-email"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="birthday" className="text-foreground">
+                  Birthday (Optional)
+                </Label>
+                <Input
+                  id="birthday"
+                  type="date"
+                  value={signupData.birthday}
+                  onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
+                  data-testid="input-birthday"
+                />
+                <p className="text-xs text-muted-foreground">Get bonus points on your birthday!</p>
+              </div>
             </div>
           </div>
 
