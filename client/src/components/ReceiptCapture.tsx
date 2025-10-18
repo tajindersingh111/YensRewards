@@ -33,7 +33,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
     <Card className="p-6" data-testid="card-receipt-capture">
       <div className="space-y-6">
         <div className="text-center">
-          <h3 className="text-xl font-bold text-foreground">Capture Receipt</h3>
+          <h3 className="text-xl font-bold text-foreground">Enter Transaction</h3>
           <p className="text-sm text-muted-foreground">Customer: {customerName}</p>
         </div>
 
@@ -56,7 +56,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             data-testid="button-capture"
           >
             <Camera className="w-4 h-4 mr-2" />
-            {imagePreview ? "Retake Photo" : "Take Photo"}
+            {imagePreview ? "Retake Photo" : "Take Photo (Optional)"}
           </Button>
 
           <div className="space-y-2">

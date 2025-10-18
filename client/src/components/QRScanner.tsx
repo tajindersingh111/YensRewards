@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScanLine, Camera, Phone, X } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { ScanLine, Phone, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Html5Qrcode } from "html5-qrcode";
@@ -12,7 +13,6 @@ interface QRScannerProps {
 
 export default function QRScanner({ onScan }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
-  const [phoneMode, setPhoneMode] = useState(false);
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -27,7 +27,6 @@ export default function QRScanner({ onScan }: QRScannerProps) {
     onSuccess: (customer) => {
       onScan(customer.id);
       setPhone("");
-      setPhoneMode(false);
     },
     onError: () => {
       alert("Customer not found. Please check the phone number.");
@@ -70,7 +69,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
       );
     } catch (err) {
       console.error("Error starting scanner:", err);
-      setError("Unable to access camera. Please allow camera access when prompted, or grant permissions in your browser settings.");
+      setError("Camera not available. Please use phone lookup instead.");
       setIsScanning(false);
     }
   };
@@ -102,110 +101,96 @@ export default function QRScanner({ onScan }: QRScannerProps) {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && phone) {
+      handlePhoneLookup();
+    }
+  };
+
   return (
     <Card className="p-8" data-testid="card-qr-scanner">
       <div className="flex flex-col items-center gap-6">
-        {!phoneMode ? (
-          <>
-            <div className="w-full max-w-md">
-              {isScanning ? (
-                <div className="space-y-4">
-                  <div id="qr-reader" className="rounded-xl overflow-hidden"></div>
-                  <Button
-                    onClick={handleStopScan}
-                    variant="outline"
-                    size="lg"
-                    className="w-full"
-                    data-testid="button-stop-scan"
-                  >
-                    <X className="w-5 h-5 mr-2" />
-                    Stop Scanning
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="w-full aspect-square border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30 relative">
-                    <Camera className="w-32 h-32 text-muted-foreground" />
-                  </div>
-
-                  <div className="text-center space-y-2 mt-6">
-                    <h3 className="text-xl font-bold text-foreground">
-                      Scan Customer QR
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Position the QR code within the camera frame
-                    </p>
-                    {error && (
-                      <p className="text-sm text-destructive">{error}</p>
-                    )}
-                  </div>
-
-                  <Button
-                    onClick={handleStartScan}
-                    size="lg"
-                    className="w-full mt-4"
-                    data-testid="button-scan"
-                  >
-                    <ScanLine className="w-5 h-5 mr-2" />
-                    Start Scan
-                  </Button>
-
-                  <Button
-                    onClick={() => setPhoneMode(true)}
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                    data-testid="button-phone-lookup"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Lookup by Phone
-                  </Button>
-                </>
-              )}
-            </div>
-          </>
+        {isScanning ? (
+          <div className="w-full max-w-md space-y-4">
+            <div id="qr-reader" className="rounded-xl overflow-hidden"></div>
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+            <Button
+              onClick={handleStopScan}
+              variant="outline"
+              size="lg"
+              className="w-full"
+              data-testid="button-stop-scan"
+            >
+              <X className="w-5 h-5 mr-2" />
+              Cancel Scan
+            </Button>
+          </div>
         ) : (
-          <>
-            <div className="w-full max-w-xs space-y-4">
+          <div className="w-full max-w-sm space-y-6">
+            {/* Phone Lookup - Primary Method */}
+            <div className="space-y-4">
               <div className="text-center space-y-2">
+                <Phone className="w-12 h-12 text-primary mx-auto" />
                 <h3 className="text-xl font-bold text-foreground">
-                  Customer Lookup
+                  Find Customer
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Enter customer phone number
+                  Enter customer's phone number
                 </p>
               </div>
 
-              <Input
-                type="tel"
-                placeholder="0812345678"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                data-testid="input-phone-lookup"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="0812345678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  autoFocus
+                  data-testid="input-phone-lookup"
+                />
+              </div>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={handlePhoneLookup}
-                  disabled={!phone || lookupCustomer.isPending}
-                  className="flex-1"
-                  data-testid="button-lookup-submit"
-                >
-                  {lookupCustomer.isPending ? "Looking up..." : "Lookup"}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setPhoneMode(false);
-                    setPhone("");
-                  }}
-                  variant="outline"
-                  data-testid="button-lookup-cancel"
-                >
-                  Cancel
-                </Button>
+              <Button
+                onClick={handlePhoneLookup}
+                disabled={!phone || lookupCustomer.isPending}
+                className="w-full"
+                size="lg"
+                data-testid="button-lookup-submit"
+              >
+                {lookupCustomer.isPending ? "Looking up..." : "Find Customer"}
+              </Button>
+            </div>
+
+            {/* QR Scan - Alternative Method */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
               </div>
             </div>
-          </>
+
+            <Button
+              onClick={handleStartScan}
+              variant="outline"
+              size="lg"
+              className="w-full"
+              data-testid="button-scan"
+            >
+              <ScanLine className="w-5 h-5 mr-2" />
+              Scan QR Code
+            </Button>
+
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+          </div>
         )}
       </div>
     </Card>
