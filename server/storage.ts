@@ -7,10 +7,12 @@ import {
   type InsertPromotion,
   type User,
   type UpsertUser,
+  type CustomerNotification,
+  type InsertCustomerNotification,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users } from "@shared/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { customers, transactions, promotions, users, customerNotifications } from "@shared/schema";
+import { eq, desc, sql, and } from "drizzle-orm";
 
 export interface IStorage {
   // Auth methods (required for Replit Auth)
@@ -33,6 +35,13 @@ export interface IStorage {
   // Promotion methods
   createPromotion(promotion: InsertPromotion): Promise<Promotion>;
   getAllPromotions(): Promise<Promotion[]>;
+  getCustomerPromotions(customerId: string): Promise<Array<Promotion & { isRead: boolean }>>;
+  
+  // Notification methods
+  createNotification(notification: InsertCustomerNotification): Promise<CustomerNotification>;
+  getUnreadCount(customerId: string): Promise<number>;
+  markAsRead(customerId: string, promotionId: string): Promise<void>;
+  markAllAsRead(customerId: string): Promise<void>;
   
   // Analytics methods
   getAnalytics(): Promise<{
@@ -162,6 +171,106 @@ export class DbStorage implements IStorage {
 
   async getAllPromotions(): Promise<Promotion[]> {
     return await db.select().from(promotions).orderBy(desc(promotions.sentAt));
+  }
+
+  async getCustomerPromotions(customerId: string): Promise<Array<Promotion & { isRead: boolean }>> {
+    const customer = await this.getCustomer(customerId);
+    if (!customer) return [];
+    
+    // Get all promotions that apply to this customer (either targetTier matches or no targetTier)
+    const allPromos = await db
+      .select()
+      .from(promotions)
+      .orderBy(desc(promotions.sentAt));
+    
+    const relevantPromos = allPromos.filter(p => 
+      !p.targetTier || p.targetTier === customer.tier
+    );
+    
+    // Get notification status for each promo
+    const promosWithReadStatus = await Promise.all(
+      relevantPromos.map(async (promo) => {
+        const notification = await db
+          .select()
+          .from(customerNotifications)
+          .where(
+            and(
+              eq(customerNotifications.customerId, customerId),
+              eq(customerNotifications.promotionId, promo.id)
+            )
+          )
+          .limit(1);
+        
+        return {
+          ...promo,
+          isRead: notification.length > 0 ? notification[0].isRead : false,
+        };
+      })
+    );
+    
+    return promosWithReadStatus;
+  }
+
+  // Notification methods
+  async createNotification(insertNotification: InsertCustomerNotification): Promise<CustomerNotification> {
+    const result = await db
+      .insert(customerNotifications)
+      .values(insertNotification)
+      .returning();
+    
+    return result[0];
+  }
+
+  async getUnreadCount(customerId: string): Promise<number> {
+    // Get all promotions relevant to this customer
+    const promosWithStatus = await this.getCustomerPromotions(customerId);
+    
+    // Count unread promotions (those that exist but aren't marked as read)
+    const unreadCount = promosWithStatus.filter(p => !p.isRead).length;
+    
+    return unreadCount;
+  }
+
+  async markAsRead(customerId: string, promotionId: string): Promise<void> {
+    // Check if notification already exists
+    const existing = await db
+      .select()
+      .from(customerNotifications)
+      .where(
+        and(
+          eq(customerNotifications.customerId, customerId),
+          eq(customerNotifications.promotionId, promotionId)
+        )
+      )
+      .limit(1);
+    
+    if (existing.length > 0) {
+      // Update existing
+      await db
+        .update(customerNotifications)
+        .set({ isRead: true, readAt: new Date() })
+        .where(eq(customerNotifications.id, existing[0].id));
+    } else {
+      // Create new notification marked as read
+      await db
+        .insert(customerNotifications)
+        .values({
+          customerId,
+          promotionId,
+          isRead: true,
+          readAt: new Date(),
+        });
+    }
+  }
+
+  async markAllAsRead(customerId: string): Promise<void> {
+    // Get all promotions for this customer
+    const promosWithStatus = await this.getCustomerPromotions(customerId);
+    
+    // Mark each as read
+    await Promise.all(
+      promosWithStatus.map(promo => this.markAsRead(customerId, promo.id))
+    );
   }
 
   // Analytics methods

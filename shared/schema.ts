@@ -65,6 +65,16 @@ export const promotions = pgTable("promotions", {
   sentCount: integer("sent_count").notNull().default(0),
 });
 
+// Customer Notifications - tracks which promotions each customer has seen
+export const customerNotifications = pgTable("customer_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  promotionId: varchar("promotion_id").notNull().references(() => promotions.id),
+  isRead: boolean("is_read").notNull().default(false),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -93,6 +103,13 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
+export const insertCustomerNotificationSchema = createInsertSchema(customerNotifications).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+  readAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -106,3 +123,6 @@ export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
+
+export type CustomerNotification = typeof customerNotifications.$inferSelect;
+export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificationSchema>;

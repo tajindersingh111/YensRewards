@@ -91,6 +91,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get customer promotions with read status
+  app.get('/api/customers/:id/promotions', async (req, res) => {
+    try {
+      const promotions = await storage.getCustomerPromotions(req.params.id);
+      res.json(promotions);
+    } catch (error) {
+      console.error("Error fetching promotions:", error);
+      res.status(500).json({ message: "Failed to fetch promotions" });
+    }
+  });
+
+  // Get unread notification count
+  app.get('/api/customers/:id/notifications/unread-count', async (req, res) => {
+    try {
+      const count = await storage.getUnreadCount(req.params.id);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  // Mark promotion as read
+  app.post('/api/customers/:customerId/promotions/:promotionId/read', async (req, res) => {
+    try {
+      await storage.markAsRead(req.params.customerId, req.params.promotionId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking as read:", error);
+      res.status(500).json({ message: "Failed to mark as read" });
+    }
+  });
+
+  // Mark all promotions as read
+  app.post('/api/customers/:id/promotions/read-all', async (req, res) => {
+    try {
+      await storage.markAllAsRead(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+      res.status(500).json({ message: "Failed to mark all as read" });
+    }
+  });
+
   // ============ Barista API Endpoints ============
 
   // Create transaction (process purchase)
