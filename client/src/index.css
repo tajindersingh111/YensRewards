@@ -10,13 +10,13 @@ html {
 /* Much larger base font for mobile devices */
 @media (max-width: 768px) {
   html {
-    font-size: 22px; /* 22% larger for tablets and phones */
+    font-size: 26px; /* 44% larger for tablets and phones */
   }
 }
 
 @media (max-width: 640px) {
   html {
-    font-size: 24px; /* 33% larger for phones */
+    font-size: 32px; /* 78% larger for phones - EXTRA LARGE */
   }
 }
 
