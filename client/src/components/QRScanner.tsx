@@ -197,14 +197,14 @@ export default function QRScanner({ onScan }: QRScannerProps) {
           </div>
         ) : (
           // QR Scanner Mode (Primary Option)
-          <div className="w-full space-y-3">
-            <div className="space-y-1">
+          <div className="w-full space-y-4">
+            <div className="space-y-3">
               <div className="w-full aspect-square max-w-[400px] mx-auto border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30">
                 <Camera className="w-32 h-32 text-primary" />
               </div>
 
-              <div className="text-center">
-                <h3 className="text-base font-semibold text-foreground">
+              <div className="text-center space-y-1">
+                <h3 className="text-lg font-semibold text-foreground">
                   Scan Customer QR
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -214,10 +214,11 @@ export default function QRScanner({ onScan }: QRScannerProps) {
 
               <Button
                 onClick={handleStartScan}
-                className="w-full text-sm min-h-10 max-w-[200px] mx-auto block"
+                size="lg"
+                className="w-full text-base"
                 data-testid="button-scan"
               >
-                <ScanLine className="w-4 h-4 mr-2" />
+                <ScanLine className="w-5 h-5 mr-2" />
                 Start Camera
               </Button>
 
@@ -240,7 +241,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
               onClick={() => setPhoneMode(true)}
               variant="outline"
               size="lg"
-              className="w-full text-base min-h-12"
+              className="w-full text-base"
               data-testid="button-phone-lookup"
             >
               <Phone className="w-5 h-5 mr-2" />
