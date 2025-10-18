@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft, Package, Star } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { Product } from "@shared/schema";
 
@@ -21,7 +21,7 @@ const CATEGORIES = [
 
 const BADGE_STYLES: Record<string, { label: string; className: string }> = {
   new: { label: "New!", className: "bg-green-500 text-white" },
-  popular: { label: "Popular!", className: "bg-yellow-500 text-white" },
+  popular: { label: "Popular!", className: "bg-primary text-white" },
   limited: { label: "Limited Time", className: "bg-red-500 text-white" },
   sale: { label: "On Sale!", className: "bg-blue-500 text-white" },
 };
@@ -65,26 +65,35 @@ export default function CustomerMenu() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-6">
-        {/* Featured Products Section */}
+      <main className="max-w-4xl mx-auto p-4 pb-20">
+        {/* Yen's Recommend Section - Matching Website Style */}
         {featuredProducts.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Featured Items</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {featuredProducts.map((product) => (
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold text-foreground mb-2">Yen's Recommend!</h2>
+              <div className="flex items-center justify-center gap-1 text-primary">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5 fill-primary" />
+                ))}
+                <span className="ml-2 text-sm text-muted-foreground">5/5</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {featuredProducts.slice(0, 10).map((product) => (
                 <ProductCard key={product.id} product={product} featured />
               ))}
             </div>
           </section>
         )}
 
-        {/* Category Tabs */}
+        {/* Category Tabs - Cleaner Layout */}
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-          <TabsList className="mb-6 flex-wrap h-auto">
+          <TabsList className="mb-6 flex-wrap h-auto w-full">
             {CATEGORIES.map((cat) => (
               <TabsTrigger 
                 key={cat.value} 
                 value={cat.value}
+                className="flex-1 min-w-[80px]"
                 data-testid={`tab-category-${cat.value}`}
               >
                 {cat.label}
@@ -105,7 +114,7 @@ export default function CustomerMenu() {
                   <p className="text-muted-foreground">Check back soon for new items!</p>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {filteredProducts.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
@@ -129,11 +138,11 @@ function ProductCard({ product, featured }: ProductCardProps) {
 
   return (
     <Card 
-      className={`overflow-hidden hover-elevate transition-all ${featured ? 'ring-2 ring-primary' : ''}`}
+      className="overflow-hidden bg-card border-border hover-elevate transition-all"
       data-testid={`product-card-${product.id}`}
     >
       {product.imageUrl ? (
-        <div className="aspect-square w-full overflow-hidden bg-muted relative">
+        <div className="aspect-[4/5] w-full overflow-hidden bg-muted relative">
           <img
             src={product.imageUrl}
             alt={product.name}
@@ -142,7 +151,7 @@ function ProductCard({ product, featured }: ProductCardProps) {
           />
           {badgeStyle && (
             <Badge 
-              className={`absolute top-2 right-2 ${badgeStyle.className} shadow-lg`}
+              className={`absolute top-2 right-2 ${badgeStyle.className} shadow-lg text-xs px-2 py-0.5`}
               data-testid={`badge-${product.id}`}
             >
               {badgeStyle.label}
@@ -150,11 +159,11 @@ function ProductCard({ product, featured }: ProductCardProps) {
           )}
         </div>
       ) : (
-        <div className="aspect-square w-full bg-muted flex items-center justify-center relative">
-          <Package className="w-16 h-16 text-muted-foreground" />
+        <div className="aspect-[4/5] w-full bg-muted flex items-center justify-center relative">
+          <Package className="w-12 h-12 text-muted-foreground" />
           {badgeStyle && (
             <Badge 
-              className={`absolute top-2 right-2 ${badgeStyle.className} shadow-lg`}
+              className={`absolute top-2 right-2 ${badgeStyle.className} shadow-lg text-xs px-2 py-0.5`}
               data-testid={`badge-${product.id}`}
             >
               {badgeStyle.label}
@@ -162,32 +171,27 @@ function ProductCard({ product, featured }: ProductCardProps) {
           )}
         </div>
       )}
-      <div className="p-4 space-y-2">
+      <div className="p-3 space-y-2 text-center">
         <div>
           <h3 
-            className="font-semibold text-foreground text-lg" 
+            className="font-bold text-foreground text-base leading-tight" 
             data-testid={`text-product-name-${product.id}`}
           >
             {product.name}
           </h3>
           {product.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
               {product.description}
             </p>
           )}
         </div>
-        <div className="flex items-center justify-between pt-2">
-          <span 
-            className="text-2xl font-bold text-primary"
+        <div className="pt-1">
+          <div 
+            className="text-xl font-bold text-primary"
             data-testid={`text-product-price-${product.id}`}
           >
             ฿{parseFloat(product.price.toString()).toFixed(0)}
-          </span>
-          {featured && (
-            <Badge variant="outline" className="border-primary text-primary">
-              Featured
-            </Badge>
-          )}
+          </div>
         </div>
       </div>
     </Card>
