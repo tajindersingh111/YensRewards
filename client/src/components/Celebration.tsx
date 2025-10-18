@@ -64,10 +64,13 @@ function playCelebrationSound(type: "points" | "tier-upgrade") {
 
 export default function Celebration({ type, onComplete }: CelebrationProps) {
   useEffect(() => {
+    console.log("🎊 CELEBRATION COMPONENT MOUNTED! Type:", type);
+    
     const duration = type === "tier-upgrade" ? 3000 : 2000;
     const animationEnd = Date.now() + duration;
 
     // Play celebration sound
+    console.log("🔊 Playing sound for:", type);
     playCelebrationSound(type);
 
     // Yens brand colors

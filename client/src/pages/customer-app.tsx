@@ -56,6 +56,8 @@ export default function CustomerApp() {
 
   // Celebration effect - Trigger when points or tier changes
   useEffect(() => {
+    console.log("🔍 Celebration check - Customer data:", customer);
+    
     if (!customer) {
       previousDataRef.current = null;
       return;
@@ -64,6 +66,8 @@ export default function CustomerApp() {
     const currentPoints = customer.points || 0;
     const currentTier = customer.tier || "bronze";
 
+    console.log("📊 Current state:", { currentPoints, currentTier, previous: previousDataRef.current });
+
     // Check if this is an update (not initial load)
     if (previousDataRef.current) {
       const previousPoints = previousDataRef.current.points;
@@ -71,7 +75,7 @@ export default function CustomerApp() {
 
       // Check for tier upgrade (BIG celebration!)
       if (currentTier !== previousTier) {
-        console.log("🎆 TIER UPGRADE!", previousTier, "→", currentTier);
+        console.log("🎆 TIER UPGRADE DETECTED!", previousTier, "→", currentTier);
         setCelebrationType("tier-upgrade");
         setShowCelebration(true);
         toast({
@@ -82,14 +86,19 @@ export default function CustomerApp() {
       // Check for points increase (regular celebration)
       else if (currentPoints > previousPoints) {
         const earnedPoints = currentPoints - previousPoints;
-        console.log("⭐ Points earned!", earnedPoints);
+        console.log("⭐ POINTS EARNED DETECTED!", earnedPoints, "points -", previousPoints, "→", currentPoints);
+        console.log("🎉 TRIGGERING CELEBRATION!");
         setCelebrationType("points");
         setShowCelebration(true);
         toast({
           title: `+${earnedPoints} Points Earned! 🎊`,
           description: `You now have ${currentPoints} points!`,
         });
+      } else {
+        console.log("✅ No changes detected");
       }
+    } else {
+      console.log("📝 Initial load - setting previous data");
     }
 
     // Update previous data
