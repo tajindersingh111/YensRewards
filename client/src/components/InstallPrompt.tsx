@@ -71,36 +71,55 @@ export default function InstallPrompt() {
   // iOS Instructions
   if (isIOS && !deferredPrompt) {
     return (
-      <Card className="fixed top-4 left-4 right-4 p-4 shadow-lg z-50 bg-[#FCD34D] border-2 border-[#F59E0B]" data-testid="card-install-prompt-ios">
-        <div className="flex items-start gap-3">
-          <Download className="w-6 h-6 mt-0.5 text-gray-800" />
-          <div className="flex-1">
-            <h3 className="font-bold text-lg mb-2 text-gray-800">Install Yens App on iPhone</h3>
-            <div className="space-y-2 text-sm text-gray-700">
-              <div className="flex items-center gap-2 bg-white/50 p-2 rounded">
-                <span className="font-semibold text-gray-800">1.</span>
-                <Share className="w-4 h-4" />
-                <span>Tap the <strong>Share button</strong> at the bottom</span>
+      <Card className="fixed top-4 left-4 right-4 p-5 shadow-lg z-50 bg-[#FCD34D] border-4 border-[#F59E0B]" data-testid="card-install-prompt-ios">
+        <div className="space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <Download className="w-8 h-8 text-gray-800" />
+              <h3 className="font-bold text-xl text-gray-800">Install Yens App</h3>
+            </div>
+            <button
+              onClick={handleDismiss}
+              className="p-1.5 rounded-full hover:bg-white/30"
+              data-testid="button-close-install"
+            >
+              <X className="w-6 h-6 text-gray-800" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="bg-white/80 p-4 rounded-lg border-2 border-gray-300">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-lg">1</div>
+                <p className="font-bold text-lg text-gray-800">Look at the BOTTOM of screen</p>
               </div>
-              <div className="flex items-center gap-2 bg-white/50 p-2 rounded">
-                <span className="font-semibold text-gray-800">2.</span>
-                <Plus className="w-4 h-4" />
-                <span>Tap <strong>"Add to Home Screen"</strong></span>
+              <div className="flex items-center gap-2 ml-11">
+                <Share className="w-6 h-6 text-blue-600" />
+                <p className="text-base text-gray-700">Tap the <span className="font-bold text-blue-600">Share button</span> (square with arrow)</p>
               </div>
-              <div className="flex items-center gap-2 bg-white/50 p-2 rounded">
-                <span className="font-semibold text-gray-800">3.</span>
-                <Download className="w-4 h-4" />
-                <span>Tap <strong>"Add"</strong> - Done! ✓</span>
+            </div>
+
+            <div className="bg-white/80 p-4 rounded-lg border-2 border-gray-300">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-lg">2</div>
+                <p className="font-bold text-lg text-gray-800">Scroll down in the menu</p>
+              </div>
+              <div className="flex items-center gap-2 ml-11">
+                <Plus className="w-6 h-6 text-blue-600" />
+                <p className="text-base text-gray-700">Find and tap <span className="font-bold text-blue-600">"Add to Home Screen"</span></p>
+              </div>
+            </div>
+
+            <div className="bg-white/80 p-4 rounded-lg border-2 border-gray-300">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-lg">3</div>
+                <p className="font-bold text-lg text-gray-800">Tap "Add" - Done!</p>
+              </div>
+              <div className="ml-11">
+                <p className="text-base text-green-700 font-bold">✓ Yens icon appears on home screen!</p>
               </div>
             </div>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="p-1 rounded hover:bg-white/30"
-            data-testid="button-close-install"
-          >
-            <X className="w-5 h-5 text-gray-800" />
-          </button>
         </div>
       </Card>
     );
