@@ -71,13 +71,14 @@ export default function BaristaApp() {
         handleReset();
       }, 2000);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Transaction error:", error);
+      const errorMessage = error?.message || error?.toString() || "Failed to process transaction";
       toast({
         title: "Error",
-        description: "Failed to process transaction",
+        description: errorMessage,
         variant: "destructive",
       });
-      console.error("Transaction error:", error);
     },
   });
 
@@ -103,6 +104,15 @@ export default function BaristaApp() {
 
   const handleConfirm = () => {
     const points = Math.floor(amount / 10);
+    
+    console.log("Submitting transaction:", {
+      customerId,
+      amount: amount.toString(),
+      points,
+      location,
+      receiptUrl,
+    });
+    
     createTransaction.mutate({
       customerId,
       amount: amount.toString(),

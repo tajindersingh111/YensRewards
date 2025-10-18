@@ -43,8 +43,8 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-foreground">
             Yen's Loyalty System
           </h1>
-          <div className="inline-block bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm">
-            v21 - Camera Fixes Deployed ✅
+          <div className="inline-block bg-blue-500 text-white px-4 py-2 rounded-full font-bold text-sm">
+            v22 - Better Error Messages ✅
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
