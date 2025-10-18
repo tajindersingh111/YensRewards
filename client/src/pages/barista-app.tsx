@@ -139,58 +139,53 @@ export default function BaristaApp() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-chart-1 text-white p-4 sticky top-0 z-50">
+      <header className="bg-chart-1 text-white p-3 sticky top-0 z-50">
         <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={() => setLocationPath("/")}
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-8 w-8"
                 data-testid="button-home"
               >
-                <Home className="w-5 h-5" />
+                <Home className="w-4 h-4" />
               </Button>
-              <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">Barista App</h1>
-                <span className="inline-block bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  v43
-                </span>
-              </div>
+              <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full" />
+              <h1 className="text-lg font-bold">Barista</h1>
             </div>
-            {step !== "scan" && (
-              <Button
-                onClick={handleCancel}
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/20"
-                data-testid="button-back"
+            <div className="flex items-center gap-2">
+              <MapPin className="w-3 h-3" />
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="bg-transparent border-b border-white/30 outline-none text-xs py-0.5"
+                data-testid="select-location"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            <select
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="bg-transparent border-b border-white/30 outline-none text-sm py-1"
-              data-testid="select-location"
-            >
-              <option value="Main Store" className="text-foreground">Main Store</option>
-              <option value="Night Bazaar" className="text-foreground">Night Bazaar</option>
-              <option value="Central Plaza Expo" className="text-foreground">Central Plaza Expo</option>
-            </select>
+                <option value="Main Store" className="text-foreground">Main</option>
+                <option value="Night Bazaar" className="text-foreground">Bazaar</option>
+                <option value="Central Plaza Expo" className="text-foreground">Expo</option>
+              </select>
+              {step !== "scan" && (
+                <Button
+                  onClick={handleCancel}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 h-8"
+                  data-testid="button-back"
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  <span className="text-xs">Back</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="w-full p-4">
+      <main className="max-w-md mx-auto p-4">
         {step === "scan" && (
           <div className="flex flex-col items-center gap-6 pt-4">
             <QRScanner onScan={handleScan} />

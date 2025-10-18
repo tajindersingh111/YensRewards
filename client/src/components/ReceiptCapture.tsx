@@ -88,57 +88,57 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
   const canSubmit = amount && imagePreview;
 
   return (
-    <Card className="p-6 w-full" data-testid="card-receipt-capture">
-      <div className="space-y-6">
+    <Card className="p-4 w-full" data-testid="card-receipt-capture">
+      <div className="space-y-4">
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-foreground">Enter Transaction</h3>
-          <p className="text-base text-muted-foreground">Customer: {customerName}</p>
+          <h3 className="text-xl font-bold text-foreground">Enter Transaction</h3>
+          <p className="text-sm text-muted-foreground">Customer: {customerName}</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Receipt Photo - REQUIRED */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label className="text-sm font-semibold">Receipt Photo *</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-xs font-semibold">Receipt Photo *</Label>
             </div>
             
             {/* Compact Preview: Show small thumbnail when captured, camera prompt when not */}
-            <div className="h-40 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border relative">
+            <div className="h-32 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border relative">
               {imagePreview ? (
                 <>
                   <img src={imagePreview} alt="Receipt" className="w-full h-full object-cover rounded-lg" />
-                  <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
-                    <CheckCircle className="w-4 h-4" />
+                  <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full p-0.5">
+                    <CheckCircle className="w-3 h-3" />
                   </div>
                 </>
               ) : (
-                <div className="text-center p-2">
-                  <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium text-foreground">Tap below to capture</p>
+                <div className="text-center p-1">
+                  <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-1" />
+                  <p className="text-xs font-medium text-foreground">Tap below to capture</p>
                 </div>
               )}
             </div>
 
-            <div className="mt-2">
+            <div className="mt-1">
               <input
                 id="receipt-file-input"
                 type="file"
                 accept="image/*"
                 capture="environment"
                 onChange={handleFileSelect}
-                className="w-full h-10 text-xs file:mr-2 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+                className="w-full h-9 text-xs file:mr-2 file:py-1.5 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
                 data-testid="input-file-receipt"
               />
             </div>
           </div>
 
           {/* Amount Input */}
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="text-sm font-semibold">Amount (฿) *</Label>
+          <div className="space-y-1">
+            <Label htmlFor="amount" className="text-xs font-semibold">Amount (฿) *</Label>
             
             {isProcessing && (
-              <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              <div className="flex items-center gap-1 p-1.5 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
                 <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">Reading receipt...</span>
               </div>
             )}
@@ -154,7 +154,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
                 setOcrDetected(false);
               }}
               disabled={isProcessing}
-              className="text-lg h-12"
+              className="h-12"
               data-testid="input-amount"
             />
             
@@ -171,7 +171,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             )}
             
             {amount && !isProcessing && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Points: <span className="font-semibold text-foreground">{Math.floor(parseFloat(amount) / 10)}</span>
               </p>
             )}
@@ -185,7 +185,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
             size="lg"
             data-testid="button-submit-receipt"
           >
-            <Upload className="w-4 h-4 mr-2" />
+            <Upload className="w-3 h-3 mr-1" />
             {!imagePreview && !amount 
               ? "Add Photo & Amount"
               : !imagePreview 

@@ -123,23 +123,23 @@ export default function QRScanner({ onScan }: QRScannerProps) {
   };
 
   return (
-    <Card className="p-6 w-full" data-testid="card-qr-scanner">
+    <Card className="p-4 w-full" data-testid="card-qr-scanner">
       <div className="flex flex-col items-center gap-6">
         {phoneMode ? (
           // Phone Lookup Mode (Backup Option)
-          <div className="w-full space-y-4">
-            <div className="text-center space-y-2">
-              <Phone className="w-16 h-16 text-primary mx-auto" />
-              <h3 className="text-2xl font-bold text-foreground">
+          <div className="w-full space-y-3">
+            <div className="text-center space-y-1">
+              <Phone className="w-12 h-12 text-primary mx-auto" />
+              <h3 className="text-xl font-bold text-foreground">
                 Customer Lookup
               </h3>
-              <p className="text-base text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Enter customer's phone number
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-base">Phone Number</Label>
+            <div className="space-y-1">
+              <Label htmlFor="phone" className="text-sm">Phone Number</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -148,7 +148,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
                 onChange={(e) => setPhone(e.target.value)}
                 onKeyPress={handleKeyPress}
                 autoFocus
-                className="text-lg h-12"
+                className="h-12"
                 data-testid="input-phone-lookup"
               />
             </div>
@@ -196,17 +196,17 @@ export default function QRScanner({ onScan }: QRScannerProps) {
           </div>
         ) : (
           // QR Scanner Mode (Primary Option)
-          <div className="w-full space-y-6">
-            <div className="space-y-4">
+          <div className="w-full space-y-4">
+            <div className="space-y-3">
               <div className="w-full aspect-square max-w-sm mx-auto border-4 border-dashed border-primary rounded-xl flex items-center justify-center bg-muted/30">
-                <Camera className="w-32 h-32 text-primary" />
+                <Camera className="w-24 h-24 text-primary" />
               </div>
 
-              <div className="text-center space-y-2">
-                <h3 className="text-2xl font-bold text-foreground">
+              <div className="text-center space-y-1">
+                <h3 className="text-xl font-bold text-foreground">
                   Scan Customer QR
                 </h3>
-                <p className="text-base text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Point camera at customer's QR code
                 </p>
               </div>
@@ -214,15 +214,15 @@ export default function QRScanner({ onScan }: QRScannerProps) {
               <Button
                 onClick={handleStartScan}
                 size="lg"
-                className="w-full text-lg"
+                className="w-full"
                 data-testid="button-scan"
               >
-                <ScanLine className="w-5 h-5 mr-2" />
+                <ScanLine className="w-4 h-4 mr-2" />
                 Start Camera
               </Button>
 
               {error && (
-                <p className="text-base text-destructive text-center font-medium">{error}</p>
+                <p className="text-sm text-destructive text-center font-medium">{error}</p>
               )}
             </div>
 
@@ -231,7 +231,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
               </div>
-              <div className="relative flex justify-center text-sm uppercase">
+              <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">Or</span>
               </div>
             </div>
@@ -240,10 +240,10 @@ export default function QRScanner({ onScan }: QRScannerProps) {
               onClick={() => setPhoneMode(true)}
               variant="outline"
               size="lg"
-              className="w-full text-lg"
+              className="w-full"
               data-testid="button-phone-lookup"
             >
-              <Phone className="w-5 h-5 mr-2" />
+              <Phone className="w-4 h-4 mr-2" />
               Lookup by Phone
             </Button>
           </div>
