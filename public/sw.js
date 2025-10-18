@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yens-loyalty-v47-BALANCED';
+const CACHE_NAME = 'yens-loyalty-v47-BALANCED-FORCE-REFRESH';
 const urlsToCache = [
   '/',
   '/customer',
