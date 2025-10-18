@@ -1,6 +1,6 @@
 {
-  "name": "Yens Admin Dashboard",
-  "short_name": "Yens Admin",
+  "name": "Admin",
+  "short_name": "Admin",
   "description": "Manage customers, view analytics and send promotions",
   "start_url": "/admin",
   "display": "standalone",

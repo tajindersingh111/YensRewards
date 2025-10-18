@@ -1,6 +1,6 @@
 {
-  "name": "Yens Loyalty - Barista",
-  "short_name": "Yens Barista",
+  "name": "Barista",
+  "short_name": "Barista",
   "description": "Process customer transactions and award points",
   "start_url": "/barista",
   "display": "standalone",
