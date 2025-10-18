@@ -130,7 +130,7 @@ export default function BaristaApp() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-chart-1 text-white p-4 sticky top-0 z-50">
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Button
@@ -158,12 +158,12 @@ export default function BaristaApp() {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-base">
+            <MapPin className="w-5 h-5" />
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="bg-transparent border-b border-white/30 outline-none"
+              className="bg-transparent border-b border-white/30 outline-none text-base py-1"
               data-testid="select-location"
             >
               <option value="Main Store" className="text-foreground">Main Store</option>
@@ -175,18 +175,19 @@ export default function BaristaApp() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto p-4">
+      <main className="w-full p-4">
         {step === "scan" && (
-          <div className="flex flex-col items-center gap-6 pt-8">
+          <div className="flex flex-col items-center gap-6 pt-4">
             <QRScanner onScan={handleScan} />
-            <div className="w-full max-w-md">
+            <div className="w-full">
               <Card className="p-6 text-center space-y-4">
-                <h3 className="font-semibold text-foreground">New Customer?</h3>
-                <p className="text-sm text-muted-foreground">Register them manually if they need help</p>
+                <h3 className="font-semibold text-lg text-foreground">New Customer?</h3>
+                <p className="text-base text-muted-foreground">Register them manually if they need help</p>
                 <Button 
                   onClick={() => setStep("register")} 
                   variant="outline" 
                   className="w-full"
+                  size="lg"
                   data-testid="button-register-customer"
                 >
                   Register New Customer

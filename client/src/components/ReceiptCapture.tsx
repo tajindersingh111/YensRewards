@@ -31,11 +31,11 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
   const canSubmit = amount && imagePreview;
 
   return (
-    <Card className="p-6" data-testid="card-receipt-capture">
+    <Card className="p-6 w-full" data-testid="card-receipt-capture">
       <div className="space-y-6">
         <div className="text-center">
-          <h3 className="text-xl font-bold text-foreground">Enter Transaction</h3>
-          <p className="text-sm text-muted-foreground">Customer: {customerName}</p>
+          <h3 className="text-2xl font-bold text-foreground">Enter Transaction</h3>
+          <p className="text-base text-muted-foreground">Customer: {customerName}</p>
         </div>
 
         <div className="space-y-4">
@@ -78,7 +78,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="amount" className="text-base font-semibold">Purchase Amount (฿)</Label>
-              <span className="text-xs text-destructive font-medium">* Required</span>
+              <span className="text-sm text-destructive font-medium">* Required</span>
             </div>
             <Input
               id="amount"
@@ -87,11 +87,12 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              className="text-lg h-12"
               data-testid="input-amount"
             />
             {amount && (
-              <p className="text-sm text-muted-foreground">
-                Points to earn: <span className="font-semibold text-foreground">{Math.floor(parseFloat(amount) / 10)}</span>
+              <p className="text-base text-muted-foreground">
+                Points to earn: <span className="font-semibold text-foreground text-lg">{Math.floor(parseFloat(amount) / 10)}</span>
               </p>
             )}
           </div>
@@ -115,7 +116,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
           </Button>
 
           {!canSubmit && (
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-sm text-center text-muted-foreground">
               Both receipt photo and amount are required to track purchases and calculate points
             </p>
           )}
