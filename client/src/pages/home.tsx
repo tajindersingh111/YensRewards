@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v34 - Real Yens Logo Icons! 🎨
+            v34 - Yens Logo (Customer Only)! 🎨
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
@@ -111,7 +111,7 @@ export default function Home() {
                       v34
                     </span>
                   </div>
-                  <p className="opacity-90">Real Yens logo as app icons! 🎨</p>
+                  <p className="opacity-90">Customer app has Yens logo, others later! 🎨</p>
                 </div>
               </div>
               <Button 
