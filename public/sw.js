@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yens-loyalty-v50-MESSAGE-FEATURE-20251019-053100';
+const CACHE_NAME = 'yens-loyalty-v50-NETWORK-FIRST-20251019-054500';
 const urlsToCache = [
   '/',
   '/customer',
@@ -22,14 +22,24 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Network-first strategy for HTML pages, cache-first for assets
+  const url = new URL(event.request.url);
+  
+  // For HTML pages and API calls: always fetch fresh from network
+  if (event.request.mode === 'navigate' || 
+      url.pathname.startsWith('/api/') ||
+      event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match(event.request)) // Fallback to cache if offline
+    );
+    return;
+  }
+  
+  // For static assets (images, CSS, JS): use cache-first
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
+      .then((response) => response || fetch(event.request))
   );
 });
 
