@@ -16,6 +16,13 @@ Preferred communication style: Simple, everyday language.
 - Version: v41
 - Status: Production ready, deployed, DO NOT MODIFY
 
+**BARISTA APP - v49**
+- Current version: v49 with compact header (text-sm "Barista" title, w-10 h-10 logo)
+- Works correctly on Android devices
+- Known issue: iPhone Safari aggressive caching - may show old version until manual cache clear/reinstall
+- Auto-update detection implemented for future updates
+- Status: Functional, deployment ongoing
+
 ## System Architecture
 
 ### UI/UX Decisions
