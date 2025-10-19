@@ -470,6 +470,12 @@ export default function CustomerApp() {
           <TabsContent value="home" className="p-4 space-y-6 mt-0">
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
             
+            <PointsCard 
+              points={customer.points} 
+              tier={customer.tier as "bronze" | "silver" | "gold"} 
+              nextTierPoints={nextTierPoints} 
+            />
+            
             {/* Message/Announcement Area */}
             {promotions && promotions.length > 0 && promotions[0] && (
               <MessageCard
@@ -479,11 +485,6 @@ export default function CustomerApp() {
               />
             )}
             
-            <PointsCard 
-              points={customer.points} 
-              tier={customer.tier as "bronze" | "silver" | "gold"} 
-              nextTierPoints={nextTierPoints} 
-            />
             {transactionsLoading ? (
               <Card className="p-6 text-center">
                 <p className="text-muted-foreground">Loading transactions...</p>
