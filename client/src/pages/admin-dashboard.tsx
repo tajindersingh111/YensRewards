@@ -14,9 +14,12 @@ import { Button } from "@/components/ui/button";
 import { DollarSign, Users, TrendingUp, Award, ArrowLeft } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoUpdate } from "@/hooks/use-auto-update";
 import type { Customer } from "@shared/schema";
 
 export default function AdminDashboard() {
+  // Auto-update detection
+  useAutoUpdate();
   const [, setLocationPath] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();

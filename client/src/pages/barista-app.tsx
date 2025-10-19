@@ -11,12 +11,15 @@ import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { ArrowLeft, MapPin, Home } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
 type Step = "scan" | "verify" | "capture" | "confirm" | "success" | "register";
 
 export default function BaristaApp() {
+  // Auto-update detection
+  useAutoUpdate();
   const [, setLocationPath] = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("scan");

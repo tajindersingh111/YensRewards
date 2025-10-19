@@ -21,9 +21,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoUpdate } from "@/hooks/use-auto-update";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
 export default function CustomerApp() {
+  // Auto-update detection
+  useAutoUpdate();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("home");
   const [phone, setPhone] = useState<string | null>(null);
