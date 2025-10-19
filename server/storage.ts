@@ -194,7 +194,7 @@ export class DbStorage implements IStorage {
       .orderBy(desc(promotions.sentAt));
     
     const relevantPromos = allPromos.filter(p => 
-      !p.targetTier || p.targetTier === customer.tier
+      !p.targetTier || p.targetTier === '' || p.targetTier === 'all' || p.targetTier === customer.tier
     );
     
     // Get notification status for each promo
