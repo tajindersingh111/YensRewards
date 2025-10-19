@@ -9,6 +9,7 @@ import TransactionList from "@/components/TransactionList";
 import ReferralCard from "@/components/ReferralCard";
 import LeaderboardCard from "@/components/LeaderboardCard";
 import PromotionCard from "@/components/PromotionCard";
+import MessageCard from "@/components/MessageCard";
 import InstallPrompt from "@/components/InstallPrompt";
 import ProfilePhotoCapture from "@/components/ProfilePhotoCapture";
 import Celebration from "@/components/Celebration";
@@ -462,6 +463,16 @@ export default function CustomerApp() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="home" className="p-4 space-y-6 mt-0">
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
+            
+            {/* Message/Announcement Area */}
+            {promotions && promotions.length > 0 && promotions[0] && (
+              <MessageCard
+                title={promotions[0].title}
+                message={promotions[0].message}
+                isNew={!promotions[0].isRead}
+              />
+            )}
+            
             <PointsCard 
               points={customer.points} 
               tier={customer.tier as "bronze" | "silver" | "gold"} 
