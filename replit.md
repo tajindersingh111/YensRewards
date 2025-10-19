@@ -10,18 +10,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v53** 🚀
+**SYSTEM VERSION: v55** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 
-**CUSTOMER APP - v53**
+**CUSTOMER APP - v55**
 - Features: 400px QR code, 34-38px mobile text, real Yens logo icons, Menu page
 - Message/announcement area positioned AFTER Points card, BEFORE Recent Transactions
 - Fixed promotion filter logic (now shows 'all' and empty targetTier promotions)
 - Version display in header
 - Status: Production ready
 
-**BARISTA APP - v53**
+**BARISTA APP - v55**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on Android devices
 - Known issue: iPhone Safari aggressive caching - may show old version until manual cache clear/reinstall
@@ -29,7 +29,7 @@ Preferred communication style: Simple, everyday language.
 - Version display in header
 - Status: Production ready
 
-**ADMIN DASHBOARD - v53**
+**ADMIN DASHBOARD - v55**
 - Full analytics, customer management, product manager, promotions
 - Version display in header
 - Status: Production ready
