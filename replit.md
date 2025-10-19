@@ -10,11 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**CUSTOMER APP - LOCKED AT v41** 🔒
-- Customer App is finalized and locked - NO changes until next development stage
-- Final features: 400px QR code, 34-38px mobile text, real Yens logo icons (v38), Menu page matching yensthai.com
-- Version: v41
-- Status: Production ready, deployed, DO NOT MODIFY
+**CUSTOMER APP - v42** 🔓
+- Customer App unlocked for new features
+- Previous features: 400px QR code, 34-38px mobile text, real Yens logo icons, Menu page matching yensthai.com
+- New in v42: Message/announcement area on home tab with bordered display
+- Version: v42 (in development)
+- Status: Adding message feature
 
 **BARISTA APP - v49**
 - Current version: v49 with compact header (text-sm "Barista" title, w-10 h-10 logo)
