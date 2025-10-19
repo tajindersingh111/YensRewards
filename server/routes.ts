@@ -9,6 +9,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
 
+  // Version endpoint for auto-update checking
+  app.get('/api/version', (req, res) => {
+    res.json({ version: 'v50' });
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yens-loyalty-v49-COMPACT-CLEAR-20251018-165500';
+const CACHE_NAME = 'yens-loyalty-v50-MESSAGE-FEATURE-20251019-053100';
 const urlsToCache = [
   '/',
   '/customer',
