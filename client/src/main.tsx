@@ -3,7 +3,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+// TEMPORARILY DISABLED to break free from old service worker cache
+// Will re-enable after v51 is confirmed working
 // iOS PWA Update Fix - Force service worker updates
+/*
 function initServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -58,6 +61,7 @@ function initServiceWorker() {
 }
 
 initServiceWorker();
+*/
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
