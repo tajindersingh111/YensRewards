@@ -433,7 +433,10 @@ export default function CustomerApp() {
           </Button>
           <div className="flex items-center gap-3">
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-            <h1 className="text-xl font-bold">Yen's Rewards</h1>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold">Yen's Rewards</h1>
+              <span className="text-xs opacity-70" data-testid="text-version">v42</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button 
