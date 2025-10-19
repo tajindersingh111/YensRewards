@@ -155,7 +155,10 @@ export default function AdminDashboard() {
             </Button>
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div>
-              <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
+                <span className="text-xs text-muted-foreground" data-testid="text-version">v1.0</span>
+              </div>
               <p className="text-sm text-muted-foreground">Yens Loyalty System</p>
             </div>
           </div>
