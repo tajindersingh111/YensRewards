@@ -143,21 +143,10 @@ export default function CustomerApp() {
   });
 
   // Fetch promotions with read status
-  const { data: promotions, isLoading: promotionsLoading, error: promotionsError } = useQuery<Array<Promotion & { isRead: boolean }>>({
+  const { data: promotions } = useQuery<Array<Promotion & { isRead: boolean }>>({
     queryKey: ['/api/customers', customer?.id, 'promotions'],
     enabled: !!customer?.id,
   });
-
-  // Debug: Log promotions data
-  useEffect(() => {
-    console.log("🔔 Customer ID:", customer?.id);
-    console.log("🔔 Query enabled:", !!customer?.id);
-    console.log("🔔 Promotions loading:", promotionsLoading);
-    console.log("🔔 Promotions error:", promotionsError);
-    console.log("🔔 Promotions data:", promotions);
-    console.log("🔔 Promotions length:", promotions?.length);
-    console.log("🔔 First promotion:", promotions?.[0]);
-  }, [customer?.id, promotions, promotionsLoading, promotionsError]);
 
   // Fetch unread notification count
   const { data: unreadData } = useQuery<{ count: number }>({
@@ -449,7 +438,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v57</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v58</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
