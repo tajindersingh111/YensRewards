@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Megaphone } from "lucide-react";
 
@@ -10,7 +9,7 @@ interface MessageCardProps {
 
 export default function MessageCard({ title, message, isNew }: MessageCardProps) {
   return (
-    <Card className="p-4 border-2 border-primary bg-primary/5" data-testid="card-message">
+    <div className="rounded-lg border-2 border-solid border-primary bg-primary/5 p-4" data-testid="card-message">
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1">
@@ -25,6 +24,6 @@ export default function MessageCard({ title, message, isNew }: MessageCardProps)
         </div>
         <p className="text-sm text-foreground pl-7">{message}</p>
       </div>
-    </Card>
+    </div>
   );
 }
