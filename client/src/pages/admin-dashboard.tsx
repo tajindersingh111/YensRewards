@@ -157,7 +157,7 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-                <span className="text-xs text-muted-foreground" data-testid="text-version">v1.0</span>
+                <span className="text-xs text-muted-foreground" data-testid="text-version">v50</span>
               </div>
               <p className="text-sm text-muted-foreground">Yens Loyalty System</p>
             </div>

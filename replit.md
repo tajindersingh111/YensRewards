@@ -10,19 +10,28 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**CUSTOMER APP - v42** 🔓
-- Customer App unlocked for new features
-- Previous features: 400px QR code, 34-38px mobile text, real Yens logo icons, Menu page matching yensthai.com
-- New in v42: Message/announcement area on home tab with bordered display
-- Version: v42 (in development)
-- Status: Adding message feature
+**SYSTEM VERSION: v50** 🚀
+- Unified version across all apps for easier tracking
+- All apps display version number in header
 
-**BARISTA APP - v49**
-- Current version: v49 with compact header (text-sm "Barista" title, w-10 h-10 logo)
+**CUSTOMER APP - v50**
+- Features: 400px QR code, 34-38px mobile text, real Yens logo icons, Menu page
+- Message/announcement area on home tab with yellow border
+- Version display in header
+- Status: Production ready
+
+**BARISTA APP - v50**
+- Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on Android devices
 - Known issue: iPhone Safari aggressive caching - may show old version until manual cache clear/reinstall
 - Auto-update detection implemented for future updates
-- Status: Functional, deployment ongoing
+- Version display in header
+- Status: Production ready
+
+**ADMIN DASHBOARD - v50**
+- Full analytics, customer management, product manager, promotions
+- Version display in header
+- Status: Production ready
 
 ## System Architecture
 
