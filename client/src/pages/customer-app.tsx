@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed } from "lucide-react";
+import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import logoUrl from "@assets/yens logo_1760702216221.png";
@@ -433,7 +433,7 @@ export default function CustomerApp() {
   const nextTierPoints = customer.tier === "bronze" ? 500 : customer.tier === "silver" ? 1000 : 0;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50 flex-shrink-0">
         <div className="max-w-md mx-auto flex items-center justify-between">
@@ -450,7 +450,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v61</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v62</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -570,6 +570,14 @@ export default function CustomerApp() {
           >
             <Home className="w-6 h-6" />
             <span className="text-xs">Home</span>
+          </button>
+          <button
+            onClick={() => setLocation("/menu")}
+            className="flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 text-muted-foreground"
+            data-testid="button-nav-menu"
+          >
+            <IceCream className="w-6 h-6" />
+            <span className="text-xs">Menu</span>
           </button>
           <button
             onClick={() => setActiveTab("rewards")}
