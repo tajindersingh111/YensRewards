@@ -433,9 +433,9 @@ export default function CustomerApp() {
   const nextTierPoints = customer.tier === "bronze" ? 500 : customer.tier === "silver" ? 1000 : 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50">
+      <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50 flex-shrink-0">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <Button 
             variant="ghost" 
@@ -477,8 +477,9 @@ export default function CustomerApp() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-md mx-auto pb-20">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <main className="flex-1 overflow-y-auto pb-24">
+        <div className="max-w-md mx-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="home" className="p-4 space-y-6 mt-0">
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
             
@@ -554,6 +555,7 @@ export default function CustomerApp() {
             )}
           </TabsContent>
         </Tabs>
+        </div>
       </main>
 
       {/* Bottom Navigation */}
