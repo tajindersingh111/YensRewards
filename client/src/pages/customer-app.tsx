@@ -461,7 +461,7 @@ export default function CustomerApp() {
               className="text-primary-foreground hover:bg-primary-foreground/20"
               data-testid="button-menu"
             >
-              <UtensilsCrossed className="w-5 h-5" />
+              <IceCream className="w-5 h-5" />
             </Button>
             <Button 
               variant="ghost" 
