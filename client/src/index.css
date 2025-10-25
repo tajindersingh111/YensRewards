@@ -23,9 +23,9 @@ html {
 /* iPhone safe-area support for notch */
 body {
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  /* Don't add bottom padding - the fixed nav handles this */
 }
 
 /* Ensure minimum touch target sizes on mobile */
@@ -33,6 +33,11 @@ body {
   button, a, input, select, textarea {
     min-height: 44px; /* iOS standard touch target */
   }
+}
+
+/* Fixed bottom navigation with safe-area support */
+.bottom-nav-safe {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* LIGHT MODE */

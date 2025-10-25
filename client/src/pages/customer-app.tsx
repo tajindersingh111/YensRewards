@@ -450,7 +450,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v60</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v61</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -488,14 +488,12 @@ export default function CustomerApp() {
               nextTierPoints={nextTierPoints} 
             />
             
-            {/* Message/Announcement Area */}
-            {promotions && promotions.length > 0 && promotions[0] && (
-              <MessageCard
-                title={promotions[0].title}
-                message={promotions[0].message}
-                isNew={!promotions[0].isRead}
-              />
-            )}
+            {/* Message/Announcement Area - ALWAYS SHOW */}
+            <MessageCard
+              title={promotions && promotions[0] ? promotions[0].title : "Welcome to Yen's!"}
+              message={promotions && promotions[0] ? promotions[0].message : "Check the Rewards tab for special offers and promotions!"}
+              isNew={promotions && promotions[0] ? !promotions[0].isRead : true}
+            />
             
             {transactionsLoading ? (
               <Card className="p-6 text-center">
@@ -559,7 +557,7 @@ export default function CustomerApp() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 bottom-nav-safe">
         <div className="max-w-md mx-auto flex justify-around p-2">
           <button
             onClick={() => { enableAudio(); setActiveTab("home"); }}
