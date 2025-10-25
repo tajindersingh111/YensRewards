@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const CURRENT_VERSION = 'v59';
+const CURRENT_VERSION = 'v60';
 const CHECK_INTERVAL = 60000; // Check every 60 seconds
 
 export function useAutoUpdate() {
