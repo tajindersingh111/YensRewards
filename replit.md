@@ -10,27 +10,32 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v55** 🚀
+**SYSTEM VERSION: v59** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
+- **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**CUSTOMER APP - v55**
-- Features: 400px QR code, 34-38px mobile text, real Yens logo icons, Menu page
+**CUSTOMER APP - v59**
+- Features: 400px QR code, real Yens logo icons, Menu page
 - Message/announcement area positioned AFTER Points card, BEFORE Recent Transactions
 - Fixed promotion filter logic (now shows 'all' and empty targetTier promotions)
+- Mobile-first responsive design with proper font scaling (16px mobile → 18px desktop)
+- iPhone safe-area padding for notch compatibility
 - Version display in header
 - Status: Production ready
 
-**BARISTA APP - v55**
+**BARISTA APP - v59**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
-- Works correctly on Android devices
-- Known issue: iPhone Safari aggressive caching - may show old version until manual cache clear/reinstall
-- Auto-update detection implemented for future updates
+- Works correctly on both Android and iPhone devices
+- Mobile-optimized with proper touch targets (44px minimum)
+- Auto-update detection implemented
 - Version display in header
 - Status: Production ready
 
-**ADMIN DASHBOARD - v55**
+**ADMIN DASHBOARD - v59**
 - Full analytics, customer management, product manager, promotions
+- Responsive grid layouts (1 col mobile → 4 cols desktop)
+- Mobile-optimized with proper font scaling
 - Version display in header
 - Status: Production ready
 
@@ -38,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 
 ### UI/UX Decisions
 - **Design System:** Tailwind CSS for utility-first styling, custom Yens brand color palette (Yens Yellow, Yens Blue, tier-specific colors), Inter font family.
-- **Responsiveness:** Mobile-first responsive design; light mode only.
+- **Responsiveness:** TRUE mobile-first responsive design (16px base → 18px desktop); iPhone safe-area padding for notch; pinch-zoom enabled; 44px minimum touch targets; light mode only.
 - **Component Library:** Shadcn UI built on Radix UI primitives for accessible, composable components.
 - **PWAs:** Dedicated PWA manifests and installation flows for Customer, Barista, and Admin apps, enabling one-tap installation and dynamic QR code-based installation for each app.
 
