@@ -10,23 +10,29 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v64** 🚀
+**SYSTEM VERSION: v67** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**CUSTOMER APP - v64**
+**RECENT FIXES (v65-v67):**
+- ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
+- ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
+- 🔧 **ANDROID SCREEN SIZE** (v66-v67) - Applied CSS !important flags and JavaScript viewport forcing
+- 📊 **DIAGNOSTIC BOX** - Yellow info box on home page shows screen dimensions, viewport width, and service worker status for troubleshooting
+- 🔄 **TESTING IN PROGRESS** - User will resume testing tomorrow after republishing v67
+
+**CUSTOMER APP - v67**
 - Features: Responsive QR code (max 320px), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
 - **ICE CREAM MENU ICON** - Added ice cream icon in both header and bottom nav
-- **SCREEN SIZE FIXED** - App fills entire screen on Android without manual zooming
 - Mobile-first responsive design with proper font scaling (16px mobile → 18px desktop)
 - iPhone safe-area padding for notch and bottom nav compatibility
 - Version display in header
-- Status: Production ready
+- Status: Testing in progress (Android viewport issue being addressed)
 
-**BARISTA APP - v64**
+**BARISTA APP - v67**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
@@ -34,12 +40,16 @@ Preferred communication style: Simple, everyday language.
 - Version display in header
 - Status: Production ready
 
-**ADMIN DASHBOARD - v64**
+**ADMIN DASHBOARD - v67**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
 - Version display in header
 - Status: Production ready
+
+**KNOWN ISSUES:**
+- Android Chrome may show app at ~50% screen width (viewport issue) - v67 includes JS fix to force full width
+- Solution requires clearing site data and testing in incognito mode after republishing
 
 ## System Architecture
 
