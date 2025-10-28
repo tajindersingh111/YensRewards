@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
 const CURRENT_VERSION = 'v62';
-const CHECK_INTERVAL = 60000; // Check every 60 seconds
+const CHECK_INTERVAL = 300000; // Check every 5 minutes (much less aggressive)
+const INITIAL_DELAY = 30000; // Wait 30 seconds before first check
 
 export function useAutoUpdate() {
   useEffect(() => {
@@ -26,23 +27,15 @@ export function useAutoUpdate() {
       }
     };
 
-    // Check on mount
-    checkVersion();
+    // Wait 30 seconds before first check (prevents refresh loop on load)
+    const initialTimeout = setTimeout(checkVersion, INITIAL_DELAY);
 
-    // Check periodically
+    // Check periodically every 5 minutes
     const interval = setInterval(checkVersion, CHECK_INTERVAL);
 
-    // Check when page becomes visible (iOS Safari)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        checkVersion();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
+      clearTimeout(initialTimeout);
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 }
