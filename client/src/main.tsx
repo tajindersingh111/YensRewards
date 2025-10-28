@@ -3,6 +3,17 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+// UNREGISTER OLD SERVICE WORKER - v64 fix
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    for (const registration of registrations) {
+      registration.unregister().then(() => {
+        console.log('✅ Old service worker unregistered');
+      });
+    }
+  });
+}
+
 // TEMPORARILY DISABLED to break free from old service worker cache
 // Will re-enable after v51 is confirmed working
 // iOS PWA Update Fix - Force service worker updates
