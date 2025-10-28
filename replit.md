@@ -10,12 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v62** 🚀
+**SYSTEM VERSION: v63** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**CUSTOMER APP - v62**
+**CUSTOMER APP - v63**
 - Features: Responsive QR code (max 320px), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
@@ -25,15 +25,15 @@ Preferred communication style: Simple, everyday language.
 - Version display in header
 - Status: Production ready
 
-**BARISTA APP - v62**
+**BARISTA APP - v63**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
-- Auto-update detection implemented
+- **Auto-update FIXED** - 30s delay before first check, 5-min intervals (prevents Android refresh loop)
 - Version display in header
 - Status: Production ready
 
-**ADMIN DASHBOARD - v62**
+**ADMIN DASHBOARD - v63**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling

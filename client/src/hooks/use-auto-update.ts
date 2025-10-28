@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const CURRENT_VERSION = 'v62';
+const CURRENT_VERSION = 'v63';
 const CHECK_INTERVAL = 300000; // Check every 5 minutes (much less aggressive)
 const INITIAL_DELAY = 30000; // Wait 30 seconds before first check
 
