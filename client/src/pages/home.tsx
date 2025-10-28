@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v66 - Force Full Width CSS! ✅
+            v67 - JS Viewport Fix! ✅
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started

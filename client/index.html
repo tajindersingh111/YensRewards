@@ -21,6 +21,20 @@
           navigator.serviceWorker.controller.postMessage({type: 'SKIP_WAITING'});
         }
       }
+      
+      // FORCE viewport to device width programmatically (Android fix)
+      (function() {
+        var viewport = document.querySelector('meta[name=viewport]');
+        if (viewport) {
+          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+        }
+        
+        // Additional Android-specific fix
+        if (/android/i.test(navigator.userAgent)) {
+          document.documentElement.style.width = '100%';
+          document.documentElement.style.overflow = 'hidden';
+        }
+      })();
     </script>
     
     <!-- PWA Manifest (dynamically loaded based on route) -->
