@@ -78,7 +78,7 @@ export default function QRDisplay() {
                       {config.title}
                     </h1>
                     <span className="inline-block bg-white/20 px-3 py-1 rounded-full text-sm font-bold">
-                      v65
+                      v66
                     </span>
                   </div>
                   <p className="text-lg opacity-90 mt-1">{config.subtitle}</p>
@@ -110,7 +110,7 @@ export default function QRDisplay() {
               <div className="flex items-center justify-center gap-2">
                 <h2 className="text-2xl font-bold text-foreground">{config.qrTitle}</h2>
                 <span className="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                  v65
+                  v66
                 </span>
               </div>
               <p className="text-muted-foreground">{config.qrSubtitle}</p>
