@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v63 - Auto-Update DISABLED (No More Refresh!) ✅
+            v63 - Auto-Update Every 5 Minutes ⏰✅
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
@@ -111,7 +111,7 @@ export default function Home() {
                       v63
                     </span>
                   </div>
-                  <p className="opacity-90">Auto-update disabled - no more refresh loops on Android!</p>
+                  <p className="opacity-90">Auto-update checks every 5 minutes - no refresh on load!</p>
                 </div>
               </div>
               <Button 
