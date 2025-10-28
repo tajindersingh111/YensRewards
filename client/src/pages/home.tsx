@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v63 - Android Refresh Loop FIXED! 🛠️✨
+            v63 - Auto-Update DISABLED (No More Refresh!) ✅
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
@@ -111,7 +111,7 @@ export default function Home() {
                       v63
                     </span>
                   </div>
-                  <p className="opacity-90">Android refresh loop fixed - 30s delay before checks!</p>
+                  <p className="opacity-90">Auto-update disabled - no more refresh loops on Android!</p>
                 </div>
               </div>
               <Button 
