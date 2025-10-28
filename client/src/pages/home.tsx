@@ -44,7 +44,7 @@ export default function Home() {
             Yen's Loyalty System
           </h1>
           <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v63 - Auto-Update Every 5 Minutes ⏰✅
+            v63 - Auto-Update DISABLED ✅
           </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
@@ -111,7 +111,7 @@ export default function Home() {
                       v63
                     </span>
                   </div>
-                  <p className="opacity-90">Auto-update checks every 5 minutes - no refresh on load!</p>
+                  <p className="opacity-90">Auto-update completely disabled - no automatic refreshes!</p>
                 </div>
               </div>
               <Button 

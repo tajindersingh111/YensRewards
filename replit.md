@@ -29,7 +29,7 @@ Preferred communication style: Simple, everyday language.
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
-- **Auto-update ENABLED** - Checks every 5 minutes (no immediate check on load)
+- **Auto-update DISABLED** - Completely turned off to prevent refresh issues
 - Version display in header
 - Status: Production ready
 
