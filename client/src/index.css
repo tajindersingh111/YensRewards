@@ -2,9 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure app fills entire viewport */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
 /* Mobile-first: Standard readable font sizes */
 html {
   font-size: 16px; /* Mobile base - standard and readable */
+  -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
+  text-size-adjust: 100%;
 }
 
 /* Scale up for larger screens */
