@@ -49,6 +49,21 @@ export default function Home() {
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
           </p>
+          
+          {/* Diagnostic Info */}
+          <Card className="p-4 bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
+            <h3 className="font-bold mb-2 text-sm">📊 Diagnostics:</h3>
+            <div className="text-xs space-y-1 font-mono">
+              <div>Screen Width: {window.innerWidth}px</div>
+              <div>Screen Height: {window.innerHeight}px</div>
+              <div>Viewport Width: {document.documentElement.clientWidth}px</div>
+              <div>Service Workers: {navigator.serviceWorker ? 'Supported' : 'Not Supported'}</div>
+              {navigator.serviceWorker && (
+                <div>SW Registered: {(navigator.serviceWorker.controller ? 'YES ❌' : 'NO ✅')}</div>
+              )}
+              <div>User Agent: {navigator.userAgent.substring(0, 50)}...</div>
+            </div>
+          </Card>
         </div>
 
         {/* App Cards */}
