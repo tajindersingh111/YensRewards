@@ -75,11 +75,11 @@ export default function CustomerApp() {
     }
   }, []);
 
-  // Fetch customer data - Poll every 3 seconds to detect new points for celebrations!
+  // Fetch customer data - NO POLLING to prevent refresh issues
   const { data: customer, isLoading: customerLoading } = useQuery<Customer>({
     queryKey: ['/api/customers/phone', phone],
     enabled: !!phone,
-    refetchInterval: 3000, // Poll every 3 seconds to trigger celebrations
+    refetchInterval: false, // DISABLED - was causing refresh issues
   });
 
   // Celebration effect - Trigger when points or tier changes
@@ -164,7 +164,7 @@ export default function CustomerApp() {
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ['/api/customers', customer?.id, 'notifications', 'unread-count'],
     enabled: !!customer?.id,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: false, // DISABLED - was causing refresh issues
   });
 
   const unreadCount = unreadData?.count || 0;
@@ -450,7 +450,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v64</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v65</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
