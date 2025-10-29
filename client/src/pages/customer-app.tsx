@@ -450,7 +450,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v73</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v74</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -559,8 +559,8 @@ export default function CustomerApp() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 bottom-nav-safe">
-        <div className="mx-auto w-full px-6 flex justify-around p-2" style={{maxWidth: "420px"}}>
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border bottom-nav-safe" style={{zIndex: 9999}}>
+        <div className="mx-auto w-full px-6 flex justify-around p-3" style={{maxWidth: "420px"}}>
           <button
             onClick={() => { enableAudio(); setActiveTab("home"); }}
             className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${
