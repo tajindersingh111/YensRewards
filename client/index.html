@@ -80,9 +80,12 @@
         
         if (navigator.userAgentData) {
           // Modern User-Agent Client Hints API
-          isAndroid = navigator.userAgentData.platform === 'Android' || 
+          // Android reports as "Linux" or "Android", and mobile flag is unreliable
+          const platform = navigator.userAgentData.platform;
+          isAndroid = platform === 'Android' || 
+                     platform === 'Linux' ||  // Android often reports as Linux
                      (navigator.userAgentData.mobile && /android/i.test(navigator.userAgent));
-          console.log('🔍 Using userAgentData:', navigator.userAgentData.platform, 'Mobile:', navigator.userAgentData.mobile);
+          console.log('🔍 Using userAgentData:', platform, 'Mobile:', navigator.userAgentData.mobile, 'Detected Android:', isAndroid);
         } else {
           // Fallback to legacy detection
           isAndroid = /android/i.test(navigator.userAgent) || 

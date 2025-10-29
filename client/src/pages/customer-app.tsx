@@ -450,19 +450,9 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <div className="flex flex-col text-xs opacity-70">
-                <span data-testid="text-version">
-                  v81 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
-                </span>
-                {typeof window !== 'undefined' && (
-                  <span className="text-[10px]">
-                    {(navigator as any).userAgentData ? 
-                      `Platform: ${(navigator as any).userAgentData.platform} | Mobile: ${(navigator as any).userAgentData.mobile}` :
-                      'No userAgentData'
-                    }
-                  </span>
-                )}
-              </div>
+              <span className="text-xs opacity-70" data-testid="text-version">
+                v82 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
