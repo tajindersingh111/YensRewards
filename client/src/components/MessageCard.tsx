@@ -9,20 +9,20 @@ interface MessageCardProps {
 
 export default function MessageCard({ title, message, isNew }: MessageCardProps) {
   return (
-    <div className="rounded-lg border-2 border-solid border-primary bg-primary/5 p-4" data-testid="card-message">
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-1">
-            <Megaphone className="w-5 h-5 text-primary flex-shrink-0" />
-            <h3 className="text-base font-bold text-foreground">{title}</h3>
+    <div className="rounded-xl border-3 border-solid border-primary bg-primary/5 p-5" data-testid="card-message">
+      <div className="space-y-2.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <Megaphone className="w-6 h-6 text-primary flex-shrink-0" />
+            <h3 className="text-lg font-bold text-foreground">{title}</h3>
           </div>
           {isNew && (
-            <Badge className="bg-red-500 text-white flex-shrink-0 text-sm px-2.5 py-0.5" data-testid="badge-message-new">
+            <Badge className="bg-red-500 text-white flex-shrink-0 text-base px-3 py-0.5" data-testid="badge-message-new">
               NEW
             </Badge>
           )}
         </div>
-        <p className="text-sm text-foreground pl-7">{message}</p>
+        <p className="text-base text-foreground pl-9">{message}</p>
       </div>
     </div>
   );
