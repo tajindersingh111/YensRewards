@@ -435,7 +435,7 @@ export default function CustomerApp() {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50 flex-shrink-0">
+      <header className="bg-primary text-primary-foreground py-3 px-4 sticky top-0 z-50 flex-shrink-0">
         <div className="mx-auto w-full px-6 flex items-center justify-between" style={{maxWidth: "420px"}}>
           <Button 
             variant="ghost" 
@@ -450,7 +450,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v70</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v71</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
