@@ -20,10 +20,10 @@ export default function TransactionList({ transactions }: TransactionListProps) 
   const recentTransactions = transactions.slice(0, 2);
   
   return (
-    <div className="space-y-3">
-      <h3 className="text-xl font-semibold text-foreground">Recent Transactions</h3>
+    <div className="space-y-2">
+      <h3 className="text-base font-semibold text-foreground">Recent Transactions</h3>
       {recentTransactions.map((transaction) => (
-        <Card key={transaction.id} className="p-4 hover-elevate" data-testid={`card-transaction-${transaction.id}`}>
+        <Card key={transaction.id} className="p-3 hover-elevate" data-testid={`card-transaction-${transaction.id}`}>
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               {transaction.type === "purchase" ? (

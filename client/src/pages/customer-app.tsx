@@ -450,7 +450,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v72</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v73</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -480,7 +480,7 @@ export default function CustomerApp() {
       <main className="flex-1 overflow-y-auto pb-24">
         <div className="mx-auto w-full px-6" style={{maxWidth: "420px"}}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsContent value="home" className="py-4 space-y-6 mt-0">
+          <TabsContent value="home" className="py-3 space-y-3 mt-0">
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
             
             <PointsCard 
