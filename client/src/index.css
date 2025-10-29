@@ -21,11 +21,17 @@ body {
 
 /* RESPONSIVE SCALING: Makes Android and iOS render at same proportionate size */
 html {
-  /* Scale font-size with viewport width to match proportions across devices */
-  /* Formula: clamp(min, viewport-based, max) - 24.5 = 392px design width / 16px base */
-  font-size: clamp(15px, calc(100vw / 24.5), 18px);
+  /* More aggressive scaling for Android - divisor reduced from 24.5 to 21.5 for ~15% boost */
+  font-size: clamp(16px, calc(100vw / 21.5), 20px);
   -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
   text-size-adjust: 100%;
+}
+
+/* Extra boost for Android viewport widths */
+@media (min-width: 401px) and (max-width: 430px) {
+  html {
+    font-size: 18px; /* Direct 12.5% increase for Android */
+  }
 }
 
 /* iPhone safe-area support for notch */
