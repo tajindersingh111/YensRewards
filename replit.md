@@ -10,12 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v79** 🚀
+**SYSTEM VERSION: v80** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**RECENT FIXES (v65-v79):**
+**RECENT FIXES (v65-v80):**
 - ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
 - ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
 - ✅ **ANDROID SCREEN WIDTH FIXED** (v68) - Removed max-width constraints; app now fills full screen on all devices
@@ -27,9 +27,10 @@ Preferred communication style: Simple, everyday language.
 - ✅ **50% SCALING INCREASE** (v77) - **USER REQUEST:** Boosted Android to 24px (50% larger than iOS 16px) for better matching proportions
 - ⚠️ **MEDIA QUERY FAILED** (v78) - Added viewport debug info; discovered 401-430px range too narrow for user's device
 - ✅ **ANDROID USER-AGENT FIX** (v79) - **BREAKTHROUGH:** Replaced CSS media query with JavaScript Android detection via user-agent; directly sets font-size=24px on Android devices <500px viewport
+- ✅ **VIEWPORT WIDTH FIX** (v80) - **CRITICAL:** Removed viewport width check entirely; Android was reporting 980px viewport width, failing the <500px check; now applies 24px to ALL Android devices
 - 🧹 **UI CLEANUP** (v68) - Removed diagnostic boxes, version badges, and debug text for clean professional look
 
-**CUSTOMER APP - v79**
+**CUSTOMER APP - v80**
 - Features: Responsive QR code (full width), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
@@ -41,7 +42,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI without debug text
 - Status: Production ready
 
-**BARISTA APP - v79**
+**BARISTA APP - v80**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
@@ -49,7 +50,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI
 - Status: Production ready
 
-**ADMIN DASHBOARD - v79**
+**ADMIN DASHBOARD - v80**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling

@@ -451,7 +451,7 @@ export default function CustomerApp() {
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
               <span className="text-xs opacity-70" data-testid="text-version">
-                v79 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
+                v80 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
               </span>
             </div>
           </div>

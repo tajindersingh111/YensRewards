@@ -75,17 +75,17 @@
         // Store viewport width for debugging
         document.documentElement.dataset.vw = viewportWidth;
         
-        // Apply 50% scaling for Android devices with mobile-sized screens
-        if (isAndroid && viewportWidth < 500) {
+        // Apply 50% scaling for ALL Android devices (no viewport width check)
+        if (isAndroid) {
           document.documentElement.style.fontSize = '24px';
           document.documentElement.classList.add('android-scale');
-          console.log('✅ Android detected - Applying 24px font-size (50% boost)');
+          console.log('✅ Android detected - Applying 24px font-size (50% boost), VW:', viewportWidth);
         } else {
           document.documentElement.style.fontSize = '16px';
-          console.log('📱 iOS/Desktop - Using 16px font-size');
+          console.log('📱 iOS/Desktop - Using 16px font-size, VW:', viewportWidth);
         }
         
-        console.log('Viewport Width:', viewportWidth, 'User Agent:', navigator.userAgent);
+        console.log('User Agent:', navigator.userAgent);
       })();
     </script>
     
