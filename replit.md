@@ -10,46 +10,42 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v67** 🚀
+**SYSTEM VERSION: v68** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**RECENT FIXES (v65-v67):**
+**RECENT FIXES (v65-v68):**
 - ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
 - ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
-- 🔧 **ANDROID SCREEN SIZE** (v66-v67) - Applied CSS !important flags and JavaScript viewport forcing
-- 📊 **DIAGNOSTIC BOX** - Yellow info box on home page shows screen dimensions, viewport width, and service worker status for troubleshooting
-- 🔄 **TESTING IN PROGRESS** - User will resume testing tomorrow after republishing v67
+- ✅ **ANDROID SCREEN WIDTH FIXED** (v68) - Removed max-width constraints; app now fills full screen on all devices
+- 🧹 **UI CLEANUP** (v68) - Removed diagnostic boxes, version badges, and debug text for clean professional look
 
-**CUSTOMER APP - v67**
+**CUSTOMER APP - v68**
 - Features: Responsive QR code (max 320px), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
 - **ICE CREAM MENU ICON** - Added ice cream icon in both header and bottom nav
+- **FULL WIDTH ON MOBILE** - Removed max-width constraints; uses w-full on mobile, lg:max-w-md on desktop
 - Mobile-first responsive design with proper font scaling (16px mobile → 18px desktop)
 - iPhone safe-area padding for notch and bottom nav compatibility
-- Version display in header
-- Status: Testing in progress (Android viewport issue being addressed)
+- Clean, professional UI without debug text
+- Status: Production ready
 
-**BARISTA APP - v67**
+**BARISTA APP - v68**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
 - **Auto-update DISABLED** - Completely turned off to prevent refresh issues
-- Version display in header
+- Clean, professional UI
 - Status: Production ready
 
-**ADMIN DASHBOARD - v67**
+**ADMIN DASHBOARD - v68**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
-- Version display in header
+- Clean, professional UI
 - Status: Production ready
-
-**KNOWN ISSUES:**
-- Android Chrome may show app at ~50% screen width (viewport issue) - v67 includes JS fix to force full width
-- Solution requires clearing site data and testing in incognito mode after republishing
 
 ## System Architecture
 
