@@ -10,12 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v85** 🚀
+**SYSTEM VERSION: v86** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**RECENT FIXES (v65-v85):**
+**RECENT FIXES (v65-v86):**
 - ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
 - ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
 - ✅ **ANDROID SCREEN WIDTH FIXED** (v68) - Removed max-width constraints; app now fills full screen on all devices
@@ -33,9 +33,10 @@ Preferred communication style: Simple, everyday language.
 - ✅ **COMPONENT PROPORTIONS INCREASED** (v83) - QR code padding (p-3→p-6), Points card (text-6xl→text-7xl, p-6→p-8), Message area (p-3→p-4, text increased) to better match iOS proportions
 - ✅ **MAJOR SIZE INCREASE** (v84) - QR code padding (p-6→p-10), Points card (text-7xl→text-8xl, p-8→p-10), Message area (p-4→p-5, all elements enlarged) for much closer iOS proportions
 - ✅ **FINAL SIZE MATCHING** (v85) - QR code (p-10→p-16, text-8xl→text-9xl), Points card (p-10→p-14, same size as QR), Message box (p-5→p-6, border-3→border-4) to perfectly match iOS proportions
+- ✅ **COMPACT SIZING FIX** (v86) - QR code padding reduced (p-16→p-6) to fill yellow border better; Points card compressed (p-14→p-8, gaps reduced) to match QR code height and create square shape
 - 🧹 **UI CLEANUP** (v68) - Removed diagnostic boxes, version badges, and debug text for clean professional look
 
-**CUSTOMER APP - v85**
+**CUSTOMER APP - v86**
 - Features: Responsive QR code (full width), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
@@ -47,7 +48,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI without debug text
 - Status: Production ready
 
-**BARISTA APP - v85**
+**BARISTA APP - v86**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
@@ -55,7 +56,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI
 - Status: Production ready
 
-**ADMIN DASHBOARD - v85**
+**ADMIN DASHBOARD - v86**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
