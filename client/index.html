@@ -66,26 +66,42 @@
       })();
     </script>
     
-    <!-- ANDROID SCALING FIX: Detect Android and apply 50% font scaling -->
+    <!-- ANDROID SCALING FIX: Detect Android using modern API + fallback -->
     <script>
       (function() {
-        const isAndroid = /android/i.test(navigator.userAgent);
         const viewportWidth = window.innerWidth;
         
         // Store viewport width for debugging
         document.documentElement.dataset.vw = viewportWidth;
         
-        // Apply 50% scaling for ALL Android devices (no viewport width check)
+        // LAYERED ANDROID DETECTION
+        // 1. Modern API (works even with desktop UA spoofing)
+        let isAndroid = false;
+        
+        if (navigator.userAgentData) {
+          // Modern User-Agent Client Hints API
+          isAndroid = navigator.userAgentData.platform === 'Android' || 
+                     (navigator.userAgentData.mobile && /android/i.test(navigator.userAgent));
+          console.log('🔍 Using userAgentData:', navigator.userAgentData.platform, 'Mobile:', navigator.userAgentData.mobile);
+        } else {
+          // Fallback to legacy detection
+          isAndroid = /android/i.test(navigator.userAgent) || 
+                     /android/i.test(navigator.platform || '');
+          console.log('🔍 Using legacy UA detection');
+        }
+        
+        // Apply 50% scaling for ALL Android devices
         if (isAndroid) {
           document.documentElement.style.fontSize = '24px';
           document.documentElement.classList.add('android-scale');
-          console.log('✅ Android detected - Applying 24px font-size (50% boost), VW:', viewportWidth);
+          console.log('✅ Android detected - Applying 24px font-size (50% boost)');
         } else {
           document.documentElement.style.fontSize = '16px';
-          console.log('📱 iOS/Desktop - Using 16px font-size, VW:', viewportWidth);
+          console.log('📱 iOS/Desktop - Using 16px font-size');
         }
         
-        console.log('User Agent:', navigator.userAgent);
+        // Debug output
+        console.log('Viewport:', viewportWidth, 'UA:', navigator.userAgent.substring(0, 100));
       })();
     </script>
     
