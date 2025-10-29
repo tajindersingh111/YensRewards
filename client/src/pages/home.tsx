@@ -43,27 +43,9 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-foreground">
             Yen's Loyalty System
           </h1>
-          <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full font-bold text-sm animate-pulse">
-            v67 - JS Viewport Fix! ✅
-          </div>
           <p className="text-lg text-muted-foreground">
             Choose your app to get started
           </p>
-          
-          {/* Diagnostic Info */}
-          <Card className="p-4 bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
-            <h3 className="font-bold mb-2 text-sm">📊 Diagnostics:</h3>
-            <div className="text-xs space-y-1 font-mono">
-              <div>Screen Width: {window.innerWidth}px</div>
-              <div>Screen Height: {window.innerHeight}px</div>
-              <div>Viewport Width: {document.documentElement.clientWidth}px</div>
-              <div>Service Workers: {navigator.serviceWorker ? 'Supported' : 'Not Supported'}</div>
-              {navigator.serviceWorker && (
-                <div>SW Registered: {(navigator.serviceWorker.controller ? 'YES ❌' : 'NO ✅')}</div>
-              )}
-              <div>User Agent: {navigator.userAgent.substring(0, 50)}...</div>
-            </div>
-          </Card>
         </div>
 
         {/* App Cards */}
@@ -120,13 +102,8 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <QrCode className="w-12 h-12" />
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-2xl font-bold">Barista App QR Code</h2>
-                    <span className="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                      v64
-                    </span>
-                  </div>
-                  <p className="opacity-90">Auto-update completely disabled - no automatic refreshes!</p>
+                  <h2 className="text-2xl font-bold">Barista App QR Code</h2>
+                  <p className="opacity-90">Scan QR codes and process transactions</p>
                 </div>
               </div>
               <Button 

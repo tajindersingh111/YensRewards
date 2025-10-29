@@ -73,14 +73,9 @@ export default function QRDisplay() {
               <div className="flex items-center gap-4">
                 <img src={logoUrl} alt="Yens Logo" className="w-16 h-16 rounded-full bg-white p-2" />
                 <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-4xl font-bold">
-                      {config.title}
-                    </h1>
-                    <span className="inline-block bg-white/20 px-3 py-1 rounded-full text-sm font-bold">
-                      v67
-                    </span>
-                  </div>
+                  <h1 className="text-4xl font-bold">
+                    {config.title}
+                  </h1>
                   <p className="text-lg opacity-90 mt-1">{config.subtitle}</p>
                 </div>
               </div>
@@ -107,12 +102,7 @@ export default function QRDisplay() {
           <Card className={`p-8 text-center space-y-6 border-4 ${config.borderColor}`}>
             <div className="space-y-2">
               <img src={logoUrl} alt="Yens Logo" className="w-20 h-20 rounded-full mx-auto" />
-              <div className="flex items-center justify-center gap-2">
-                <h2 className="text-2xl font-bold text-foreground">{config.qrTitle}</h2>
-                <span className="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                  v67
-                </span>
-              </div>
+              <h2 className="text-2xl font-bold text-foreground">{config.qrTitle}</h2>
               <p className="text-muted-foreground">{config.qrSubtitle}</p>
             </div>
             
