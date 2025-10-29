@@ -24,21 +24,21 @@ export default function PointsCard({ points, tier, nextTierPoints }: PointsCardP
   const progress = nextTierPoints ? (points / nextTierPoints) * 100 : 100;
 
   return (
-    <Card className="p-10 bg-primary text-primary-foreground" data-testid="points-card">
-      <div className="flex flex-col items-center gap-5">
-        <Badge className={`${tierColors[tier]} px-5 py-2 text-base`} data-testid={`badge-tier-${tier}`}>
+    <Card className="p-14 bg-primary text-primary-foreground rounded-2xl" data-testid="points-card">
+      <div className="flex flex-col items-center gap-6">
+        <Badge className={`${tierColors[tier]} px-6 py-2 text-lg`} data-testid={`badge-tier-${tier}`}>
           {tierNames[tier]} Member
         </Badge>
         
         <div className="text-center">
-          <p className="text-lg font-medium opacity-90 mb-3">Your Points</p>
-          <p className="text-8xl font-bold" data-testid="text-points">{points}</p>
+          <p className="text-xl font-medium opacity-90 mb-4">Your Points</p>
+          <p className="text-9xl font-bold" data-testid="text-points">{points}</p>
         </div>
 
         {nextTierPoints && (
-          <div className="w-full space-y-2 mt-3">
-            <Progress value={progress} className="h-3" />
-            <p className="text-base text-center opacity-80">
+          <div className="w-full space-y-3 mt-4">
+            <Progress value={progress} className="h-3.5" />
+            <p className="text-lg text-center opacity-80">
               {nextTierPoints - points} points to {tier === "bronze" ? "Silver" : "Gold"}
             </p>
           </div>
