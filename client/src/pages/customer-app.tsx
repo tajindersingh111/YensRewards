@@ -436,7 +436,7 @@ export default function CustomerApp() {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-3 px-4 sticky top-0 z-50 flex-shrink-0">
-        <div className="mx-auto w-full px-4 flex items-center justify-between" style={{maxWidth: "min(100vw, 600px)"}}>
+        <div className="mx-auto w-full px-4 flex items-center justify-between" style={{maxWidth: "min(100vw, 420px)"}}>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -451,7 +451,7 @@ export default function CustomerApp() {
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
               <span className="text-xs opacity-70" data-testid="text-version">
-                v86 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
+                v87 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
               </span>
             </div>
           </div>
@@ -480,7 +480,7 @@ export default function CustomerApp() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-24">
-        <div className="mx-auto w-full px-4" style={{maxWidth: "min(100vw, 600px)"}}>
+        <div className="mx-auto w-full px-4" style={{maxWidth: "min(100vw, 420px)"}}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="home" className="py-3 space-y-3 mt-0">
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
