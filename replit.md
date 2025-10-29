@@ -10,12 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v71** 🚀
+**SYSTEM VERSION: v72** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**RECENT FIXES (v65-v71):**
+**RECENT FIXES (v65-v72):**
 - ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
 - ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
 - ✅ **ANDROID SCREEN WIDTH FIXED** (v68) - Removed max-width constraints; app now fills full screen on all devices
@@ -23,7 +23,7 @@ Preferred communication style: Simple, everyday language.
 - ✅ **COMPONENT SIZING MATCHED** (v71) - Adjusted QR code, Points card, and header to better match iOS proportions
 - 🧹 **UI CLEANUP** (v68) - Removed diagnostic boxes, version badges, and debug text for clean professional look
 
-**CUSTOMER APP - v71**
+**CUSTOMER APP - v72**
 - Features: Responsive QR code (full width), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
@@ -35,7 +35,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI without debug text
 - Status: Production ready
 
-**BARISTA APP - v71**
+**BARISTA APP - v72**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
@@ -43,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI
 - Status: Production ready
 
-**ADMIN DASHBOARD - v71**
+**ADMIN DASHBOARD - v72**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
