@@ -436,7 +436,7 @@ export default function CustomerApp() {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50 flex-shrink-0">
-        <div className="w-full max-w-lg mx-auto flex items-center justify-between">
+        <div className="mx-auto w-full px-6 flex items-center justify-between" style={{maxWidth: "420px"}}>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -450,7 +450,7 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">Yen's Rewards</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v69</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v70</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -478,9 +478,9 @@ export default function CustomerApp() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-24">
-        <div className="w-full max-w-lg mx-auto">
+        <div className="mx-auto w-full px-6" style={{maxWidth: "420px"}}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsContent value="home" className="p-4 space-y-6 mt-0">
+          <TabsContent value="home" className="py-4 space-y-6 mt-0">
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
             
             <PointsCard 
@@ -505,7 +505,7 @@ export default function CustomerApp() {
             )}
           </TabsContent>
 
-          <TabsContent value="rewards" className="p-4 space-y-6 mt-0">
+          <TabsContent value="rewards" className="py-4 space-y-6 mt-0">
             {promotions && promotions.length > 0 ? (
               promotions.map((promo) => (
                 <PromotionCard
@@ -524,12 +524,12 @@ export default function CustomerApp() {
             )}
           </TabsContent>
 
-          <TabsContent value="referrals" className="p-4 space-y-6 mt-0">
+          <TabsContent value="referrals" className="py-4 space-y-6 mt-0">
             <ReferralCard referralCode={customer.referralCode} referralCount={0} />
             <LeaderboardCard entries={mockLeaderboard} currentUserId={customer.id} />
           </TabsContent>
 
-          <TabsContent value="profile" className="p-4 space-y-6 mt-0">
+          <TabsContent value="profile" className="py-4 space-y-6 mt-0">
             <div className="text-center space-y-4">
               {customer.photo ? (
                 <img src={customer.photo} alt={customer.name} className="w-24 h-24 rounded-full mx-auto object-cover" />
@@ -560,7 +560,7 @@ export default function CustomerApp() {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 bottom-nav-safe">
-        <div className="w-full max-w-lg mx-auto flex justify-around p-2">
+        <div className="mx-auto w-full px-6 flex justify-around p-2" style={{maxWidth: "420px"}}>
           <button
             onClick={() => { enableAudio(); setActiveTab("home"); }}
             className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${

@@ -10,30 +10,30 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v69** 🚀
+**SYSTEM VERSION: v70** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**RECENT FIXES (v65-v69):**
+**RECENT FIXES (v65-v70):**
 - ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
 - ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
 - ✅ **ANDROID SCREEN WIDTH FIXED** (v68) - Removed max-width constraints; app now fills full screen on all devices
-- ✅ **PERFECT PROPORTIONS** (v69) - Applied max-w-lg (512px) for iOS-matching proportions on all devices
+- ✅ **PERFECT PROPORTIONS FIXED** (v70) - Fixed max-width to 420px with px-6 padding for identical iOS/Android margins
 - 🧹 **UI CLEANUP** (v68) - Removed diagnostic boxes, version badges, and debug text for clean professional look
 
-**CUSTOMER APP - v69**
+**CUSTOMER APP - v70**
 - Features: Responsive QR code (max 320px), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
 - **ICE CREAM MENU ICON** - Added ice cream icon in both header and bottom nav
-- **PERFECT PROPORTIONS** - Uses max-w-lg (512px) on all devices for consistent iOS/Android look with proper margins
+- **PERFECT PROPORTIONS** - Uses 420px max-width with px-6 horizontal padding for consistent iOS/Android margins
 - Mobile-first responsive design with proper font scaling (16px mobile → 18px desktop)
 - iPhone safe-area padding for notch and bottom nav compatibility
 - Clean, professional UI without debug text
 - Status: Production ready
 
-**BARISTA APP - v69**
+**BARISTA APP - v70**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
@@ -41,7 +41,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI
 - Status: Production ready
 
-**ADMIN DASHBOARD - v69**
+**ADMIN DASHBOARD - v70**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
