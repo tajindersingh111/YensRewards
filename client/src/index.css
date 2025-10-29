@@ -19,19 +19,16 @@ body {
   min-height: 100vh !important;
 }
 
-/* RESPONSIVE SCALING: Makes Android and iOS render at same proportionate size */
+/* RESPONSIVE SCALING: Android detection via JavaScript sets font-size in index.html */
 html {
-  /* Base font size for iOS */
-  font-size: 16px;
+  /* Default will be overridden by JavaScript in index.html based on Android detection */
   -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
   text-size-adjust: 100%;
 }
 
-/* AGGRESSIVE 50% boost for Android viewport widths */
-@media (min-width: 401px) and (max-width: 430px) {
-  html {
-    font-size: 24px; /* 50% increase for Android (16px * 1.5 = 24px) */
-  }
+/* Fallback CSS for Android scaling (if JS doesn't run) */
+html.android-scale {
+  font-size: 24px !important; /* 50% increase for Android */
 }
 
 /* iPhone safe-area support for notch */
