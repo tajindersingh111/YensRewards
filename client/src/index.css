@@ -19,24 +19,13 @@ body {
   min-height: 100vh !important;
 }
 
-/* Mobile-first: Standard readable font sizes */
+/* RESPONSIVE SCALING: Makes Android and iOS render at same proportionate size */
 html {
-  font-size: 16px; /* Mobile base - standard and readable */
+  /* Scale font-size with viewport width to match proportions across devices */
+  /* Formula: clamp(min, viewport-based, max) - 24.5 = 392px design width / 16px base */
+  font-size: clamp(15px, calc(100vw / 24.5), 18px);
   -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
   text-size-adjust: 100%;
-}
-
-/* Scale up for larger screens */
-@media (min-width: 768px) {
-  html {
-    font-size: 17px; /* Slightly larger for tablets */
-  }
-}
-
-@media (min-width: 1024px) {
-  html {
-    font-size: 18px; /* Desktop size */
-  }
 }
 
 /* iPhone safe-area support for notch */
