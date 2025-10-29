@@ -21,16 +21,16 @@ body {
 
 /* RESPONSIVE SCALING: Makes Android and iOS render at same proportionate size */
 html {
-  /* More aggressive scaling for Android - divisor reduced from 24.5 to 21.5 for ~15% boost */
-  font-size: clamp(16px, calc(100vw / 21.5), 20px);
+  /* Base font size for iOS */
+  font-size: 16px;
   -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
   text-size-adjust: 100%;
 }
 
-/* Extra boost for Android viewport widths */
+/* AGGRESSIVE 50% boost for Android viewport widths */
 @media (min-width: 401px) and (max-width: 430px) {
   html {
-    font-size: 18px; /* Direct 12.5% increase for Android */
+    font-size: 24px; /* 50% increase for Android (16px * 1.5 = 24px) */
   }
 }
 
