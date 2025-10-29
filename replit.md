@@ -10,12 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v87** 🚀
+**SYSTEM VERSION: v88** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**RECENT FIXES (v65-v87):**
+**RECENT FIXES (v65-v88):**
 - ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
 - ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
 - ✅ **ANDROID SCREEN WIDTH FIXED** (v68) - Removed max-width constraints; app now fills full screen on all devices
@@ -35,9 +35,10 @@ Preferred communication style: Simple, everyday language.
 - ✅ **FINAL SIZE MATCHING** (v85) - QR code (p-10→p-16, text-8xl→text-9xl), Points card (p-10→p-14, same size as QR), Message box (p-5→p-6, border-3→border-4) to perfectly match iOS proportions
 - ✅ **COMPACT SIZING FIX** (v86) - QR code padding reduced (p-16→p-6) to fill yellow border better; Points card compressed (p-14→p-8, gaps reduced) to match QR code height and create square shape
 - ✅ **iOS PROPORTION MATCHING** (v87) - QR code (p-6→p-4, text reduced), Points card (p-8→p-6, text-9xl→text-7xl, all gaps minimized), Message box (p-6→p-4, border-4→border-2, lighter text), max-width (600px→420px) to perfectly match iOS reference
+- ✅ **SCALE COMPENSATION FIX** (v88) - **CRITICAL:** Since 24px base = 1.5x scaling, reduced ALL utilities to compensate: QR (p-4→p-3, gap-3→gap-2, text-lg→text-base), Points (p-6→p-4, text-7xl→text-5xl, gap-2→gap-1.5), Message (p-4→p-3, text-base→text-sm, text-sm→text-xs), max-width (420px→400px) to achieve true iOS visual parity
 - 🧹 **UI CLEANUP** (v68) - Removed diagnostic boxes, version badges, and debug text for clean professional look
 
-**CUSTOMER APP - v87**
+**CUSTOMER APP - v88**
 - Features: Responsive QR code (full width), real Yens logo icons, Menu page
 - **Message box ALWAYS VISIBLE** - Yellow-bordered announcement area positioned AFTER Points card, BEFORE Recent Transactions (shows welcome message as fallback if no promotions)
 - **FIXED BOTTOM NAVIGATION** - TRUE fix using `h-screen` container (no white space below nav!)
@@ -49,7 +50,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI without debug text
 - Status: Production ready
 
-**BARISTA APP - v87**
+**BARISTA APP - v88**
 - Compact header (text-sm "Barista" title, w-10 h-10 logo)
 - Works correctly on both Android and iPhone devices
 - Mobile-optimized with proper touch targets (44px minimum)
@@ -57,7 +58,7 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI
 - Status: Production ready
 
-**ADMIN DASHBOARD - v87**
+**ADMIN DASHBOARD - v88**
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
