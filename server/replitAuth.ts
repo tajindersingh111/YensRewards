@@ -155,3 +155,24 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return;
   }
 };
+
+// Middleware to check if user is an admin (must be used after isAuthenticated)
+export const isAdmin: RequestHandler = async (req, res, next) => {
+  const user = req.user as any;
+  const userId = user?.claims?.sub;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const isUserAdmin = await storage.isUserAdmin(userId);
+    if (!isUserAdmin) {
+      return res.status(403).json({ message: "Forbidden: Admin access required" });
+    }
+    return next();
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

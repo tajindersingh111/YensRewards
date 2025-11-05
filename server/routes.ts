@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 
@@ -163,10 +163,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Admin API Endpoints ============
+  // All admin endpoints require authentication and admin role
 
   // Get analytics/KPIs
-  // TODO: Add admin authentication in production
-  app.get('/api/admin/analytics', async (req, res) => {
+  app.get('/api/admin/analytics', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const analytics = await storage.getAnalytics();
       res.json(analytics);
@@ -177,8 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all customers
-  // TODO: Add admin authentication in production
-  app.get('/api/admin/customers', async (req, res) => {
+  app.get('/api/admin/customers', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const customers = await storage.getAllCustomers();
       res.json(customers);
@@ -189,8 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update customer
-  // TODO: Add admin authentication in production
-  app.patch('/api/admin/customers/:id', async (req, res) => {
+  app.patch('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const customer = await storage.updateCustomer(req.params.id, req.body);
       if (!customer) {
@@ -204,8 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import customers from CSV
-  // TODO: Add admin authentication in production
-  app.post('/api/admin/import-customers', async (req, res) => {
+  app.post('/api/admin/import-customers', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { customers } = req.body;
       
@@ -248,8 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create promotion
-  // TODO: Add admin authentication in production
-  app.post('/api/admin/promotions', async (req, res) => {
+  app.post('/api/admin/promotions', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const validatedData = insertPromotionSchema.parse(req.body);
       const promotion = await storage.createPromotion(validatedData);
@@ -264,8 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all promotions
-  // TODO: Add admin authentication in production
-  app.get('/api/admin/promotions', async (req, res) => {
+  app.get('/api/admin/promotions', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const promotions = await storage.getAllPromotions();
       res.json(promotions);
@@ -314,8 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create product (admin only)
-  // TODO: Add admin authentication in production
-  app.post('/api/admin/products', async (req, res) => {
+  app.post('/api/admin/products', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(validatedData);
@@ -330,8 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update product (admin only)
-  // TODO: Add admin authentication in production
-  app.patch('/api/admin/products/:id', async (req, res) => {
+  app.patch('/api/admin/products/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const product = await storage.updateProduct(req.params.id, req.body);
       if (!product) {
@@ -345,8 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete product (admin only)
-  // TODO: Add admin authentication in production
-  app.delete('/api/admin/products/:id', async (req, res) => {
+  app.delete('/api/admin/products/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       await storage.deleteProduct(req.params.id);
       res.status(204).send();

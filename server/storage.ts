@@ -20,6 +20,7 @@ export interface IStorage {
   // Auth methods (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  isUserAdmin(id: string): Promise<boolean>;
   
   // Customer methods
   getCustomer(id: string): Promise<Customer | undefined>;
@@ -84,6 +85,11 @@ export class DbStorage implements IStorage {
       })
       .returning();
     return result[0];
+  }
+
+  async isUserAdmin(id: string): Promise<boolean> {
+    const user = await this.getUser(id);
+    return user?.role === "admin";
   }
 
   // Customer methods
