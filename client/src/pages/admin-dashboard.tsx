@@ -8,6 +8,7 @@ import CustomerTable from "@/components/CustomerTable";
 import PromotionCreator from "@/components/PromotionCreator";
 import CustomerImportExport from "@/components/CustomerImportExport";
 import ProductManager from "@/components/ProductManager";
+import MessageTemplates from "@/components/MessageTemplates";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy, Cake, Send } from "lucide-react";
+import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy, Cake, Send, Settings } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
@@ -302,6 +303,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="customers" data-testid="tab-customers">Customers</TabsTrigger>
             <TabsTrigger value="products" data-testid="tab-products">Products</TabsTrigger>
             <TabsTrigger value="promotions" data-testid="tab-promotions">Promotions</TabsTrigger>
+            <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -707,6 +709,10 @@ export default function AdminDashboard() {
                 data-testid="promotion-creator"
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <MessageTemplates />
           </TabsContent>
         </Tabs>
       </main>
