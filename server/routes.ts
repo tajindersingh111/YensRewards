@@ -544,6 +544,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all message logs (admin only)
+  app.get('/api/admin/messages', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const logs = await storage.getMessageLogs();
+      
+      // Enrich with customer names
+      const enrichedLogs = await Promise.all(
+        logs.map(async (log) => {
+          const customer = await storage.getCustomer(log.customerId);
+          return {
+            ...log,
+            customerName: customer?.name || 'Unknown',
+          };
+        })
+      );
+
+      res.json(enrichedLogs);
+    } catch (error) {
+      console.error("Error fetching message logs:", error);
+      res.status(500).json({ message: "Failed to fetch message logs" });
+    }
+  });
+
+  // Get message statistics (admin only)
+  app.get('/api/admin/messages/stats', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const logs = await storage.getMessageLogs();
+      
+      const stats = {
+        total: logs.length,
+        sent: logs.filter(l => l.status === 'sent').length,
+        delivered: logs.filter(l => l.status === 'delivered').length,
+        failed: logs.filter(l => l.status === 'failed').length,
+        pending: logs.filter(l => l.status === 'pending').length,
+        smsCount: logs.filter(l => l.channel === 'sms').length,
+        emailCount: logs.filter(l => l.channel === 'email').length,
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching message stats:", error);
+      res.status(500).json({ message: "Failed to fetch message stats" });
+    }
+  });
+
+  // Retry failed message (admin only)
+  app.post('/api/admin/messages/:id/retry', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const logs = await storage.getMessageLogs();
+      const messageLog = logs.find(l => l.id === id);
+
+      if (!messageLog) {
+        res.status(404).json({ message: "Message not found" });
+        return;
+      }
+
+      if (messageLog.status !== 'failed') {
+        res.status(400).json({ message: "Only failed messages can be retried" });
+        return;
+      }
+
+      // Reset to pending and clear error
+      await storage.updateMessageLogStatus(id, 'pending', undefined, undefined);
+
+      // If SMS, attempt to resend immediately
+      if (messageLog.channel === 'sms') {
+        try {
+          const twilioResult = await sendSMS(messageLog.recipient, messageLog.message);
+          
+          if (twilioResult.success && twilioResult.messageId) {
+            await storage.updateMessageLogStatus(
+              id,
+              'sent',
+              twilioResult.messageId,
+              undefined
+            );
+          } else {
+            await storage.updateMessageLogStatus(
+              id,
+              'failed',
+              undefined,
+              twilioResult.error || 'Unknown error'
+            );
+          }
+        } catch (error) {
+          await storage.updateMessageLogStatus(
+            id,
+            'failed',
+            undefined,
+            error instanceof Error ? error.message : 'Failed to send SMS'
+          );
+        }
+      }
+
+      // TODO: If email, attempt to resend when email service is configured
+
+      res.json({ message: "Message retry initiated" });
+    } catch (error) {
+      console.error("Error retrying message:", error);
+      res.status(500).json({ message: "Failed to retry message" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

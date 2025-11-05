@@ -9,6 +9,7 @@ import PromotionCreator from "@/components/PromotionCreator";
 import CustomerImportExport from "@/components/CustomerImportExport";
 import ProductManager from "@/components/ProductManager";
 import MessageTemplates from "@/components/MessageTemplates";
+import MessageHistory from "@/components/MessageHistory";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -303,6 +304,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="customers" data-testid="tab-customers">Customers</TabsTrigger>
             <TabsTrigger value="products" data-testid="tab-products">Products</TabsTrigger>
             <TabsTrigger value="promotions" data-testid="tab-promotions">Promotions</TabsTrigger>
+            <TabsTrigger value="messages" data-testid="tab-messages">Messages</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -709,6 +711,10 @@ export default function AdminDashboard() {
                 data-testid="promotion-creator"
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="messages" className="space-y-6">
+            <MessageHistory />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
