@@ -386,22 +386,39 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Birthday This Week */}
+            {/* Upcoming Birthdays */}
             {(() => {
-              // Calculate birthdays for this week
+              // Calculate date ranges
               const today = new Date();
-              today.setHours(0, 0, 0, 0); // Zero out time for accurate comparison
+              today.setHours(0, 0, 0, 0);
+              
+              const tomorrow = new Date(today);
+              tomorrow.setDate(today.getDate() + 1);
+              tomorrow.setHours(0, 0, 0, 0);
+              
+              const dayAfterTomorrow = new Date(tomorrow);
+              dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
+              dayAfterTomorrow.setHours(0, 0, 0, 0);
               
               const startOfWeek = new Date(today);
               startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
-              startOfWeek.setHours(0, 0, 0, 0); // Zero out time
+              startOfWeek.setHours(0, 0, 0, 0);
               
               const endOfWeek = new Date(startOfWeek);
               endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
-              endOfWeek.setHours(23, 59, 59, 999); // End of Saturday
+              endOfWeek.setHours(23, 59, 59, 999);
+              
+              const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+              startOfMonth.setHours(0, 0, 0, 0);
+              
+              const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+              endOfMonth.setHours(23, 59, 59, 999);
 
-              // Group customers by birthday day
-              const birthdaysByDay: { [key: string]: typeof customers } = {};
+              // Group customers by time periods
+              const todayBirthdays: typeof customers = [];
+              const tomorrowBirthdays: typeof customers = [];
+              const thisWeekBirthdays: typeof customers = [];
+              const thisMonthBirthdays: typeof customers = [];
               
               customers.forEach(customer => {
                 if (customer.birthday) {
@@ -411,22 +428,18 @@ export default function AdminDashboard() {
                   
                   const parts = customer.birthday.split('-');
                   if (parts.length === 2) {
-                    // MM-DD format
                     [month, day] = [parseInt(parts[0]), parseInt(parts[1])];
                   } else if (parts.length === 3) {
-                    // YYYY-MM-DD format - extract month and day only
                     [, month, day] = parts.map((p: string) => parseInt(p));
                   } else {
-                    // Invalid format, skip
                     return;
                   }
                   
-                  // Validate month and day
                   if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
                     return;
                   }
                   
-                  // Handle Feb 29 on non-leap years - move to Feb 28
+                  // Handle Feb 29 on non-leap years
                   let adjustedDay = day;
                   if (month === 2 && day === 29) {
                     const isLeapYear = (today.getFullYear() % 4 === 0 && today.getFullYear() % 100 !== 0) || 
@@ -440,68 +453,46 @@ export default function AdminDashboard() {
                   let birthdayThisYear = new Date(today.getFullYear(), month - 1, adjustedDay);
                   birthdayThisYear.setHours(0, 0, 0, 0);
                   
-                  // Handle year-spanning weeks (e.g., Dec 29 - Jan 4)
-                  // If birthday falls before the week start, try next year
-                  if (birthdayThisYear < startOfWeek) {
+                  // Handle year wrapping
+                  if (birthdayThisYear < startOfMonth) {
                     birthdayThisYear = new Date(today.getFullYear() + 1, month - 1, adjustedDay);
                     birthdayThisYear.setHours(0, 0, 0, 0);
                   }
-                  // If birthday falls after the week end, try previous year
-                  else if (birthdayThisYear > endOfWeek) {
-                    birthdayThisYear = new Date(today.getFullYear() - 1, month - 1, adjustedDay);
-                    birthdayThisYear.setHours(0, 0, 0, 0);
-                  }
                   
-                  if (birthdayThisYear >= startOfWeek && birthdayThisYear <= endOfWeek) {
-                    // Use local date components to avoid timezone shifts
-                    const year = birthdayThisYear.getFullYear();
-                    const m = String(birthdayThisYear.getMonth() + 1).padStart(2, '0');
-                    const d = String(birthdayThisYear.getDate()).padStart(2, '0');
-                    const dayKey = `${year}-${m}-${d}`;
-                    
-                    if (!birthdaysByDay[dayKey]) {
-                      birthdaysByDay[dayKey] = [];
-                    }
-                    birthdaysByDay[dayKey].push(customer);
+                  // Categorize by time period
+                  if (birthdayThisYear.toDateString() === today.toDateString()) {
+                    todayBirthdays.push(customer);
+                  } else if (birthdayThisYear.toDateString() === tomorrow.toDateString()) {
+                    tomorrowBirthdays.push(customer);
+                  } else if (birthdayThisYear >= dayAfterTomorrow && birthdayThisYear <= endOfWeek) {
+                    thisWeekBirthdays.push(customer);
+                  } else if (birthdayThisYear > endOfWeek && birthdayThisYear <= endOfMonth) {
+                    thisMonthBirthdays.push(customer);
                   }
                 }
               });
 
-              // Convert to sorted array
-              const birthdayDays = Object.entries(birthdaysByDay)
-                .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-                .map(([date, customers]) => {
-                  // Parse date using local components to avoid timezone issues
-                  const [year, month, day] = date.split('-').map((p: string) => parseInt(p));
-                  const dayDate = new Date(year, month - 1, day);
-                  dayDate.setHours(0, 0, 0, 0);
-                  
-                  const isToday = dayDate.toDateString() === today.toDateString();
-                  const isTomorrow = dayDate.toDateString() === new Date(today.getTime() + 86400000).toDateString();
-                  
-                  let dayLabel = '';
-                  if (isToday) dayLabel = 'Today';
-                  else if (isTomorrow) dayLabel = 'Tomorrow';
-                  else dayLabel = dayDate.toLocaleDateString('en-US', { weekday: 'long' });
-                  
-                  const dateLabel = dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                  
-                  return { date, dayLabel, dateLabel, customers };
-                });
+              // Create birthday groups
+              const birthdayGroups = [
+                { key: 'today', label: 'Today', dateLabel: today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: todayBirthdays },
+                { key: 'tomorrow', label: 'Tomorrow', dateLabel: tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: tomorrowBirthdays },
+                { key: 'this-week', label: 'This Week', dateLabel: `${dayAfterTomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisWeekBirthdays },
+                { key: 'this-month', label: 'This Month', dateLabel: `${new Date(endOfWeek.getTime() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisMonthBirthdays },
+              ].filter(group => group.customers.length > 0);
 
-              if (birthdayDays.length === 0) return null;
+              if (birthdayGroups.length === 0) return null;
 
-              // Get all customer IDs for the week
-              const allWeekCustomerIds = birthdayDays.flatMap(day => day.customers.map(c => c.id));
+              // Get all customer IDs
+              const allBirthdayCustomerIds = birthdayGroups.flatMap(group => group.customers.map(c => c.id));
 
               // Handlers for sending messages
-              const handleSendWeek = () => {
-                if (allWeekCustomerIds.length > 0) {
-                  sendBirthdayMessagesMutation.mutate(allWeekCustomerIds);
+              const handleSendAll = () => {
+                if (allBirthdayCustomerIds.length > 0) {
+                  sendBirthdayMessagesMutation.mutate(allBirthdayCustomerIds);
                 }
               };
 
-              const handleSendDay = (customerIds: string[]) => {
+              const handleSendGroup = (customerIds: string[]) => {
                 if (customerIds.length > 0) {
                   sendBirthdayMessagesMutation.mutate(customerIds);
                 }
@@ -512,68 +503,72 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Cake className="w-5 h-5 text-[#FCD34D]" />
-                      <h3 className="font-semibold text-lg">Birthdays This Week</h3>
+                      <h3 className="font-semibold text-lg">Upcoming Birthdays</h3>
                     </div>
                     <Button
-                      onClick={handleSendWeek}
-                      disabled={sendBirthdayMessagesMutation.isPending || allWeekCustomerIds.length === 0}
+                      onClick={handleSendAll}
+                      disabled={sendBirthdayMessagesMutation.isPending || allBirthdayCustomerIds.length === 0}
                       className="bg-[#FCD34D] hover:bg-[#FCD34D]/90 text-gray-900"
-                      data-testid="button-send-all-week"
+                      data-testid="button-send-all-birthdays"
                     >
                       <Send className="w-4 h-4 mr-2" />
-                      Send All Week ({allWeekCustomerIds.length})
+                      Send All ({allBirthdayCustomerIds.length})
                     </Button>
                   </div>
                   <div className="overflow-x-auto pb-2">
                     <div className="flex gap-4 min-w-max">
-                      {birthdayDays.map(({ date, dayLabel, dateLabel, customers }) => (
+                      {birthdayGroups.map(({ key, label, dateLabel, customers }) => (
                         <div 
-                          key={date}
-                          className="bg-gradient-to-br from-[#FCD34D]/10 to-[#3B82F6]/10 rounded-lg p-4 border-2 border-[#FCD34D]/30 min-w-[200px]"
-                          data-testid={`birthday-card-${date}`}
+                          key={key}
+                          className="bg-gradient-to-br from-[#FCD34D]/10 to-[#3B82F6]/10 rounded-lg border-2 border-[#FCD34D]/30 min-w-[220px] flex flex-col"
+                          data-testid={`birthday-card-${key}`}
                         >
-                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#FCD34D]/20">
-                            <Cake className="w-4 h-4 text-[#FCD34D]" />
-                            <div>
-                              <p className="font-semibold text-sm">{dayLabel}</p>
-                              <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                          <div className="p-4 flex-1">
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#FCD34D]/20">
+                              <Cake className="w-4 h-4 text-[#FCD34D]" />
+                              <div className="flex-1">
+                                <p className="font-semibold text-sm">{label}</p>
+                                <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              {customers.map(customer => (
+                                <div 
+                                  key={customer.id}
+                                  className="flex items-center gap-3 p-2 rounded-md hover-elevate"
+                                  data-testid={`birthday-customer-${customer.id}`}
+                                >
+                                  <div className="relative w-10 h-10">
+                                    <Avatar className="w-10 h-10 border-2 border-[#FCD34D]">
+                                      <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                                        {customer.name.slice(0, 2).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    {customer.photo && (
+                                      <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{customer.name}</p>
+                                    <p className="text-xs text-muted-foreground">{customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}</p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="space-y-3 mb-3">
-                            {customers.map(customer => (
-                              <div 
-                                key={customer.id}
-                                className="flex items-center gap-3 p-2 rounded-md hover-elevate"
-                                data-testid={`birthday-customer-${customer.id}`}
-                              >
-                                <div className="relative w-10 h-10">
-                                  <Avatar className="w-10 h-10 border-2 border-[#FCD34D]">
-                                    <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
-                                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                                      {customer.name.slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  {customer.photo && (
-                                    <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{customer.name}</p>
-                                  <p className="text-xs text-muted-foreground">{customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}</p>
-                                </div>
-                              </div>
-                            ))}
+                          <div className="p-4 pt-0">
+                            <Button
+                              onClick={() => handleSendGroup(customers.map(c => c.id))}
+                              disabled={sendBirthdayMessagesMutation.isPending}
+                              className="w-full bg-[#FCD34D] hover:bg-[#FCD34D]/90 text-gray-900"
+                              size="sm"
+                              data-testid={`button-send-group-${key}`}
+                            >
+                              <Send className="w-3 h-3 mr-2" />
+                              Send ({customers.length})
+                            </Button>
                           </div>
-                          <Button
-                            onClick={() => handleSendDay(customers.map(c => c.id))}
-                            disabled={sendBirthdayMessagesMutation.isPending}
-                            className="w-full bg-[#FCD34D] hover:bg-[#FCD34D]/90 text-gray-900"
-                            size="sm"
-                            data-testid={`button-send-day-${date}`}
-                          >
-                            <Send className="w-3 h-3 mr-2" />
-                            Send ({customers.length})
-                          </Button>
                         </div>
                       ))}
                     </div>
