@@ -63,6 +63,16 @@ Preferred communication style: Simple, everyday language.
   - Branch selector dropdown (defaults to "All Branches")
   - Member count display with Add/Upload action buttons
   - Top 10 Spenders horizontal scroll section with numbered avatar badges
+  - **BIRTHDAYS THIS WEEK** - Displays customers with birthdays in the current week (Sunday-Saturday):
+    - Daily cards with Yens yellow/blue gradient styling
+    - Only shows days with birthdays (no empty cards)
+    - Cake icons and relative date labels ("Today", "Tomorrow", day names)
+    - Customer avatars with 40% yellow tint overlay
+    - Horizontal scrollable layout
+    - Handles both MM-DD and YYYY-MM-DD date formats
+    - Leap year support (Feb 29 → Feb 28 on non-leap years)
+    - Year-spanning week handling (e.g., Dec 29-Jan 4)
+    - Timezone-safe using local date components
   - Active/Inactive filter tabs (active = totalSpent > 0)
   - Search functionality across name, phone, email
   - Enhanced customer table with tier badges, spending, points
