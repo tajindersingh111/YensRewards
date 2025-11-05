@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
+import { sendSMS } from "./twilio";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -449,38 +450,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No birthday template found" });
       }
 
-      // Get customers and prepare messages
+      // Get customers and send messages
       const customers = await Promise.all(
         customerIds.map(id => storage.getCustomer(id))
       );
 
-      const sentMessages = customers
-        .filter(customer => customer !== undefined)
-        .map(customer => {
-          if (!customer) return null;
-          
-          // Replace placeholders in template
-          const personalizedMessage = template.message
-            .replace(/{name}/g, customer.name)
-            .replace(/{points}/g, customer.points.toString())
-            .replace(/{tier}/g, customer.tier);
+      const results = await Promise.all(
+        customers
+          .filter(customer => customer !== undefined)
+          .map(async (customer) => {
+            if (!customer) return null;
+            
+            // Replace placeholders in template
+            const personalizedMessage = template.message
+              .replace(/{name}/g, customer.name)
+              .replace(/{points}/g, customer.points.toString())
+              .replace(/{tier}/g, customer.tier);
 
-          // TODO: Actually send SMS here (integrate with Twilio or similar)
-          console.log(`Sending birthday message to ${customer.name} (${customer.phone}): ${personalizedMessage}`);
-          
-          return {
-            customerId: customer.id,
-            phone: customer.phone,
-            message: personalizedMessage,
-            sent: true
-          };
-        })
-        .filter(msg => msg !== null);
+            const personalizedSubject = template.subject
+              ? template.subject
+                  .replace(/{name}/g, customer.name)
+                  .replace(/{points}/g, customer.points.toString())
+                  .replace(/{tier}/g, customer.tier)
+              : null;
+
+            // Send via SMS if channel includes SMS
+            let smsResult = null;
+            if (template.channel === 'sms' || template.channel === 'both') {
+              if (customer.phone) {
+                smsResult = await sendSMS(customer.phone, personalizedMessage);
+                
+                // Log the SMS message
+                await storage.createMessageLog({
+                  customerId: customer.id,
+                  templateId: template.id,
+                  channel: 'sms',
+                  recipient: customer.phone,
+                  subject: null,
+                  message: personalizedMessage,
+                  status: smsResult.success ? 'sent' : 'failed',
+                  externalId: smsResult.messageId || null,
+                  errorMessage: smsResult.error || null,
+                });
+              }
+            }
+
+            // Send via Email if channel includes Email
+            let emailResult = null;
+            if (template.channel === 'email' || template.channel === 'both') {
+              if (customer.email) {
+                // TODO: Implement email sending when email service is configured
+                console.log(`Email sending not yet configured for ${customer.email}`);
+                
+                // Log the email message as pending
+                await storage.createMessageLog({
+                  customerId: customer.id,
+                  templateId: template.id,
+                  channel: 'email',
+                  recipient: customer.email,
+                  subject: personalizedSubject,
+                  message: personalizedMessage,
+                  status: 'pending',
+                  externalId: null,
+                  errorMessage: 'Email service not configured',
+                });
+              }
+            }
+
+            return {
+              customerId: customer.id,
+              name: customer.name,
+              phone: customer.phone,
+              email: customer.email,
+              smsResult,
+              emailResult,
+              success: (smsResult?.success || template.channel !== 'sms') && (emailResult === null || template.channel !== 'email')
+            };
+          })
+      );
+
+      const filteredResults = results.filter(r => r !== null);
+      const successCount = filteredResults.filter(r => r.success).length;
 
       res.json({
-        message: `Birthday messages sent to ${sentMessages.length} customers`,
-        sent: sentMessages.length,
-        details: sentMessages
+        message: `Messages sent to ${successCount}/${filteredResults.length} customers`,
+        sent: successCount,
+        total: filteredResults.length,
+        details: filteredResults
       });
     } catch (error) {
       console.error("Error sending birthday messages:", error);

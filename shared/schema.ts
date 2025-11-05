@@ -91,15 +91,34 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Message Templates table - for birthday and promotional SMS messages
+// Message Templates table - for birthday and promotional SMS/email messages
 export const messageTemplates = pgTable("message_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(), // Template name for reference (e.g., "Birthday - General", "Birthday - VIP")
-  type: text("type").notNull(), // birthday, promotion, etc.
+  name: text("name").notNull(),
+  type: text("type").notNull(), // birthday, promotion, reminder
+  channel: text("channel").notNull(), // sms, email, both
+  subject: text("subject"), // Email subject (null for SMS)
   message: text("message").notNull(), // Template with placeholders: {name}, {points}, {tier}
-  isDefault: boolean("is_default").notNull().default(false), // Is this the default template for this type?
+  isDefault: boolean("is_default").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Message Log table - tracks all sent messages
+export const messageLog = pgTable("message_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  templateId: varchar("template_id").references(() => messageTemplates.id),
+  channel: text("channel").notNull(), // sms, email
+  recipient: text("recipient").notNull(), // phone or email
+  subject: text("subject"), // Email subject
+  message: text("message").notNull(),
+  status: text("status").notNull().default("pending"), // pending, sent, failed, delivered
+  externalId: text("external_id"), // Twilio SID or email provider ID
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 
@@ -149,6 +168,13 @@ export const insertMessageTemplateSchema = createInsertSchema(messageTemplates).
   updatedAt: true,
 });
 
+export const insertMessageLogSchema = createInsertSchema(messageLog).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+  deliveredAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -171,3 +197,6 @@ export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificati
 
 export type MessageTemplate = typeof messageTemplates.$inferSelect;
 export type InsertMessageTemplate = z.infer<typeof insertMessageTemplateSchema>;
+
+export type MessageLog = typeof messageLog.$inferSelect;
+export type InsertMessageLog = z.infer<typeof insertMessageLogSchema>;

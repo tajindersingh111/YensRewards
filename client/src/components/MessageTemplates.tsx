@@ -30,6 +30,8 @@ export default function MessageTemplates() {
     defaultValues: {
       name: "",
       type: "birthday",
+      channel: "sms",
+      subject: "",
       message: "",
       isDefault: false,
     },
@@ -105,6 +107,8 @@ export default function MessageTemplates() {
     form.reset({
       name: "",
       type: "birthday",
+      channel: "sms",
+      subject: "",
       message: "",
       isDefault: false,
     });
@@ -116,6 +120,8 @@ export default function MessageTemplates() {
     form.reset({
       name: template.name,
       type: template.type,
+      channel: template.channel,
+      subject: template.subject || "",
       message: template.message,
       isDefault: template.isDefault,
     });
@@ -175,7 +181,7 @@ export default function MessageTemplates() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="name"
@@ -215,7 +221,50 @@ export default function MessageTemplates() {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="channel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Channel</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-template-channel">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="sms">SMS</SelectItem>
+                            <SelectItem value="email">Email</SelectItem>
+                            <SelectItem value="both">Both (SMS + Email)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+
+                {(form.watch("channel") === "email" || form.watch("channel") === "both") && (
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Subject</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Happy Birthday from Yens!"
+                            data-testid="input-template-subject"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -333,7 +382,11 @@ export default function MessageTemplates() {
                       </Badge>
                     )}
                   </CardTitle>
-                  <CardDescription className="capitalize">{template.type}</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <span className="capitalize">{template.type}</span>
+                    <span>•</span>
+                    <Badge variant="outline" className="capitalize">{template.channel}</Badge>
+                  </CardDescription>
                 </div>
                 <div className="flex gap-1">
                   <Button
@@ -356,10 +409,19 @@ export default function MessageTemplates() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {template.message}
-              </p>
+            <CardContent className="space-y-2">
+              {template.subject && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Subject:</p>
+                  <p className="text-sm">{template.subject}</p>
+                </div>
+              )}
+              <div>
+                {template.subject && <p className="text-xs font-semibold text-muted-foreground">Message:</p>}
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {template.message}
+                </p>
+              </div>
             </CardContent>
           </Card>
         ))}

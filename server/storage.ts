@@ -13,9 +13,11 @@ import {
   type InsertProduct,
   type MessageTemplate,
   type InsertMessageTemplate,
+  type MessageLog,
+  type InsertMessageLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog } from "@shared/schema";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -74,6 +76,11 @@ export interface IStorage {
   createMessageTemplate(template: InsertMessageTemplate): Promise<MessageTemplate>;
   updateMessageTemplate(id: string, template: Partial<MessageTemplate>): Promise<MessageTemplate | undefined>;
   deleteMessageTemplate(id: string): Promise<void>;
+  
+  // Message Log methods
+  createMessageLog(log: InsertMessageLog): Promise<MessageLog>;
+  getMessageLogs(customerId?: string): Promise<MessageLog[]>;
+  updateMessageLogStatus(id: string, status: string, externalId?: string, errorMessage?: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -455,6 +462,54 @@ export class DbStorage implements IStorage {
 
   async deleteMessageTemplate(id: string): Promise<void> {
     await db.delete(messageTemplates).where(eq(messageTemplates.id, id));
+  }
+
+  // Message Log methods
+  async createMessageLog(log: InsertMessageLog): Promise<MessageLog> {
+    const result = await db.insert(messageLog).values({
+      ...log,
+      sentAt: log.status === 'sent' ? new Date() : null,
+    }).returning();
+    return result[0];
+  }
+
+  async getMessageLogs(customerId?: string): Promise<MessageLog[]> {
+    if (customerId) {
+      return await db
+        .select()
+        .from(messageLog)
+        .where(eq(messageLog.customerId, customerId))
+        .orderBy(desc(messageLog.createdAt));
+    }
+    return await db
+      .select()
+      .from(messageLog)
+      .orderBy(desc(messageLog.createdAt))
+      .limit(100);
+  }
+
+  async updateMessageLogStatus(
+    id: string,
+    status: string,
+    externalId?: string,
+    errorMessage?: string
+  ): Promise<void> {
+    const updates: any = {
+      status,
+      externalId: externalId || null,
+      errorMessage: errorMessage || null,
+    };
+    
+    if (status === 'sent') {
+      updates.sentAt = new Date();
+    } else if (status === 'delivered') {
+      updates.deliveredAt = new Date();
+    }
+
+    await db
+      .update(messageLog)
+      .set(updates)
+      .where(eq(messageLog.id, id));
   }
 }
 
