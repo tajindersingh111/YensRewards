@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema } from "@shared/schema";
+import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -345,6 +345,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting product:", error);
       res.status(500).json({ message: "Failed to delete product" });
+    }
+  });
+
+  // ============ Message Template API Endpoints (Admin Only) ============
+  
+  // Get all message templates
+  app.get('/api/admin/message-templates', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getAllMessageTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  // Get templates by type
+  app.get('/api/admin/message-templates/type/:type', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getMessageTemplatesByType(req.params.type);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  // Get default template for a type
+  app.get('/api/admin/message-templates/default/:type', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const template = await storage.getDefaultMessageTemplate(req.params.type);
+      if (!template) {
+        return res.status(404).json({ message: "No default template found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching default template:", error);
+      res.status(500).json({ message: "Failed to fetch default template" });
+    }
+  });
+
+  // Create message template
+  app.post('/api/admin/message-templates', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertMessageTemplateSchema.parse(req.body);
+      const template = await storage.createMessageTemplate(validatedData);
+      res.status(201).json(template);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: fromError(error).toString() });
+      }
+      console.error("Error creating template:", error);
+      res.status(500).json({ message: "Failed to create template" });
+    }
+  });
+
+  // Update message template
+  app.patch('/api/admin/message-templates/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const template = await storage.updateMessageTemplate(req.params.id, req.body);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating template:", error);
+      res.status(500).json({ message: "Failed to update template" });
+    }
+  });
+
+  // Delete message template
+  app.delete('/api/admin/message-templates/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteMessageTemplate(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      res.status(500).json({ message: "Failed to delete template" });
+    }
+  });
+
+  // ============ Birthday Message Sending Endpoints (Admin Only) ============
+  
+  // Send birthday messages to specific customers
+  app.post('/api/admin/send-birthday-messages', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { customerIds, templateId } = req.body;
+      
+      if (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0) {
+        return res.status(400).json({ message: "Customer IDs required" });
+      }
+
+      // Get template
+      let template;
+      if (templateId) {
+        template = await storage.getMessageTemplate(templateId);
+      } else {
+        template = await storage.getDefaultMessageTemplate('birthday');
+      }
+
+      if (!template) {
+        return res.status(404).json({ message: "No birthday template found" });
+      }
+
+      // Get customers and prepare messages
+      const customers = await Promise.all(
+        customerIds.map(id => storage.getCustomer(id))
+      );
+
+      const sentMessages = customers
+        .filter(customer => customer !== undefined)
+        .map(customer => {
+          if (!customer) return null;
+          
+          // Replace placeholders in template
+          const personalizedMessage = template.message
+            .replace(/{name}/g, customer.name)
+            .replace(/{points}/g, customer.points.toString())
+            .replace(/{tier}/g, customer.tier);
+
+          // TODO: Actually send SMS here (integrate with Twilio or similar)
+          console.log(`Sending birthday message to ${customer.name} (${customer.phone}): ${personalizedMessage}`);
+          
+          return {
+            customerId: customer.id,
+            phone: customer.phone,
+            message: personalizedMessage,
+            sent: true
+          };
+        })
+        .filter(msg => msg !== null);
+
+      res.json({
+        message: `Birthday messages sent to ${sentMessages.length} customers`,
+        sent: sentMessages.length,
+        details: sentMessages
+      });
+    } catch (error) {
+      console.error("Error sending birthday messages:", error);
+      res.status(500).json({ message: "Failed to send birthday messages" });
     }
   });
 

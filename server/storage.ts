@@ -11,9 +11,11 @@ import {
   type InsertCustomerNotification,
   type Product,
   type InsertProduct,
+  type MessageTemplate,
+  type InsertMessageTemplate,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates } from "@shared/schema";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -63,6 +65,15 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<Product>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<void>;
+  
+  // Message Template methods
+  getAllMessageTemplates(): Promise<MessageTemplate[]>;
+  getMessageTemplate(id: string): Promise<MessageTemplate | undefined>;
+  getMessageTemplatesByType(type: string): Promise<MessageTemplate[]>;
+  getDefaultMessageTemplate(type: string): Promise<MessageTemplate | undefined>;
+  createMessageTemplate(template: InsertMessageTemplate): Promise<MessageTemplate>;
+  updateMessageTemplate(id: string, template: Partial<MessageTemplate>): Promise<MessageTemplate | undefined>;
+  deleteMessageTemplate(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -378,6 +389,72 @@ export class DbStorage implements IStorage {
 
   async deleteProduct(id: string): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  // Message Template methods
+  async getAllMessageTemplates(): Promise<MessageTemplate[]> {
+    return await db.select().from(messageTemplates).orderBy(desc(messageTemplates.createdAt));
+  }
+
+  async getMessageTemplate(id: string): Promise<MessageTemplate | undefined> {
+    const result = await db.select().from(messageTemplates).where(eq(messageTemplates.id, id));
+    return result[0];
+  }
+
+  async getMessageTemplatesByType(type: string): Promise<MessageTemplate[]> {
+    return await db
+      .select()
+      .from(messageTemplates)
+      .where(eq(messageTemplates.type, type))
+      .orderBy(desc(messageTemplates.isDefault), desc(messageTemplates.createdAt));
+  }
+
+  async getDefaultMessageTemplate(type: string): Promise<MessageTemplate | undefined> {
+    const result = await db
+      .select()
+      .from(messageTemplates)
+      .where(and(eq(messageTemplates.type, type), eq(messageTemplates.isDefault, true)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createMessageTemplate(insertTemplate: InsertMessageTemplate): Promise<MessageTemplate> {
+    // If this is set as default, unset other defaults for the same type
+    if (insertTemplate.isDefault) {
+      await db
+        .update(messageTemplates)
+        .set({ isDefault: false })
+        .where(eq(messageTemplates.type, insertTemplate.type));
+    }
+
+    const result = await db
+      .insert(messageTemplates)
+      .values(insertTemplate)
+      .returning();
+    
+    return result[0];
+  }
+
+  async updateMessageTemplate(id: string, template: Partial<MessageTemplate>): Promise<MessageTemplate | undefined> {
+    // If this is set as default, unset other defaults for the same type
+    if (template.isDefault && template.type) {
+      await db
+        .update(messageTemplates)
+        .set({ isDefault: false })
+        .where(and(eq(messageTemplates.type, template.type), sql`${messageTemplates.id} != ${id}`));
+    }
+
+    const result = await db
+      .update(messageTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(messageTemplates.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async deleteMessageTemplate(id: string): Promise<void> {
+    await db.delete(messageTemplates).where(eq(messageTemplates.id, id));
   }
 }
 

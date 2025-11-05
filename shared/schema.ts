@@ -91,6 +91,17 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Message Templates table - for birthday and promotional SMS messages
+export const messageTemplates = pgTable("message_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // Template name for reference (e.g., "Birthday - General", "Birthday - VIP")
+  type: text("type").notNull(), // birthday, promotion, etc.
+  message: text("message").notNull(), // Template with placeholders: {name}, {points}, {tier}
+  isDefault: boolean("is_default").notNull().default(false), // Is this the default template for this type?
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -132,6 +143,12 @@ export const insertProductSchema = createInsertSchema(products).omit({
   updatedAt: true,
 });
 
+export const insertMessageTemplateSchema = createInsertSchema(messageTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -151,3 +168,6 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 
 export type CustomerNotification = typeof customerNotifications.$inferSelect;
 export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificationSchema>;
+
+export type MessageTemplate = typeof messageTemplates.$inferSelect;
+export type InsertMessageTemplate = z.infer<typeof insertMessageTemplateSchema>;
