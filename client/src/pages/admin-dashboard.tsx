@@ -11,7 +11,11 @@ import ProductManager from "@/components/ProductManager";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
@@ -24,6 +28,8 @@ export default function AdminDashboard() {
   useAutoUpdate();
   const [, setLocationPath] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [memberStatus, setMemberStatus] = useState<"active" | "inactive">("active");
   const { toast } = useToast();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
@@ -244,7 +250,6 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <InstallPrompt pageName="admin-dashboard" />
             <Button
               onClick={handleLogout}
               variant="outline"
@@ -269,52 +274,175 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <KPICard
-                title="Total Sales"
-                value={analyticsLoading ? "..." : `฿${analytics?.totalSales.toLocaleString() || 0}`}
-                icon={DollarSign}
-                subtitle="All time"
-                data-testid="kpi-total-sales"
-              />
-              <KPICard
-                title="Total Customers"
-                value={analyticsLoading ? "..." : String(analytics?.totalCustomers || 0)}
-                icon={Users}
-                subtitle="Active members"
-                data-testid="kpi-total-customers"
-              />
-              <KPICard
-                title="Avg. Transaction"
-                value={analyticsLoading ? "..." : `฿${Math.round(analytics?.avgTransaction || 0)}`}
-                icon={TrendingUp}
-                data-testid="kpi-avg-transaction"
-              />
-              <KPICard
-                title="Points Redeemed"
-                value={analyticsLoading ? "..." : String(analytics?.pointsRedeemed || 0)}
-                icon={Award}
-                subtitle="All time"
-                data-testid="kpi-points-redeemed"
-              />
+            {/* Branch Selector */}
+            <div className="bg-card rounded-lg p-4 border">
+              <Select defaultValue="all">
+                <SelectTrigger className="w-full md:w-64" data-testid="select-branch">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SalesChart 
-                data={analytics?.salesByLocation || []} 
-                title="Sales by Location" 
-                data-testid="chart-sales-location"
-              />
+            {/* Member Count and Actions */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <p className="text-sm text-muted-foreground" data-testid="text-member-count">
+                All members {customers.length} of 1,000
+              </p>
+              <div className="flex gap-2">
+                <Button variant="default" className="gap-2" data-testid="button-add-member">
+                  <UserPlus className="w-4 h-4" />
+                  Add Member
+                </Button>
+                <Button variant="outline" className="gap-2" data-testid="button-upload-member">
+                  <Upload className="w-4 h-4" />
+                  Upload Member
+                </Button>
+              </div>
             </div>
 
-            {/* Recent Customers */}
-            <CustomerTable
-              customers={customers.slice(0, 5)}
-              onMessage={(id) => console.log("Message customer:", id)}
-              data-testid="table-recent-customers"
-            />
+            {/* Top Spenders */}
+            <div className="bg-card rounded-lg border p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+                <h3 className="font-semibold text-lg">10 Top Spenders</h3>
+              </div>
+              <div className="overflow-x-auto pb-2">
+                <div className="flex gap-4 min-w-max">
+                  {[...customers]
+                    .sort((a, b) => Number(b.totalSpent) - Number(a.totalSpent))
+                    .slice(0, 10)
+                    .map((customer, index) => (
+                      <div 
+                        key={customer.id} 
+                        className="flex flex-col items-center gap-2 w-24"
+                        data-testid={`top-spender-${index + 1}`}
+                      >
+                        <div className="relative">
+                          <Avatar className="w-16 h-16 border-2 border-primary">
+                            <AvatarImage src={customer.photo} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {customer.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -top-1 -left-1 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                        </div>
+                        <p className="text-xs font-medium text-center line-clamp-1">
+                          {customer.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ฿{Number(customer.totalSpent).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Active/Inactive Tabs and Search */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex gap-2">
+                <Button
+                  variant={memberStatus === "active" ? "default" : "outline"}
+                  onClick={() => setMemberStatus("active")}
+                  data-testid="button-filter-active"
+                >
+                  Active
+                </Button>
+                <Button
+                  variant={memberStatus === "inactive" ? "default" : "outline"}
+                  onClick={() => setMemberStatus("inactive")}
+                  data-testid="button-filter-inactive"
+                >
+                  Inactive
+                </Button>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search member"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-member"
+                />
+              </div>
+            </div>
+
+            {/* Customer Table */}
+            <div className="bg-card rounded-lg border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr className="border-b">
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Member</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Tier</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Phone</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Email</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Birthday</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Spending</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customers
+                      .filter(c => {
+                        // Filter by active/inactive status (active = has spent money)
+                        const isActive = Number(c.totalSpent) > 0;
+                        const matchesStatus = memberStatus === "active" ? isActive : !isActive;
+                        
+                        // Filter by search query
+                        const matchesSearch = searchQuery === "" || 
+                          c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          c.phone.includes(searchQuery) ||
+                          (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase()));
+                        
+                        return matchesStatus && matchesSearch;
+                      })
+                      .slice(0, 10)
+                      .map((customer) => (
+                        <tr key={customer.id} className="border-b hover-elevate" data-testid={`row-customer-${customer.id}`}>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={customer.photo} />
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {customer.name.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{customer.name}</span>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                customer.tier === "gold" ? "border-yellow-500 text-yellow-700 dark:text-yellow-500" :
+                                customer.tier === "silver" ? "border-gray-400 text-gray-700 dark:text-gray-400" :
+                                "border-orange-600 text-orange-700 dark:text-orange-500"
+                              }
+                            >
+                              {customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">{customer.phone}</td>
+                          <td className="p-4 text-sm text-muted-foreground">{customer.email || "-"}</td>
+                          <td className="p-4 text-sm text-muted-foreground">{customer.birthday || "-"}</td>
+                          <td className="p-4 text-sm font-medium">฿{Number(customer.totalSpent).toLocaleString()}</td>
+                          <td className="p-4 text-sm font-medium">{customer.points}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="customers" className="space-y-6">
