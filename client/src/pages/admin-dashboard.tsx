@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy } from "lucide-react";
+import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy, Cake } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
@@ -350,6 +350,165 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Birthday This Week */}
+            {(() => {
+              // Calculate birthdays for this week
+              const today = new Date();
+              today.setHours(0, 0, 0, 0); // Zero out time for accurate comparison
+              
+              const startOfWeek = new Date(today);
+              startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
+              startOfWeek.setHours(0, 0, 0, 0); // Zero out time
+              
+              const endOfWeek = new Date(startOfWeek);
+              endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
+              endOfWeek.setHours(23, 59, 59, 999); // End of Saturday
+
+              // Group customers by birthday day
+              const birthdaysByDay: { [key: string]: typeof customers } = {};
+              
+              customers.forEach(customer => {
+                if (customer.birthday) {
+                  // Handle both MM-DD and YYYY-MM-DD formats
+                  let month: number;
+                  let day: number;
+                  
+                  const parts = customer.birthday.split('-');
+                  if (parts.length === 2) {
+                    // MM-DD format
+                    [month, day] = [parseInt(parts[0]), parseInt(parts[1])];
+                  } else if (parts.length === 3) {
+                    // YYYY-MM-DD format - extract month and day only
+                    [, month, day] = parts.map((p: string) => parseInt(p));
+                  } else {
+                    // Invalid format, skip
+                    return;
+                  }
+                  
+                  // Validate month and day
+                  if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+                    return;
+                  }
+                  
+                  // Handle Feb 29 on non-leap years - move to Feb 28
+                  let adjustedDay = day;
+                  if (month === 2 && day === 29) {
+                    const isLeapYear = (today.getFullYear() % 4 === 0 && today.getFullYear() % 100 !== 0) || 
+                                      (today.getFullYear() % 400 === 0);
+                    if (!isLeapYear) {
+                      adjustedDay = 28;
+                    }
+                  }
+                  
+                  // Create birthday for this year
+                  let birthdayThisYear = new Date(today.getFullYear(), month - 1, adjustedDay);
+                  birthdayThisYear.setHours(0, 0, 0, 0);
+                  
+                  // Handle year-spanning weeks (e.g., Dec 29 - Jan 4)
+                  // If birthday falls before the week start, try next year
+                  if (birthdayThisYear < startOfWeek) {
+                    birthdayThisYear = new Date(today.getFullYear() + 1, month - 1, adjustedDay);
+                    birthdayThisYear.setHours(0, 0, 0, 0);
+                  }
+                  // If birthday falls after the week end, try previous year
+                  else if (birthdayThisYear > endOfWeek) {
+                    birthdayThisYear = new Date(today.getFullYear() - 1, month - 1, adjustedDay);
+                    birthdayThisYear.setHours(0, 0, 0, 0);
+                  }
+                  
+                  if (birthdayThisYear >= startOfWeek && birthdayThisYear <= endOfWeek) {
+                    // Use local date components to avoid timezone shifts
+                    const year = birthdayThisYear.getFullYear();
+                    const m = String(birthdayThisYear.getMonth() + 1).padStart(2, '0');
+                    const d = String(birthdayThisYear.getDate()).padStart(2, '0');
+                    const dayKey = `${year}-${m}-${d}`;
+                    
+                    if (!birthdaysByDay[dayKey]) {
+                      birthdaysByDay[dayKey] = [];
+                    }
+                    birthdaysByDay[dayKey].push(customer);
+                  }
+                }
+              });
+
+              // Convert to sorted array
+              const birthdayDays = Object.entries(birthdaysByDay)
+                .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+                .map(([date, customers]) => {
+                  // Parse date using local components to avoid timezone issues
+                  const [year, month, day] = date.split('-').map((p: string) => parseInt(p));
+                  const dayDate = new Date(year, month - 1, day);
+                  dayDate.setHours(0, 0, 0, 0);
+                  
+                  const isToday = dayDate.toDateString() === today.toDateString();
+                  const isTomorrow = dayDate.toDateString() === new Date(today.getTime() + 86400000).toDateString();
+                  
+                  let dayLabel = '';
+                  if (isToday) dayLabel = 'Today';
+                  else if (isTomorrow) dayLabel = 'Tomorrow';
+                  else dayLabel = dayDate.toLocaleDateString('en-US', { weekday: 'long' });
+                  
+                  const dateLabel = dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  
+                  return { date, dayLabel, dateLabel, customers };
+                });
+
+              if (birthdayDays.length === 0) return null;
+
+              return (
+                <div className="bg-card rounded-lg border p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Cake className="w-5 h-5 text-[#FCD34D]" />
+                    <h3 className="font-semibold text-lg">Birthdays This Week</h3>
+                  </div>
+                  <div className="overflow-x-auto pb-2">
+                    <div className="flex gap-4 min-w-max">
+                      {birthdayDays.map(({ date, dayLabel, dateLabel, customers }) => (
+                        <div 
+                          key={date}
+                          className="bg-gradient-to-br from-[#FCD34D]/10 to-[#3B82F6]/10 rounded-lg p-4 border-2 border-[#FCD34D]/30 min-w-[200px]"
+                          data-testid={`birthday-card-${date}`}
+                        >
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#FCD34D]/20">
+                            <Cake className="w-4 h-4 text-[#FCD34D]" />
+                            <div>
+                              <p className="font-semibold text-sm">{dayLabel}</p>
+                              <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            {customers.map(customer => (
+                              <div 
+                                key={customer.id}
+                                className="flex items-center gap-3 p-2 rounded-md hover-elevate"
+                                data-testid={`birthday-customer-${customer.id}`}
+                              >
+                                <div className="relative w-10 h-10">
+                                  <Avatar className="w-10 h-10 border-2 border-[#FCD34D]">
+                                    <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                                      {customer.name.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  {customer.photo && (
+                                    <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{customer.name}</p>
+                                  <p className="text-xs text-muted-foreground">{customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Active/Inactive Tabs and Search */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
