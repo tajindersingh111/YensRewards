@@ -107,7 +107,23 @@ Preferred communication style: Simple, everyday language.
   - Auth error handling: `isUnauthorizedError` and `isForbiddenError` utilities detect auth failures
   - Login flow: `/api/login` → Replit OAuth → callback → session creation → redirect to dashboard
   - Logout endpoint: `/api/logout` clears session and redirects to home
-- **Database Schema:** Comprehensive PostgreSQL schema including `customers`, `transactions`, `promotions`, `products`, `referrals`, and `users` tables, managed with Drizzle ORM.
+- **Database Schema:** Comprehensive PostgreSQL schema including `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, and `message_log` tables, managed with Drizzle ORM.
+- **Messaging System:**
+  - **Twilio Integration:** Fully configured SMS delivery via Replit Twilio connector
+  - **Multi-Channel Support:** Send messages via SMS, Email, or Both channels
+  - **Message Templates:** Admin-managed templates with placeholder substitution ({name}, {tier}, {points})
+  - **Template Types:** Birthday, Promotion, Reminder categories with default template system
+  - **Message Logging:** Comprehensive tracking of all sent messages in `message_log` table:
+    - Status tracking (pending, sent, failed, delivered)
+    - External IDs (Twilio SID for SMS)
+    - Error messages for failed deliveries
+    - Delivery timestamps
+  - **Birthday Messaging:** Automated birthday message sending with daily/weekly batch capabilities
+  - **Template Management UI:** Full CRUD interface in Admin Settings tab with:
+    - Channel selector (SMS/Email/Both)
+    - Conditional email subject field
+    - Live preview with placeholder substitution
+    - Default template designation per type
 - **Core Features:**
     - **Customer Loyalty:** Point accumulation (1 point per ฿10), tier management (Bronze/Silver/Gold).
     - **Transaction Processing:** Barista app with multi-step transaction flow, customer verification via QR or phone lookup, receipt amount entry, and point calculation.
@@ -128,4 +144,5 @@ Preferred communication style: Simple, everyday language.
 - **Development Tools:** Vite, TypeScript, PostCSS with Tailwind and Autoprefixer.
 - **Form & Validation:** React Hook Form, `@hookform/resolvers` (for Zod integration).
 - **Session Management:** `connect-pg-simple` for PostgreSQL session storage.
+- **Messaging Services:** Twilio for SMS delivery (via Replit Twilio connector).
 - **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid`.
