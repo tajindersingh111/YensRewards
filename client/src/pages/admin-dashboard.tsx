@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy, Cake } from "lucide-react";
+import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy, Cake, Send } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
@@ -456,11 +456,61 @@ export default function AdminDashboard() {
 
               if (birthdayDays.length === 0) return null;
 
+              // Get all customer IDs for the week
+              const allWeekCustomerIds = birthdayDays.flatMap(day => day.customers.map(c => c.id));
+
+              // Send birthday messages mutation
+              const sendBirthdayMessagesMutation = useMutation({
+                mutationFn: async (customerIds: string[]) => {
+                  return await apiRequest('/api/admin/send-birthday-messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customerIds }),
+                  });
+                },
+                onSuccess: (data: any) => {
+                  toast({
+                    title: "Birthday Messages Sent!",
+                    description: `Successfully sent ${data.sent} birthday message${data.sent !== 1 ? 's' : ''}`,
+                  });
+                },
+                onError: (error: any) => {
+                  toast({
+                    title: "Failed to send messages",
+                    description: error.message || "An error occurred",
+                    variant: "destructive",
+                  });
+                },
+              });
+
+              const handleSendWeek = () => {
+                if (allWeekCustomerIds.length > 0) {
+                  sendBirthdayMessagesMutation.mutate(allWeekCustomerIds);
+                }
+              };
+
+              const handleSendDay = (customerIds: string[]) => {
+                if (customerIds.length > 0) {
+                  sendBirthdayMessagesMutation.mutate(customerIds);
+                }
+              };
+
               return (
                 <div className="bg-card rounded-lg border p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Cake className="w-5 h-5 text-[#FCD34D]" />
-                    <h3 className="font-semibold text-lg">Birthdays This Week</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Cake className="w-5 h-5 text-[#FCD34D]" />
+                      <h3 className="font-semibold text-lg">Birthdays This Week</h3>
+                    </div>
+                    <Button
+                      onClick={handleSendWeek}
+                      disabled={sendBirthdayMessagesMutation.isPending || allWeekCustomerIds.length === 0}
+                      className="bg-[#FCD34D] hover:bg-[#FCD34D]/90 text-gray-900"
+                      data-testid="button-send-all-week"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Send All Week ({allWeekCustomerIds.length})
+                    </Button>
                   </div>
                   <div className="overflow-x-auto pb-2">
                     <div className="flex gap-4 min-w-max">
@@ -477,7 +527,7 @@ export default function AdminDashboard() {
                               <p className="text-xs text-muted-foreground">{dateLabel}</p>
                             </div>
                           </div>
-                          <div className="space-y-3">
+                          <div className="space-y-3 mb-3">
                             {customers.map(customer => (
                               <div 
                                 key={customer.id}
@@ -502,6 +552,16 @@ export default function AdminDashboard() {
                               </div>
                             ))}
                           </div>
+                          <Button
+                            onClick={() => handleSendDay(customers.map(c => c.id))}
+                            disabled={sendBirthdayMessagesMutation.isPending}
+                            className="w-full bg-[#FCD34D] hover:bg-[#FCD34D]/90 text-gray-900"
+                            size="sm"
+                            data-testid={`button-send-day-${date}`}
+                          >
+                            <Send className="w-3 h-3 mr-2" />
+                            Send ({customers.length})
+                          </Button>
                         </div>
                       ))}
                     </div>
