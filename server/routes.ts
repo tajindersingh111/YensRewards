@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
+import { sendEmail } from "./resend";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -498,11 +499,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Send via Email if channel includes Email
             let emailResult = null;
             if (template.channel === 'email' || template.channel === 'both') {
-              if (customer.email) {
-                // TODO: Implement email sending when email service is configured
-                console.log(`Email sending not yet configured for ${customer.email}`);
+              if (customer.email && personalizedSubject) {
+                emailResult = await sendEmail(customer.email, personalizedSubject, personalizedMessage);
                 
-                // Log the email message as pending
+                // Log the email message
                 await storage.createMessageLog({
                   customerId: customer.id,
                   templateId: template.id,
@@ -510,9 +510,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   recipient: customer.email,
                   subject: personalizedSubject,
                   message: personalizedMessage,
-                  status: 'pending',
-                  externalId: null,
-                  errorMessage: 'Email service not configured',
+                  status: emailResult.success ? 'sent' : 'failed',
+                  externalId: emailResult.messageId || null,
+                  errorMessage: emailResult.error || null,
                 });
               }
             }
@@ -639,7 +639,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // TODO: If email, attempt to resend when email service is configured
+      // If email, attempt to resend immediately
+      if (messageLog.channel === 'email') {
+        try {
+          const subject = messageLog.subject || 'Message from Yens Thai Ice Cream';
+          const emailResult = await sendEmail(messageLog.recipient, subject, messageLog.message);
+          
+          if (emailResult.success && emailResult.messageId) {
+            await storage.updateMessageLogStatus(
+              id,
+              'sent',
+              emailResult.messageId,
+              undefined
+            );
+          } else {
+            await storage.updateMessageLogStatus(
+              id,
+              'failed',
+              undefined,
+              emailResult.error || 'Unknown error'
+            );
+          }
+        } catch (error) {
+          await storage.updateMessageLogStatus(
+            id,
+            'failed',
+            undefined,
+            error instanceof Error ? error.message : 'Failed to send email'
+          );
+        }
+      }
 
       res.json({ message: "Message retry initiated" });
     } catch (error) {
