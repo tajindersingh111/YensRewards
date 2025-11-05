@@ -77,6 +77,25 @@ Preferred communication style: Simple, everyday language.
   - Search functionality across name, phone, email
   - Enhanced customer table with tier badges, spending, points
   - **YELLOW BRAND TINT ON PHOTOS** - All customer profile photos display with Yens yellow (#FCD34D) overlay for brand consistency
+- **MESSAGES TAB (NEW)** - Complete message history and analytics:
+  - **Statistics Dashboard** - Real-time metrics cards showing:
+    - Total messages sent
+    - Delivered, Failed, and Pending counts
+    - SMS vs Email breakdown
+  - **Message History Table** - Comprehensive audit trail with:
+    - Date, Channel, Recipient, Message preview, Status
+    - Customer names enriched from database
+    - Color-coded status badges (delivered/green, sent/blue, failed/red, pending/yellow)
+    - Error messages displayed for failed deliveries
+  - **Advanced Filtering** - Multi-dimensional search:
+    - Status filter (All, Pending, Sent, Delivered, Failed)
+    - Channel filter (All, SMS, Email)
+    - Recipient search (phone or email)
+  - **Retry Functionality** - One-click retry for failed messages:
+    - Manual retry button for failed SMS messages
+    - Automatic Twilio resend on retry
+    - Status updates in real-time
+    - Error tracking for failed retries
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
