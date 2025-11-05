@@ -59,6 +59,13 @@ Preferred communication style: Simple, everyday language.
 - Status: Production ready
 
 **ADMIN DASHBOARD - v88**
+- **OVERVIEW TAB REDESIGNED** - Modern layout with:
+  - Branch selector dropdown (defaults to "All Branches")
+  - Member count display with Add/Upload action buttons
+  - Top 10 Spenders horizontal scroll section with numbered avatar badges
+  - Active/Inactive filter tabs (active = totalSpent > 0)
+  - Search functionality across name, phone, email
+  - Enhanced customer table with tier badges, spending, points
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
