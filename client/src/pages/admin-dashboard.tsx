@@ -155,18 +155,14 @@ export default function AdminDashboard() {
   const sendBirthdayMessagesMutation = useMutation({
     mutationFn: async (customerIds: string[]) => {
       const response = await apiRequest('POST', '/api/admin/send-birthday-messages', { customerIds });
-      const data = await response.json();
-      console.log('Birthday messages API response:', data);
-      return data;
+      return await response.json();
     },
     onSuccess: (data: any) => {
-      console.log('Mutation onSuccess received data:', data);
       // Invalidate messages queries to refresh statistics
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
       
-      const sentCount = data?.sent || 0;
-      console.log('Extracted sentCount:', sentCount);
+      const sentCount = data?.sent || data?.total || 0;
       toast({
         title: "Birthday Messages Sent!",
         description: `Successfully sent ${sentCount} birthday message${sentCount !== 1 ? 's' : ''}`,
