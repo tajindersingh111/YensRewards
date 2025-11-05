@@ -149,6 +149,37 @@ export default function AdminDashboard() {
     },
   });
 
+  // Send birthday messages mutation
+  const sendBirthdayMessagesMutation = useMutation({
+    mutationFn: async (customerIds: string[]) => {
+      return await apiRequest('POST', '/api/admin/send-birthday-messages', { customerIds });
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Birthday Messages Sent!",
+        description: `Successfully sent ${data.sent} birthday message${data.sent !== 1 ? 's' : ''}`,
+      });
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error) || isForbiddenError(error)) {
+        toast({
+          title: "Session Expired",
+          description: "Please log in again",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Failed to send messages",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleImportCSV = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -459,30 +490,7 @@ export default function AdminDashboard() {
               // Get all customer IDs for the week
               const allWeekCustomerIds = birthdayDays.flatMap(day => day.customers.map(c => c.id));
 
-              // Send birthday messages mutation
-              const sendBirthdayMessagesMutation = useMutation({
-                mutationFn: async (customerIds: string[]) => {
-                  return await apiRequest('/api/admin/send-birthday-messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ customerIds }),
-                  });
-                },
-                onSuccess: (data: any) => {
-                  toast({
-                    title: "Birthday Messages Sent!",
-                    description: `Successfully sent ${data.sent} birthday message${data.sent !== 1 ? 's' : ''}`,
-                  });
-                },
-                onError: (error: any) => {
-                  toast({
-                    title: "Failed to send messages",
-                    description: error.message || "An error occurred",
-                    variant: "destructive",
-                  });
-                },
-              });
-
+              // Handlers for sending messages
               const handleSendWeek = () => {
                 if (allWeekCustomerIds.length > 0) {
                   sendBirthdayMessagesMutation.mutate(allWeekCustomerIds);
