@@ -79,8 +79,17 @@ Preferred communication style: Simple, everyday language.
 - **Monorepo Structure:** `/client` (React app), `/server` (Express API), `/shared` (common types/schemas) for code sharing and separation of concerns.
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
-- **Authentication:** Replit Auth integrated for barista/admin login, session management using `connect-pg-simple`.
-- **Database Schema:** Comprehensive PostgreSQL schema including `customers`, `transactions`, `promotions`, `products`, and `referrals` tables, managed with Drizzle ORM.
+- **Authentication & Authorization:** 
+  - Replit Auth (OpenID Connect) integrated for admin/barista login
+  - Session management using `connect-pg-simple` with PostgreSQL session store
+  - Role-based access control: users table has `role` field ("admin" or "barista")
+  - Admin dashboard protected with `isAuthenticated` and `isAdmin` middleware
+  - All admin API endpoints (`/api/admin/*`) require authentication and admin role
+  - Frontend uses `useAuth` hook for authentication state, redirects unauthorized users to login
+  - Auth error handling: `isUnauthorizedError` and `isForbiddenError` utilities detect auth failures
+  - Login flow: `/api/login` → Replit OAuth → callback → session creation → redirect to dashboard
+  - Logout endpoint: `/api/logout` clears session and redirects to home
+- **Database Schema:** Comprehensive PostgreSQL schema including `customers`, `transactions`, `promotions`, `products`, `referrals`, and `users` tables, managed with Drizzle ORM.
 - **Core Features:**
     - **Customer Loyalty:** Point accumulation (1 point per ฿10), tier management (Bronze/Silver/Gold).
     - **Transaction Processing:** Barista app with multi-step transaction flow, customer verification via QR or phone lookup, receipt amount entry, and point calculation.
