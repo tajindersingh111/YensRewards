@@ -23,6 +23,7 @@ function Router() {
       <Route path="/menu" component={CustomerMenu} />
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/qr/:appType" component={QRDisplay} />
       <Route path="/qr" component={QRDisplay} />
       <Route path="/camera-test" component={CameraTest} />
