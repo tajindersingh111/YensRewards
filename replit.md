@@ -66,6 +66,7 @@ Preferred communication style: Simple, everyday language.
   - Active/Inactive filter tabs (active = totalSpent > 0)
   - Search functionality across name, phone, email
   - Enhanced customer table with tier badges, spending, points
+  - **YELLOW BRAND TINT ON PHOTOS** - All customer profile photos display with Yens yellow (#FCD34D) overlay for brand consistency
 - Full analytics, customer management, product manager, promotions
 - Responsive grid layouts (1 col mobile → 4 cols desktop)
 - Mobile-optimized with proper font scaling
