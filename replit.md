@@ -10,12 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Development Status
 
-**SYSTEM VERSION: v88** 🚀
+**SYSTEM VERSION: v89** 🚀
 - Unified version across all apps for easier tracking
 - All apps display version number in header
 - **MOBILE-FIRST RESPONSIVE DESIGN** optimized for iPhone and Android
 
-**RECENT FIXES (v65-v88):**
+**RECENT FIXES (v65-v89):**
 - ✅ **5-SECOND REFRESH LOOP FIXED** (v65) - Service worker unregister code added to HTML <head> tag
 - ✅ **AUTO-POLLING DISABLED** (v65) - Turned off all refetchInterval (was polling every 3-30 seconds)
 - ✅ **ANDROID SCREEN WIDTH FIXED** (v68) - Removed max-width constraints; app now fills full screen on all devices
@@ -36,6 +36,7 @@ Preferred communication style: Simple, everyday language.
 - ✅ **COMPACT SIZING FIX** (v86) - QR code padding reduced (p-16→p-6) to fill yellow border better; Points card compressed (p-14→p-8, gaps reduced) to match QR code height and create square shape
 - ✅ **iOS PROPORTION MATCHING** (v87) - QR code (p-6→p-4, text reduced), Points card (p-8→p-6, text-9xl→text-7xl, all gaps minimized), Message box (p-6→p-4, border-4→border-2, lighter text), max-width (600px→420px) to perfectly match iOS reference
 - ✅ **SCALE COMPENSATION FIX** (v88) - **CRITICAL:** Since 24px base = 1.5x scaling, reduced ALL utilities to compensate: QR (p-4→p-3, gap-3→gap-2, text-lg→text-base), Points (p-6→p-4, text-7xl→text-5xl, gap-2→gap-1.5), Message (p-4→p-3, text-base→text-sm, text-sm→text-xs), max-width (420px→400px) to achieve true iOS visual parity
+- ✅ **BIRTHDAY REDESIGN** (v89) - **ADMIN DASHBOARD:** Replaced daily cards with time-based groupings (Today, Tomorrow, This Week, This Month); moved send buttons to bottom of cards using flex-col layout; improved date range labels and card layout
 - 🧹 **UI CLEANUP** (v68) - Removed diagnostic boxes, version badges, and debug text for clean professional look
 
 **CUSTOMER APP - v88**
@@ -58,20 +59,22 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional UI
 - Status: Production ready
 
-**ADMIN DASHBOARD - v88**
+**ADMIN DASHBOARD - v89**
 - **OVERVIEW TAB REDESIGNED** - Modern layout with:
   - Branch selector dropdown (defaults to "All Branches")
   - Member count display with Add/Upload action buttons
   - Top 10 Spenders horizontal scroll section with numbered avatar badges
-  - **BIRTHDAYS THIS WEEK** - Displays customers with birthdays in the current week (Sunday-Saturday):
-    - Daily cards with Yens yellow/blue gradient styling
-    - Only shows days with birthdays (no empty cards)
-    - Cake icons and relative date labels ("Today", "Tomorrow", day names)
+  - **UPCOMING BIRTHDAYS** - Time-based birthday grouping system:
+    - Four time-based groups: Today, Tomorrow, This Week, This Month
+    - Only shows groups with birthdays (no empty cards)
+    - Cards with Yens yellow/blue gradient styling
+    - Cake icons and date range labels for each group
     - Customer avatars with 40% yellow tint overlay
-    - Horizontal scrollable layout
+    - Send buttons positioned at bottom of each card (flex-col layout)
+    - Horizontal scrollable card layout (min-width: 220px)
     - Handles both MM-DD and YYYY-MM-DD date formats
     - Leap year support (Feb 29 → Feb 28 on non-leap years)
-    - Year-spanning week handling (e.g., Dec 29-Jan 4)
+    - Month-spanning week handling (e.g., Dec 29-Jan 4)
     - Timezone-safe using local date components
   - Active/Inactive filter tabs (active = totalSpent > 0)
   - Search functionality across name, phone, email
@@ -123,45 +126,48 @@ Preferred communication style: Simple, everyday language.
   - Admin dashboard protected with `isAuthenticated` and `isAdmin` middleware
   - All admin API endpoints (`/api/admin/*`) require authentication and admin role
   - Frontend uses `useAuth` hook for authentication state, redirects unauthorized users to login
-  - Auth error handling: `isUnauthorizedError` and `isForbiddenError` utilities detect auth failures
-  - Login flow: `/api/login` → Replit OAuth → callback → session creation → redirect to dashboard
-  - Logout endpoint: `/api/logout` clears session and redirects to home
-- **Database Schema:** Comprehensive PostgreSQL schema including `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, and `message_log` tables, managed with Drizzle ORM.
-- **Messaging System:**
-  - **Twilio Integration:** Fully configured SMS delivery via Replit Twilio connector
-  - **Multi-Channel Support:** Send messages via SMS, Email, or Both channels
-  - **Message Templates:** Admin-managed templates with placeholder substitution ({name}, {tier}, {points})
-  - **Template Types:** Birthday, Promotion, Reminder categories with default template system
-  - **Message Logging:** Comprehensive tracking of all sent messages in `message_log` table:
-    - Status tracking (pending, sent, failed, delivered)
-    - External IDs (Twilio SID for SMS)
-    - Error messages for failed deliveries
-    - Delivery timestamps
-  - **Birthday Messaging:** Automated birthday message sending with daily/weekly batch capabilities
-  - **Template Management UI:** Full CRUD interface in Admin Settings tab with:
-    - Channel selector (SMS/Email/Both)
-    - Conditional email subject field
-    - Live preview with placeholder substitution
-    - Default template designation per type
-- **Core Features:**
-    - **Customer Loyalty:** Point accumulation (1 point per ฿10), tier management (Bronze/Silver/Gold).
-    - **Transaction Processing:** Barista app with multi-step transaction flow, customer verification via QR or phone lookup, receipt amount entry, and point calculation.
-    - **Customer Management:** Self-registration, profile management, transaction history, referral tracking.
-    - **Admin Analytics:** Real-time KPIs (sales, customers, average transaction, points redeemed), sales by location, customer list management with CSV export.
-    - **Promotions:** Tier-based promotion system with in-app notification badges and PWA badge API integration.
-    - **Product Menu System:** Visual product catalog with categories (Soft Serve, Milk Tea, Fruit Tea, Shakes, Sundaes, Float Drinks), promotional badges (New, Popular, Limited Time, On Sale), featured items, and admin CRUD interface for menu management. Accessible to customers via `/menu` route with category filtering and responsive card layout.
+- **Database Schema:** 
+  - `customers` table: Core customer data (name, phone, email, birthday, photo, tier, points, totalSpent)
+  - `transactions` table: Purchase records (customer, amount, points earned/redeemed)
+  - `promotions` table: Tier-based promotions with message templates
+  - `products` table: Product catalog with pricing
+  - `referrals` table: Tracks referral relationships (referrer → referred)
+  - `users` table: Admin/barista authentication (email, role, created via Replit Auth)
+  - `message_templates` table: Multi-channel message templates (SMS/Email/Both) with placeholders
+  - `message_log` table: Complete message delivery audit trail with status tracking
+  - All managed with Drizzle ORM, type-safe migrations
+- **Messaging System:** 
+  - **Twilio Integration:** SMS sending via Replit Twilio connector for transactional messages
+  - **Resend Integration:** Email sending via Replit Resend connector for marketing/transactional emails
+  - **Multi-channel Support:** Templates support SMS only, Email only, or Both channels
+  - **Template Management:** Admin-managed message templates with dynamic placeholder substitution ({name}, {tier}, {points})
+  - **Message Logging:** Comprehensive logging of all sent messages with status tracking (pending, sent, delivered, failed)
+  - **Automated Birthday Messaging:** System automatically sends birthday messages through configured channels
+  - **Retry Functionality:** Failed messages can be retried with one click from admin dashboard
+- **Core Features:** 
+  - Customer loyalty (point accumulation, tier management with Bronze/Silver/Gold/Platinum)
+  - Transaction processing via Barista app with QR code scanning and receipt OCR
+  - Customer management (self-registration, profile with photo upload, transaction history, referral tracking)
+  - Admin analytics (KPIs dashboard, sales reporting, customer lifetime value, CSV export)
+  - Tier-based promotions with in-app notifications and message delivery
+  - Product menu system with admin CRUD operations
+  - Birthday tracking with automated multi-channel messaging
 
 ### System Design Choices
-- **Type Safety:** End-to-end TypeScript with shared Zod schemas for both client and server.
-- **Scalability:** Interface-based storage design allows swapping between in-memory and database persistence; serverless-ready with Neon PostgreSQL.
-- **Progressive Enhancement:** Mock functionality used during development to allow parallel UI and backend development, with real implementations integrated incrementally.
+- **Type Safety:** End-to-end TypeScript with shared Zod schemas for validation across frontend and backend
+- **Scalability:** Interface-based storage design allows easy switching from in-memory to database persistence; serverless-ready architecture
+- **Progressive Enhancement:** Mock functionality used during development for parallel UI and backend development
+- **Mobile-First:** All interfaces optimized for mobile devices with responsive breakpoints for tablet/desktop
+- **Brand Consistency:** Yens yellow (#FCD34D) color scheme applied throughout all apps with professional polish
 
 ## External Dependencies
 
-- **UI Components:** Radix UI primitives, Shadcn UI, Lucide React for icons, `date-fns` for date manipulation.
-- **Database & ORM:** Neon serverless PostgreSQL, Drizzle ORM, Drizzle Kit for migrations, Drizzle Zod for validation.
-- **Development Tools:** Vite, TypeScript, PostCSS with Tailwind and Autoprefixer.
-- **Form & Validation:** React Hook Form, `@hookform/resolvers` (for Zod integration).
-- **Session Management:** `connect-pg-simple` for PostgreSQL session storage.
-- **Messaging Services:** Twilio for SMS delivery (via Replit Twilio connector).
-- **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid`.
+- **UI Components:** Radix UI primitives, Shadcn UI, Lucide React (icons), `date-fns` for date manipulation
+- **Database & ORM:** Neon serverless PostgreSQL, Drizzle ORM, Drizzle Kit, Drizzle Zod for schema validation
+- **Development Tools:** Vite, TypeScript, PostCSS with Tailwind and Autoprefixer
+- **Form & Validation:** React Hook Form, `@hookform/resolvers` (for Zod integration)
+- **Session Management:** `connect-pg-simple` for PostgreSQL-backed session storage
+- **Messaging Services:** 
+  - Twilio (via Replit Twilio connector) for SMS delivery
+  - Resend (via Replit Resend connector) for email delivery
+- **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid` for ID generation
