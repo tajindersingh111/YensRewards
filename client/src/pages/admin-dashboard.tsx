@@ -324,12 +324,17 @@ export default function AdminDashboard() {
                         data-testid={`top-spender-${index + 1}`}
                       >
                         <div className="relative">
-                          <Avatar className="w-16 h-16 border-2 border-primary">
-                            <AvatarImage src={customer.photo} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {customer.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                          <div className="relative w-16 h-16">
+                            <Avatar className="w-16 h-16 border-2 border-primary">
+                              <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                {customer.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {customer.photo && (
+                              <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                            )}
+                          </div>
                           <div className="absolute -top-1 -left-1 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
                           </div>
@@ -411,12 +416,17 @@ export default function AdminDashboard() {
                         <tr key={customer.id} className="border-b hover-elevate" data-testid={`row-customer-${customer.id}`}>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10">
-                                <AvatarImage src={customer.photo} />
-                                <AvatarFallback className="bg-primary/10 text-primary">
-                                  {customer.name.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
+                              <div className="relative w-10 h-10">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                                  <AvatarFallback className="bg-primary/10 text-primary">
+                                    {customer.name.slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {customer.photo && (
+                                  <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                                )}
+                              </div>
                               <span className="font-medium">{customer.name}</span>
                             </div>
                           </td>
