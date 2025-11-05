@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -11,10 +11,12 @@ import ProductManager from "@/components/ProductManager";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Users, TrendingUp, Award, ArrowLeft } from "lucide-react";
+import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
+import { useAuth } from "@/hooks/useAuth";
+import { isUnauthorizedError, isForbiddenError } from "@/lib/authUtils";
 import type { Customer } from "@shared/schema";
 
 export default function AdminDashboard() {
@@ -23,6 +25,34 @@ export default function AdminDashboard() {
   const [, setLocationPath] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated or not admin
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to access the admin dashboard",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+
+    if (!authLoading && isAuthenticated && user?.role !== "admin") {
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin privileges",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        setLocationPath("/");
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, authLoading, user, toast, setLocationPath]);
 
   // Fetch analytics data
   const { data: analytics, isLoading: analyticsLoading } = useQuery<{
@@ -33,11 +63,15 @@ export default function AdminDashboard() {
     salesByLocation: Array<{ label: string; value: number }>;
   }>({
     queryKey: ['/api/admin/analytics'],
+    enabled: isAuthenticated && user?.role === "admin",
+    retry: false,
   });
 
   // Fetch all customers
   const { data: customersData = [], isLoading: customersLoading } = useQuery<any[]>({
     queryKey: ['/api/admin/customers'],
+    enabled: isAuthenticated && user?.role === "admin",
+    retry: false,
   });
 
   // Transform customers to ensure proper tier types
@@ -58,7 +92,18 @@ export default function AdminDashboard() {
         description: "Promotion sent successfully!",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error) || isForbiddenError(error)) {
+        toast({
+          title: "Session Expired",
+          description: "Please log in again",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       toast({
         title: "Error",
         description: "Failed to send promotion",
@@ -78,7 +123,18 @@ export default function AdminDashboard() {
         description: `${data.imported || 0} customers imported successfully`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error) || isForbiddenError(error)) {
+        toast({
+          title: "Session Expired",
+          description: "Please log in again",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       toast({
         title: "Import Failed",
         description: error.message || "Failed to import customers",
@@ -141,6 +197,26 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated or not admin (will redirect)
+  if (!isAuthenticated || user?.role !== "admin") {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -162,8 +238,22 @@ export default function AdminDashboard() {
                 <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
               <span className="text-xs text-muted-foreground" data-testid="text-version">v88</span>
               </div>
-              <p className="text-sm text-muted-foreground">Yens Loyalty System</p>
+              <p className="text-sm text-muted-foreground">
+                Logged in as: {user?.email || user?.firstName || "Admin"}
+              </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <InstallPrompt pageName="admin-dashboard" />
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </div>
         </div>
       </header>
