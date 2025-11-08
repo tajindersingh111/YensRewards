@@ -40,6 +40,10 @@ export default function EnhancedMessaging() {
   // Fetch filtered customers
   const { data: customers = [], isLoading, refetch } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers/filter', filters],
+    queryFn: async () => {
+      const response = await apiRequest('POST', '/api/admin/customers/filter', filters);
+      return response;
+    },
   });
 
   // Apply quick search filter on top of backend filters
