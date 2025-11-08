@@ -100,11 +100,15 @@ export class DbStorage implements IStorage {
         .limit(1);
 
       if (existingUserByEmail.length > 0) {
-        // Update existing user by email
+        // Update existing user by email - PRESERVE role field
         const result = await db
           .update(users)
           .set({
-            ...userData,
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            profileImageUrl: userData.profileImageUrl,
+            // DO NOT update role - preserve existing role in database
             updatedAt: new Date(),
           })
           .where(eq(users.email, userData.email))
@@ -113,14 +117,18 @@ export class DbStorage implements IStorage {
       }
     }
 
-    // Otherwise, do normal upsert by ID
+    // Otherwise, do normal upsert by ID - PRESERVE role field on update
     const result = await db
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
         target: users.id,
         set: {
-          ...userData,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          // DO NOT update role - preserve existing role in database
           updatedAt: new Date(),
         },
       })

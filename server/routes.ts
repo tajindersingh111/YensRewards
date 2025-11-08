@@ -2,10 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema } from "@shared/schema";
+import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, users } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -27,6 +29,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // One-time admin promotion endpoint (protected by authentication + secret)
+  app.post('/api/auth/promote-admin', isAuthenticated, async (req: any, res) => {
+    try {
+      const { secret } = req.body;
+      const ADMIN_SECRET = process.env.ADMIN_PROMOTION_SECRET || 'yens-admin-2025';
+      
+      if (secret !== ADMIN_SECRET) {
+        return res.status(403).json({ message: "Invalid secret" });
+      }
+
+      const userId = req.user.claims.sub;
+      const email = req.user.claims.email;
+      
+      // Directly update the user's role to admin
+      await db.update(users).set({ role: 'admin' }).where(eq(users.id, userId));
+      
+      console.log(`✅ Promoted user ${email} (${userId}) to admin`);
+      
+      res.json({ message: "Successfully promoted to admin", email, userId });
+    } catch (error) {
+      console.error("Error promoting to admin:", error);
+      res.status(500).json({ message: "Failed to promote to admin" });
     }
   });
 
