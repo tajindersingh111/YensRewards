@@ -57,6 +57,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Testing Endpoints (Admin Only) ============
+  
+  // Test SMS sending
+  app.post('/api/admin/test-sms', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { phone, message } = req.body;
+      
+      if (!phone || !message) {
+        return res.status(400).json({ message: "Phone and message are required" });
+      }
+
+      console.log(`📱 Testing SMS to ${phone}`);
+      const result = await sendSMS(phone, message);
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: "SMS sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: result.error || "Failed to send SMS" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error testing SMS:", error);
+      res.status(500).json({ message: error.message || "Failed to send test SMS" });
+    }
+  });
+
+  // Test email sending
+  app.post('/api/admin/test-email', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, subject, message } = req.body;
+      
+      if (!email || !subject || !message) {
+        return res.status(400).json({ message: "Email, subject, and message are required" });
+      }
+
+      console.log(`📧 Testing email to ${email}`);
+      const result = await sendEmail(email, subject, message);
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: "Email sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: result.error || "Failed to send email" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error testing email:", error);
+      res.status(500).json({ message: error.message || "Failed to send test email" });
+    }
+  });
+
   // ============ Customer API Endpoints ============
   
   // Get customer by ID

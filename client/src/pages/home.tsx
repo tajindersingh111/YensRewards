@@ -184,24 +184,45 @@ export default function Home() {
           </div>
         </Card>
 
-        {/* Admin Promotion Link (temporary setup) */}
-        <Card className="p-6 border-2 border-primary">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-xl font-bold text-foreground mb-2">🔐 First Time Admin Setup</h3>
-              <p className="text-muted-foreground">
-                Click here to promote yourself to admin (one-time setup required)
-              </p>
+        {/* Admin Tools */}
+        <div className="space-y-4">
+          <Card className="p-6 border-2 border-primary">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-foreground mb-2">🔐 First Time Admin Setup</h3>
+                <p className="text-muted-foreground">
+                  Click here to promote yourself to admin (one-time setup required)
+                </p>
+              </div>
+              <Button 
+                size="lg" 
+                onClick={() => setLocation('/promote-admin')}
+                data-testid="button-promote-admin"
+              >
+                Setup Admin Access
+              </Button>
             </div>
-            <Button 
-              size="lg" 
-              onClick={() => setLocation('/promote-admin')}
-              data-testid="button-promote-admin"
-            >
-              Setup Admin Access
-            </Button>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-foreground mb-2">📨 Test Messaging</h3>
+                <p className="text-muted-foreground">
+                  Test your Twilio SMS and Resend Email integrations
+                </p>
+              </div>
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => setLocation('/test-messages')}
+                data-testid="button-test-messages"
+              >
+                Test Messages
+              </Button>
+            </div>
+          </Card>
+        </div>
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground">
