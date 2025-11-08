@@ -35,9 +35,21 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Admin Dashboard - Auth State:', {
+      authLoading,
+      isAuthenticated,
+      user,
+      userRole: user?.role,
+      userEmail: user?.email,
+    });
+  }, [authLoading, isAuthenticated, user]);
+
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
+      console.log('❌ Not authenticated - redirecting to login');
       toast({
         title: "Authentication Required",
         description: "Please log in to access the admin dashboard",
@@ -50,15 +62,20 @@ export default function AdminDashboard() {
     }
 
     if (!authLoading && isAuthenticated && user?.role !== "admin") {
+      console.log('❌ Access denied - User role:', user?.role, 'Expected: admin');
       toast({
         title: "Access Denied",
-        description: "You don't have admin privileges",
+        description: `You don't have admin privileges (role: ${user?.role || 'none'})`,
         variant: "destructive",
       });
       setTimeout(() => {
         setLocationPath("/");
       }, 500);
       return;
+    }
+
+    if (!authLoading && isAuthenticated && user?.role === "admin") {
+      console.log('✅ Admin access granted');
     }
   }, [isAuthenticated, authLoading, user, toast, setLocationPath]);
 
