@@ -12,6 +12,7 @@ import CustomerImportExport from "@/components/CustomerImportExport";
 import ProductManager from "@/components/ProductManager";
 import MessageTemplates from "@/components/MessageTemplates";
 import MessageHistory from "@/components/MessageHistory";
+import EnhancedMessaging from "@/components/EnhancedMessaging";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -760,7 +761,22 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
-            <MessageHistory />
+            <Tabs defaultValue="send" className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="send" data-testid="tab-send-messages">
+                  Send Messages
+                </TabsTrigger>
+                <TabsTrigger value="history" data-testid="tab-message-history">
+                  Message History
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="send" className="space-y-6 mt-6">
+                <EnhancedMessaging />
+              </TabsContent>
+              <TabsContent value="history" className="space-y-6 mt-6">
+                <MessageHistory />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
