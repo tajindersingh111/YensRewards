@@ -11,6 +11,7 @@ import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
 import PromoteAdmin from "@/pages/promote-admin";
 import MessageTest from "@/pages/message-test";
+import MessagingTroubleshoot from "@/pages/messaging-troubleshoot";
 import QRDisplay from "@/pages/qr-display";
 import CameraTest from "@/pages/camera-test";
 import VersionCheck from "@/pages/version-check";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/promote-admin" component={PromoteAdmin} />
       <Route path="/test-messages" component={MessageTest} />
+      <Route path="/messaging-troubleshoot" component={MessagingTroubleshoot} />
       <Route path="/qr/:appType" component={QRDisplay} />
       <Route path="/qr" component={QRDisplay} />
       <Route path="/camera-test" component={CameraTest} />
