@@ -33,6 +33,16 @@ export interface IStorage {
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer | undefined>;
   getAllCustomers(): Promise<Customer[]>;
+  getFilteredCustomers(filters: {
+    tier?: string[];
+    minSpend?: number;
+    maxSpend?: number;
+    minPoints?: number;
+    maxPoints?: number;
+    searchQuery?: string;
+    registeredAfter?: Date;
+    registeredBefore?: Date;
+  }): Promise<Customer[]>;
   
   // Transaction methods
   getTransaction(id: string): Promise<Transaction | undefined>;
@@ -181,6 +191,69 @@ export class DbStorage implements IStorage {
 
   async getAllCustomers(): Promise<Customer[]> {
     return await db.select().from(customers).orderBy(desc(customers.createdAt));
+  }
+
+  async getFilteredCustomers(filters: {
+    tier?: string[];
+    minSpend?: number;
+    maxSpend?: number;
+    minPoints?: number;
+    maxPoints?: number;
+    searchQuery?: string;
+    registeredAfter?: Date;
+    registeredBefore?: Date;
+  }): Promise<Customer[]> {
+    let query = db.select().from(customers);
+
+    const conditions = [];
+
+    // Tier filter
+    if (filters.tier && filters.tier.length > 0) {
+      conditions.push(sql`${customers.tier} IN (${sql.join(filters.tier.map(t => sql.raw(`'${t}'`)), sql`, `)})`);
+    }
+
+    // Spend range filter
+    if (filters.minSpend !== undefined) {
+      conditions.push(sql`${customers.totalSpent} >= ${filters.minSpend}`);
+    }
+    if (filters.maxSpend !== undefined) {
+      conditions.push(sql`${customers.totalSpent} <= ${filters.maxSpend}`);
+    }
+
+    // Points range filter
+    if (filters.minPoints !== undefined) {
+      conditions.push(sql`${customers.points} >= ${filters.minPoints}`);
+    }
+    if (filters.maxPoints !== undefined) {
+      conditions.push(sql`${customers.points} <= ${filters.maxPoints}`);
+    }
+
+    // Search query (name, phone, email)
+    if (filters.searchQuery) {
+      const searchTerm = `%${filters.searchQuery}%`;
+      conditions.push(
+        sql`(
+          ${customers.name} ILIKE ${searchTerm} OR 
+          ${customers.phone} ILIKE ${searchTerm} OR 
+          ${customers.email} ILIKE ${searchTerm}
+        )`
+      );
+    }
+
+    // Date range filters
+    if (filters.registeredAfter) {
+      conditions.push(sql`${customers.createdAt} >= ${filters.registeredAfter}`);
+    }
+    if (filters.registeredBefore) {
+      conditions.push(sql`${customers.createdAt} <= ${filters.registeredBefore}`);
+    }
+
+    // Apply all conditions
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    return await query.orderBy(desc(customers.totalSpent));
   }
 
   // Transaction methods

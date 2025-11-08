@@ -25,7 +25,7 @@ export default function MessagingTroubleshoot() {
     setSmsSending(true);
     setSmsResult(null);
     try {
-      const response = await fetch("/api/test/sms", {
+      const response = await fetch("/api/admin/test-sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -66,7 +66,7 @@ export default function MessagingTroubleshoot() {
     setEmailSending(true);
     setEmailResult(null);
     try {
-      const response = await fetch("/api/test/email", {
+      const response = await fetch("/api/admin/test-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

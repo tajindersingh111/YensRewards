@@ -440,6 +440,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Filter customers with advanced criteria
+  app.post('/api/admin/customers/filter', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const filters = req.body;
+      const customers = await storage.getFilteredCustomers(filters);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error filtering customers:", error);
+      res.status(500).json({ message: "Failed to filter customers" });
+    }
+  });
+
+  // Send bulk message to multiple customers
+  app.post('/api/admin/customers/bulk-message', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { customerIds, message, subject, channel } = req.body;
+
+      if (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0) {
+        return res.status(400).json({ message: "Customer IDs required" });
+      }
+
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      if (!channel || !['sms', 'email', 'both'].includes(channel)) {
+        return res.status(400).json({ message: "Valid channel required (sms, email, or both)" });
+      }
+
+      // Get all customers
+      const customers = await Promise.all(
+        customerIds.map(id => storage.getCustomer(id))
+      );
+
+      const validCustomers = customers.filter(c => c !== undefined);
+
+      if (validCustomers.length === 0) {
+        return res.status(404).json({ message: "No valid customers found" });
+      }
+
+      let smsSent = 0;
+      let smsFailures = 0;
+      let emailsSent = 0;
+      let emailFailures = 0;
+
+      // Send messages to each customer
+      for (const customer of validCustomers) {
+        if (!customer) continue;
+
+        // Replace placeholders in message
+        const personalizedMessage = message
+          .replace(/{name}/g, customer.name)
+          .replace(/{points}/g, customer.points.toString())
+          .replace(/{tier}/g, customer.tier);
+
+        const personalizedSubject = subject
+          ? subject
+              .replace(/{name}/g, customer.name)
+              .replace(/{points}/g, customer.points.toString())
+              .replace(/{tier}/g, customer.tier)
+          : 'Message from Yens Thai Ice Cream';
+
+        // Send SMS if channel is sms or both
+        if ((channel === 'sms' || channel === 'both') && customer.phone) {
+          try {
+            const smsResult = await sendSMS(customer.phone, personalizedMessage);
+            
+            if (smsResult.success) {
+              smsSent++;
+            } else {
+              smsFailures++;
+            }
+
+            // Log SMS message
+            await storage.createMessageLog({
+              customerId: customer.id,
+              channel: 'sms',
+              recipient: customer.phone,
+              subject: null,
+              message: personalizedMessage,
+              status: smsResult.success ? 'sent' : 'failed',
+              externalId: smsResult.messageId || null,
+              errorMessage: smsResult.error || null,
+            });
+          } catch (error: any) {
+            console.error(`Error sending SMS to ${customer.phone}:`, error);
+            smsFailures++;
+          }
+        }
+
+        // Send Email if channel is email or both
+        if ((channel === 'email' || channel === 'both') && customer.email) {
+          try {
+            const emailResult = await sendEmail(
+              customer.email,
+              personalizedSubject,
+              personalizedMessage
+            );
+
+            if (emailResult.success) {
+              emailsSent++;
+            } else {
+              emailFailures++;
+            }
+
+            // Log email message
+            await storage.createMessageLog({
+              customerId: customer.id,
+              channel: 'email',
+              recipient: customer.email,
+              subject: personalizedSubject,
+              message: personalizedMessage,
+              status: emailResult.success ? 'sent' : 'failed',
+              externalId: emailResult.messageId || null,
+              errorMessage: emailResult.error || null,
+            });
+          } catch (error: any) {
+            console.error(`Error sending email to ${customer.email}:`, error);
+            emailFailures++;
+          }
+        }
+      }
+
+      res.json({
+        message: "Bulk messaging complete",
+        totalCustomers: validCustomers.length,
+        sms: {
+          sent: smsSent,
+          failed: smsFailures,
+        },
+        email: {
+          sent: emailsSent,
+          failed: emailFailures,
+        },
+      });
+    } catch (error) {
+      console.error("Error sending bulk messages:", error);
+      res.status(500).json({ message: "Failed to send bulk messages" });
+    }
+  });
+
   // Create promotion
   app.post('/api/admin/promotions', isAuthenticated, isAdmin, async (req, res) => {
     try {
