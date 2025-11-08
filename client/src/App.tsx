@@ -9,6 +9,7 @@ import CustomerApp from "@/pages/customer-app";
 import CustomerMenu from "@/pages/customer-menu";
 import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
+import PromoteAdmin from "@/pages/promote-admin";
 import QRDisplay from "@/pages/qr-display";
 import CameraTest from "@/pages/camera-test";
 import VersionCheck from "@/pages/version-check";
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/promote-admin" component={PromoteAdmin} />
       <Route path="/qr/:appType" component={QRDisplay} />
       <Route path="/qr" component={QRDisplay} />
       <Route path="/camera-test" component={CameraTest} />
