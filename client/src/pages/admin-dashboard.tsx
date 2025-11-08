@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import KPICard from "@/components/KPICard";
 import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
+import CustomerEditDialog from "@/components/CustomerEditDialog";
 import PromotionCreator from "@/components/PromotionCreator";
 import CustomerImportExport from "@/components/CustomerImportExport";
 import ProductManager from "@/components/ProductManager";
@@ -32,6 +33,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [memberStatus, setMemberStatus] = useState<"active" | "inactive">("active");
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
@@ -714,7 +717,17 @@ export default function AdminDashboard() {
             <CustomerTable
               customers={customers}
               onMessage={(id) => console.log("Message customer:", id)}
+              onEdit={(customer) => {
+                setEditingCustomer(customer as any);
+                setIsEditDialogOpen(true);
+              }}
               data-testid="table-all-customers"
+            />
+            
+            <CustomerEditDialog
+              customer={editingCustomer}
+              open={isEditDialogOpen}
+              onOpenChange={setIsEditDialogOpen}
             />
           </TabsContent>
 

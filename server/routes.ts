@@ -178,6 +178,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update customer (Admin only)
+  app.patch('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const customer = await storage.updateCustomer(req.params.id, req.body);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
   // Get customer transactions
   app.get('/api/customers/:id/transactions', async (req, res) => {
     try {

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MessageSquare } from "lucide-react";
+import { Search, MessageSquare, Edit } from "lucide-react";
 import { useState } from "react";
 
 interface Customer {
@@ -19,6 +19,7 @@ interface Customer {
 interface CustomerTableProps {
   customers: Customer[];
   onMessage: (customerId: string) => void;
+  onEdit: (customer: Customer) => void;
 }
 
 const tierColors = {
@@ -27,7 +28,7 @@ const tierColors = {
   gold: "bg-[hsl(45,93%,47%)] text-white",
 };
 
-export default function CustomerTable({ customers, onMessage }: CustomerTableProps) {
+export default function CustomerTable({ customers, onMessage, onEdit }: CustomerTableProps) {
   const [search, setSearch] = useState("");
 
   const filteredCustomers = customers.filter((c) =>
@@ -60,7 +61,7 @@ export default function CustomerTable({ customers, onMessage }: CustomerTablePro
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tier</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Points</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Total Spent</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Action</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -96,14 +97,24 @@ export default function CustomerTable({ customers, onMessage }: CustomerTablePro
                     </td>
                     <td className="py-3 px-4 text-foreground">฿{customer.totalSpent.toLocaleString()}</td>
                     <td className="py-3 px-4">
-                      <Button
-                        onClick={() => onMessage(customer.id)}
-                        variant="ghost"
-                        size="sm"
-                        data-testid={`button-message-${customer.id}`}
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          onClick={() => onEdit(customer)}
+                          variant="ghost"
+                          size="sm"
+                          data-testid={`button-edit-${customer.id}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => onMessage(customer.id)}
+                          variant="ghost"
+                          size="sm"
+                          data-testid={`button-message-${customer.id}`}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );
