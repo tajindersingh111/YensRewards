@@ -32,8 +32,7 @@ export function getSession() {
     tableName: "sessions",
   });
   
-  console.log('🍪 Session config - Environment:', process.env.NODE_ENV);
-  console.log('🍪 Session config - Using sameSite: lax (for published URL compatibility)');
+  console.log('🍪 Session config - Using sameSite: none (required for cross-site OIDC redirect)');
   
   return session({
     secret: process.env.SESSION_SECRET!,
@@ -42,8 +41,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true, // Always use secure since we're on HTTPS
-      sameSite: 'lax', // Always use 'lax' - works with both preview and published URLs
+      secure: true, // Required for sameSite: none
+      sameSite: 'none', // Required for cross-site OIDC callback redirect
       maxAge: sessionTtl,
     },
   });
