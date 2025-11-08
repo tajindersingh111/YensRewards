@@ -752,7 +752,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="promotions" className="space-y-6">
-            <EnhancedMessaging />
+            <div className="max-w-2xl">
+              <PromotionCreator
+                onSend={handleSendPromotion}
+                data-testid="promotion-creator"
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
