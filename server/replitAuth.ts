@@ -33,6 +33,7 @@ export function getSession() {
   });
   
   console.log('🍪 Session config - Environment:', process.env.NODE_ENV);
+  console.log('🍪 Session config - Using sameSite: lax (for published URL compatibility)');
   
   return session({
     secret: process.env.SESSION_SECRET!,
@@ -41,8 +42,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' || true, // Always secure for HTTPS
-      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none', // Use 'lax' for production
+      secure: true, // Always use secure since we're on HTTPS
+      sameSite: 'lax', // Always use 'lax' - works with both preview and published URLs
       maxAge: sessionTtl,
     },
   });
