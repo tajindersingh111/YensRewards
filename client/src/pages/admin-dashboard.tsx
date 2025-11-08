@@ -6,6 +6,7 @@ import KPICard from "@/components/KPICard";
 import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
 import CustomerEditDialog from "@/components/CustomerEditDialog";
+import CustomerMessageDialog from "@/components/CustomerMessageDialog";
 import PromotionCreator from "@/components/PromotionCreator";
 import CustomerImportExport from "@/components/CustomerImportExport";
 import ProductManager from "@/components/ProductManager";
@@ -35,6 +36,8 @@ export default function AdminDashboard() {
   const [memberStatus, setMemberStatus] = useState<"active" | "inactive">("active");
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [messagingCustomer, setMessagingCustomer] = useState<Customer | null>(null);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
@@ -716,7 +719,13 @@ export default function AdminDashboard() {
             />
             <CustomerTable
               customers={customers}
-              onMessage={(id) => console.log("Message customer:", id)}
+              onMessage={(id) => {
+                const customer = customers.find((c) => c.id === id);
+                if (customer) {
+                  setMessagingCustomer(customer as Customer);
+                  setIsMessageDialogOpen(true);
+                }
+              }}
               onEdit={(customer) => {
                 setEditingCustomer(customer as any);
                 setIsEditDialogOpen(true);
@@ -728,6 +737,12 @@ export default function AdminDashboard() {
               customer={editingCustomer}
               open={isEditDialogOpen}
               onOpenChange={setIsEditDialogOpen}
+            />
+            
+            <CustomerMessageDialog
+              customer={messagingCustomer as any}
+              open={isMessageDialogOpen}
+              onOpenChange={setIsMessageDialogOpen}
             />
           </TabsContent>
 

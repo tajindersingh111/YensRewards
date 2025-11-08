@@ -308,6 +308,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send direct message to customer
+  app.post('/api/admin/customers/:id/message', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const customerId = req.params.id;
+      const { message, subject, channel } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const customer = await storage.getCustomer(customerId);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      const results: any = {
+        sms: null,
+        email: null,
+      };
+
+      // Send SMS if channel is sms or both
+      if ((channel === 'sms' || channel === 'both') && customer.phone) {
+        try {
+          const smsResult = await sendSMS(customer.phone, message);
+          results.sms = smsResult;
+          
+          // Log SMS message
+          await storage.createMessageLog({
+            customerId: customer.id,
+            channel: 'sms',
+            recipient: customer.phone,
+            subject: null,
+            message,
+            status: smsResult.success ? 'sent' : 'failed',
+            externalId: smsResult.messageId || null,
+            errorMessage: smsResult.error || null,
+          });
+        } catch (error: any) {
+          console.error("Error sending SMS:", error);
+          results.sms = { success: false, error: error.message };
+        }
+      }
+
+      // Send Email if channel is email or both
+      if ((channel === 'email' || channel === 'both') && customer.email) {
+        try {
+          const emailResult = await sendEmail(
+            customer.email,
+            subject || 'Message from Yens Thai Ice Cream',
+            message
+          );
+          results.email = emailResult;
+
+          // Log email message
+          await storage.createMessageLog({
+            customerId: customer.id,
+            channel: 'email',
+            recipient: customer.email,
+            subject: subject || null,
+            message,
+            status: emailResult.success ? 'sent' : 'failed',
+            externalId: emailResult.messageId || null,
+            errorMessage: emailResult.error || null,
+          });
+        } catch (error: any) {
+          console.error("Error sending email:", error);
+          results.email = { success: false, error: error.message };
+        }
+      }
+
+      const success = results.sms?.success || results.email?.success;
+      
+      if (!success) {
+        return res.status(500).json({ 
+          message: "Failed to send message",
+          results 
+        });
+      }
+
+      res.json({
+        message: "Message sent successfully",
+        results,
+      });
+    } catch (error) {
+      console.error("Error sending message to customer:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
   // Import customers from CSV
   app.post('/api/admin/import-customers', isAuthenticated, isAdmin, async (req, res) => {
     try {
