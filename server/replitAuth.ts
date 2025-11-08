@@ -31,6 +31,9 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  
+  console.log('🍪 Session config - Environment:', process.env.NODE_ENV);
+  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -38,8 +41,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production' || true, // Always secure for HTTPS
+      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none', // Use 'lax' for production
       maxAge: sessionTtl,
     },
   });
@@ -110,9 +113,28 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/admin",
-      failureRedirect: "/api/login",
+    console.log('🔄 Callback called, hostname:', req.hostname);
+    passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any, info: any) => {
+      console.log('🔄 Callback auth result:', { err, hasUser: !!user, info });
+      
+      if (err) {
+        console.error('❌ Callback error:', err);
+        return next(err);
+      }
+      
+      if (!user) {
+        console.log('❌ No user from auth');
+        return res.redirect("/api/login");
+      }
+      
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error('❌ Login error:', loginErr);
+          return next(loginErr);
+        }
+        console.log('✅ Login successful, session ID:', req.sessionID);
+        return res.redirect("/admin");
+      });
     })(req, res, next);
   });
 
@@ -131,7 +153,15 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  console.log('🔐 isAuthenticated check:', {
+    isAuth: req.isAuthenticated(),
+    hasUser: !!req.user,
+    hasExpiresAt: !!user?.expires_at,
+    sessionID: req.sessionID,
+    cookies: req.headers.cookie,
+  });
+
+  if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
