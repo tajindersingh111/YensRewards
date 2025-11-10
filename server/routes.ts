@@ -15,7 +15,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Version endpoint for auto-update checking
   app.get('/api/version', (req, res) => {
-    res.json({ version: 'v92' });
+    res.json({ version: 'v93' });
   });
 
   // Auth routes
