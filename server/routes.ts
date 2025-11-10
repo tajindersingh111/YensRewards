@@ -15,7 +15,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Version endpoint for auto-update checking
   app.get('/api/version', (req, res) => {
-    res.json({ version: 'v90' });
+    res.json({ version: 'v91' });
   });
 
   // Auth routes
@@ -160,6 +160,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching customer:", error);
       res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  // Search customers by phone number (for Barista app)
+  app.get('/api/customers/search', async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      
+      // Validate query length
+      if (!query || query.length < 3) {
+        return res.status(400).json({ message: "Query must be at least 3 characters" });
+      }
+      
+      const customers = await storage.searchCustomersByPhone(query, 10);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error searching customers:", error);
+      res.status(500).json({ message: "Failed to search customers" });
     }
   });
 

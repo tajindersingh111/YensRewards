@@ -30,6 +30,7 @@ export interface IStorage {
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
   getCustomerByReferralCode(code: string): Promise<Customer | undefined>;
+  searchCustomersByPhone(query: string, limit?: number): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer | undefined>;
   getAllCustomers(): Promise<Customer[]>;
@@ -165,6 +166,21 @@ export class DbStorage implements IStorage {
   async getCustomerByReferralCode(code: string): Promise<Customer | undefined> {
     const result = await db.select().from(customers).where(eq(customers.referralCode, code));
     return result[0];
+  }
+
+  async searchCustomersByPhone(query: string, limit: number = 10): Promise<Customer[]> {
+    // Sanitize query - only keep digits and + symbol
+    const sanitized = query.replace(/[^0-9+]/g, '');
+    
+    // Use ILIKE for case-insensitive prefix/contains matching
+    const result = await db
+      .select()
+      .from(customers)
+      .where(sql`${customers.phone} ILIKE ${sanitized + '%'}`)
+      .orderBy(customers.name)
+      .limit(limit);
+    
+    return result;
   }
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
