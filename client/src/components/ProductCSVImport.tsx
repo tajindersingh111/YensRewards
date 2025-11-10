@@ -15,19 +15,22 @@ import {
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle } from "lucide-react";
 
 interface ParsedProduct {
-  productCode: string;
+  productCode?: string;
   name: string;
   category: string;
   price: number;
   cost: number;
   imageUrl?: string;
+  available: boolean;
+  featured: boolean;
+  sortOrder: number;
 }
 
 const CATEGORY_MAP: Record<string, string> = {
   "ไอศครีม": "soft_serve",
   "ชานม": "milk_tea",
   "ชาผลไม้": "fruit_tea",
-  "สมูตตี้": "smoothie",
+  "สมูตตี้": "shakes",
 };
 
 export default function ProductCSVImport() {
@@ -38,7 +41,12 @@ export default function ProductCSVImport() {
 
   const importMutation = useMutation({
     mutationFn: async (products: ParsedProduct[]) => {
-      return await apiRequest('POST', '/api/admin/products/import', { products });
+      const productsForApi = products.map(p => ({
+        ...p,
+        price: p.price.toString(),
+        cost: p.cost.toString(),
+      }));
+      return await apiRequest('POST', '/api/admin/products/import', { products: productsForApi });
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
@@ -98,11 +106,14 @@ export default function ProductCSVImport() {
       const priceNum = parseFloat(priceStr.replace(/,/g, '')) || 0;
 
       const product: ParsedProduct = {
-        productCode,
+        productCode: productCode || undefined,
         name: productName,
         category,
         price: priceNum,
-        cost: costNum > 1000 ? 0 : costNum, // Skip unrealistic costs
+        cost: costNum > 1000 ? 0 : costNum,
+        available: true,
+        featured: false,
+        sortOrder: 0,
       };
       
       // Only include imageUrl if it's provided
