@@ -121,17 +121,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ Customer API Endpoints ============
   
-  // Get customer by ID
-  app.get('/api/customers/:id', async (req, res) => {
+  // Search customers by phone number (for Barista app)
+  // IMPORTANT: This route must come BEFORE /api/customers/:id to avoid "search" being treated as an ID
+  app.get('/api/customers/search', async (req, res) => {
     try {
-      const customer = await storage.getCustomer(req.params.id);
-      if (!customer) {
-        return res.status(404).json({ message: "Customer not found" });
+      const query = req.query.q as string;
+      
+      // Validate query length
+      if (!query || query.length < 3) {
+        return res.status(400).json({ message: "Query must be at least 3 characters" });
       }
-      res.json(customer);
+      
+      const customers = await storage.searchCustomersByPhone(query, 10);
+      res.json(customers);
     } catch (error) {
-      console.error("Error fetching customer:", error);
-      res.status(500).json({ message: "Failed to fetch customer" });
+      console.error("Error searching customers:", error);
+      res.status(500).json({ message: "Failed to search customers" });
     }
   });
 
@@ -163,21 +168,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Search customers by phone number (for Barista app)
-  app.get('/api/customers/search', async (req, res) => {
+  // Get customer by ID
+  app.get('/api/customers/:id', async (req, res) => {
     try {
-      const query = req.query.q as string;
-      
-      // Validate query length
-      if (!query || query.length < 3) {
-        return res.status(400).json({ message: "Query must be at least 3 characters" });
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
       }
-      
-      const customers = await storage.searchCustomersByPhone(query, 10);
-      res.json(customers);
+      res.json(customer);
     } catch (error) {
-      console.error("Error searching customers:", error);
-      res.status(500).json({ message: "Failed to search customers" });
+      console.error("Error fetching customer:", error);
+      res.status(500).json({ message: "Failed to fetch customer" });
     }
   });
 
