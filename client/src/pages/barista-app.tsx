@@ -28,8 +28,15 @@ export default function BaristaApp() {
   const [location, setLocation] = useState("Main Store");
 
   // Search customers by phone number
-  const { data: searchResults = [] } = useQuery<Customer[]>({
+  const { data: searchResults = [], isError, error } = useQuery<Customer[]>({
     queryKey: ['/api/customers/search', searchQuery],
+    queryFn: async () => {
+      const response = await fetch(`/api/customers/search?q=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) {
+        throw new Error('Failed to search customers');
+      }
+      return response.json();
+    },
     enabled: searchQuery.length >= 3,
   });
 
@@ -150,7 +157,7 @@ export default function BaristaApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-sm font-bold">Barista</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v91</span>
+              <span className="text-xs opacity-70" data-testid="text-version">v93</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
