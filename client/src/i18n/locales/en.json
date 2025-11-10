@@ -27,7 +27,8 @@
     "warning": "Warning",
     "info": "Information",
     "new": "NEW",
-    "admin": "Admin"
+    "admin": "Admin",
+    "version": "v2.0"
   },
   "home": {
     "title": "Yen's Loyalty System",
@@ -88,6 +89,7 @@
     "checkBackSoon": "Check back soon for special offers!",
     "birthday": "Birthday",
     "home": "Home",
+    "menuNav": "Menu",
     "menu": {
       "title": "Our Menu",
       "subtitle": "Yens Thai Ice Cream",

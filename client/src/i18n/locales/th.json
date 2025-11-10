@@ -27,7 +27,8 @@
     "warning": "คำเตือน",
     "info": "ข้อมูล",
     "new": "ใหม่",
-    "admin": "ผู้ดูแล"
+    "admin": "ผู้ดูแล",
+    "version": "v2.0"
   },
   "home": {
     "title": "ระบบสะสมคะแนนเย็นส์",
@@ -88,6 +89,7 @@
     "checkBackSoon": "กลับมาดูโปรโมชั่นพิเศษเร็วๆ นี้!",
     "birthday": "วันเกิด",
     "home": "หน้าแรก",
+    "menuNav": "เมนู",
     "menu": {
       "title": "เมนูของเรา",
       "subtitle": "Yens Thai Ice Cream",

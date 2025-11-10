@@ -308,7 +308,7 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground">{t('admin.title')}</h1>
-              <span className="text-xs text-muted-foreground" data-testid="text-version">v94</span>
+              <span className="text-xs text-muted-foreground" data-testid="text-version">{t('common.version')}</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 {t('admin.overview.loggedInAs')} {user?.email || user?.firstName || t('common.admin')}

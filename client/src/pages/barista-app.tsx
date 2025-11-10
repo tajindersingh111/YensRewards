@@ -160,7 +160,7 @@ export default function BaristaApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
               <h1 className="text-sm font-bold">{t('barista.title')}</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">v94</span>
+              <span className="text-xs opacity-70" data-testid="text-version">{t('common.version')}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">

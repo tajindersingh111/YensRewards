@@ -454,7 +454,7 @@ export default function CustomerApp() {
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">{t('customer.yensRewards')}</h1>
               <span className="text-xs opacity-70" data-testid="text-version">
-                v94 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
+                {t('common.version')} | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
               </span>
             </div>
           </div>
@@ -589,7 +589,7 @@ export default function CustomerApp() {
             data-testid="button-nav-menu"
           >
             <IceCream className="w-6 h-6" />
-            <span className="text-xs">{t('customer.menu')}</span>
+            <span className="text-xs">{t('customer.menuNav')}</span>
           </button>
           <button
             onClick={() => setActiveTab("rewards")}
