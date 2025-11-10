@@ -14,6 +14,8 @@ import MessageTemplates from "@/components/MessageTemplates";
 import MessageHistory from "@/components/MessageHistory";
 import EnhancedMessaging from "@/components/EnhancedMessaging";
 import InstallPrompt from "@/components/InstallPrompt";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +33,7 @@ import type { Customer } from "@shared/schema";
 export default function AdminDashboard() {
   // Auto-update detection
   useAutoUpdate();
+  const { t } = useTranslation();
   const [, setLocationPath] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,8 +61,8 @@ export default function AdminDashboard() {
     if (!authLoading && !isAuthenticated) {
       console.log('❌ Not authenticated - redirecting to login');
       toast({
-        title: "Authentication Required",
-        description: "Please log in to access the admin dashboard",
+        title: t('admin.toasts.authRequired'),
+        description: t('admin.toasts.authRequiredDesc'),
         variant: "destructive",
       });
       setTimeout(() => {
@@ -71,8 +74,8 @@ export default function AdminDashboard() {
     if (!authLoading && isAuthenticated && user?.role !== "admin") {
       console.log('❌ Access denied - User role:', user?.role, 'Expected: admin');
       toast({
-        title: "Access Denied",
-        description: `You don't have admin privileges (role: ${user?.role || 'none'})`,
+        title: t('admin.toasts.accessDenied'),
+        description: t('admin.toasts.accessDeniedDesc'),
         variant: "destructive",
       });
       setTimeout(() => {
@@ -84,7 +87,7 @@ export default function AdminDashboard() {
     if (!authLoading && isAuthenticated && user?.role === "admin") {
       console.log('✅ Admin access granted');
     }
-  }, [isAuthenticated, authLoading, user, toast, setLocationPath]);
+  }, [isAuthenticated, authLoading, user, toast, setLocationPath, t]);
 
   // Fetch analytics data
   const { data: analytics, isLoading: analyticsLoading } = useQuery<{
@@ -120,15 +123,15 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/promotions'] });
       toast({
-        title: "Success",
-        description: "Promotion sent successfully!",
+        title: t('admin.toasts.promotionSuccess'),
+        description: t('admin.toasts.promotionSent'),
       });
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error) || isForbiddenError(error)) {
         toast({
-          title: "Session Expired",
-          description: "Please log in again",
+          title: t('admin.toasts.sessionExpired'),
+          description: t('admin.toasts.sessionExpiredDesc'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -137,8 +140,8 @@ export default function AdminDashboard() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to send promotion",
+        title: t('common.error'),
+        description: t('admin.toasts.promotionError'),
         variant: "destructive",
       });
     },
@@ -151,15 +154,15 @@ export default function AdminDashboard() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
       toast({
-        title: "Import Successful",
-        description: `${data.imported || 0} customers imported successfully`,
+        title: t('admin.toasts.importSuccess'),
+        description: `${data.imported || 0} ${t('admin.toasts.importSuccessDesc')}`,
       });
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error) || isForbiddenError(error)) {
         toast({
-          title: "Session Expired",
-          description: "Please log in again",
+          title: t('admin.toasts.sessionExpired'),
+          description: t('admin.toasts.sessionExpiredDesc'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -168,8 +171,8 @@ export default function AdminDashboard() {
         return;
       }
       toast({
-        title: "Import Failed",
-        description: error.message || "Failed to import customers",
+        title: t('admin.toasts.importFailed'),
+        description: error.message || t('admin.toasts.importFailedDesc'),
         variant: "destructive",
       });
     },
@@ -188,15 +191,15 @@ export default function AdminDashboard() {
       
       const sentCount = data?.sent || data?.total || 0;
       toast({
-        title: "Birthday Messages Sent!",
-        description: `Successfully sent ${sentCount} birthday message${sentCount !== 1 ? 's' : ''}`,
+        title: t('admin.toasts.birthdayMessagesSent'),
+        description: t('admin.toasts.birthdayMessagesSentDesc', { count: sentCount }),
       });
     },
     onError: (error: any) => {
       if (isUnauthorizedError(error) || isForbiddenError(error)) {
         toast({
-          title: "Session Expired",
-          description: "Please log in again",
+          title: t('admin.toasts.sessionExpired'),
+          description: t('admin.toasts.sessionExpiredDesc'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -205,8 +208,8 @@ export default function AdminDashboard() {
         return;
       }
       toast({
-        title: "Failed to send messages",
-        description: error.message || "An error occurred",
+        title: t('admin.toasts.sendMessagesFailed'),
+        description: error.message || t('admin.toasts.sendMessagesError'),
         variant: "destructive",
       });
     },
@@ -231,8 +234,8 @@ export default function AdminDashboard() {
       
       if (customers.length === 0) {
         toast({
-          title: "No Valid Data",
-          description: "CSV file contains no valid customer data",
+          title: t('admin.toasts.noValidData'),
+          description: t('admin.toasts.noValidDataDesc'),
           variant: "destructive",
         });
         return;
@@ -260,7 +263,7 @@ export default function AdminDashboard() {
 
   const handleSendPromotion = (message: string, tier?: string) => {
     createPromotion.mutate({
-      title: "Special Promotion",
+      title: t('admin.toasts.specialPromotion'),
       targetTier: tier === 'all' ? undefined : tier,
       message,
     });
@@ -275,7 +278,7 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg text-muted-foreground">Loading...</div>
+          <div className="text-lg text-muted-foreground">{t('common.loading')}</div>
         </div>
       </div>
     );
@@ -304,15 +307,16 @@ export default function AdminDashboard() {
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
+                <h1 className="text-xl font-bold text-foreground">{t('admin.title')}</h1>
               <span className="text-xs text-muted-foreground" data-testid="text-version">v94</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Logged in as: {user?.email || user?.firstName || "Admin"}
+                {t('admin.overview.loggedInAs')} {user?.email || user?.firstName || t('common.admin')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <Button
               onClick={handleLogout}
               variant="outline"
@@ -320,7 +324,7 @@ export default function AdminDashboard() {
               data-testid="button-logout"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Logout
+              {t('auth.logout')}
             </Button>
           </div>
         </div>
@@ -330,12 +334,12 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-            <TabsTrigger value="customers" data-testid="tab-customers">Customers</TabsTrigger>
-            <TabsTrigger value="products" data-testid="tab-products">Products</TabsTrigger>
-            <TabsTrigger value="promotions" data-testid="tab-promotions">Promotions</TabsTrigger>
-            <TabsTrigger value="messages" data-testid="tab-messages">Messages</TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
+            <TabsTrigger value="overview" data-testid="tab-overview">{t('admin.tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="customers" data-testid="tab-customers">{t('admin.tabs.customers')}</TabsTrigger>
+            <TabsTrigger value="products" data-testid="tab-products">{t('admin.tabs.products')}</TabsTrigger>
+            <TabsTrigger value="promotions" data-testid="tab-promotions">{t('admin.tabs.promotions')}</TabsTrigger>
+            <TabsTrigger value="messages" data-testid="tab-messages">{t('admin.tabs.messages')}</TabsTrigger>
+            <TabsTrigger value="settings" data-testid="tab-settings">{t('admin.tabs.settings')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -349,7 +353,7 @@ export default function AdminDashboard() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Branches</SelectItem>
+                  <SelectItem value="all">{t('admin.overview.allBranches')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -357,16 +361,16 @@ export default function AdminDashboard() {
             {/* Member Count and Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <p className="text-sm text-muted-foreground" data-testid="text-member-count">
-                All members {customers.length} of 1,000
+                {t('admin.overview.memberCount', { count: customers.length, total: 1000 })}
               </p>
               <div className="flex gap-2">
                 <Button variant="default" className="gap-2" data-testid="button-add-member">
                   <UserPlus className="w-4 h-4" />
-                  Add Member
+                  {t('admin.overview.addMember')}
                 </Button>
                 <Button variant="outline" className="gap-2" data-testid="button-upload-member">
                   <Upload className="w-4 h-4" />
-                  Upload Member
+                  {t('admin.overview.uploadMember')}
                 </Button>
               </div>
             </div>
@@ -375,7 +379,7 @@ export default function AdminDashboard() {
             <div className="bg-card rounded-lg border p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Trophy className="w-5 h-5 text-yellow-500" />
-                <h3 className="font-semibold text-lg">10 Top Spenders</h3>
+                <h3 className="font-semibold text-lg">{t('admin.overview.topSpenders')}</h3>
               </div>
               <div className="overflow-x-auto pb-2">
                 <div className="flex gap-4 min-w-max">
@@ -504,10 +508,10 @@ export default function AdminDashboard() {
 
               // Create birthday groups
               const birthdayGroups = [
-                { key: 'today', label: 'Today', dateLabel: today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: todayBirthdays },
-                { key: 'tomorrow', label: 'Tomorrow', dateLabel: tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: tomorrowBirthdays },
-                { key: 'this-week', label: 'This Week', dateLabel: `${dayAfterTomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisWeekBirthdays },
-                { key: 'this-month', label: 'This Month', dateLabel: `${new Date(endOfWeek.getTime() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisMonthBirthdays },
+                { key: 'today', label: t('admin.overview.today'), dateLabel: today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: todayBirthdays },
+                { key: 'tomorrow', label: t('admin.overview.tomorrow'), dateLabel: tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: tomorrowBirthdays },
+                { key: 'this-week', label: t('admin.overview.thisWeek'), dateLabel: `${dayAfterTomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisWeekBirthdays },
+                { key: 'this-month', label: t('admin.overview.thisMonth'), dateLabel: `${new Date(endOfWeek.getTime() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisMonthBirthdays },
               ].filter(group => group.customers.length > 0);
 
               if (birthdayGroups.length === 0) return null;
@@ -533,7 +537,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Cake className="w-5 h-5 text-[#FCD34D]" />
-                      <h3 className="font-semibold text-lg">Upcoming Birthdays</h3>
+                      <h3 className="font-semibold text-lg">{t('admin.overview.upcomingBirthdays')}</h3>
                     </div>
                     <Button
                       onClick={handleSendAll}
@@ -542,7 +546,7 @@ export default function AdminDashboard() {
                       data-testid="button-send-all-birthdays"
                     >
                       <Send className="w-4 h-4 mr-2" />
-                      Send All ({allBirthdayCustomerIds.length})
+                      {sendBirthdayMessagesMutation.isPending ? t('admin.overview.sendingMessages') : `${t('admin.overview.sendAll')} (${allBirthdayCustomerIds.length})`}
                     </Button>
                   </div>
                   <div className="overflow-x-auto pb-2">
@@ -615,20 +619,20 @@ export default function AdminDashboard() {
                   onClick={() => setMemberStatus("active")}
                   data-testid="button-filter-active"
                 >
-                  Active
+                  {t('admin.overview.active')}
                 </Button>
                 <Button
                   variant={memberStatus === "inactive" ? "default" : "outline"}
                   onClick={() => setMemberStatus("inactive")}
                   data-testid="button-filter-inactive"
                 >
-                  Inactive
+                  {t('admin.overview.inactive')}
                 </Button>
               </div>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search member"
+                  placeholder={t('admin.overview.searchMember')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -643,13 +647,13 @@ export default function AdminDashboard() {
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr className="border-b">
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Member</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Tier</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Phone</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Email</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Birthday</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Spending</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Points</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">{t('admin.overview.memberHeader')}</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">{t('admin.overview.tierHeader')}</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">{t('admin.overview.phoneHeader')}</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">{t('admin.overview.emailHeader')}</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">{t('admin.overview.birthdayHeader')}</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">{t('admin.overview.spendingHeader')}</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">{t('admin.overview.pointsHeader')}</th>
                     </tr>
                   </thead>
                   <tbody>
