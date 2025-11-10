@@ -485,6 +485,12 @@ export default function CustomerApp() {
           <TabsContent value="home" className="py-3 space-y-3 mt-0">
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
             
+            {/* Customer Phone Number - Prominent Display */}
+            <div className="flex flex-col items-center gap-1 py-3 px-4 bg-card rounded-xl border-2 border-border" data-testid="phone-display">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Customer Phone</p>
+              <p className="text-3xl font-bold text-foreground" data-testid="text-customer-phone">{customer.phone}</p>
+            </div>
+            
             <PointsCard 
               points={customer.points} 
               tier={customer.tier as "bronze" | "silver" | "gold"} 
