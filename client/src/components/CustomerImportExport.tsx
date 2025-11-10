@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Download, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 interface CustomerImportExportProps {
   onImport: (file: File) => void;
@@ -15,6 +16,7 @@ export default function CustomerImportExport({
   onExport,
   customerCount,
 }: CustomerImportExportProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,16 +25,16 @@ export default function CustomerImportExport({
     if (file) {
       if (!file.name.endsWith(".csv")) {
         toast({
-          title: "Invalid File",
-          description: "Please upload a CSV file",
+          title: t('customers.invalidFile'),
+          description: t('customers.invalidFileDesc'),
           variant: "destructive",
         });
         return;
       }
       onImport(file);
       toast({
-        title: "Import Started",
-        description: `Processing ${file.name}...`,
+        title: t('customers.importStarted'),
+        description: t('customers.processingFile', { filename: file.name }),
       });
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -43,8 +45,8 @@ export default function CustomerImportExport({
   const handleExport = () => {
     onExport();
     toast({
-      title: "Export Complete",
-      description: `${customerCount} customers exported to CSV`,
+      title: t('customers.exportComplete'),
+      description: t('customers.customersExported', { count: customerCount }),
     });
   };
 
@@ -57,11 +59,11 @@ export default function CustomerImportExport({
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <FileSpreadsheet className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Customer Data</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('customers.customerData')}</h3>
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Import customers from CSV or export current customer list
+          {t('customers.importExportDesc')}
         </p>
 
         <div className="flex gap-3">
@@ -81,7 +83,7 @@ export default function CustomerImportExport({
             data-testid="button-import-csv"
           >
             <Upload className="w-4 h-4 mr-2" />
-            Import CSV
+            {t('customers.importCSV')}
           </Button>
 
           <Button
@@ -91,14 +93,14 @@ export default function CustomerImportExport({
             data-testid="button-export-csv"
           >
             <Download className="w-4 h-4 mr-2" />
-            Export CSV
+            {t('customers.exportCSV')}
           </Button>
         </div>
 
         <div className="text-xs text-muted-foreground border-t pt-3">
-          <p className="font-medium mb-1">CSV Format:</p>
+          <p className="font-medium mb-1">{t('customers.csvFormat')}</p>
           <p className="font-mono">name,phone,email,birthday</p>
-          <p className="mt-1">Example: John Doe,+66812345678,john@email.com,1990-03-15</p>
+          <p className="mt-1">{t('customers.csvExample')}</p>
         </div>
       </div>
     </Card>
