@@ -6,23 +6,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, Users } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface PromotionCreatorProps {
   onSend: (message: string, targetTier?: string) => void;
 }
 
 export default function PromotionCreator({ onSend }: PromotionCreatorProps) {
+  const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [targetTier, setTargetTier] = useState("all");
   const { toast } = useToast();
+
+  const getTargetDisplay = (tier: string) => {
+    if (tier === "all") return t('promotions.allCustomers');
+    return t(`promotions.${tier}Tier`);
+  };
 
   const handleSend = () => {
     //todo: remove mock functionality
     if (message.trim()) {
       onSend(message, targetTier === "all" ? undefined : targetTier);
       toast({
-        title: "Message Sent!",
-        description: `Promotion sent to ${targetTier === "all" ? "all customers" : targetTier + " tier"}`,
+        title: t('promotions.messageSent'),
+        description: t('promotions.promotionSentTo', { target: getTargetDisplay(targetTier) }),
       });
       setMessage("");
       console.log("Message sent:", { message, targetTier });
@@ -34,12 +41,12 @@ export default function PromotionCreator({ onSend }: PromotionCreatorProps) {
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Send className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Send Promotion</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('promotions.sendPromotion')}</h3>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="target">Target Audience</Label>
+            <Label htmlFor="target">{t('promotions.targetAudience')}</Label>
             <select
               id="target"
               value={targetTier}
@@ -47,25 +54,25 @@ export default function PromotionCreator({ onSend }: PromotionCreatorProps) {
               className="w-full p-2 rounded-md border border-input bg-background"
               data-testid="select-target-tier"
             >
-              <option value="all">All Customers</option>
-              <option value="bronze">Bronze Tier</option>
-              <option value="silver">Silver Tier</option>
-              <option value="gold">Gold Tier</option>
+              <option value="all">{t('promotions.allCustomers')}</option>
+              <option value="bronze">{t('promotions.bronzeTier')}</option>
+              <option value="silver">{t('promotions.silverTier')}</option>
+              <option value="gold">{t('promotions.goldTier')}</option>
             </select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
+            <Label htmlFor="message">{t('promotions.message')}</Label>
             <Textarea
               id="message"
-              placeholder="Enter your promotional message..."
+              placeholder={t('promotions.messagePlaceholder')}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
               data-testid="textarea-message"
             />
             <p className="text-xs text-muted-foreground">
-              SMS character count: {message.length}/160
+              {t('promotions.smsCharCount', { count: message.length })}
             </p>
           </div>
 
@@ -76,7 +83,7 @@ export default function PromotionCreator({ onSend }: PromotionCreatorProps) {
             data-testid="button-send-promotion"
           >
             <Users className="w-4 h-4 mr-2" />
-            Send to {targetTier === "all" ? "All Customers" : `${targetTier} Tier`}
+            {t('promotions.sendTo', { target: getTargetDisplay(targetTier) })}
           </Button>
         </div>
       </div>

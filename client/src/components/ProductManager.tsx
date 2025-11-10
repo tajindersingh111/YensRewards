@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,20 +29,13 @@ import ProductCSVImport from "@/components/ProductCSVImport";
 import ProductPhotoUpload from "@/components/ProductPhotoUpload";
 import type { Product } from "@shared/schema";
 
-const CATEGORIES = [
-  { value: "soft_serve", label: "Soft Serve" },
-  { value: "milk_tea", label: "Milk Tea" },
-  { value: "fruit_tea", label: "Fruit Tea" },
-  { value: "shakes", label: "Shakes/Smoothies" },
-  { value: "sundaes", label: "Sundaes" },
-  { value: "float_drinks", label: "Float Drinks" },
-];
+const CATEGORY_VALUES = ["soft_serve", "milk_tea", "fruit_tea", "shakes", "sundaes", "float_drinks"];
 
-const BADGES = [
-  { value: "new", label: "New!", color: "bg-green-500" },
-  { value: "popular", label: "Popular!", color: "bg-yellow-500" },
-  { value: "limited", label: "Limited Time", color: "bg-red-500" },
-  { value: "sale", label: "On Sale!", color: "bg-blue-500" },
+const BADGE_CONFIG = [
+  { value: "new", color: "bg-green-500" },
+  { value: "popular", color: "bg-yellow-500" },
+  { value: "limited", color: "bg-red-500" },
+  { value: "sale", color: "bg-blue-500" },
 ];
 
 interface ProductFormData {
@@ -59,6 +53,7 @@ interface ProductFormData {
 }
 
 export default function ProductManager() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -86,12 +81,12 @@ export default function ProductManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({ title: "Success", description: "Product created successfully!" });
+      toast({ title: t('products.success'), description: t('products.productCreated') });
       resetForm();
       setIsDialogOpen(false);
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to create product", variant: "destructive" });
+      toast({ title: t('products.error'), description: t('products.createFailed'), variant: "destructive" });
     },
   });
 
@@ -101,12 +96,12 @@ export default function ProductManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({ title: "Success", description: "Product updated successfully!" });
+      toast({ title: t('products.success'), description: t('products.productUpdated') });
       resetForm();
       setIsDialogOpen(false);
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update product", variant: "destructive" });
+      toast({ title: t('products.error'), description: t('products.updateFailed'), variant: "destructive" });
     },
   });
 
@@ -116,10 +111,10 @@ export default function ProductManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({ title: "Success", description: "Product deleted successfully!" });
+      toast({ title: t('products.success'), description: t('products.productDeleted') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to delete product", variant: "destructive" });
+      toast({ title: t('products.error'), description: t('products.deleteFailed'), variant: "destructive" });
     },
   });
 
@@ -168,22 +163,22 @@ export default function ProductManager() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
+    if (confirm(t('products.deleteConfirm'))) {
       deleteMutation.mutate(id);
     }
   };
 
   const getBadgeInfo = (badgeValue: string | null) => {
     if (!badgeValue) return null;
-    return BADGES.find(b => b.value === badgeValue);
+    return BADGE_CONFIG.find(b => b.value === badgeValue);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Products</h2>
-          <p className="text-muted-foreground">Manage your menu items</p>
+          <h2 className="text-2xl font-bold text-foreground">{t('products.title')}</h2>
+          <p className="text-muted-foreground">{t('products.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <ProductCSVImport />
@@ -194,17 +189,17 @@ export default function ProductManager() {
             <DialogTrigger asChild>
               <Button data-testid="button-add-product" className="hover-elevate active-elevate-2">
                 <Plus className="w-4 h-4 mr-2" />
-                Add Product
+                {t('products.addProduct')}
               </Button>
             </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
+              <DialogTitle>{editingProduct ? t('products.editProduct') : t('products.addNewProduct')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="productCode">Product Code</Label>
+                  <Label htmlFor="productCode">{t('products.productCode')}</Label>
                   <Input
                     id="productCode"
                     value={formData.productCode}
@@ -214,7 +209,7 @@ export default function ProductManager() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="cost">Cost (฿)</Label>
+                  <Label htmlFor="cost">{t('products.productCost')} (฿)</Label>
                   <Input
                     id="cost"
                     type="number"
@@ -227,7 +222,7 @@ export default function ProductManager() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="name">Product Name *</Label>
+                <Label htmlFor="name">{t('products.productName')} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -237,7 +232,7 @@ export default function ProductManager() {
                 />
               </div>
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('products.productDescription')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -248,7 +243,7 @@ export default function ProductManager() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="price">Price (฿) *</Label>
+                  <Label htmlFor="price">{t('products.productPrice')} (฿) *</Label>
                   <Input
                     id="price"
                     type="number"
@@ -260,18 +255,18 @@ export default function ProductManager() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category">{t('products.productCategory')} *</Label>
                   <Select
                     value={formData.category}
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                   >
                     <SelectTrigger id="category" data-testid="select-product-category">
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t('products.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
+                      {CATEGORY_VALUES.map((catValue) => (
+                        <SelectItem key={catValue} value={catValue}>
+                          {t(`menu.categories.${catValue}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -279,7 +274,7 @@ export default function ProductManager() {
                 </div>
               </div>
               <div>
-                <Label>Product Image</Label>
+                <Label>{t('products.productImage')}</Label>
                 <ProductPhotoUpload
                   currentImageUrl={formData.imageUrl}
                   onImageChange={(url) => setFormData({ ...formData, imageUrl: url })}
@@ -287,26 +282,26 @@ export default function ProductManager() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="badge">Promotional Badge</Label>
+                  <Label htmlFor="badge">{t('products.promotionalBadge')}</Label>
                   <Select
                     value={formData.badge || "none"}
                     onValueChange={(value) => setFormData({ ...formData, badge: value === "none" ? "" : value })}
                   >
                     <SelectTrigger id="badge" data-testid="select-product-badge">
-                      <SelectValue placeholder="None" />
+                      <SelectValue placeholder={t('products.none')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {BADGES.map((badge) => (
+                      <SelectItem value="none">{t('products.none')}</SelectItem>
+                      {BADGE_CONFIG.map((badge) => (
                         <SelectItem key={badge.value} value={badge.value}>
-                          {badge.label}
+                          {t(`menu.badges.${badge.value}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="sortOrder">Sort Order</Label>
+                  <Label htmlFor="sortOrder">{t('products.sortOrder')}</Label>
                   <Input
                     id="sortOrder"
                     type="number"
@@ -325,7 +320,7 @@ export default function ProductManager() {
                     className="w-4 h-4"
                     data-testid="checkbox-product-featured"
                   />
-                  <span className="text-sm">Featured Product</span>
+                  <span className="text-sm">{t('products.featured')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -335,7 +330,7 @@ export default function ProductManager() {
                     className="w-4 h-4"
                     data-testid="checkbox-product-available"
                   />
-                  <span className="text-sm">Available</span>
+                  <span className="text-sm">{t('products.productAvailable')}</span>
                 </label>
               </div>
               <DialogFooter>
@@ -345,14 +340,14 @@ export default function ProductManager() {
                   onClick={() => setIsDialogOpen(false)}
                   data-testid="button-cancel-product"
                 >
-                  Cancel
+                  {t('products.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
                   data-testid="button-save-product"
                 >
-                  {editingProduct ? "Update" : "Create"} Product
+                  {editingProduct ? t('products.update') : t('products.create')}
                 </Button>
               </DialogFooter>
             </form>
@@ -363,13 +358,13 @@ export default function ProductManager() {
 
     {isLoading ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading products...</p>
+          <p className="text-muted-foreground">{t('products.loadingProducts')}</p>
         </div>
       ) : products.length === 0 ? (
         <Card className="p-12 text-center">
           <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No products yet</h3>
-          <p className="text-muted-foreground mb-4">Add your first product to get started</p>
+          <h3 className="text-lg font-semibold mb-2">{t('products.noProducts')}</h3>
+          <p className="text-muted-foreground mb-4">{t('products.noProductsDesc')}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -400,7 +395,7 @@ export default function ProductManager() {
                     </div>
                     {badgeInfo && (
                       <Badge className={`${badgeInfo.color} text-white text-xs`}>
-                        {badgeInfo.label}
+                        {t(`menu.badges.${product.badge}`)}
                       </Badge>
                     )}
                   </div>
@@ -410,10 +405,10 @@ export default function ProductManager() {
                     </span>
                     <div className="flex gap-1">
                       {product.featured && (
-                        <Badge variant="outline" className="text-xs">Featured</Badge>
+                        <Badge variant="outline" className="text-xs">{t('products.featuredShort')}</Badge>
                       )}
                       {!product.available && (
-                        <Badge variant="secondary" className="text-xs">Sold Out</Badge>
+                        <Badge variant="secondary" className="text-xs">{t('products.soldOut')}</Badge>
                       )}
                     </div>
                   </div>
@@ -426,7 +421,7 @@ export default function ProductManager() {
                       data-testid={`button-edit-${product.id}`}
                     >
                       <Edit className="w-4 h-4 mr-1" />
-                      Edit
+                      {t('products.editProduct')}
                     </Button>
                     <Button
                       onClick={() => handleDelete(product.id)}

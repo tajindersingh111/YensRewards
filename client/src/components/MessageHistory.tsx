@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { RefreshCw, Mail, MessageSquare, CheckCircle, XCircle, Clock, Send } from "lucide-react";
 import { format } from "date-fns";
 
@@ -42,6 +43,7 @@ interface MessageStats {
 }
 
 export default function MessageHistory() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [channelFilter, setChannelFilter] = useState<string>("all");
@@ -66,14 +68,14 @@ export default function MessageHistory() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
       toast({
-        title: "Message Retried",
-        description: "The message has been queued for retry",
+        title: t('messages.messageRetried'),
+        description: t('messages.messageRetriedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Retry Failed",
-        description: error.message || "Failed to retry message",
+        title: t('messages.retryFailed'),
+        description: error.message || t('messages.retryFailedDesc'),
         variant: "destructive",
       });
     },
@@ -110,7 +112,7 @@ export default function MessageHistory() {
     return (
       <Badge variant={variants[status]} className="flex items-center gap-1" data-testid={`badge-status-${status}`}>
         {getStatusIcon(status)}
-        <span className="capitalize">{status}</span>
+        <span className="capitalize">{t(`messages.${status}`)}</span>
       </Badge>
     );
   };
@@ -129,7 +131,7 @@ export default function MessageHistory() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Messages</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('messages.totalMessages')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-total">
@@ -140,7 +142,7 @@ export default function MessageHistory() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Delivered</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('messages.delivered')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600" data-testid="stat-delivered">
@@ -151,7 +153,7 @@ export default function MessageHistory() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Failed</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('messages.failed')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600" data-testid="stat-failed">
@@ -162,7 +164,7 @@ export default function MessageHistory() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('messages.pending')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600" data-testid="stat-pending">
@@ -176,7 +178,7 @@ export default function MessageHistory() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">SMS Messages</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('messages.smsMessages')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -190,7 +192,7 @@ export default function MessageHistory() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Email Messages</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('messages.emailMessages')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -206,13 +208,13 @@ export default function MessageHistory() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Message History</CardTitle>
-          <CardDescription>View and manage all sent messages</CardDescription>
+          <CardTitle>{t('messages.messageHistory')}</CardTitle>
+          <CardDescription>{t('messages.viewManageMessages')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
-              placeholder="Search by recipient..."
+              placeholder={t('messages.searchByRecipient')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="sm:max-w-xs"
@@ -220,24 +222,24 @@ export default function MessageHistory() {
             />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="sm:w-[180px]" data-testid="select-status-filter">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('messages.filterByStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="sent">Sent</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="all">{t('messages.allStatuses')}</SelectItem>
+                <SelectItem value="pending">{t('messages.pending')}</SelectItem>
+                <SelectItem value="sent">{t('messages.sent')}</SelectItem>
+                <SelectItem value="delivered">{t('messages.delivered')}</SelectItem>
+                <SelectItem value="failed">{t('messages.failed')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={channelFilter} onValueChange={setChannelFilter}>
               <SelectTrigger className="sm:w-[180px]" data-testid="select-channel-filter">
-                <SelectValue placeholder="Filter by channel" />
+                <SelectValue placeholder={t('messages.filterByChannel')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Channels</SelectItem>
-                <SelectItem value="sms">SMS</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="all">{t('messages.allChannels')}</SelectItem>
+                <SelectItem value="sms">{t('messages.sms')}</SelectItem>
+                <SelectItem value="email">{t('messages.email')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -247,25 +249,25 @@ export default function MessageHistory() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Channel</TableHead>
-                  <TableHead>Recipient</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t('messages.sentAt')}</TableHead>
+                  <TableHead>{t('messages.channel')}</TableHead>
+                  <TableHead>{t('messages.recipient')}</TableHead>
+                  <TableHead>{t('promotions.message')}</TableHead>
+                  <TableHead>{t('messages.status')}</TableHead>
+                  <TableHead>{t('messages.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Loading messages...
+                      {t('messages.loadingMessages')}
                     </TableCell>
                   </TableRow>
                 ) : filteredMessages.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No messages found
+                      {t('messages.noMessages')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -277,7 +279,7 @@ export default function MessageHistory() {
                       <TableCell>
                         <Badge variant="outline" className="flex items-center gap-1 w-fit">
                           {getChannelIcon(msg.channel)}
-                          <span className="uppercase">{msg.channel}</span>
+                          <span className="uppercase">{t(`messages.${msg.channel}`)}</span>
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">{msg.recipient}</TableCell>
@@ -296,7 +298,7 @@ export default function MessageHistory() {
                             data-testid={`button-retry-${msg.id}`}
                           >
                             <RefreshCw className="h-4 w-4 mr-1" />
-                            Retry
+                            {t('messages.retry')}
                           </Button>
                         )}
                         {msg.errorMessage && (
