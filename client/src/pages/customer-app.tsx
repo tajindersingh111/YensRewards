@@ -22,11 +22,14 @@ import { Badge } from "@/components/ui/badge";
 import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
 export default function CustomerApp() {
   // Auto-update detection
   useAutoUpdate();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("home");
   const [phone, setPhone] = useState<string | null>(null);
@@ -107,8 +110,8 @@ export default function CustomerApp() {
         setCelebrationType("tier-upgrade");
         setShowCelebration(true);
         toast({
-          title: `🎉 Tier Upgraded to ${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}!`,
-          description: "Congratulations! You've reached a new level!",
+          title: t('customer.tierUpgrade', { tier: t(`customer.tiers.${currentTier}`) }),
+          description: t('customer.tierUpgradeDesc'),
         });
       }
       // Check for points increase (regular celebration)
@@ -119,8 +122,8 @@ export default function CustomerApp() {
         setCelebrationType("points");
         setShowCelebration(true);
         toast({
-          title: `+${earnedPoints} Points Earned! 🎊`,
-          description: `You now have ${currentPoints} points!`,
+          title: t('customer.pointsEarned', { points: earnedPoints }),
+          description: t('customer.totalPoints', { points: currentPoints }),
         });
       } else {
         console.log("✅ No changes detected");
@@ -231,14 +234,14 @@ export default function CustomerApp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customers/phone', phone] });
       toast({
-        title: "Welcome to Yen's Rewards! 🎉",
-        description: "Your account has been created successfully!",
+        title: t('customer.welcomeTitle'),
+        description: t('customer.accountCreated'),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to create account. Please try again.",
+        title: t('common.error'),
+        description: t('customer.accountCreateFailed'),
         variant: "destructive",
       });
     },
@@ -247,8 +250,8 @@ export default function CustomerApp() {
   const handleSignup = () => {
     if (!signupData.name.trim()) {
       toast({
-        title: "Name Required",
-        description: "Please enter your name to continue",
+        title: t('customer.nameRequired'),
+        description: t('customer.nameRequiredDesc'),
         variant: "destructive",
       });
       return;
@@ -271,8 +274,8 @@ export default function CustomerApp() {
           <div className="text-center space-y-4">
             <img src={logoUrl} alt="Yens Logo" className="w-24 h-24 rounded-full mx-auto" />
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-foreground">Yen's Rewards</h1>
-              <p className="text-base text-muted-foreground">Enter your phone number to access your rewards</p>
+              <h1 className="text-3xl font-bold text-foreground">{t('customer.yensRewards')}</h1>
+              <p className="text-base text-muted-foreground">{t('customer.enterPhone')}</p>
             </div>
           </div>
           
@@ -292,12 +295,12 @@ export default function CustomerApp() {
               size="lg"
               data-testid="button-login"
             >
-              Access My Rewards
+              {t('customer.accessRewards')}
             </Button>
           </div>
           
           <div className="text-sm text-muted-foreground text-center">
-            <p>New customer? Enter your phone number and we'll set up your account!</p>
+            <p>{t('customer.newCustomer')}</p>
           </div>
         </Card>
       </div>
@@ -310,7 +313,7 @@ export default function CustomerApp() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your rewards...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -325,12 +328,12 @@ export default function CustomerApp() {
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
               <UserPlus className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground">Create Your Account</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t('customer.createAccount')}</h2>
             <p className="text-muted-foreground">
-              Welcome! Let's set up your Yen's Rewards account
+              {t('customer.setupAccount')}
             </p>
             <p className="text-sm text-muted-foreground">
-              Phone: <span className="font-semibold text-foreground">{phone}</span>
+              {t('customer.phone')}: <span className="font-semibold text-foreground">{phone}</span>
             </p>
           </div>
 
@@ -345,12 +348,12 @@ export default function CustomerApp() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-foreground">
-                  Your Name <span className="text-destructive">*</span>
+                  {t('customer.yourName')} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder={t('customer.enterName')}
                   value={signupData.name}
                   onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
                   data-testid="input-name"
@@ -359,12 +362,12 @@ export default function CustomerApp() {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground">
-                  Email (Optional)
+                  {t('customer.emailOptional')}
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder={t('customer.emailPlaceholder')}
                   value={signupData.email}
                   onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                   data-testid="input-email"
@@ -373,7 +376,7 @@ export default function CustomerApp() {
 
               <div className="space-y-2">
                 <Label htmlFor="birthday" className="text-foreground">
-                  Birthday (Optional)
+                  {t('customer.birthdayOptional')}
                 </Label>
                 <Input
                   id="birthday"
@@ -382,7 +385,7 @@ export default function CustomerApp() {
                   onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
                   data-testid="input-birthday"
                 />
-                <p className="text-xs text-muted-foreground">Get bonus points on your birthday!</p>
+                <p className="text-xs text-muted-foreground">{t('customer.birthdayBonus')}</p>
               </div>
             </div>
           </div>
@@ -394,7 +397,7 @@ export default function CustomerApp() {
               disabled={createCustomer.isPending}
               data-testid="button-create-account"
             >
-              {createCustomer.isPending ? "Creating Account..." : "Create Account"}
+              {createCustomer.isPending ? t('customer.creatingAccount') : t('customer.createAccount')}
             </Button>
             <Button 
               variant="outline"
@@ -402,12 +405,12 @@ export default function CustomerApp() {
               className="w-full"
               data-testid="button-back"
             >
-              Use Different Number
+              {t('customer.useDifferentNumber')}
             </Button>
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
-            By creating an account, you'll start earning points on every purchase!
+            {t('customer.startEarning')}
           </p>
         </Card>
       </div>
@@ -449,13 +452,14 @@ export default function CustomerApp() {
           <div className="flex items-center gap-3">
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold">Yen's Rewards</h1>
+              <h1 className="text-xl font-bold">{t('customer.yensRewards')}</h1>
               <span className="text-xs opacity-70" data-testid="text-version">
                 v94 | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <Button 
               variant="ghost" 
               size="icon" 
@@ -487,7 +491,7 @@ export default function CustomerApp() {
             
             {/* Customer Phone Number - Prominent Display */}
             <div className="flex flex-col items-center gap-1 py-3 px-4 bg-card rounded-xl border-2 border-border" data-testid="phone-display">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Customer Phone</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('customer.customerPhone')}</p>
               <p className="text-3xl font-bold text-foreground" data-testid="text-customer-phone">{customer.phone}</p>
             </div>
             
@@ -506,7 +510,7 @@ export default function CustomerApp() {
             
             {transactionsLoading ? (
               <Card className="p-6 text-center">
-                <p className="text-muted-foreground">Loading transactions...</p>
+                <p className="text-muted-foreground">{t('common.loading')}</p>
               </Card>
             ) : (
               <TransactionList transactions={formattedTransactions} />
@@ -526,8 +530,8 @@ export default function CustomerApp() {
               ))
             ) : (
               <Card className="p-8 text-center">
-                <p className="text-muted-foreground">No promotions available yet</p>
-                <p className="text-sm text-muted-foreground mt-2">Check back soon for special offers!</p>
+                <p className="text-muted-foreground">{t('customer.noPromotions')}</p>
+                <p className="text-sm text-muted-foreground mt-2">{t('customer.checkBackSoon')}</p>
               </Card>
             )}
           </TabsContent>
@@ -550,13 +554,13 @@ export default function CustomerApp() {
                 <h2 className="text-2xl font-bold text-foreground">{customer.name}</h2>
                 <p className="text-muted-foreground">{customer.phone}</p>
                 {customer.birthday && (
-                  <p className="text-sm text-muted-foreground mt-2">Birthday: {customer.birthday}</p>
+                  <p className="text-sm text-muted-foreground mt-2">{t('customer.birthday')}: {customer.birthday}</p>
                 )}
               </div>
             </div>
             {transactionsLoading ? (
               <Card className="p-6 text-center">
-                <p className="text-muted-foreground">Loading transactions...</p>
+                <p className="text-muted-foreground">{t('common.loading')}</p>
               </Card>
             ) : (
               <TransactionList transactions={formattedTransactions} />
@@ -577,7 +581,7 @@ export default function CustomerApp() {
             data-testid="button-nav-home"
           >
             <Home className="w-6 h-6" />
-            <span className="text-xs">Home</span>
+            <span className="text-xs">{t('customer.home')}</span>
           </button>
           <button
             onClick={() => setLocation("/menu")}
@@ -585,7 +589,7 @@ export default function CustomerApp() {
             data-testid="button-nav-menu"
           >
             <IceCream className="w-6 h-6" />
-            <span className="text-xs">Menu</span>
+            <span className="text-xs">{t('customer.menu')}</span>
           </button>
           <button
             onClick={() => setActiveTab("rewards")}
@@ -595,7 +599,7 @@ export default function CustomerApp() {
             data-testid="button-nav-rewards"
           >
             <Award className="w-6 h-6" />
-            <span className="text-xs">Rewards</span>
+            <span className="text-xs">{t('customer.rewards')}</span>
             {unreadCount > 0 && (
               <Badge 
                 className="absolute top-1 right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs font-bold rounded-full"
@@ -613,7 +617,7 @@ export default function CustomerApp() {
             data-testid="button-nav-referrals"
           >
             <Users className="w-6 h-6" />
-            <span className="text-xs">Referrals</span>
+            <span className="text-xs">{t('customer.referrals')}</span>
           </button>
           <button
             onClick={() => setActiveTab("profile")}
@@ -623,7 +627,7 @@ export default function CustomerApp() {
             data-testid="button-nav-profile"
           >
             <User className="w-6 h-6" />
-            <span className="text-xs">Profile</span>
+            <span className="text-xs">{t('customer.profile')}</span>
           </button>
         </div>
       </nav>

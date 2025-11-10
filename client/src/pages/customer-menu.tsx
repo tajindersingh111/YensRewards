@@ -8,27 +8,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Package, Star } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { Product } from "@shared/schema";
-
-const CATEGORIES = [
-  { value: "all", label: "All Items" },
-  { value: "soft_serve", label: "Soft Serve" },
-  { value: "milk_tea", label: "Milk Tea" },
-  { value: "fruit_tea", label: "Fruit Tea" },
-  { value: "shakes", label: "Shakes" },
-  { value: "sundaes", label: "Sundaes" },
-  { value: "float_drinks", label: "Float Drinks" },
-];
-
-const BADGE_STYLES: Record<string, { label: string; className: string }> = {
-  new: { label: "New!", className: "bg-green-500 text-white" },
-  popular: { label: "Popular!", className: "bg-primary text-white" },
-  limited: { label: "Limited Time", className: "bg-red-500 text-white" },
-  sale: { label: "On Sale!", className: "bg-blue-500 text-white" },
-};
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function CustomerMenu() {
   const [, setLocationPath] = useLocation();
   const [activeCategory, setActiveCategory] = useState("all");
+  const { t } = useTranslation();
+  
+  const CATEGORIES = [
+    { value: "all", label: t('customer.menu.allItems') },
+    { value: "soft_serve", label: t('customer.menu.categories.soft_serve') },
+    { value: "milk_tea", label: t('customer.menu.categories.milk_tea') },
+    { value: "fruit_tea", label: t('customer.menu.categories.fruit_tea') },
+    { value: "shakes", label: t('customer.menu.categories.shakes') },
+    { value: "sundaes", label: t('customer.menu.categories.sundaes') },
+    { value: "float_drinks", label: t('customer.menu.categories.float_drinks') },
+  ];
+
+  const BADGE_STYLES: Record<string, { label: string; className: string }> = {
+    new: { label: t('customer.menu.badges.new'), className: "bg-green-500 text-white" },
+    popular: { label: t('customer.menu.badges.popular'), className: "bg-primary text-white" },
+    limited: { label: t('customer.menu.badges.limited'), className: "bg-red-500 text-white" },
+    sale: { label: t('customer.menu.badges.sale'), className: "bg-blue-500 text-white" },
+  };
 
   const { data: allProducts = [], isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -57,10 +60,11 @@ export default function CustomerMenu() {
             </Button>
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div>
-              <h1 className="text-xl font-bold text-foreground">Our Menu</h1>
-              <p className="text-sm text-muted-foreground">Yens Thai Ice Cream</p>
+              <h1 className="text-xl font-bold text-foreground">{t('customer.menu.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('customer.menu.subtitle')}</p>
             </div>
           </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -70,7 +74,7 @@ export default function CustomerMenu() {
         {featuredProducts.length > 0 && (
           <section className="mb-8">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Yen's Recommend!</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-2">{t('customer.menu.yensRecommend')}</h2>
               <div className="flex items-center justify-center gap-1 text-primary">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-5 h-5 fill-primary" />
@@ -80,7 +84,7 @@ export default function CustomerMenu() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {featuredProducts.slice(0, 10).map((product) => (
-                <ProductCard key={product.id} product={product} featured />
+                <ProductCard key={product.id} product={product} featured={true} />
               ))}
             </div>
           </section>
@@ -105,13 +109,13 @@ export default function CustomerMenu() {
             <TabsContent key={cat.value} value={cat.value} className="mt-0">
               {isLoading ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">Loading menu...</p>
+                  <p className="text-muted-foreground">{t('common.loading')}</p>
                 </div>
               ) : filteredProducts.length === 0 ? (
                 <Card className="p-12 text-center">
                   <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No items available</h3>
-                  <p className="text-muted-foreground">Check back soon for new items!</p>
+                  <h3 className="text-lg font-semibold mb-2">{t('customer.menu.noItems')}</h3>
+                  <p className="text-muted-foreground">{t('customer.menu.checkBack')}</p>
                 </Card>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -134,6 +138,15 @@ interface ProductCardProps {
 }
 
 function ProductCard({ product, featured }: ProductCardProps) {
+  const { t } = useTranslation();
+  
+  const BADGE_STYLES: Record<string, { label: string; className: string }> = {
+    new: { label: t('customer.menu.badges.new'), className: "bg-green-500 text-white" },
+    popular: { label: t('customer.menu.badges.popular'), className: "bg-primary text-white" },
+    limited: { label: t('customer.menu.badges.limited'), className: "bg-red-500 text-white" },
+    sale: { label: t('customer.menu.badges.sale'), className: "bg-blue-500 text-white" },
+  };
+  
   const badgeStyle = product.badge ? BADGE_STYLES[product.badge] : null;
 
   return (
