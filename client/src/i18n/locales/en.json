@@ -452,7 +452,9 @@
       "updateFailed": "Failed to update template",
       "deleteFailed": "Failed to delete template",
       "success": "Success",
-      "error": "Error"
+      "error": "Error",
+      "setDefault": "Set as default template for this type",
+      "defaultTemplate": "Default"
     },
     "csv": {
       "selectFile": "Select CSV File",

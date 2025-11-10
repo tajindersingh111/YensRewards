@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Plus, Edit2, Trash2, Eye, Star } from "lucide-react";
 import { insertMessageTemplateSchema, type MessageTemplate, type InsertMessageTemplate } from "@shared/schema";
 
 export default function MessageTemplates() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
@@ -48,15 +50,15 @@ export default function MessageTemplates() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
       toast({
-        title: "Template Created",
-        description: "Message template created successfully",
+        title: t('messages.success'),
+        description: t('messages.templateCreated'),
       });
       resetForm();
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create template",
+        title: t('messages.error'),
+        description: error.message || t('messages.createFailed'),
         variant: "destructive",
       });
     },
@@ -69,15 +71,15 @@ export default function MessageTemplates() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
       toast({
-        title: "Template Updated",
-        description: "Message template updated successfully",
+        title: t('messages.success'),
+        description: t('messages.templateUpdated'),
       });
       resetForm();
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update template",
+        title: t('messages.error'),
+        description: error.message || t('messages.updateFailed'),
         variant: "destructive",
       });
     },
@@ -90,14 +92,14 @@ export default function MessageTemplates() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
       toast({
-        title: "Template Deleted",
-        description: "Message template deleted successfully",
+        title: t('messages.success'),
+        description: t('messages.templateDeleted'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete template",
+        title: t('messages.error'),
+        description: error.message || t('messages.deleteFailed'),
         variant: "destructive",
       });
     },
@@ -138,7 +140,7 @@ export default function MessageTemplates() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this template?")) {
+    if (confirm(t('messages.deleteConfirm'))) {
       deleteTemplateMutation.mutate(id);
     }
   };
@@ -152,20 +154,20 @@ export default function MessageTemplates() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading templates...</div>;
+    return <div className="text-center py-8">{t('common.loading')}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Message Templates</h2>
-          <p className="text-muted-foreground">Create and manage message templates for birthday greetings and promotions</p>
+          <h2 className="text-2xl font-bold">{t('messages.templates')}</h2>
+          <p className="text-muted-foreground">{t('messages.manageTemplates')}</p>
         </div>
         {!isCreating && (
           <Button onClick={() => setIsCreating(true)} data-testid="button-create-template">
             <Plus className="w-4 h-4 mr-2" />
-            New Template
+            {t('messages.addTemplate')}
           </Button>
         )}
       </div>
@@ -173,9 +175,9 @@ export default function MessageTemplates() {
       {isCreating && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingTemplate ? "Edit Template" : "Create New Template"}</CardTitle>
+            <CardTitle>{editingTemplate ? t('messages.editTemplate') : t('messages.addNewTemplate')}</CardTitle>
             <CardDescription>
-              Use placeholders: {"{name}"}, {"{tier}"}, {"{points}"}
+              {t('messages.placeholdersDesc')}
             </CardDescription>
           </CardHeader>
           <Form {...form}>
@@ -187,10 +189,10 @@ export default function MessageTemplates() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Template Name</FormLabel>
+                        <FormLabel>{t('messages.templateName')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g., Birthday Greeting"
+                            placeholder={t('messages.templateName')}
                             data-testid="input-template-name"
                             {...field}
                           />
@@ -204,7 +206,7 @@ export default function MessageTemplates() {
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Type</FormLabel>
+                        <FormLabel>{t('messages.templateType')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-template-type">
@@ -212,9 +214,9 @@ export default function MessageTemplates() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="birthday">Birthday</SelectItem>
-                            <SelectItem value="promotion">Promotion</SelectItem>
-                            <SelectItem value="reminder">Reminder</SelectItem>
+                            <SelectItem value="birthday">{t('messages.birthday')}</SelectItem>
+                            <SelectItem value="promotion">{t('messages.promotion')}</SelectItem>
+                            <SelectItem value="reminder">{t('messages.reminder')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -226,7 +228,7 @@ export default function MessageTemplates() {
                     name="channel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Channel</FormLabel>
+                        <FormLabel>{t('messages.channel')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-template-channel">
@@ -234,9 +236,9 @@ export default function MessageTemplates() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="sms">SMS</SelectItem>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="both">Both (SMS + Email)</SelectItem>
+                            <SelectItem value="sms">{t('messages.sms')}</SelectItem>
+                            <SelectItem value="email">{t('messages.email')}</SelectItem>
+                            <SelectItem value="both">{t('messages.sms')} + {t('messages.email')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -251,10 +253,10 @@ export default function MessageTemplates() {
                     name="subject"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email Subject</FormLabel>
+                        <FormLabel>{t('messages.templateSubject')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g., Happy Birthday from Yens!"
+                            placeholder={t('messages.templateSubject')}
                             data-testid="input-template-subject"
                             {...field}
                             value={field.value || ""}
@@ -271,10 +273,10 @@ export default function MessageTemplates() {
                   name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Message</FormLabel>
+                      <FormLabel>{t('messages.templateMessage')}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Enter your message. Use {name}, {tier}, {points} as placeholders."
+                          placeholder={t('messages.placeholdersDesc')}
                           rows={4}
                           data-testid="input-template-message"
                           {...field}
@@ -299,7 +301,7 @@ export default function MessageTemplates() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>
-                          Set as default template for this type
+                          {t('messages.setDefault')}
                         </FormLabel>
                       </div>
                     </FormItem>
@@ -309,14 +311,14 @@ export default function MessageTemplates() {
                 <div className="border-t pt-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4" />
-                    <h4 className="font-semibold">Preview</h4>
+                    <h4 className="font-semibold">{t('csv.preview')}</h4>
                   </div>
                   <div className="bg-muted p-4 rounded-lg">
                     <p className="text-sm whitespace-pre-wrap">{getPreviewMessage()}</p>
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <Input
-                      placeholder="Preview Name"
+                      placeholder={t('messages.customerName')}
                       value={previewData.name}
                       onChange={(e) => setPreviewData({ ...previewData, name: e.target.value })}
                       className="text-xs"
@@ -330,13 +332,13 @@ export default function MessageTemplates() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bronze">Bronze</SelectItem>
-                        <SelectItem value="silver">Silver</SelectItem>
-                        <SelectItem value="gold">Gold</SelectItem>
+                        <SelectItem value="bronze">{t('common.tiers.bronze')}</SelectItem>
+                        <SelectItem value="silver">{t('common.tiers.silver')}</SelectItem>
+                        <SelectItem value="gold">{t('common.tiers.gold')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input
-                      placeholder="Points"
+                      placeholder={t('messages.customerPoints')}
                       value={previewData.points}
                       onChange={(e) => setPreviewData({ ...previewData, points: e.target.value })}
                       className="text-xs"
@@ -351,7 +353,7 @@ export default function MessageTemplates() {
                   disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending}
                   data-testid="button-save-template"
                 >
-                  {editingTemplate ? "Update" : "Create"} Template
+                  {editingTemplate ? t('messages.update') : t('messages.create')}
                 </Button>
                 <Button
                   type="button"
@@ -359,7 +361,7 @@ export default function MessageTemplates() {
                   onClick={resetForm}
                   data-testid="button-cancel-template"
                 >
-                  Cancel
+                  {t('messages.cancel')}
                 </Button>
               </CardFooter>
             </form>
@@ -378,14 +380,14 @@ export default function MessageTemplates() {
                     {template.isDefault && (
                       <Badge variant="default" className="bg-[#FCD34D] text-gray-900">
                         <Star className="w-3 h-3 mr-1" />
-                        Default
+                        {t('messages.defaultTemplate')}
                       </Badge>
                     )}
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2">
-                    <span className="capitalize">{template.type}</span>
+                    <span className="capitalize">{t(`messages.${template.type}`)}</span>
                     <span>•</span>
-                    <Badge variant="outline" className="capitalize">{template.channel}</Badge>
+                    <Badge variant="outline" className="capitalize">{t(`messages.${template.channel}`)}</Badge>
                   </CardDescription>
                 </div>
                 <div className="flex gap-1">
@@ -412,12 +414,12 @@ export default function MessageTemplates() {
             <CardContent className="space-y-2">
               {template.subject && (
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">Subject:</p>
+                  <p className="text-xs font-semibold text-muted-foreground">{t('messages.templateSubject')}:</p>
                   <p className="text-sm">{template.subject}</p>
                 </div>
               )}
               <div>
-                {template.subject && <p className="text-xs font-semibold text-muted-foreground">Message:</p>}
+                {template.subject && <p className="text-xs font-semibold text-muted-foreground">{t('messages.templateMessage')}:</p>}
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {template.message}
                 </p>
@@ -430,10 +432,10 @@ export default function MessageTemplates() {
       {templates.length === 0 && !isCreating && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">No message templates yet</p>
+            <p className="text-muted-foreground mb-4">{t('messages.noTemplates')}</p>
             <Button onClick={() => setIsCreating(true)} data-testid="button-create-first-template">
               <Plus className="w-4 h-4 mr-2" />
-              Create Your First Template
+              {t('messages.addTemplate')}
             </Button>
           </CardContent>
         </Card>
