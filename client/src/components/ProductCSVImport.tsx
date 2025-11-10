@@ -20,6 +20,7 @@ interface ParsedProduct {
   category: string;
   price: number;
   cost: number;
+  imageUrl?: string;
 }
 
 const CATEGORY_MAP: Record<string, string> = {
@@ -80,6 +81,7 @@ export default function ProductCSVImport() {
       const categoryThai = values[3].trim();
       const costStr = values[4].trim();
       const priceStr = values[6].trim();
+      const imageUrl = values[8]?.trim() || ''; // Optional photo URL column
 
       // Skip if product name is empty
       if (!productName) continue;
@@ -93,13 +95,20 @@ export default function ProductCSVImport() {
       // Parse price (convert to number)
       const priceNum = parseFloat(priceStr.replace(/,/g, '')) || 0;
 
-      products.push({
+      const product: ParsedProduct = {
         productCode,
         name: productName,
         category,
         price: priceNum,
         cost: costNum > 1000 ? 0 : costNum, // Skip unrealistic costs
-      });
+      };
+      
+      // Only include imageUrl if it's provided
+      if (imageUrl) {
+        product.imageUrl = imageUrl;
+      }
+
+      products.push(product);
     }
 
     return products;
@@ -159,8 +168,20 @@ export default function ProductCSVImport() {
               <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="font-semibold text-lg mb-2">Upload CSV File</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Upload a CSV file with product data (Product code, Name, Category, Cost, Price)
+                Upload a CSV file with product data
               </p>
+              <div className="text-xs text-muted-foreground mb-4 text-left bg-muted p-3 rounded">
+                <p className="font-semibold mb-1">CSV Format (9 columns):</p>
+                <p className="mb-1">1. Product Code</p>
+                <p className="mb-1">2. Product Name</p>
+                <p className="mb-1">3. Quantity (ignore)</p>
+                <p className="mb-1">4. Category (Thai: ไอศครีม, ชานม, ชาผลไม้, สมูตตี้)</p>
+                <p className="mb-1">5. Cost Price</p>
+                <p className="mb-1">6. Tax (ignore)</p>
+                <p className="mb-1">7. Total (ignore)</p>
+                <p className="mb-1">8. Selling Price</p>
+                <p className="font-semibold">9. Photo URL (optional)</p>
+              </div>
               <input
                 type="file"
                 accept=".csv"
@@ -204,6 +225,7 @@ export default function ProductCSVImport() {
                       <th className="p-2">Category</th>
                       <th className="p-2">Price</th>
                       <th className="p-2">Cost</th>
+                      <th className="p-2">Photo</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -214,6 +236,13 @@ export default function ProductCSVImport() {
                         <td className="p-2 text-xs">{product.category}</td>
                         <td className="p-2">฿{product.price}</td>
                         <td className="p-2 text-muted-foreground">฿{product.cost}</td>
+                        <td className="p-2 text-xs">
+                          {product.imageUrl ? (
+                            <span className="text-green-600">✓ Yes</span>
+                          ) : (
+                            <span className="text-muted-foreground">No</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

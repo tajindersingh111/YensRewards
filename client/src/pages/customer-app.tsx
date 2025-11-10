@@ -627,7 +627,7 @@ export default function CustomerApp() {
             data-testid="button-nav-profile"
           >
             <User className="w-6 h-6" />
-            <span className="text-xs">{t('customer.profile')}</span>
+            <span className="text-xs">{t('customer.profileNav')}</span>
           </button>
         </div>
       </nav>
