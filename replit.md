@@ -19,6 +19,12 @@ Preferred communication style: Simple, everyday language.
 - **Nested Translations**: Accessing nested strings like `t('customer.menu.categories.soft_serve')` is correct as it targets a string leaf node.
 - **Version Management**: Application version is now managed in translation files at `common.version` for consistency across all interfaces and language modes.
 
+### CSV Product Import Enhancement
+- **Photo URL Support**: CSV import now supports optional product photo URLs in column 9. The system maintains backward compatibility with 8-column CSVs while accepting 9-column CSVs with photo URLs.
+- **Column Format**: Standard format includes Product Code, Name, Quantity, Category (Thai), Cost Price, Tax, Total, Selling Price, and optional Photo URL.
+- **Fallback Logic**: Selling price parser uses values[7] with fallback to values[6] for older CSV formats.
+- **Preview Display**: Import preview shows photo availability indicator (Yes/No) for each product.
+
 ## System Architecture
 
 ### UI/UX Decisions
