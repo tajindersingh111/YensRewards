@@ -172,11 +172,12 @@ export class DbStorage implements IStorage {
     // Sanitize query - only keep digits and + symbol
     const sanitized = query.replace(/[^0-9+]/g, '');
     
-    // Use ILIKE for case-insensitive prefix/contains matching
+    // Use ILIKE with wildcards on both sides to match anywhere in phone number
+    // This handles different formats: +66812345678, 0812345678, etc.
     const result = await db
       .select()
       .from(customers)
-      .where(sql`${customers.phone} ILIKE ${sanitized + '%'}`)
+      .where(sql`${customers.phone} ILIKE ${'%' + sanitized + '%'}`)
       .orderBy(customers.name)
       .limit(limit);
     
