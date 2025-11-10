@@ -13,12 +13,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { ArrowLeft, Search, UserPlus, CheckCircle2 } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 type Step = "search" | "verify" | "enter-amount" | "confirm" | "success";
 
 export default function BaristaApp() {
   // Auto-update detection
   useAutoUpdate();
+  const { t } = useTranslation();
   const [, setLocationPath] = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("search");
@@ -33,7 +36,7 @@ export default function BaristaApp() {
     queryFn: async () => {
       const response = await fetch(`/api/customers/search?q=${encodeURIComponent(searchQuery)}`);
       if (!response.ok) {
-        throw new Error('Failed to search customers');
+        throw new Error(t('barista.searchError'));
       }
       return response.json();
     },
@@ -51,8 +54,8 @@ export default function BaristaApp() {
       }
       setStep("success");
       toast({
-        title: "Success!",
-        description: "Transaction processed successfully",
+        title: t('barista.transactionSuccess'),
+        description: t('barista.transactionSuccessDesc'),
       });
       setTimeout(() => {
         handleReset();
@@ -60,9 +63,9 @@ export default function BaristaApp() {
     },
     onError: (error: any) => {
       console.error("Transaction error:", error);
-      const errorMessage = error?.message || error?.toString() || "Failed to process transaction";
+      const errorMessage = error?.message || error?.toString() || t('barista.transactionError');
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: errorMessage,
         variant: "destructive",
       });
@@ -86,8 +89,8 @@ export default function BaristaApp() {
   const handleAmountSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid spend amount",
+        title: t('barista.invalidAmount'),
+        description: t('barista.invalidAmountDesc'),
         variant: "destructive",
       });
       return;
@@ -156,20 +159,21 @@ export default function BaristaApp() {
           <div className="flex items-center gap-2">
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
             <div className="flex flex-col">
-              <h1 className="text-sm font-bold">Barista</h1>
+              <h1 className="text-sm font-bold">{t('barista.title')}</h1>
               <span className="text-xs opacity-70" data-testid="text-version">v94</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               className="bg-transparent border-b border-white/30 outline-none text-xs py-0.5"
               data-testid="select-location"
             >
-              <option value="Main Store" className="text-foreground">Main</option>
-              <option value="Night Bazaar" className="text-foreground">Bazaar</option>
-              <option value="Central Plaza Expo" className="text-foreground">Expo</option>
+              <option value="Main Store" className="text-foreground">{t('barista.locations.main')}</option>
+              <option value="Night Bazaar" className="text-foreground">{t('barista.locations.bazaar')}</option>
+              <option value="Central Plaza Expo" className="text-foreground">{t('barista.locations.expo')}</option>
             </select>
             {step !== "search" && (
               <Button
@@ -194,21 +198,21 @@ export default function BaristaApp() {
             <Card className="p-6 space-y-4">
               <div className="text-center space-y-2">
                 <Search className="w-12 h-12 mx-auto text-chart-1" />
-                <h2 className="text-2xl font-bold text-foreground">Find Customer</h2>
-                <p className="text-sm text-muted-foreground">Search by phone number</p>
+                <h2 className="text-2xl font-bold text-foreground">{t('barista.findCustomer')}</h2>
+                <p className="text-sm text-muted-foreground">{t('barista.searchByPhone')}</p>
               </div>
               
               <div className="space-y-2">
                 <Input
                   type="tel"
-                  placeholder="Enter phone number..."
+                  placeholder={t('barista.enterPhone')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="text-lg h-12"
                   autoFocus
                   data-testid="input-search-phone"
                 />
-                <p className="text-xs text-muted-foreground">Type at least 3 characters to search</p>
+                <p className="text-xs text-muted-foreground">{t('barista.searchHint')}</p>
               </div>
 
               {/* Search Results */}
@@ -238,18 +242,18 @@ export default function BaristaApp() {
                           </div>
                           <div className="text-right">
                             <Badge className={getTierColor(customer.tier)}>
-                              {customer.tier}
+                              {t(`customer.tiers.${customer.tier}`)}
                             </Badge>
-                            <p className="text-xs text-muted-foreground mt-1">{customer.points} pts</p>
+                            <p className="text-xs text-muted-foreground mt-1">{customer.points} {t('customer.pointsAbbr')}</p>
                           </div>
                         </div>
                       </Card>
                     ))
                   ) : (
                     <Card className="p-6 text-center">
-                      <p className="text-muted-foreground">No customers found</p>
+                      <p className="text-muted-foreground">{t('barista.noCustomers')}</p>
                       <p className="text-sm text-muted-foreground mt-2">
-                        Try a different phone number
+                        {t('barista.tryDifferentPhone')}
                       </p>
                     </Card>
                   )}
@@ -261,8 +265,8 @@ export default function BaristaApp() {
             <Card className="p-6 text-center space-y-4">
               <UserPlus className="w-10 h-10 mx-auto text-muted-foreground" />
               <div>
-                <h3 className="font-semibold text-lg text-foreground">New Customer?</h3>
-                <p className="text-sm text-muted-foreground">They can register on the Customer App</p>
+                <h3 className="font-semibold text-lg text-foreground">{t('barista.newCustomer')}</h3>
+                <p className="text-sm text-muted-foreground">{t('barista.registerOnApp')}</p>
               </div>
             </Card>
           </div>
@@ -289,13 +293,13 @@ export default function BaristaApp() {
                   
                   <div className="flex items-center justify-center gap-4 mt-4">
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Points</p>
+                      <p className="text-sm text-muted-foreground">{t('customer.points')}</p>
                       <p className="text-2xl font-bold text-chart-1">{selectedCustomer.points}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Tier</p>
+                      <p className="text-sm text-muted-foreground">{t('customer.tier')}</p>
                       <Badge className={getTierColor(selectedCustomer.tier)}>
-                        {selectedCustomer.tier}
+                        {t(`customer.tiers.${selectedCustomer.tier}`)}
                       </Badge>
                     </div>
                   </div>
@@ -309,7 +313,7 @@ export default function BaristaApp() {
                   size="lg"
                   data-testid="button-confirm-customer"
                 >
-                  Confirm Customer
+                  {t('barista.confirmCustomer')}
                 </Button>
                 <Button
                   variant="outline"
@@ -317,7 +321,7 @@ export default function BaristaApp() {
                   className="w-full"
                   data-testid="button-wrong-customer"
                 >
-                  Wrong Customer
+                  {t('barista.wrongCustomer')}
                 </Button>
               </div>
             </Card>
@@ -329,15 +333,15 @@ export default function BaristaApp() {
           <div className="pt-8">
             <Card className="p-6 space-y-6">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-foreground">Enter Spend Amount</h2>
+                <h2 className="text-2xl font-bold text-foreground">{t('barista.enterAmount')}</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Customer: {selectedCustomer.name}
+                  {t('barista.customer')}: {selectedCustomer.name}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Spend Amount (฿)</label>
+                  <label className="text-sm font-medium text-foreground">{t('barista.spendAmount')}</label>
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -354,13 +358,13 @@ export default function BaristaApp() {
                 {amount && parseFloat(amount) > 0 && (
                   <Card className="p-4 bg-muted">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Points to Earn:</span>
+                      <span className="text-sm text-muted-foreground">{t('barista.pointsToEarn')}:</span>
                       <span className="text-2xl font-bold text-chart-1">
                         +{Math.floor(parseFloat(amount) / 10)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      ฿10 = 1 point
+                      {t('barista.pointsFormula')}
                     </p>
                   </Card>
                 )}
@@ -374,7 +378,7 @@ export default function BaristaApp() {
                   disabled={!amount || parseFloat(amount) <= 0}
                   data-testid="button-continue-amount"
                 >
-                  Continue
+                  {t('common.next')}
                 </Button>
                 <Button
                   variant="outline"
@@ -382,7 +386,7 @@ export default function BaristaApp() {
                   className="w-full"
                   data-testid="button-back-to-verify"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
               </div>
             </Card>
@@ -394,7 +398,7 @@ export default function BaristaApp() {
           <div className="pt-8">
             <Card className="p-6 space-y-6">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-foreground">Confirm Transaction</h2>
+                <h2 className="text-2xl font-bold text-foreground">{t('barista.confirmTransaction')}</h2>
               </div>
 
               <div className="space-y-4">
@@ -416,22 +420,22 @@ export default function BaristaApp() {
 
                 <div className="space-y-3 p-4 bg-muted rounded-lg">
                   <div className="flex justify-between items-center">
-                    <span className="text-base text-muted-foreground">Spend Amount:</span>
+                    <span className="text-base text-muted-foreground">{t('barista.spendAmountLabel')}:</span>
                     <span className="text-3xl font-bold text-foreground">฿{parseFloat(amount).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-base text-muted-foreground">Points Earned:</span>
+                    <span className="text-base text-muted-foreground">{t('barista.pointsEarnedLabel')}:</span>
                     <span className="text-3xl font-bold text-chart-1">+{points}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Location:</span>
+                    <span className="text-muted-foreground">{t('barista.location')}:</span>
                     <span className="font-medium text-foreground">{location}</span>
                   </div>
                 </div>
 
                 <div className="p-3 bg-chart-1/10 rounded-lg border border-chart-1/20">
                   <p className="text-sm text-center text-muted-foreground">
-                    New Total: <span className="font-bold text-foreground">{selectedCustomer.points + points} points</span>
+                    {t('barista.newTotal')}: <span className="font-bold text-foreground">{selectedCustomer.points + points} {t('customer.points')}</span>
                   </p>
                 </div>
               </div>
@@ -444,7 +448,7 @@ export default function BaristaApp() {
                   disabled={createTransaction.isPending}
                   data-testid="button-confirm-transaction"
                 >
-                  {createTransaction.isPending ? "Processing..." : "Confirm Transaction"}
+                  {createTransaction.isPending ? t('barista.processing') : t('barista.confirmTransaction')}
                 </Button>
                 <Button
                   variant="outline"
@@ -453,7 +457,7 @@ export default function BaristaApp() {
                   disabled={createTransaction.isPending}
                   data-testid="button-edit-amount"
                 >
-                  Edit Amount
+                  {t('barista.editAmount')}
                 </Button>
               </div>
             </Card>
@@ -467,12 +471,12 @@ export default function BaristaApp() {
               <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-12 h-12 text-green-500" />
               </div>
-              <h2 className="text-2xl font-bold text-foreground">Success!</h2>
+              <h2 className="text-2xl font-bold text-foreground">{t('common.success')}!</h2>
               <p className="text-lg text-muted-foreground">
-                {points} points added
+                {points} {t('barista.pointsAdded')}
               </p>
               <p className="text-sm text-muted-foreground">
-                Starting new transaction...
+                {t('barista.startingNew')}
               </p>
             </Card>
           </div>
