@@ -25,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Package } from "lucide-react";
 import ProductCSVImport from "@/components/ProductCSVImport";
+import ProductPhotoUpload from "@/components/ProductPhotoUpload";
 import type { Product } from "@shared/schema";
 
 const CATEGORIES = [
@@ -278,14 +279,10 @@ export default function ProductManager() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="imageUrl">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  data-testid="input-product-image"
+                <Label>Product Image</Label>
+                <ProductPhotoUpload
+                  currentImageUrl={formData.imageUrl}
+                  onImageChange={(url) => setFormData({ ...formData, imageUrl: url })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

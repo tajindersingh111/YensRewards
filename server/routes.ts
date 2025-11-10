@@ -8,6 +8,39 @@ import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import fs from "fs/promises";
+
+// Configure multer for file uploads to object storage
+const publicDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0] || '/tmp/public';
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: async (req, file, cb) => {
+      const uploadDir = path.join(publicDir, 'products');
+      try {
+        await fs.mkdir(uploadDir, { recursive: true });
+        cb(null, uploadDir);
+      } catch (error: any) {
+        cb(error, uploadDir);
+      }
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}_${Math.round(Math.random() * 1E9)}`;
+      cb(null, `product_${uniqueSuffix}${path.extname(file.originalname)}`);
+    },
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -738,6 +771,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing products:", error);
       res.status(500).json({ message: "Failed to import products" });
+    }
+  });
+
+  // Upload product image (admin only)
+  app.post('/api/admin/upload-product-image', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Generate public URL for the uploaded file
+      const filename = req.file.filename;
+      const publicUrl = `/products/${filename}`;
+
+      res.json({ url: publicUrl });
+    } catch (error) {
+      console.error("Error uploading product image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
     }
   });
 
