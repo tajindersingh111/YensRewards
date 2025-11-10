@@ -234,7 +234,7 @@ export default function BaristaApp() {
                           </Avatar>
                           <div className="flex-1">
                             <p className="font-semibold text-foreground">{customer.name}</p>
-                            <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                            <p className="text-2xl font-bold text-foreground">{customer.phone}</p>
                           </div>
                           <div className="text-right">
                             <Badge className={getTierColor(customer.tier)}>
@@ -285,7 +285,7 @@ export default function BaristaApp() {
                 
                 <div>
                   <h2 className="text-2xl font-bold text-foreground">{selectedCustomer.name}</h2>
-                  <p className="text-lg text-muted-foreground mt-1">{selectedCustomer.phone}</p>
+                  <p className="text-3xl font-bold text-foreground mt-2">{selectedCustomer.phone}</p>
                   
                   <div className="flex items-center justify-center gap-4 mt-4">
                     <div className="text-center">
@@ -410,18 +410,18 @@ export default function BaristaApp() {
                   </Avatar>
                   <div>
                     <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedCustomer.phone}</p>
+                    <p className="text-xl font-bold text-foreground">{selectedCustomer.phone}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3 p-4 bg-muted rounded-lg">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Spend Amount:</span>
-                    <span className="text-xl font-bold text-foreground">฿{parseFloat(amount).toFixed(2)}</span>
+                    <span className="text-base text-muted-foreground">Spend Amount:</span>
+                    <span className="text-3xl font-bold text-foreground">฿{parseFloat(amount).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Points Earned:</span>
-                    <span className="text-xl font-bold text-chart-1">+{points}</span>
+                    <span className="text-base text-muted-foreground">Points Earned:</span>
+                    <span className="text-3xl font-bold text-chart-1">+{points}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Location:</span>
