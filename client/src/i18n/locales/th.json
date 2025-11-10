@@ -25,7 +25,8 @@
     "error": "ข้อผิดพลาด",
     "success": "สำเร็จ",
     "warning": "คำเตือน",
-    "info": "ข้อมูล"
+    "info": "ข้อมูล",
+    "new": "ใหม่"
   },
   "home": {
     "title": "ระบบสะสมคะแนนเย็นส์",
@@ -56,6 +57,7 @@
     "tierUpgradeDesc": "ยินดีด้วย! คุณขึ้นสู่ระดับใหม่แล้ว!",
     "pointsEarned": "+{{points}} คะแนนได้รับแล้ว!",
     "totalPoints": "ตอนนี้คุณมี {{points}} คะแนน!",
+    "pointsToNext": "คะแนนสู่ระดับ{{tier}}",
     "welcomeTitle": "ยินดีต้อนรับสู่ Yen's Rewards!",
     "accountCreated": "สร้างบัญชีของคุณสำเร็จแล้ว!",
     "accountCreateFailed": "ไม่สามารถสร้างบัญชีได้ กรุณาลองอีกครั้ง",
@@ -260,6 +262,19 @@
     "promotionSuccess": "เลื่อนตำแหน่งเป็นผู้ดูแลสำเร็จ",
     "promotionError": "ไม่สามารถเลื่อนตำแหน่งเป็นผู้ดูแลได้",
     "goToDashboard": "ไปที่แดชบอร์ด"
+  },
+  "referral": {
+    "title": "ชวนเพื่อน",
+    "description": "แชร์โค้ดของคุณและรับ 50 คะแนนเมื่อเพื่อนสมัครสมาชิก!",
+    "copy": "คัดลอก",
+    "share": "แชร์",
+    "copied": "คัดลอกแล้ว!",
+    "codeCopied": "คัดลอกโค้ดแนะนำแล้ว",
+    "openingShare": "กำลังเปิดตัวเลือกการแชร์...",
+    "friendsReferred": "เพื่อนที่แนะนำ"
+  },
+  "promotion": {
+    "validUntil": "ใช้ได้ถึง"
   },
   "language": {
     "select": "เลือกภาษา",

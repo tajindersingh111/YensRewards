@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { IceCream, Coffee, Award } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface Transaction {
   id: string;
@@ -16,12 +17,12 @@ interface TransactionListProps {
 }
 
 export default function TransactionList({ transactions }: TransactionListProps) {
-  // Show only the last 2 transactions to keep QR code visible
+  const { t } = useTranslation();
   const recentTransactions = transactions.slice(0, 2);
   
   return (
     <div className="space-y-2">
-      <h3 className="text-base font-semibold text-foreground">Recent Transactions</h3>
+      <h3 className="text-base font-semibold text-foreground">{t('customer.recentTransactions')}</h3>
       {recentTransactions.map((transaction) => (
         <Card key={transaction.id} className="p-3 hover-elevate" data-testid={`card-transaction-${transaction.id}`}>
           <div className="flex items-center gap-4">

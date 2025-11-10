@@ -25,7 +25,8 @@
     "error": "Error",
     "success": "Success",
     "warning": "Warning",
-    "info": "Information"
+    "info": "Information",
+    "new": "NEW"
   },
   "home": {
     "title": "Yen's Loyalty System",
@@ -56,6 +57,7 @@
     "tierUpgradeDesc": "Congratulations! You've reached a new level!",
     "pointsEarned": "+{{points}} Points Earned!",
     "totalPoints": "You now have {{points}} points!",
+    "pointsToNext": "points to {{tier}}",
     "welcomeTitle": "Welcome to Yen's Rewards!",
     "accountCreated": "Your account has been created successfully!",
     "accountCreateFailed": "Failed to create account. Please try again.",
@@ -260,6 +262,19 @@
     "promotionSuccess": "Successfully promoted to admin",
     "promotionError": "Failed to promote to admin",
     "goToDashboard": "Go to Dashboard"
+  },
+  "referral": {
+    "title": "Refer a Friend",
+    "description": "Share your code and earn 50 points when friends sign up!",
+    "copy": "Copy",
+    "share": "Share",
+    "copied": "Copied!",
+    "codeCopied": "Referral code copied to clipboard",
+    "openingShare": "Opening share options...",
+    "friendsReferred": "friends referred"
+  },
+  "promotion": {
+    "validUntil": "Valid until"
   },
   "language": {
     "select": "Select Language",

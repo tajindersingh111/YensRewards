@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Megaphone, Clock } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface PromotionCardProps {
   title: string;
@@ -11,6 +12,8 @@ interface PromotionCardProps {
 }
 
 export default function PromotionCard({ title, description, validUntil, isNew }: PromotionCardProps) {
+  const { t } = useTranslation();
+  
   return (
     <Card className="p-6 bg-gradient-to-br from-primary to-chart-2 text-primary-foreground hover-elevate" data-testid="card-promotion">
       <div className="space-y-3">
@@ -21,7 +24,7 @@ export default function PromotionCard({ title, description, validUntil, isNew }:
           </div>
           {isNew && (
             <Badge className="bg-chart-4 text-white" data-testid="badge-new">
-              NEW
+              {t('common.new')}
             </Badge>
           )}
         </div>
@@ -30,7 +33,7 @@ export default function PromotionCard({ title, description, validUntil, isNew }:
 
         <div className="flex items-center gap-1 text-xs opacity-80">
           <Clock className="w-3 h-3" />
-          <span>Valid until {format(validUntil, "MMM dd, yyyy")}</span>
+          <span>{t('promotion.validUntil')} {format(validUntil, "MMM dd, yyyy")}</span>
         </div>
       </div>
     </Card>
