@@ -60,6 +60,7 @@ export default function ProductCSVImport() {
   const parseCSV = (text: string) => {
     const lines = text.split('\n').filter(line => line.trim());
     const products: ParsedProduct[] = [];
+    let hasPhotoColumn = false;
 
     // Skip header row (index 0)
     for (let i = 1; i < lines.length; i++) {
@@ -80,7 +81,8 @@ export default function ProductCSVImport() {
       const productName = values[1].trim();
       const categoryThai = values[3].trim();
       const costStr = values[4].trim();
-      const priceStr = values[6].trim();
+      // Selling Price is at index 7 (column 8), fallback to index 6 for older formats
+      const priceStr = (values[7]?.trim() || values[6]?.trim() || '');
       const imageUrl = values[8]?.trim() || ''; // Optional photo URL column
 
       // Skip if product name is empty
@@ -106,9 +108,17 @@ export default function ProductCSVImport() {
       // Only include imageUrl if it's provided
       if (imageUrl) {
         product.imageUrl = imageUrl;
+        hasPhotoColumn = true;
       }
 
       products.push(product);
+    }
+
+    // Log if photo column was detected
+    if (hasPhotoColumn) {
+      console.log(`[CSV Import] Photo URLs detected in CSV`);
+    } else {
+      console.log(`[CSV Import] No photo URLs found - you can add photo URLs in column 9`);
     }
 
     return products;
@@ -170,17 +180,20 @@ export default function ProductCSVImport() {
               <p className="text-sm text-muted-foreground mb-4">
                 Upload a CSV file with product data
               </p>
-              <div className="text-xs text-muted-foreground mb-4 text-left bg-muted p-3 rounded">
-                <p className="font-semibold mb-1">CSV Format (9 columns):</p>
-                <p className="mb-1">1. Product Code</p>
-                <p className="mb-1">2. Product Name</p>
-                <p className="mb-1">3. Quantity (ignore)</p>
-                <p className="mb-1">4. Category (Thai: ไอศครีม, ชานม, ชาผลไม้, สมูตตี้)</p>
-                <p className="mb-1">5. Cost Price</p>
-                <p className="mb-1">6. Tax (ignore)</p>
-                <p className="mb-1">7. Total (ignore)</p>
-                <p className="mb-1">8. Selling Price</p>
-                <p className="font-semibold">9. Photo URL (optional)</p>
+              <div className="text-xs text-muted-foreground mb-4 text-left bg-muted/50 p-3 rounded border">
+                <p className="font-semibold mb-2">CSV Format:</p>
+                <div className="space-y-1">
+                  <p>1. Product Code</p>
+                  <p>2. Product Name</p>
+                  <p>3. Quantity</p>
+                  <p>4. Category (ไอศครีม, ชานม, ชาผลไม้, สมูตตี้)</p>
+                  <p>5. Cost Price</p>
+                  <p>6. Tax</p>
+                  <p>7. Total</p>
+                  <p>8. Selling Price</p>
+                  <p className="font-semibold">9. Photo URL (Optional - NEW!)</p>
+                </div>
+                <p className="mt-2 pt-2 border-t text-xs">Note: Add photo URLs in column 9 to assign product images automatically</p>
               </div>
               <input
                 type="file"
