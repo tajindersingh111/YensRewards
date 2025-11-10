@@ -8,6 +8,17 @@ A multi-interface loyalty management system for Yens Thai Ice Cream, designed to
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Updates (Nov 10, 2025)
+
+### Critical Bug Fixes
+- **Customer App Navigation**: Fixed runtime error where `t('customer.menu')` returned an object instead of string. Added dedicated `customer.menuNav` translation key for bottom navigation.
+- **Version Centralization**: Replaced all hardcoded "v94" strings with centralized `common.version: "v2.0"` translation key across Customer App, Barista App, and Admin Dashboard.
+
+### Translation System Best Practices
+- **Object vs String Keys**: Never use parent object keys for rendering (e.g., `t('customer.menu')` returns object). Always use leaf string keys (e.g., `t('customer.menuNav')` returns string).
+- **Nested Translations**: Accessing nested strings like `t('customer.menu.categories.soft_serve')` is correct as it targets a string leaf node.
+- **Version Management**: Application version is now managed in translation files at `common.version` for consistency across all interfaces and language modes.
+
 ## System Architecture
 
 ### UI/UX Decisions
