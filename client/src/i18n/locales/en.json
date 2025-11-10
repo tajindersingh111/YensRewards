@@ -42,7 +42,10 @@
   "customer": {
     "title": "My Loyalty Card",
     "points": "Points",
+    "pointsAbbr": "pts",
     "tier": "Tier",
+    "member": "Member",
+    "idLabel": "ID",
     "tiers": {
       "bronze": "Bronze",
       "silver": "Silver",
@@ -129,6 +132,16 @@
       "milk_tea": "Milk Tea",
       "fruit_tea": "Fruit Tea",
       "smoothie": "Smoothie"
+    },
+    "leaderboard": {
+      "title": "Top Members",
+      "pointsAbbr": "pts"
+    },
+    "profile": {
+      "tapHere": "Or tap here:",
+      "changePhoto": "Tap camera icon to change photo",
+      "addPhoto": "Add your profile photo",
+      "yellowTheme": "Photos get a special Yens yellow theme!"
     }
   },
   "barista": {

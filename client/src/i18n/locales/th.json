@@ -42,7 +42,10 @@
   "customer": {
     "title": "บัตรสะสมคะแนนของฉัน",
     "points": "คะแนน",
+    "pointsAbbr": "คะแนน",
     "tier": "ระดับ",
+    "member": "สมาชิก",
+    "idLabel": "รหัส",
     "tiers": {
       "bronze": "ทองแดง",
       "silver": "เงิน",
@@ -129,6 +132,16 @@
       "milk_tea": "ชานม",
       "fruit_tea": "ชาผลไม้",
       "smoothie": "สมูตตี้"
+    },
+    "leaderboard": {
+      "title": "สมาชิกชั้นนำ",
+      "pointsAbbr": "คะแนน"
+    },
+    "profile": {
+      "tapHere": "หรือแตะที่นี่:",
+      "changePhoto": "แตะไอคอนกล้องเพื่อเปลี่ยนรูป",
+      "addPhoto": "เพิ่มรูปโปรไฟล์ของคุณ",
+      "yellowTheme": "รูปภาพจะได้รับธีมสีเหลือง Yens พิเศษ!"
     }
   },
   "barista": {

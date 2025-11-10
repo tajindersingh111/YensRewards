@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Camera, User } from "lucide-react";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "react-i18next";
 
 interface ProfilePhotoCaptureProps {
   currentPhoto?: string | null;
@@ -14,6 +15,7 @@ export default function ProfilePhotoCapture({
   onPhotoCapture,
   userName 
 }: ProfilePhotoCaptureProps) {
+  const { t } = useTranslation();
   const [imagePreview, setImagePreview] = useState<string | null>(currentPhoto || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -124,7 +126,7 @@ export default function ProfilePhotoCapture({
         
         {/* Fallback: Direct visible file input below avatar */}
         <div className="mt-2">
-          <label className="text-xs text-muted-foreground block mb-1">Or tap here:</label>
+          <label className="text-xs text-muted-foreground block mb-1">{t('customer.profile.tapHere')}</label>
           <input
             type="file"
             accept="image/*"
@@ -138,11 +140,11 @@ export default function ProfilePhotoCapture({
       {/* Instructions */}
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
-          {imagePreview ? "Tap camera icon to change photo" : "Add your profile photo"}
+          {imagePreview ? t('customer.profile.changePhoto') : t('customer.profile.addPhoto')}
         </p>
         {!imagePreview && (
           <p className="text-xs text-muted-foreground mt-1">
-            Photos get a special Yens yellow theme!
+            {t('customer.profile.yellowTheme')}
           </p>
         )}
       </div>

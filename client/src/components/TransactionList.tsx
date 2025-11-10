@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { IceCream, Coffee, Award } from "lucide-react";
 import { format } from "date-fns";
+import { th as thLocale } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 
 interface Transaction {
@@ -17,8 +18,9 @@ interface TransactionListProps {
 }
 
 export default function TransactionList({ transactions }: TransactionListProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const recentTransactions = transactions.slice(0, 2);
+  const dateLocale = i18n.language === 'th' ? thLocale : undefined;
   
   return (
     <div className="space-y-2">
@@ -36,11 +38,11 @@ export default function TransactionList({ transactions }: TransactionListProps) 
             <div className="flex-1">
               <p className="font-semibold text-foreground">{transaction.location}</p>
               <p className="text-sm text-muted-foreground">
-                {format(transaction.date, "MMM dd, yyyy")}
+                {format(transaction.date, "MMM dd, yyyy", { locale: dateLocale })}
               </p>
             </div>
             <div className="text-right">
-              <p className="font-bold text-primary" data-testid={`text-points-${transaction.id}`}>+{transaction.points} pts</p>
+              <p className="font-bold text-primary" data-testid={`text-points-${transaction.id}`}>+{transaction.points} {t('customer.pointsAbbr')}</p>
               <p className="text-sm text-muted-foreground">฿{transaction.amount}</p>
             </div>
           </div>

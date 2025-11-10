@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface LeaderboardEntry {
   id: string;
@@ -15,6 +16,8 @@ interface LeaderboardCardProps {
 }
 
 export default function LeaderboardCard({ entries, currentUserId }: LeaderboardCardProps) {
+  const { t } = useTranslation();
+  
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="w-5 h-5 text-[hsl(45,93%,47%)]" />;
     if (rank === 2) return <Medal className="w-5 h-5 text-[hsl(0,0%,63%)]" />;
@@ -27,7 +30,7 @@ export default function LeaderboardCard({ entries, currentUserId }: LeaderboardC
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Trophy className="w-5 h-5 text-primary" />
-          <h3 className="text-xl font-semibold text-foreground">Top Members</h3>
+          <h3 className="text-xl font-semibold text-foreground">{t('customer.leaderboard.title')}</h3>
         </div>
 
         <div className="space-y-2">
@@ -54,7 +57,7 @@ export default function LeaderboardCard({ entries, currentUserId }: LeaderboardC
               </div>
 
               <Badge variant="secondary" data-testid={`text-points-${entry.id}`}>
-                {entry.points} pts
+                {entry.points} {t('customer.leaderboard.pointsAbbr')}
               </Badge>
             </div>
           ))}

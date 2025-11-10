@@ -24,7 +24,7 @@ export default function PointsCard({ points, tier, nextTierPoints }: PointsCardP
     <Card className="p-4 bg-primary text-primary-foreground rounded-2xl" data-testid="points-card">
       <div className="flex flex-col items-center gap-1.5">
         <Badge className={`${tierColors[tier]} px-3 py-0.5 text-sm`} data-testid={`badge-tier-${tier}`}>
-          {t(`customer.tiers.${tier}`)} Member
+          {t(`customer.tiers.${tier}`)} {t('customer.member')}
         </Badge>
         
         <div className="text-center">
