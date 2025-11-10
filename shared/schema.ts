@@ -78,9 +78,11 @@ export const customerNotifications = pgTable("customer_notifications", {
 // Products table - menu items
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productCode: text("product_code"), // Product code from POS
   name: text("name").notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  cost: decimal("cost", { precision: 10, scale: 2 }), // Cost price
   category: text("category").notNull(), // soft_serve, milk_tea, fruit_tea, shakes, sundaes, float_drinks
   imageUrl: text("image_url"),
   badge: text("badge"), // new, popular, limited, sale, null
@@ -160,6 +162,9 @@ export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  productCode: z.string().optional(),
+  cost: z.string().optional(),
 });
 
 export const insertMessageTemplateSchema = createInsertSchema(messageTemplates).omit({

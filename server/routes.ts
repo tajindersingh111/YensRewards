@@ -704,6 +704,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk import products from CSV
+  app.post('/api/admin/products/import', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { products } = req.body;
+      
+      if (!Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ message: "Products array is required" });
+      }
+
+      const imported = [];
+      const errors = [];
+
+      for (const product of products) {
+        try {
+          const validatedData = insertProductSchema.parse(product);
+          const created = await storage.createProduct(validatedData as any);
+          imported.push(created);
+        } catch (error: any) {
+          errors.push({
+            product: product.name || 'Unknown',
+            error: error.message,
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        imported: imported.length,
+        errors: errors.length,
+        details: errors,
+      });
+    } catch (error) {
+      console.error("Error importing products:", error);
+      res.status(500).json({ message: "Failed to import products" });
+    }
+  });
+
   // ============ Message Template API Endpoints (Admin Only) ============
   
   // Get all message templates

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Package } from "lucide-react";
+import ProductCSVImport from "@/components/ProductCSVImport";
 import type { Product } from "@shared/schema";
 
 const CATEGORIES = [
@@ -43,9 +44,11 @@ const BADGES = [
 ];
 
 interface ProductFormData {
+  productCode: string;
   name: string;
   description: string;
   price: string;
+  cost: string;
   category: string;
   imageUrl: string;
   badge: string;
@@ -59,9 +62,11 @@ export default function ProductManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
+    productCode: "",
     name: "",
     description: "",
     price: "",
+    cost: "",
     category: "",
     imageUrl: "",
     badge: "",
@@ -119,9 +124,11 @@ export default function ProductManager() {
 
   const resetForm = () => {
     setFormData({
+      productCode: "",
       name: "",
       description: "",
       price: "",
+      cost: "",
       category: "",
       imageUrl: "",
       badge: "",
@@ -135,9 +142,11 @@ export default function ProductManager() {
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({
+      productCode: product.productCode || "",
       name: product.name,
       description: product.description || "",
       price: product.price.toString(),
+      cost: product.cost?.toString() || "",
       category: product.category,
       imageUrl: product.imageUrl || "",
       badge: product.badge || "",
@@ -175,21 +184,47 @@ export default function ProductManager() {
           <h2 className="text-2xl font-bold text-foreground">Products</h2>
           <p className="text-muted-foreground">Manage your menu items</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-product" className="hover-elevate active-elevate-2">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <ProductCSVImport />
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-product" className="hover-elevate active-elevate-2">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Product
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="productCode">Product Code</Label>
+                  <Input
+                    id="productCode"
+                    value={formData.productCode}
+                    onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
+                    placeholder="0010001"
+                    data-testid="input-product-code"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cost">Cost (฿)</Label>
+                  <Input
+                    id="cost"
+                    type="number"
+                    step="0.01"
+                    value={formData.cost}
+                    onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                    placeholder="0.00"
+                    data-testid="input-product-cost"
+                  />
+                </div>
+              </div>
               <div>
                 <Label htmlFor="name">Product Name *</Label>
                 <Input
@@ -327,8 +362,9 @@ export default function ProductManager() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
-      {isLoading ? (
+    {isLoading ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Loading products...</p>
         </div>
