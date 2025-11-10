@@ -18,15 +18,15 @@ interface ParsedProduct {
   productCode: string;
   name: string;
   category: string;
-  price: string;
-  cost: string;
+  price: number;
+  cost: number;
 }
 
 const CATEGORY_MAP: Record<string, string> = {
   "ไอศครีม": "soft_serve",
   "ชานม": "milk_tea",
   "ชาผลไม้": "fruit_tea",
-  "สมูตตี้": "shakes",
+  "สมูตตี้": "smoothie",
 };
 
 export default function ProductCSVImport() {
@@ -88,17 +88,17 @@ export default function ProductCSVImport() {
       const category = CATEGORY_MAP[categoryThai] || "soft_serve";
 
       // Parse cost (remove commas and convert to number)
-      const cost = costStr.replace(/,/g, '');
+      const costNum = parseFloat(costStr.replace(/,/g, '')) || 0;
       
-      // Parse price
-      const price = priceStr;
+      // Parse price (convert to number)
+      const priceNum = parseFloat(priceStr.replace(/,/g, '')) || 0;
 
       products.push({
         productCode,
         name: productName,
         category,
-        price,
-        cost,
+        price: priceNum,
+        cost: costNum > 1000 ? 0 : costNum, // Skip unrealistic costs
       });
     }
 

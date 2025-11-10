@@ -55,9 +55,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      console.log('🔑 Auth check - User ID:', userId);
-      const user = await storage.getUser(userId);
-      console.log('👤 User from DB:', JSON.stringify(user, null, 2));
+      const email = req.user.claims.email;
+      console.log('🔑 Auth check - User ID:', userId, 'Email:', email);
+      let user = await storage.getUser(userId);
+      console.log('👤 User from DB (initial):', JSON.stringify(user, null, 2));
+      
+      // If user doesn't exist, create them (can happen in OIDC test mode)
+      if (!user) {
+        console.log('⚠️  User not found, creating user from claims...');
+        user = await storage.upsertUser({
+          id: userId,
+          email: email || '',
+          firstName: req.user.claims.first_name || '',
+          lastName: req.user.claims.last_name || '',
+          profileImageUrl: req.user.claims.profile_image_url || null,
+        });
+        console.log('✅ User created:', JSON.stringify(user, null, 2));
+      }
+      
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -77,8 +92,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = req.user.claims.sub;
       const email = req.user.claims.email;
+      const firstName = req.user.claims.first_name || '';
+      const lastName = req.user.claims.last_name || '';
       
-      // Directly update the user's role to admin
+      // First ensure the user exists (in case of OIDC test mode)
+      await storage.upsertUser({
+        id: userId,
+        email,
+        firstName,
+        lastName,
+        profileImageUrl: req.user.claims.profile_image_url || null,
+      });
+      
+      // Then update the user's role to admin
       await db.update(users).set({ role: 'admin' }).where(eq(users.id, userId));
       
       console.log(`✅ Promoted user ${email} (${userId}) to admin`);
