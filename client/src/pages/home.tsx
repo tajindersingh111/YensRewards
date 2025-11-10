@@ -3,31 +3,34 @@ import { Button } from "@/components/ui/button";
 import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2, QrCode } from "lucide-react";
 import { useLocation } from "wouter";
 import logoUrl from "@assets/yens logo_1760702216221.png";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const apps = [
     {
       id: "customer",
-      title: "Customer App",
-      description: "View points, QR code, and rewards",
+      title: t('home.customerApp'),
+      description: t('home.customerDesc'),
       icon: Smartphone,
       color: "bg-primary",
       path: "/customer",
     },
     {
       id: "barista",
-      title: "Barista App",
-      description: "Scan QR codes and process transactions",
+      title: t('home.baristaApp'),
+      description: t('home.baristaDesc'),
       icon: ScanLine,
       color: "bg-chart-1",
       path: "/barista",
     },
     {
       id: "admin",
-      title: "Admin Dashboard",
-      description: "View reports, customers, and send promotions",
+      title: t('home.adminApp'),
+      description: t('home.adminDesc'),
       icon: BarChart3,
       color: "bg-chart-3",
       path: "/admin",
@@ -37,14 +40,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-chart-1/5 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full space-y-8">
+        {/* Language Switcher - Top Right */}
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
+        
         {/* Header */}
         <div className="text-center space-y-4">
           <img src={logoUrl} alt="Yens Logo" className="w-24 h-24 mx-auto rounded-full" />
           <h1 className="text-4xl font-bold text-foreground">
-            Yen's Loyalty System
+            {t('home.title')}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Choose your app to get started
+            {t('home.subtitle')}
           </p>
         </div>
 
@@ -66,7 +74,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground">{app.description}</p>
                 </div>
                 <Button className="w-full" variant="outline" data-testid={`button-open-${app.id}`}>
-                  Open App
+                  {t('home.openApp')}
                 </Button>
               </div>
             </Card>

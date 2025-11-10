@@ -30,14 +30,14 @@ export default function LanguageSwitcher() {
           data-testid="button-language-thai"
           className="hover-elevate active-elevate-2"
         >
-          🇹🇭 ไทย (Thai)
+          ไทย (Thai)
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => changeLanguage('en')}
           data-testid="button-language-english"
           className="hover-elevate active-elevate-2"
         >
-          🇬🇧 English
+          English
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

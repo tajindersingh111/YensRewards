@@ -22,10 +22,12 @@ Preferred communication style: Simple, everyday language.
 - **Monorepo Structure:** `/client` (React app), `/server` (Express API), `/shared` (common types/schemas).
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
-- **Authentication & Authorization:** Replit Auth (OpenID Connect) for admin/barista login, session management with `connect-pg-simple`, role-based access control ("admin", "barista").
+- **Authentication & Authorization:** Replit Auth (OpenID Connect) for admin/barista login, session management with `connect-pg-simple`, role-based access control ("admin", "barista"), auto-user creation in test mode.
 - **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log` tables managed with Drizzle ORM.
 - **Messaging System:** Twilio for SMS, Resend for email, multi-channel support, admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages, retry functionality.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals), admin analytics, tier-based promotions, product menu, automated birthday messaging.
+- **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default language, localStorage persistence, comprehensive translations covering all apps, LanguageSwitcher component for easy switching.
+- **Product Management:** CSV bulk import with Thai category mapping, photo upload to object storage (max 5MB), product codes and costs, image storage under `/products/`.
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals), admin analytics, tier-based promotions, product menu, automated birthday messaging, CSV product import.
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
