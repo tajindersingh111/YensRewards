@@ -717,7 +717,7 @@ export default function AdminDashboard() {
 
           <TabsContent value="customers" className="space-y-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">{t('customers.title')}</h2>
+              <h2 className="text-2xl font-bold">{t('admin.customers.title')}</h2>
               <CustomerCSVImport />
             </div>
             <CustomerTable

@@ -63,7 +63,7 @@ export default function CustomerCSVImport() {
 
     toast({
       title: t('common.success'),
-      description: t('customers.templateDownloaded'),
+      description: t('admin.customers.templateDownloaded'),
     });
   };
 
@@ -76,13 +76,13 @@ export default function CustomerCSVImport() {
       setImportResult(data);
       toast({
         title: t('common.success'),
-        description: `${t('customers.imported')} ${data.imported}, ${t('customers.updated')} ${data.updated}`,
+        description: `${t('admin.customers.imported')} ${data.imported}, ${t('admin.customers.updated')} ${data.updated}`,
       });
     },
     onError: () => {
       toast({
         title: t('common.error'),
-        description: t('customers.importError'),
+        description: t('admin.customers.importError'),
         variant: "destructive",
       });
     },
@@ -161,13 +161,13 @@ export default function CustomerCSVImport() {
         setParsedCustomers(customers);
         setImportResult(null);
         toast({
-          title: t('customers.csvParsed'),
-          description: `${t('customers.foundCustomers', { count: customers.length })}`,
+          title: t('admin.customers.csvParsed'),
+          description: `${t('admin.customers.foundCustomers', { count: customers.length })}`,
         });
       } catch (error) {
         toast({
           title: t('common.error'),
-          description: t('customers.parseError'),
+          description: t('admin.customers.parseError'),
           variant: "destructive",
         });
       }
@@ -189,24 +189,24 @@ export default function CustomerCSVImport() {
       <DialogTrigger asChild>
         <Button variant="outline" className="hover-elevate active-elevate-2" data-testid="button-import-csv-customers">
           <Upload className="w-4 h-4 mr-2" />
-          {t('customers.importCSV')}
+          {t('admin.customers.importCSV')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('customers.importFromCSV')}</DialogTitle>
+          <DialogTitle>{t('admin.customers.importFromCSV')}</DialogTitle>
         </DialogHeader>
 
         {!parsedCustomers.length && !importResult && (
           <div className="space-y-4">
             <Card className="p-6 text-center">
               <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="font-semibold text-lg mb-2">{t('customers.uploadCSV')}</h3>
+              <h3 className="font-semibold text-lg mb-2">{t('admin.customers.uploadCSV')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {t('customers.uploadDescription')}
+                {t('admin.customers.uploadDescription')}
               </p>
               <div className="text-xs text-muted-foreground mb-4 text-left bg-muted/50 p-3 rounded border">
-                <p className="font-semibold mb-2">{t('customers.csvFormat')}:</p>
+                <p className="font-semibold mb-2">{t('admin.customers.csvFormat')}:</p>
                 <div className="space-y-1">
                   <p>1. Crm Name</p>
                   <p>2. Membership Tier</p>
@@ -231,7 +231,7 @@ export default function CustomerCSVImport() {
                   data-testid="button-download-template"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  {t('customers.downloadTemplate')}
+                  {t('admin.customers.downloadTemplate')}
                 </Button>
                 <input
                   type="file"
@@ -257,20 +257,20 @@ export default function CustomerCSVImport() {
         {parsedCustomers.length > 0 && !importResult && (
           <div className="space-y-4">
             <Card className="p-4">
-              <h3 className="font-semibold mb-2">{t('customers.preview')}</h3>
+              <h3 className="font-semibold mb-2">{t('admin.customers.preview')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {t('customers.readyToImport', { count: parsedCustomers.length })}
+                {t('admin.customers.readyToImport', { count: parsedCustomers.length })}
               </p>
               
               <div className="max-h-96 overflow-y-auto border rounded">
                 <table className="w-full text-sm">
                   <thead className="bg-muted sticky top-0">
                     <tr>
-                      <th className="text-left p-2">{t('customers.name')}</th>
-                      <th className="text-left p-2">{t('customers.phone')}</th>
-                      <th className="text-left p-2">{t('customers.tier')}</th>
-                      <th className="text-left p-2">{t('customers.points')}</th>
-                      <th className="text-left p-2">{t('customers.totalSpent')}</th>
+                      <th className="text-left p-2">{t('admin.customers.name')}</th>
+                      <th className="text-left p-2">{t('admin.customers.phone')}</th>
+                      <th className="text-left p-2">{t('admin.customers.tier')}</th>
+                      <th className="text-left p-2">{t('admin.customers.points')}</th>
+                      <th className="text-left p-2">{t('admin.customers.totalSpent')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -287,7 +287,7 @@ export default function CustomerCSVImport() {
                 </table>
                 {parsedCustomers.length > 50 && (
                   <div className="p-2 text-center text-xs text-muted-foreground border-t">
-                    {t('customers.showingFirst', { count: 50, total: parsedCustomers.length })}
+                    {t('admin.customers.showingFirst', { count: 50, total: parsedCustomers.length })}
                   </div>
                 )}
               </div>
@@ -308,7 +308,7 @@ export default function CustomerCSVImport() {
                 className="hover-elevate active-elevate-2"
                 data-testid="button-confirm-import"
               >
-                {importMutation.isPending ? t('common.loading') : t('customers.import')}
+                {importMutation.isPending ? t('common.loading') : t('admin.customers.import')}
               </Button>
             </DialogFooter>
           </div>
@@ -320,9 +320,9 @@ export default function CustomerCSVImport() {
               <div className="flex items-start gap-3 mb-4">
                 <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-lg">{t('customers.importComplete')}</h3>
+                  <h3 className="font-semibold text-lg">{t('admin.customers.importComplete')}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {t('customers.totalProcessed')}: {importResult.total}
+                    {t('admin.customers.totalProcessed')}: {importResult.total}
                   </p>
                 </div>
               </div>
@@ -330,15 +330,15 @@ export default function CustomerCSVImport() {
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="text-center p-3 bg-green-50 rounded">
                   <div className="text-2xl font-bold text-green-700">{importResult.imported}</div>
-                  <div className="text-xs text-green-600">{t('customers.newImported')}</div>
+                  <div className="text-xs text-green-600">{t('admin.customers.newImported')}</div>
                 </div>
                 <div className="text-center p-3 bg-blue-50 rounded">
                   <div className="text-2xl font-bold text-blue-700">{importResult.updated}</div>
-                  <div className="text-xs text-blue-600">{t('customers.existingUpdated')}</div>
+                  <div className="text-xs text-blue-600">{t('admin.customers.existingUpdated')}</div>
                 </div>
                 <div className="text-center p-3 bg-red-50 rounded">
                   <div className="text-2xl font-bold text-red-700">{importResult.failed}</div>
-                  <div className="text-xs text-red-600">{t('customers.failed')}</div>
+                  <div className="text-xs text-red-600">{t('admin.customers.failed')}</div>
                 </div>
               </div>
 
@@ -346,7 +346,7 @@ export default function CustomerCSVImport() {
                 <div className="border-t pt-4">
                   <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-red-600" />
-                    {t('customers.errors')}:
+                    {t('admin.customers.errors')}:
                   </h4>
                   <div className="max-h-48 overflow-y-auto space-y-2">
                     {importResult.errors.map((error: any, idx: number) => (
