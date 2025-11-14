@@ -101,7 +101,7 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
     return customers.filter(c => {
       const createdAt = new Date(c.createdAt).getTime();
       
-      // Check lower bound (fromDate)
+      // Check lower bound (fromDate) - inclusive (>=)
       if (fromDate) {
         const fromDateTime = new Date(fromDate).getTime();
         if (createdAt < fromDateTime) {
@@ -109,11 +109,12 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
         }
       }
       
-      // Check upper bound (toDate)
+      // Check upper bound (toDate) - exclusive (<)
+      // Add 1 day to make toDate inclusive of the entire selected day
       if (toDate) {
         const toDateTime = new Date(toDate).getTime();
-        // Add 1 day to include the entire "to" date
         const endOfToDate = toDateTime + (24 * 60 * 60 * 1000);
+        // Use strict < to match backend logic
         if (createdAt >= endOfToDate) {
           return false;
         }
