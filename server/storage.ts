@@ -45,6 +45,12 @@ export interface IStorage {
     registeredAfter?: Date;
     registeredBefore?: Date;
   }): Promise<Customer[]>;
+  bulkDeleteCustomers(filter: {
+    createdAfter?: Date;
+    createdBefore?: Date;
+    tags?: string[];
+    hasZeroTotals?: boolean;
+  }): Promise<{ deletedCount: number; deletedIds: string[] }>;
   
   // Transaction methods
   getTransaction(id: string): Promise<Transaction | undefined>;
@@ -314,6 +320,60 @@ export class DbStorage implements IStorage {
     }
 
     return await query.orderBy(desc(customers.totalSpent));
+  }
+
+  async bulkDeleteCustomers(filter: {
+    createdAfter?: Date;
+    createdBefore?: Date;
+    tags?: string[];
+    hasZeroTotals?: boolean;
+  }): Promise<{ deletedCount: number; deletedIds: string[] }> {
+    const conditions = [];
+
+    // Date range filters
+    if (filter.createdAfter) {
+      conditions.push(sql`${customers.createdAt} >= ${filter.createdAfter}`);
+    }
+    if (filter.createdBefore) {
+      conditions.push(sql`${customers.createdAt} <= ${filter.createdBefore}`);
+    }
+
+    // Tags filter
+    if (filter.tags && filter.tags.length > 0) {
+      conditions.push(sql`${customers.tag} IN (${sql.join(filter.tags.map(t => sql.raw(`'${t}'`)), sql`, `)})`);
+    }
+
+    // Zero totals filter
+    if (filter.hasZeroTotals) {
+      conditions.push(sql`${customers.totalSpent} = 0`);
+    }
+
+    // Find customers matching the filter
+    let query = db.select({ id: customers.id }).from(customers);
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const matchingCustomers = await query;
+    const customerIds = matchingCustomers.map(c => c.id);
+
+    if (customerIds.length === 0) {
+      return { deletedCount: 0, deletedIds: [] };
+    }
+
+    // Delete related data (transactions, notifications, message logs)
+    // These will cascade delete due to foreign key constraints
+    await db.delete(transactions).where(sql`${transactions.customerId} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
+    await db.delete(customerNotifications).where(sql`${customerNotifications.customerId} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
+    await db.delete(messageLog).where(sql`${messageLog.customerId} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
+
+    // Delete customers
+    await db.delete(customers).where(sql`${customers.id} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
+
+    return {
+      deletedCount: customerIds.length,
+      deletedIds: customerIds,
+    };
   }
 
   // Transaction methods

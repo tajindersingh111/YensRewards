@@ -964,6 +964,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk delete customers (admin only)
+  app.post('/api/admin/customers/bulk-delete', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { filter, reason, confirmPhrase } = req.body;
+
+      // Validate confirm phrase
+      if (confirmPhrase !== "DELETE") {
+        return res.status(422).json({ message: "Invalid confirmation phrase. Type 'DELETE' to confirm." });
+      }
+
+      // Validate filter
+      if (!filter || typeof filter !== 'object') {
+        return res.status(400).json({ message: "Filter is required" });
+      }
+
+      // Convert date strings to Date objects
+      const deleteFilter: any = {};
+      if (filter.createdAfter) {
+        deleteFilter.createdAfter = new Date(filter.createdAfter);
+      }
+      if (filter.createdBefore) {
+        deleteFilter.createdBefore = new Date(filter.createdBefore);
+      }
+      if (filter.tags && Array.isArray(filter.tags)) {
+        deleteFilter.tags = filter.tags;
+      }
+      if (filter.hasZeroTotals !== undefined) {
+        deleteFilter.hasZeroTotals = filter.hasZeroTotals;
+      }
+
+      // Perform bulk delete
+      const result = await storage.bulkDeleteCustomers(deleteFilter);
+
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: "No customers matched the filter criteria" });
+      }
+
+      // Log the deletion for audit
+      const userId = req.user?.claims?.sub;
+      console.log(`Bulk delete by admin ${userId}: ${result.deletedCount} customers deleted. Reason: ${reason || 'Not provided'}`);
+
+      res.json({
+        success: true,
+        deletedCount: result.deletedCount,
+        message: `Successfully deleted ${result.deletedCount} customer(s)`,
+      });
+    } catch (error) {
+      console.error("Error bulk deleting customers:", error);
+      res.status(500).json({ message: "Failed to delete customers" });
+    }
+  });
+
   // ============ Message Template API Endpoints (Admin Only) ============
   
   // Get all message templates
