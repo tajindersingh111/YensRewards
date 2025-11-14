@@ -41,6 +41,13 @@ export const customers = pgTable("customers", {
   referredBy: varchar("referred_by"),
   totalSpent: decimal("total_spent", { precision: 10, scale: 2 }).notNull().default("0"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Additional fields for CSV import
+  gender: text("gender"),
+  registerDate: timestamp("register_date"),
+  registerBranch: text("register_branch"),
+  lastUse: timestamp("last_use"),
+  tag: text("tag"),
+  lineUid: text("line_uid"),
 });
 
 // Transactions table - purchase history
