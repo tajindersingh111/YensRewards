@@ -34,18 +34,12 @@ export const customers = pgTable("customers", {
   phone: text("phone").notNull().unique(),
   email: text("email"),
   photo: text("photo"),
-  gender: text("gender"), // Male, Female, Anonymous, null
   birthday: text("birthday"),
   points: integer("points").notNull().default(0),
-  tier: text("tier").notNull().default("member"), // member, bronze, silver, gold, platinum
+  tier: text("tier").notNull().default("bronze"), // bronze, silver, gold, platinum
   referralCode: text("referral_code").notNull().unique(),
   referredBy: varchar("referred_by"),
   totalSpent: decimal("total_spent", { precision: 10, scale: 2 }).notNull().default("0"),
-  registerDate: timestamp("register_date"), // When customer registered (from CSV)
-  registerBranch: text("register_branch"), // Branch where customer registered
-  lastUse: timestamp("last_use"), // Last transaction date
-  tag: text("tag"), // Customer tags/notes
-  lineUid: text("line_uid"), // LINE app user ID
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -135,23 +129,6 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   referralCode: true,
   createdAt: true,
-});
-
-// CSV Import schema - allows importing all fields from CSV
-export const insertCustomerCSVSchema = z.object({
-  name: z.string().min(1),
-  phone: z.string().min(1),
-  email: z.string().optional(),
-  gender: z.string().optional(),
-  birthday: z.string().optional(),
-  points: z.number().optional(),
-  tier: z.string().optional(),
-  totalSpent: z.string().optional(),
-  registerDate: z.string().optional(),
-  registerBranch: z.string().optional(),
-  lastUse: z.string().optional(),
-  tag: z.string().optional(),
-  lineUid: z.string().optional(),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
