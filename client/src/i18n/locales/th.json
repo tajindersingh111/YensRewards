@@ -371,7 +371,9 @@
       "existingUpdated": "อัปเดตลูกค้าเดิม",
       "failed": "ล้มเหลว",
       "errors": "ข้อผิดพลาด",
-      "importError": "ไม่สามารถนำเข้าลูกค้าได้"
+      "importError": "ไม่สามารถนำเข้าลูกค้าได้",
+      "downloadTemplate": "ดาวน์โหลดแบบฟอร์ม",
+      "templateDownloaded": "ดาวน์โหลดแบบฟอร์ม CSV สำเร็จ"
     },
     "transactions": {
       "title": "ธุรกรรม",

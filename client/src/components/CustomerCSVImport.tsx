@@ -13,7 +13,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Upload, Users, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, Users, AlertCircle, CheckCircle, Download } from "lucide-react";
 
 interface ParsedCustomer {
   name: string;
@@ -37,6 +37,35 @@ export default function CustomerCSVImport() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [parsedCustomers, setParsedCustomers] = useState<ParsedCustomer[]>([]);
   const [importResult, setImportResult] = useState<any>(null);
+
+  const downloadTemplate = () => {
+    const templateData = [
+      ['Crm Name', 'Membership Tier', 'Phone Number', 'Email', 'Gender', 'Birthdate', 'Register Date', 'Register Branch', 'Total Spending', 'Point', 'Last Use', 'Tag', 'Line UID'],
+      ['สมชาย ใจดี', 'Member', '0812345678', 'somchai@example.com', 'Male', '15/01/1990', '01/11/2025', 'YensThailand Cafe & Bakery', '250', '25', '10/11/2025', 'VIP', ''],
+      ['สมหญิง รักสะอาด', 'Gold', '0823456789', 'somying@example.com', 'Female', '20/03/1985', '05/10/2025', 'YensThailand Cafe & Bakery', '1500', '150', '12/11/2025', '', ''],
+      ['John Smith', 'Silver', '0834567890', 'john.smith@example.com', 'Male', '10/05/1992', '15/09/2025', 'YensThailand Cafe & Bakery', '800', '80', '08/11/2025', 'Regular', ''],
+    ];
+
+    const csvContent = templateData.map(row => 
+      row.map(cell => `"${cell}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'customer_import_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: t('common.success'),
+      description: t('customers.templateDownloaded'),
+    });
+  };
 
   const importMutation = useMutation({
     mutationFn: async (customers: ParsedCustomer[]) => {
@@ -194,22 +223,33 @@ export default function CustomerCSVImport() {
                   <p>13. Line UID</p>
                 </div>
               </div>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="csv-upload-customers"
-                data-testid="input-csv-file-customers"
-              />
-              <label htmlFor="csv-upload-customers">
-                <Button asChild variant="outline" className="hover-elevate active-elevate-2">
-                  <span>
-                    <Upload className="w-4 h-4 mr-2" />
-                    {t('common.upload')}
-                  </span>
+              <div className="flex gap-2 justify-center">
+                <Button 
+                  variant="outline" 
+                  className="hover-elevate active-elevate-2"
+                  onClick={downloadTemplate}
+                  data-testid="button-download-template"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {t('customers.downloadTemplate')}
                 </Button>
-              </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="csv-upload-customers"
+                  data-testid="input-csv-file-customers"
+                />
+                <label htmlFor="csv-upload-customers">
+                  <Button asChild variant="outline" className="hover-elevate active-elevate-2">
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      {t('common.upload')}
+                    </span>
+                  </Button>
+                </label>
+              </div>
             </Card>
           </div>
         )}

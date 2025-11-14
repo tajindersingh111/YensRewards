@@ -371,7 +371,9 @@
       "existingUpdated": "Updated Existing",
       "failed": "Failed",
       "errors": "Errors",
-      "importError": "Failed to import customers"
+      "importError": "Failed to import customers",
+      "downloadTemplate": "Download Template",
+      "templateDownloaded": "CSV template downloaded successfully"
     },
     "transactions": {
       "title": "Transactions",
