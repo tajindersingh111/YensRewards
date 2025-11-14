@@ -8,22 +8,24 @@ A multi-interface loyalty management system for Yens Thai Ice Cream, designed to
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Updates (Nov 10, 2025)
+## Recent Updates
 
-### Critical Bug Fixes
+### Nov 14, 2025 - Customer CSV Import (v2.0.5)
+- **Database Schema Extension**: Added 6 new customer fields: `gender`, `registerBranch`, `registerDate`, `lastUse`, `tag`, `lineUid` to support comprehensive customer data from external systems.
+- **Customer CSV Import Feature**: Built complete CSV import system for bulk customer onboarding with 13-column format support.
+  - **Format**: Crm Name, Membership Tier, Phone Number, Email, Gender, Birthdate, Register Date, Register Branch, Total Spending, Point, Last Use, Tag, Line UID
+  - **Smart Upsert Logic**: Uses phone number as unique key, generates referral codes for new customers, preserves existing data when CSV fields are empty
+  - **Validation**: Full Zod schema validation with detailed error reporting per row
+  - **Date Parsing**: Reliable DD/MM/YYYY format parsing using Date.UTC for timezone-independent results
+  - **UI Component**: Bilingual preview dialog with progress tracking, detailed results display, and comprehensive error reporting
+  - **Integration**: Accessible via "Import CSV" button in Admin Dashboard Customers tab
+- **Data Migration**: Successfully imported 506 customers from 514-row CSV into development database
+
+### Nov 10, 2025 - Translation & Product Import Fixes
 - **Customer App Navigation**: Fixed runtime error where `t('customer.menu')` returned an object instead of string. Added dedicated `customer.menuNav` translation key for bottom navigation.
 - **Version Centralization**: Replaced all hardcoded "v94" strings with centralized `common.version: "v2.0"` translation key across Customer App, Barista App, and Admin Dashboard.
-
-### Translation System Best Practices
-- **Object vs String Keys**: Never use parent object keys for rendering (e.g., `t('customer.menu')` returns object). Always use leaf string keys (e.g., `t('customer.menuNav')` returns string).
-- **Nested Translations**: Accessing nested strings like `t('customer.menu.categories.soft_serve')` is correct as it targets a string leaf node.
-- **Version Management**: Application version is now managed in translation files at `common.version` for consistency across all interfaces and language modes.
-
-### CSV Product Import Enhancement
-- **Photo URL Support**: CSV import now supports optional product photo URLs in column 9. The system maintains backward compatibility with 8-column CSVs while accepting 9-column CSVs with photo URLs.
-- **Column Format**: Standard format includes Product Code, Name, Quantity, Category (Thai), Cost Price, Tax, Total, Selling Price, and optional Photo URL.
-- **Fallback Logic**: Selling price parser uses values[7] with fallback to values[6] for older CSV formats.
-- **Preview Display**: Import preview shows photo availability indicator (Yes/No) for each product.
+- **Translation System Best Practices**: Documented object vs string key usage, nested translation patterns, and version management in translation files.
+- **CSV Product Import Enhancement**: Added photo URL support in column 9, maintained backward compatibility with 8-column CSVs, improved preview display with photo availability indicator.
 
 ## System Architecture
 
@@ -44,7 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Messaging System:** Twilio for SMS, Resend for email, multi-channel support, admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages, retry functionality.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default language, localStorage persistence, comprehensive translations covering all apps, LanguageSwitcher component for easy switching.
 - **Product Management:** CSV bulk import with Thai category mapping, photo upload to object storage (max 5MB), product codes and costs, image storage under `/products/`.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals), admin analytics, tier-based promotions, product menu, automated birthday messaging, CSV product import.
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import), admin analytics, tier-based promotions, product menu, automated birthday messaging, CSV product import.
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
