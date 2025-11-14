@@ -41,6 +41,12 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
     tier: "bronze" as "bronze" | "silver" | "gold" | "platinum",
     points: 0,
     totalSpent: "0",
+    gender: "",
+    registerBranch: "",
+    registerDate: "",
+    lastUse: "",
+    tag: "",
+    lineUid: "",
   });
 
   // Populate form when customer changes
@@ -54,6 +60,12 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
         tier: (customer.tier || "bronze") as "bronze" | "silver" | "gold" | "platinum",
         points: customer.points || 0,
         totalSpent: customer.totalSpent || "0",
+        gender: customer.gender || "",
+        registerBranch: customer.registerBranch || "",
+        registerDate: customer.registerDate ? new Date(customer.registerDate).toISOString().split('T')[0] : "",
+        lastUse: customer.lastUse ? new Date(customer.lastUse).toISOString().split('T')[0] : "",
+        tag: customer.tag || "",
+        lineUid: customer.lineUid || "",
       });
     }
   }, [customer]);
@@ -212,6 +224,82 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
                 value={formData.totalSpent}
                 onChange={(e) => setFormData({ ...formData, totalSpent: e.target.value })}
                 data-testid="input-edit-total-spent"
+              />
+            </div>
+
+            {/* Gender */}
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => setFormData({ ...formData, gender: value })}
+              >
+                <SelectTrigger data-testid="select-edit-gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Anonymous">Anonymous</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Register Branch */}
+            <div className="space-y-2">
+              <Label htmlFor="registerBranch">Register Branch</Label>
+              <Input
+                id="registerBranch"
+                value={formData.registerBranch}
+                onChange={(e) => setFormData({ ...formData, registerBranch: e.target.value })}
+                data-testid="input-edit-register-branch"
+              />
+            </div>
+
+            {/* Register Date */}
+            <div className="space-y-2">
+              <Label htmlFor="registerDate">Register Date</Label>
+              <Input
+                id="registerDate"
+                type="date"
+                value={formData.registerDate}
+                onChange={(e) => setFormData({ ...formData, registerDate: e.target.value })}
+                data-testid="input-edit-register-date"
+              />
+            </div>
+
+            {/* Last Use */}
+            <div className="space-y-2">
+              <Label htmlFor="lastUse">Last Use</Label>
+              <Input
+                id="lastUse"
+                type="date"
+                value={formData.lastUse}
+                onChange={(e) => setFormData({ ...formData, lastUse: e.target.value })}
+                data-testid="input-edit-last-use"
+              />
+            </div>
+
+            {/* Tag */}
+            <div className="space-y-2">
+              <Label htmlFor="tag">Tag</Label>
+              <Input
+                id="tag"
+                value={formData.tag}
+                onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+                placeholder="e.g., VIP, Regular"
+                data-testid="input-edit-tag"
+              />
+            </div>
+
+            {/* Line UID */}
+            <div className="space-y-2">
+              <Label htmlFor="lineUid">Line UID</Label>
+              <Input
+                id="lineUid"
+                value={formData.lineUid}
+                onChange={(e) => setFormData({ ...formData, lineUid: e.target.value })}
+                data-testid="input-edit-line-uid"
               />
             </div>
 

@@ -10,6 +10,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### Nov 14, 2025 - CSV Import Fix & Edit Customer Enhancement (v2.0.7)
+- **CSV Import Response Fix**: Fixed CustomerCSVImport mutation to properly parse JSON response from backend, ensuring detailed import results (imported count, updated count, failed count, error details) are correctly displayed in success dialog and toast notifications.
+- **Edit Customer Dialog Enhancement**: Added all 6 CSV import fields to Edit Customer dialog for full customer record management:
+  - **Gender**: Dropdown selector (Male/Female/Anonymous)
+  - **Register Branch**: Text field for branch location
+  - **Register Date**: Date picker for registration date
+  - **Last Use**: Date picker for last visit/purchase
+  - **Tag**: Text field for customer tags (VIP, Regular, etc.)
+  - **Line UID**: Text field for LINE app integration
+- **Automated CSV Tier Correction**: Created tier assignment script to convert 515-customer CSV from "Member" tier to proper bronze/silver/gold based on spending (488 bronze, 21 silver, 6 gold).
+- **Session Authentication Note**: Bulk delete and other admin operations require fresh login session; users should logout/login if encountering 401 Unauthorized errors.
+
 ### Nov 14, 2025 - Translation Fix & Data Quality (v2.0.7)
 - **Translation Path Fix**: Resolved import result dialog showing raw translation keys instead of localized text. Updated CustomerCSVImport and admin-dashboard components to use correct `admin.customers.*` namespace paths matching the i18n JSON structure.
 - **Legacy Data Diagnosis**: Identified legacy customer records with misaligned email/gender/birthday columns from earlier CSV imports. Current import logic is correct; only pre-existing data is affected.
