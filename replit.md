@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### Nov 14, 2025 - Customer Details & Bulk Delete (v2.0.6)
+- **CustomerDetailsDialog**: Created expandable detail view for all CSV import fields (gender, registerBranch, registerDate, lastUse, tag, lineUid). Accessible via "View Details" button in customer table, organized into Contact Info, Membership, and Additional Info sections.
+- **Bulk Delete Customers**: Implemented comprehensive bulk deletion system with UTC-safe date range filtering, two-step confirmation workflow requiring "DELETE" phrase, cascade deletion of related data (transactions, notifications, messages), audit logging with reason field, and real-time preview showing affected customer count.
+- **UTC Date Handling**: Resolved all timezone issues by implementing explicit UTC helpers (`Date.UTC()`) consistently across frontend preview, mutation, and backend filtering. Eliminates local-time skew and ensures accurate inclusive date ranges regardless of client timezone.
+- **Auth Improvements**: Fixed role downgrade bug where existing admin users could lose admin status; implemented test-mode-only OIDC claim trust (using `REPLIT_DEPLOYMENT === undefined`) while requiring database verification in all deployments (staging/production).
+- **Production Safety**: All critical security issues resolved; architect-verified production-ready implementation.
+
 ### Nov 14, 2025 - Customer CSV Import (v2.0.5)
 - **Database Schema Extension**: Added 6 new customer fields: `gender`, `registerBranch`, `registerDate`, `lastUse`, `tag`, `lineUid` to support comprehensive customer data from external systems.
 - **Customer CSV Import Feature**: Built complete CSV import system for bulk customer onboarding with 13-column format support.
@@ -46,7 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **Messaging System:** Twilio for SMS, Resend for email, multi-channel support, admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages, retry functionality.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default language, localStorage persistence, comprehensive translations covering all apps, LanguageSwitcher component for easy switching.
 - **Product Management:** CSV bulk import with Thai category mapping, photo upload to object storage (max 5MB), product codes and costs, image storage under `/products/`.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import), admin analytics, tier-based promotions, product menu, automated birthday messaging, CSV product import.
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import, bulk delete with date filters, expandable customer details), admin analytics, tier-based promotions, product menu, automated birthday messaging, CSV product import.
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
