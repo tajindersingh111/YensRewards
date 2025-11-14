@@ -10,6 +10,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### Nov 14, 2025 - Translation Fix & Data Quality (v2.0.7)
+- **Translation Path Fix**: Resolved import result dialog showing raw translation keys instead of localized text. Updated CustomerCSVImport and admin-dashboard components to use correct `admin.customers.*` namespace paths matching the i18n JSON structure.
+- **Legacy Data Diagnosis**: Identified legacy customer records with misaligned email/gender/birthday columns from earlier CSV imports. Current import logic is correct; only pre-existing data is affected.
+- **Recommended Action**: Use bulk delete feature to remove legacy customers with data quality issues, then re-import using the correct 13-column CSV template.
+
 ### Nov 14, 2025 - Customer Details & Bulk Delete (v2.0.6)
 - **CustomerDetailsDialog**: Created expandable detail view for all CSV import fields (gender, registerBranch, registerDate, lastUse, tag, lineUid). Accessible via "View Details" button in customer table, organized into Contact Info, Membership, and Additional Info sections.
 - **Bulk Delete Customers**: Implemented comprehensive bulk deletion system with UTC-safe date range filtering, two-step confirmation workflow requiring "DELETE" phrase, cascade deletion of related data (transactions, notifications, messages), audit logging with reason field, and real-time preview showing affected customer count.
