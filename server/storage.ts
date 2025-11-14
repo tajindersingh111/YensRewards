@@ -33,6 +33,7 @@ export interface IStorage {
   searchCustomersByPhone(query: string, limit?: number): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer | undefined>;
+  upsertCustomerByPhone(customer: InsertCustomer & Partial<Customer>): Promise<{ action: 'insert' | 'update', customer: Customer }>;
   getAllCustomers(): Promise<Customer[]>;
   getFilteredCustomers(filters: {
     tier?: string[];
@@ -204,6 +205,48 @@ export class DbStorage implements IStorage {
       .returning();
     
     return result[0];
+  }
+
+  async upsertCustomerByPhone(customer: InsertCustomer & Partial<Customer>): Promise<{ action: 'insert' | 'update', customer: Customer }> {
+    // Check if customer exists by phone
+    const existing = await this.getCustomerByPhone(customer.phone);
+    
+    if (existing) {
+      // Update existing customer (only fields that are explicitly provided)
+      const updateData: Partial<Customer> = {};
+      
+      // Only update fields that are explicitly provided in the customer object
+      if (customer.name !== undefined) updateData.name = customer.name;
+      if (customer.email !== undefined) updateData.email = customer.email;
+      if (customer.photo !== undefined) updateData.photo = customer.photo;
+      if (customer.gender !== undefined) updateData.gender = customer.gender;
+      if (customer.birthday !== undefined) updateData.birthday = customer.birthday;
+      if (customer.tag !== undefined) updateData.tag = customer.tag;
+      if (customer.lineUid !== undefined) updateData.lineUid = customer.lineUid;
+      if (customer.registerBranch !== undefined) updateData.registerBranch = customer.registerBranch;
+      if (customer.registerDate !== undefined) updateData.registerDate = customer.registerDate;
+      if (customer.lastUse !== undefined) updateData.lastUse = customer.lastUse;
+      
+      // Update points/tier/spending if explicitly provided
+      if (customer.points !== undefined) updateData.points = customer.points;
+      if (customer.tier !== undefined) updateData.tier = customer.tier;
+      if (customer.totalSpent !== undefined) updateData.totalSpent = customer.totalSpent;
+      
+      const updated = await this.updateCustomer(existing.id, updateData);
+      return { action: 'update', customer: updated! };
+    } else {
+      // Create new customer with proper defaults
+      const insertData: InsertCustomer & Partial<Customer> = {
+        ...customer,
+        // Ensure required defaults
+        points: customer.points ?? 0,
+        tier: customer.tier ?? 'member',
+        totalSpent: customer.totalSpent ?? '0.00',
+      };
+      
+      const created = await this.createCustomer(insertData);
+      return { action: 'insert', customer: created };
+    }
   }
 
   async getAllCustomers(): Promise<Customer[]> {

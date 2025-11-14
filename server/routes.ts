@@ -818,6 +818,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import customers from CSV (admin only)
+  app.post('/api/admin/customers/import', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { customers: customerData } = req.body;
+      
+      if (!Array.isArray(customerData) || customerData.length === 0) {
+        return res.status(400).json({ message: "Customers array is required" });
+      }
+
+      const imported = [];
+      const updated = [];
+      const errors = [];
+
+      for (let i = 0; i < customerData.length; i++) {
+        const customer = customerData[i];
+        try {
+          // Validate against Zod schema first
+          const validationResult = insertCustomerCSVSchema.safeParse(customer);
+          
+          if (!validationResult.success) {
+            const errorMessages = validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+            throw new Error(`Validation failed: ${errorMessages}`);
+          }
+
+          const validData = validationResult.data;
+
+          // Normalize customer data with proper defaults
+          const normalized: any = {
+            name: validData.name.trim(),
+            phone: validData.phone.trim(),
+          };
+
+          // Optional fields from validated data
+          if (validData.email?.trim()) normalized.email = validData.email.trim();
+          if (validData.gender?.trim()) normalized.gender = validData.gender.trim();
+          if (validData.birthday?.trim()) normalized.birthday = validData.birthday.trim();
+          if (validData.tag?.trim()) normalized.tag = validData.tag.trim();
+          if (validData.lineUid?.trim()) normalized.lineUid = validData.lineUid.trim();
+          if (validData.registerBranch?.trim()) normalized.registerBranch = validData.registerBranch.trim();
+
+          // Parse numeric fields
+          if (validData.points !== undefined) {
+            normalized.points = validData.points;
+          }
+
+          // Convert totalSpent to decimal string
+          if (validData.totalSpent?.trim()) {
+            const cleanedSpend = validData.totalSpent.replace(/,/g, '');
+            const spendNum = parseFloat(cleanedSpend);
+            if (!isNaN(spendNum)) {
+              normalized.totalSpent = spendNum.toFixed(2);
+            }
+          }
+
+          // Normalize tier (case insensitive)
+          if (validData.tier?.trim()) {
+            normalized.tier = validData.tier.toLowerCase().trim();
+          }
+
+          // Parse dates (DD/MM/YYYY format to UTC Date)
+          if (validData.registerDate?.trim()) {
+            try {
+              const parts = validData.registerDate.split(/[\/\s]/);
+              if (parts.length >= 3) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+                // Use Date.UTC to create consistent dates
+                const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+                if (!isNaN(date.getTime())) {
+                  normalized.registerDate = date;
+                }
+              }
+            } catch (e) {
+              console.warn(`Invalid registerDate for ${validData.phone}:`, validData.registerDate);
+            }
+          }
+
+          if (validData.lastUse?.trim()) {
+            try {
+              const parts = validData.lastUse.split(/[\/\s]/);
+              if (parts.length >= 3) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+                let hour = 0;
+                let minute = 0;
+                
+                if (parts.length > 3 && parts[3].includes(':')) {
+                  const timeParts = parts[3].split(':');
+                  hour = parseInt(timeParts[0]) || 0;
+                  minute = parseInt(timeParts[1]) || 0;
+                }
+                
+                // Use Date.UTC for consistent parsing
+                const date = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+                if (!isNaN(date.getTime())) {
+                  normalized.lastUse = date;
+                }
+              }
+            } catch (e) {
+              console.warn(`Invalid lastUse for ${validData.phone}:`, validData.lastUse);
+            }
+          }
+
+          // Upsert customer by phone
+          const result = await storage.upsertCustomerByPhone(normalized);
+          
+          if (result.action === 'insert') {
+            imported.push(result.customer);
+          } else {
+            updated.push(result.customer);
+          }
+        } catch (error: any) {
+          errors.push({
+            row: i + 1,
+            phone: customer.phone || 'Unknown',
+            name: customer.name || 'Unknown',
+            error: error.message,
+          });
+          console.error(`Error importing customer row ${i + 1}:`, error.message);
+        }
+      }
+
+      res.json({
+        success: true,
+        imported: imported.length,
+        updated: updated.length,
+        failed: errors.length,
+        total: customerData.length,
+        errors,
+      });
+    } catch (error) {
+      console.error("Error importing customers:", error);
+      res.status(500).json({ message: "Failed to import customers" });
+    }
+  });
+
   // ============ Message Template API Endpoints (Admin Only) ============
   
   // Get all message templates
