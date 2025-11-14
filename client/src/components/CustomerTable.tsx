@@ -7,6 +7,7 @@ import { Search, MessageSquare, Edit, Eye } from "lucide-react";
 import { useState } from "react";
 import { Customer } from "@shared/schema";
 import CustomerDetailsDialog from "@/components/CustomerDetailsDialog";
+import BulkDeleteCustomersDialog from "@/components/BulkDeleteCustomersDialog";
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -31,17 +32,20 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
   return (
     <Card className="p-6" data-testid="card-customer-table">
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <h3 className="text-lg font-semibold text-foreground">Customers</h3>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search customers..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-              data-testid="input-search-customers"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search customers..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-customers"
+              />
+            </div>
+            <BulkDeleteCustomersDialog customers={customers} />
           </div>
         </div>
 
