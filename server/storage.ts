@@ -335,7 +335,8 @@ export class DbStorage implements IStorage {
       conditions.push(sql`${customers.createdAt} >= ${filter.createdAfter}`);
     }
     if (filter.createdBefore) {
-      conditions.push(sql`${customers.createdAt} <= ${filter.createdBefore}`);
+      // Use strict < to match frontend preview logic (exclusive upper bound)
+      conditions.push(sql`${customers.createdAt} < ${filter.createdBefore}`);
     }
 
     // Tags filter

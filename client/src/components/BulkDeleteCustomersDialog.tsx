@@ -29,16 +29,27 @@ interface BulkDeleteCustomersDialogProps {
 export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCustomersDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [filterDate, setFilterDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   const [confirmPhrase, setConfirmPhrase] = useState("");
   const [reason, setReason] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async () => {
+      // Calculate end-of-day for toDate to make it inclusive
+      let createdBeforeISO: string | undefined = undefined;
+      if (toDate) {
+        const toDateTime = new Date(toDate).getTime();
+        // Add 1 day to include the entire "to" date (making it inclusive)
+        const endOfToDate = new Date(toDateTime + (24 * 60 * 60 * 1000));
+        createdBeforeISO = endOfToDate.toISOString();
+      }
+
       return await apiRequest('POST', '/api/admin/customers/bulk-delete', {
         filter: {
-          createdAfter: filterDate ? new Date(filterDate).toISOString() : undefined,
+          createdAfter: fromDate ? new Date(fromDate).toISOString() : undefined,
+          createdBefore: createdBeforeISO,
         },
         confirmPhrase,
         reason,
@@ -66,7 +77,8 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
   });
 
   const resetForm = () => {
-    setFilterDate("");
+    setFromDate("");
+    setToDate("");
     setConfirmPhrase("");
     setReason("");
     setShowConfirmation(false);
@@ -81,21 +93,53 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
 
   // Calculate affected customers count
   const getAffectedCount = () => {
-    if (!filterDate) {
+    // No filters = all customers
+    if (!fromDate && !toDate) {
       return customers.length;
     }
     
-    const filterDateTime = new Date(filterDate).getTime();
     return customers.filter(c => {
       const createdAt = new Date(c.createdAt).getTime();
-      return createdAt >= filterDateTime;
+      
+      // Check lower bound (fromDate)
+      if (fromDate) {
+        const fromDateTime = new Date(fromDate).getTime();
+        if (createdAt < fromDateTime) {
+          return false;
+        }
+      }
+      
+      // Check upper bound (toDate)
+      if (toDate) {
+        const toDateTime = new Date(toDate).getTime();
+        // Add 1 day to include the entire "to" date
+        const endOfToDate = toDateTime + (24 * 60 * 60 * 1000);
+        if (createdAt >= endOfToDate) {
+          return false;
+        }
+      }
+      
+      return true;
     }).length;
   };
 
   const affectedCount = getAffectedCount();
   const isConfirmValid = confirmPhrase === "DELETE";
+  
+  // Validate date range
+  const isDateRangeValid = !fromDate || !toDate || new Date(fromDate) <= new Date(toDate);
 
   const handleNext = () => {
+    // Validate date range
+    if (!isDateRangeValid) {
+      toast({
+        title: "Invalid date range",
+        description: "The 'From' date must be before or equal to the 'To' date",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (affectedCount === 0) {
       toast({
         title: "No customers to delete",
@@ -156,18 +200,38 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Delete customers created after (optional)
+                  Date Range Filter (optional)
                 </label>
-                <Input
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                  data-testid="input-filter-date"
-                  placeholder="Leave empty to delete all customers"
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">From Date</label>
+                    <Input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      data-testid="input-from-date"
+                      placeholder="Start date"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">To Date</label>
+                    <Input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      data-testid="input-to-date"
+                      placeholder="End date"
+                    />
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Leave empty to select all customers. Set a date to only delete customers created after that date.
+                  Leave both empty to delete all customers. Set a range to delete customers created within that period.
                 </p>
+                {!isDateRangeValid && (
+                  <p className="text-xs text-destructive font-medium">
+                    The 'From' date must be before or equal to the 'To' date
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -199,7 +263,7 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
               <Button 
                 variant="destructive" 
                 onClick={handleNext}
-                disabled={affectedCount === 0}
+                disabled={affectedCount === 0 || !isDateRangeValid}
                 data-testid="button-next-delete"
               >
                 Next
