@@ -858,11 +858,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (validData.lineUid?.trim()) normalized.lineUid = validData.lineUid.trim();
           if (validData.registerBranch?.trim()) normalized.registerBranch = validData.registerBranch.trim();
 
-          // Parse numeric fields
+          // Parse numeric fields (points must be whole numbers - database column is INTEGER)
           if (validData.points !== undefined && validData.points.trim()) {
-            const pointsNum = parseInt(validData.points.trim());
-            if (!isNaN(pointsNum)) {
+            const pointsNum = Number(validData.points.trim());
+            if (Number.isFinite(pointsNum) && Number.isInteger(pointsNum)) {
               normalized.points = pointsNum;
+            } else if (Number.isFinite(pointsNum)) {
+              // Fractional points detected - reject row
+              throw new Error(`Points must be a whole number, got: "${validData.points}"`);
+            } else {
+              throw new Error(`Invalid points value: "${validData.points}"`);
             }
           }
 
