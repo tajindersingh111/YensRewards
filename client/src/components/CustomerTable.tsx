@@ -3,18 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MessageSquare, Edit } from "lucide-react";
+import { Search, MessageSquare, Edit, Eye } from "lucide-react";
 import { useState } from "react";
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  points: number;
-  tier: "bronze" | "silver" | "gold";
-  totalSpent: number;
-  photo?: string;
-}
+import { Customer } from "@shared/schema";
+import CustomerDetailsDialog from "@/components/CustomerDetailsDialog";
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -30,6 +22,7 @@ const tierColors = {
 
 export default function CustomerTable({ customers, onMessage, onEdit }: CustomerTableProps) {
   const [search, setSearch] = useState("");
+  const [detailsCustomer, setDetailsCustomer] = useState<Customer | null>(null);
 
   const filteredCustomers = customers.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
@@ -58,9 +51,11 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
               <tr className="border-b">
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Customer</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tier</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Points</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Total Spent</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tag</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
@@ -78,7 +73,7 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={customer.photo} alt={customer.name} />
+                          <AvatarImage src={customer.photo ?? undefined} alt={customer.name} />
                           <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
                             {initials}
                           </AvatarFallback>
@@ -87,17 +82,38 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
                       </div>
                     </td>
                     <td className="py-3 px-4 text-muted-foreground">{customer.phone}</td>
+                    <td className="py-3 px-4 text-muted-foreground text-sm" data-testid={`text-email-${customer.id}`}>
+                      {customer.email || "-"}
+                    </td>
                     <td className="py-3 px-4">
-                      <Badge className={tierColors[customer.tier]} data-testid={`badge-tier-${customer.id}`}>
+                      <Badge className={tierColors[customer.tier as keyof typeof tierColors]} data-testid={`badge-tier-${customer.id}`}>
                         {customer.tier}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 font-semibold text-primary" data-testid={`text-points-${customer.id}`}>
                       {customer.points}
                     </td>
-                    <td className="py-3 px-4 text-foreground">฿{customer.totalSpent.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-foreground">฿{Number(customer.totalSpent).toLocaleString()}</td>
+                    <td className="py-3 px-4">
+                      {customer.tag ? (
+                        <Badge variant="outline" className="text-xs" data-testid={`badge-tag-${customer.id}`}>
+                          {customer.tag}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
+                        <Button
+                          onClick={() => setDetailsCustomer(customer)}
+                          variant="ghost"
+                          size="sm"
+                          data-testid={`button-details-${customer.id}`}
+                          title="View all imported fields"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button
                           onClick={() => onEdit(customer)}
                           variant="ghost"
@@ -123,6 +139,12 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
           </table>
         </div>
       </div>
+      
+      <CustomerDetailsDialog 
+        customer={detailsCustomer}
+        open={!!detailsCustomer}
+        onOpenChange={(open: boolean) => !open && setDetailsCustomer(null)}
+      />
     </Card>
   );
 }
