@@ -323,8 +323,8 @@ export class DbStorage implements IStorage {
   }
 
   async bulkDeleteCustomers(filter: {
-    createdAfter?: Date;
-    createdBefore?: Date;
+    createdAfter?: string; // ISO string
+    createdBefore?: string; // ISO string
     tags?: string[];
     hasZeroTotals?: boolean;
   }): Promise<{ deletedCount: number; deletedIds: string[] }> {
@@ -335,7 +335,7 @@ export class DbStorage implements IStorage {
       conditions.push(sql`${customers.createdAt} >= ${filter.createdAfter}`);
     }
     if (filter.createdBefore) {
-      // Use strict < to match frontend preview logic (exclusive upper bound)
+      // Use strict < comparison (frontend already added +1 day for inclusive behavior)
       conditions.push(sql`${customers.createdAt} < ${filter.createdBefore}`);
     }
 

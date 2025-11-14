@@ -37,19 +37,23 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async () => {
-      // Calculate end-of-day for toDate to make it inclusive
-      let createdBeforeISO: string | undefined = undefined;
-      if (toDate) {
-        const toDateTime = new Date(toDate).getTime();
-        // Add 1 day to include the entire "to" date (making it inclusive)
-        const endOfToDate = new Date(toDateTime + (24 * 60 * 60 * 1000));
-        createdBeforeISO = endOfToDate.toISOString();
-      }
+      // UTC helpers for timezone-safe date boundaries
+      const getUTCMidnight = (dateStr: string): Date => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      };
+
+      const getUTCMidnightNextDay = (dateStr: string): Date => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        // Add 1 day using UTC arithmetic
+        return new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0));
+      };
 
       return await apiRequest('POST', '/api/admin/customers/bulk-delete', {
         filter: {
-          createdAfter: fromDate ? new Date(fromDate).toISOString() : undefined,
-          createdBefore: createdBeforeISO,
+          createdAfter: fromDate ? getUTCMidnight(fromDate).toISOString() : undefined,
+          // For inclusive toDate: send midnight of next day, backend uses strict <
+          createdBefore: toDate ? getUTCMidnightNextDay(toDate).toISOString() : undefined,
         },
         confirmPhrase,
         reason,
@@ -99,23 +103,23 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
     }
     
     return customers.filter(c => {
-      const createdAt = new Date(c.createdAt).getTime();
+      // Parse createdAt as UTC timestamp
+      const createdAt = Date.parse(c.createdAt);
       
-      // Check lower bound (fromDate) - inclusive (>=)
+      // Check lower bound (fromDate) - use UTC helper matching mutation logic
       if (fromDate) {
-        const fromDateTime = new Date(fromDate).getTime();
-        if (createdAt < fromDateTime) {
+        const [year, month, day] = fromDate.split('-').map(Number);
+        const fromDayUTC = Date.UTC(year, month - 1, day, 0, 0, 0, 0);
+        if (createdAt < fromDayUTC) {
           return false;
         }
       }
       
-      // Check upper bound (toDate) - exclusive (<)
-      // Add 1 day to make toDate inclusive of the entire selected day
+      // Check upper bound (toDate) - use UTC helper matching mutation logic
       if (toDate) {
-        const toDateTime = new Date(toDate).getTime();
-        const endOfToDate = toDateTime + (24 * 60 * 60 * 1000);
-        // Use strict < to match backend logic
-        if (createdAt >= endOfToDate) {
+        const [year, month, day] = toDate.split('-').map(Number);
+        const nextDayUTC = Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0);
+        if (createdAt >= nextDayUTC) {
           return false;
         }
       }
@@ -127,8 +131,14 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
   const affectedCount = getAffectedCount();
   const isConfirmValid = confirmPhrase === "DELETE";
   
-  // Validate date range
-  const isDateRangeValid = !fromDate || !toDate || new Date(fromDate) <= new Date(toDate);
+  // Validate date range using UTC helpers
+  const isDateRangeValid = !fromDate || !toDate || (() => {
+    const [fromYear, fromMonth, fromDay] = fromDate.split('-').map(Number);
+    const [toYear, toMonth, toDay] = toDate.split('-').map(Number);
+    const fromUTC = Date.UTC(fromYear, fromMonth - 1, fromDay);
+    const toUTC = Date.UTC(toYear, toMonth - 1, toDay);
+    return fromUTC <= toUTC;
+  })();
 
   const handleNext = () => {
     // Validate date range

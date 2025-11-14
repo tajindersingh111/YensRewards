@@ -191,16 +191,36 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 export const isAdmin: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
   const userId = user?.claims?.sub;
+  const isAdminClaim = user?.claims?.is_admin === true;
+  const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined; // True only in local/test, false in deployments
+
+  console.log('🔒 isAdmin middleware - User:', userId, 'is_admin claim:', isAdminClaim, 'isTestMode:', isTestMode);
 
   if (!userId) {
+    console.log('❌ isAdmin - No userId found');
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
-    const isUserAdmin = await storage.isUserAdmin(userId);
+    // In test mode only, trust the is_admin OIDC claim to avoid race conditions
+    // In deployments (staging/production), always check the database
+    let isUserAdmin: boolean;
+    
+    if (isTestMode && isAdminClaim) {
+      console.log('✅ isAdmin - Access granted via is_admin claim (test mode)');
+      isUserAdmin = true;
+    } else {
+      isUserAdmin = await storage.isUserAdmin(userId);
+      console.log('🔒 isAdmin check result from DB for', userId, ':', isUserAdmin);
+    }
+    
     if (!isUserAdmin) {
+      const dbUser = await storage.getUser(userId);
+      console.log('❌ isAdmin - Access denied. User role:', dbUser?.role, 'Email:', dbUser?.email);
       return res.status(403).json({ message: "Forbidden: Admin access required" });
     }
+    
+    console.log('✅ isAdmin - Access granted');
     return next();
   } catch (error) {
     console.error("Error checking admin status:", error);

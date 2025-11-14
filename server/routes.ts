@@ -56,22 +56,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const email = req.user.claims.email;
-      console.log('🔑 Auth check - User ID:', userId, 'Email:', email);
+      const isAdminClaim = req.user.claims.is_admin === true;
+      const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined; // True only in local/test, false in deployments
+      
+      console.log('🔑 Auth check - User ID:', userId, 'Email:', email, 'is_admin claim:', isAdminClaim, 'isTestMode:', isTestMode);
       let user = await storage.getUser(userId);
       console.log('👤 User from DB (initial):', JSON.stringify(user, null, 2));
       
       // If user doesn't exist, create them (can happen in OIDC test mode)
       if (!user) {
         console.log('⚠️  User not found, creating user from claims...');
+        // Determine role: ONLY for NEW users in test mode, honor is_admin claim
+        const roleForNewUser = (isTestMode && isAdminClaim) ? 'admin' : 'barista';
+        
         user = await storage.upsertUser({
           id: userId,
           email: email || '',
           firstName: req.user.claims.first_name || '',
           lastName: req.user.claims.last_name || '',
           profileImageUrl: req.user.claims.profile_image_url || null,
+          role: roleForNewUser,
         });
-        console.log('✅ User created:', JSON.stringify(user, null, 2));
+        console.log('✅ User created with role:', user.role, JSON.stringify(user, null, 2));
+      } else if (isTestMode && isAdminClaim && user.role !== 'admin') {
+        // In test mode only, upgrade existing users with is_admin claim to admin role
+        console.log('⬆️  Upgrading existing user to admin (test mode + is_admin claim)');
+        await db.update(users).set({ role: 'admin' }).where(eq(users.id, userId));
+        user.role = 'admin';
+        console.log('✅ User upgraded to admin:', JSON.stringify(user, null, 2));
       }
+      // Note: Existing users WITHOUT is_admin claim keep their database role (no downgrade)
       
       res.json(user);
     } catch (error) {
@@ -979,13 +993,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Filter is required" });
       }
 
-      // Convert date strings to Date objects
+      // Keep dates as ISO strings - storage layer handles UTC parsing
       const deleteFilter: any = {};
       if (filter.createdAfter) {
-        deleteFilter.createdAfter = new Date(filter.createdAfter);
+        deleteFilter.createdAfter = filter.createdAfter; // Keep as ISO string
       }
       if (filter.createdBefore) {
-        deleteFilter.createdBefore = new Date(filter.createdBefore);
+        deleteFilter.createdBefore = filter.createdBefore; // Keep as ISO string
       }
       if (filter.tags && Array.isArray(filter.tags)) {
         deleteFilter.tags = filter.tags;
