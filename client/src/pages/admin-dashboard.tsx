@@ -8,6 +8,7 @@ import CustomerTable from "@/components/CustomerTable";
 import CustomerEditDialog from "@/components/CustomerEditDialog";
 import CustomerMessageDialog from "@/components/CustomerMessageDialog";
 import PromotionCreator from "@/components/PromotionCreator";
+import CustomerCSVImport from "@/components/CustomerCSVImport";
 import ProductManager from "@/components/ProductManager";
 import MessageTemplates from "@/components/MessageTemplates";
 import MessageHistory from "@/components/MessageHistory";
@@ -715,6 +716,10 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="customers" className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">{t('customers.title')}</h2>
+              <CustomerCSVImport />
+            </div>
             <CustomerTable
               customers={customers}
               onMessage={(id) => {

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, users } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, users } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
@@ -859,8 +859,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (validData.registerBranch?.trim()) normalized.registerBranch = validData.registerBranch.trim();
 
           // Parse numeric fields
-          if (validData.points !== undefined) {
-            normalized.points = validData.points;
+          if (validData.points !== undefined && validData.points.trim()) {
+            const pointsNum = parseInt(validData.points.trim());
+            if (!isNaN(pointsNum)) {
+              normalized.points = pointsNum;
+            }
           }
 
           // Convert totalSpent to decimal string

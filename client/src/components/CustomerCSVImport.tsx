@@ -21,7 +21,7 @@ interface ParsedCustomer {
   email?: string;
   gender?: string;
   birthday?: string;
-  points?: number;
+  points?: string; // String from CSV, server will parse to number
   tier?: string;
   totalSpent?: string;
   registerDate?: string;
@@ -138,9 +138,9 @@ export default function CustomerCSVImport() {
         lineUid,
       };
 
-      // Parse points
+      // Points as string - server will parse to number
       if (points) {
-        customer.points = parseInt(points) || 0;
+        customer.points = points;
       }
 
       customers.push(customer);

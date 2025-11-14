@@ -41,7 +41,7 @@ export const customers = pgTable("customers", {
   referredBy: varchar("referred_by"),
   totalSpent: decimal("total_spent", { precision: 10, scale: 2 }).notNull().default("0"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  // Additional fields for CSV import
+  // Additional fields for CSV import (matching production database column names)
   gender: text("gender"),
   registerDate: timestamp("register_date"),
   registerBranch: text("register_branch"),
@@ -136,6 +136,23 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   referralCode: true,
   createdAt: true,
+});
+
+// CSV Import schema - all fields as strings from CSV, server will coerce types
+export const insertCustomerCSVSchema = z.object({
+  name: z.string().min(1),
+  phone: z.string().min(1),
+  email: z.string().optional(),
+  gender: z.string().optional(),
+  birthday: z.string().optional(),
+  points: z.string().optional(), // Will be parsed to number on server
+  tier: z.string().optional(),
+  totalSpent: z.string().optional(),
+  registerDate: z.string().optional(), // Will be parsed to Date on server
+  registerBranch: z.string().optional(),
+  lastUse: z.string().optional(), // Will be parsed to Date on server
+  tag: z.string().optional(),
+  lineUid: z.string().optional(),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
