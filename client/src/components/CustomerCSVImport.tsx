@@ -69,7 +69,8 @@ export default function CustomerCSVImport() {
 
   const importMutation = useMutation({
     mutationFn: async (customers: ParsedCustomer[]) => {
-      return await apiRequest('POST', '/api/admin/customers/import', { customers });
+      const response = await apiRequest('POST', '/api/admin/customers/import', { customers });
+      return await response.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
