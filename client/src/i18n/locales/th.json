@@ -250,7 +250,7 @@
       "sendToGroup": "ส่งให้กลุ่ม",
       "sendingMessages": "กำลังส่งข้อความวันเกิด...",
       "allBranches": "ทุกสาขา",
-      "memberCount": "สมาชิกทั้งหมด {{count}} จาก {{total}}",
+      "memberCount": "สมาชิกทั้งหมด {{count}}",
       "addMember": "เพิ่มสมาชิก",
       "uploadMember": "อัปโหลดสมาชิก",
       "loggedInAs": "เข้าสู่ระบบในนาม:",

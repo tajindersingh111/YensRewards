@@ -250,7 +250,7 @@
       "sendToGroup": "Send to Group",
       "sendingMessages": "Sending birthday messages...",
       "allBranches": "All Branches",
-      "memberCount": "All members {{count}} of {{total}}",
+      "memberCount": "All members {{count}}",
       "addMember": "Add Member",
       "uploadMember": "Upload Member",
       "loggedInAs": "Logged in as:",

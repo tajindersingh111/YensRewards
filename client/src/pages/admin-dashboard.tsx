@@ -361,7 +361,7 @@ export default function AdminDashboard() {
             {/* Member Count and Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <p className="text-sm text-muted-foreground" data-testid="text-member-count">
-                {t('admin.overview.memberCount', { count: customers.length, total: 1000 })}
+                {t('admin.overview.memberCount', { count: customers.length })}
               </p>
               <div className="flex gap-2">
                 <Button variant="default" className="gap-2" data-testid="button-add-member">
