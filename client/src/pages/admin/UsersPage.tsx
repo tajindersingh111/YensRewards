@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,11 +38,6 @@ import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Trash2, Shield, Users } from "lucide-react";
 import { User } from "@shared/schema";
 
-const roleLabels = {
-  admin: "Admin",
-  manager: "Manager",
-  barista: "User",
-};
 
 const roleColors = {
   admin: "bg-red-500 text-white",
@@ -50,6 +46,7 @@ const roleColors = {
 };
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
@@ -72,16 +69,16 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: "User created",
-        description: "The user has been successfully created.",
+        title: t("admin.users.userCreated"),
+        description: t("admin.users.userCreatedDesc"),
       });
       setAddDialogOpen(false);
       setNewUser({ email: "", firstName: "", lastName: "", role: "barista" });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to create user",
-        description: error.message || "An error occurred",
+        title: t("admin.users.userCreateFailed"),
+        description: error.message || t("admin.users.genericError"),
         variant: "destructive",
       });
     },
@@ -94,15 +91,16 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: "Role updated",
-        description: "The user role has been successfully updated.",
+        title: t("admin.users.roleUpdated"),
+        description: t("admin.users.roleUpdatedDesc"),
       });
       setEditingUser(null);
+      setEditingRole("");
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to update role",
-        description: error.message || "An error occurred",
+        title: t("admin.users.roleUpdateFailed"),
+        description: error.message || t("admin.users.genericError"),
         variant: "destructive",
       });
     },
@@ -115,15 +113,15 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: "User deleted",
-        description: "The user has been successfully deleted.",
+        title: t("admin.users.userDeleted"),
+        description: t("admin.users.userDeletedDesc"),
       });
       setDeletingUser(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to delete user",
-        description: error.message || "An error occurred",
+        title: t("admin.users.userDeleteFailed"),
+        description: error.message || t("admin.users.genericError"),
         variant: "destructive",
       });
     },
@@ -132,8 +130,8 @@ export default function UsersPage() {
   const handleCreateUser = () => {
     if (!newUser.email || !newUser.role) {
       toast({
-        title: "Validation error",
-        description: "Email and role are required",
+        title: t("admin.users.validationError"),
+        description: t("admin.users.emailRoleRequired"),
         variant: "destructive",
       });
       return;
@@ -141,9 +139,11 @@ export default function UsersPage() {
     createMutation.mutate(newUser);
   };
 
-  const handleUpdateRole = (role: string) => {
-    if (editingUser) {
-      updateRoleMutation.mutate({ id: editingUser.id, role });
+  const [editingRole, setEditingRole] = useState<string>("");
+
+  const handleUpdateRole = () => {
+    if (editingUser && editingRole) {
+      updateRoleMutation.mutate({ id: editingUser.id, role: editingRole });
     }
   };
 
@@ -151,68 +151,68 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Users</h1>
-          <p className="text-muted-foreground mt-1">Manage user accounts and permissions</p>
+          <h1 className="text-3xl font-bold text-foreground">{t("admin.users.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("admin.users.subtitle")}</p>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-user">
               <UserPlus className="w-4 h-4 mr-2" />
-              Add User
+              {t("admin.users.addUser")}
             </Button>
           </DialogTrigger>
           <DialogContent data-testid="dialog-add-user">
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
+              <DialogTitle>{t("admin.users.addUserTitle")}</DialogTitle>
               <DialogDescription>
-                Create a new user account and assign a role
+                {t("admin.users.addUserDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email*</Label>
+                <Label htmlFor="email">{t("admin.users.emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="user@example.com"
+                  placeholder={t("admin.users.emailPlaceholder")}
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                   data-testid="input-email"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName">{t("admin.users.firstNameLabel")}</Label>
                 <Input
                   id="firstName"
-                  placeholder="John"
+                  placeholder={t("admin.users.firstNamePlaceholder")}
                   value={newUser.firstName}
                   onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
                   data-testid="input-firstName"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName">{t("admin.users.lastNameLabel")}</Label>
                 <Input
                   id="lastName"
-                  placeholder="Doe"
+                  placeholder={t("admin.users.lastNamePlaceholder")}
                   value={newUser.lastName}
                   onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
                   data-testid="input-lastName"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">Role*</Label>
+                <Label htmlFor="role">{t("admin.users.roleLabel")}</Label>
                 <Select
                   value={newUser.role}
                   onValueChange={(value) => setNewUser({ ...newUser, role: value })}
                 >
-                  <SelectTrigger data-testid="select-role">
+                  <SelectTrigger id="role" data-testid="select-role">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="barista">User</SelectItem>
+                    <SelectItem value="admin">{t("admin.users.roleAdmin")}</SelectItem>
+                    <SelectItem value="manager">{t("admin.users.roleManager")}</SelectItem>
+                    <SelectItem value="barista">{t("admin.users.roleBarista")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -223,14 +223,14 @@ export default function UsersPage() {
                 onClick={() => setAddDialogOpen(false)}
                 data-testid="button-cancel"
               >
-                Cancel
+                {t("admin.users.cancel")}
               </Button>
               <Button
                 onClick={handleCreateUser}
                 disabled={createMutation.isPending}
                 data-testid="button-create-user"
               >
-                {createMutation.isPending ? "Creating..." : "Create User"}
+                {createMutation.isPending ? t("admin.users.creating") : t("admin.users.createUser")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -240,24 +240,24 @@ export default function UsersPage() {
       <Card className="p-6">
         {isLoading ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Loading users...</p>
+            <p className="text-muted-foreground">{t("common.loading")}</p>
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-8">
             <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">No users found</p>
-            <p className="text-sm text-muted-foreground">Click "Add User" to create your first user</p>
+            <p className="text-lg font-medium">{t("admin.users.noUsers")}</p>
+            <p className="text-sm text-muted-foreground">{t("admin.users.noUsersDesc")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">User</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Role</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Created</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.user")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.email")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.role")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.created")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -283,7 +283,7 @@ export default function UsersPage() {
                       </td>
                       <td className="py-3 px-4">
                         <Badge className={roleColors[user.role as keyof typeof roleColors]}>
-                          {roleLabels[user.role as keyof typeof roleLabels]}
+                          {t(`admin.users.role${user.role.charAt(0).toUpperCase() + user.role.slice(1)}` as any)}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">
@@ -300,7 +300,7 @@ export default function UsersPage() {
                             data-testid={`button-edit-role-${user.id}`}
                           >
                             <Shield className="w-4 h-4 mr-1" />
-                            Change Role
+                            {t("admin.users.changeRole")}
                           </Button>
                           <Button
                             variant="outline"
@@ -322,32 +322,61 @@ export default function UsersPage() {
       </Card>
 
       {/* Edit Role Dialog */}
-      <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+      <Dialog 
+        open={!!editingUser} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingUser(null);
+            setEditingRole("");
+          } else if (editingUser) {
+            setEditingRole(editingUser.role);
+          }
+        }}
+      >
         <DialogContent data-testid="dialog-edit-role">
           <DialogHeader>
-            <DialogTitle>Change User Role</DialogTitle>
+            <DialogTitle>{t("admin.users.editRoleTitle")}</DialogTitle>
             <DialogDescription>
-              Update the role for {editingUser?.email}
+              {t("admin.users.editRoleDesc", { email: editingUser?.email })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="editRole">Role</Label>
+              <Label htmlFor="editRole">{t("admin.users.role")}</Label>
               <Select
-                value={editingUser?.role}
-                onValueChange={handleUpdateRole}
+                value={editingRole || editingUser?.role}
+                onValueChange={setEditingRole}
               >
-                <SelectTrigger data-testid="select-edit-role">
+                <SelectTrigger id="editRole" data-testid="select-edit-role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="barista">User</SelectItem>
+                  <SelectItem value="admin">{t("admin.users.roleAdmin")}</SelectItem>
+                  <SelectItem value="manager">{t("admin.users.roleManager")}</SelectItem>
+                  <SelectItem value="barista">{t("admin.users.roleBarista")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingUser(null);
+                setEditingRole("");
+              }}
+              data-testid="button-cancel-edit"
+            >
+              {t("admin.users.cancel")}
+            </Button>
+            <Button
+              onClick={handleUpdateRole}
+              disabled={updateRoleMutation.isPending || !editingRole}
+              data-testid="button-save-role"
+            >
+              {updateRoleMutation.isPending ? t("admin.users.updating") : t("admin.users.saveChanges")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -355,19 +384,19 @@ export default function UsersPage() {
       <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
         <AlertDialogContent data-testid="dialog-delete-user">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.users.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {deletingUser?.email}? This action cannot be undone.
+              {t("admin.users.deleteDesc", { email: deletingUser?.email })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t("admin.users.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deletingUser && deleteMutation.mutate(deletingUser.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? t("admin.users.deleting") : t("admin.users.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
