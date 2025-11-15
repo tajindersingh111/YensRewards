@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### Nov 15, 2025 - Add Member & Upload Member Buttons (v2.1.0)
+- **Functional Overview Buttons**: Wired up "Add Member" and "Upload Member" buttons in Admin Dashboard Overview tab to open respective dialogs for easy customer management without switching tabs.
+- **CustomerEditDialog Enhancement**: Refactored CustomerEditDialog to support both create and edit modes with Zod schema validation, conditional UI (avatar/read-only fields hidden in create mode), and mode-aware mutation endpoints (POST for create, PATCH for edit).
+- **CustomerCSVImport Controlled Component**: Made CustomerCSVImport a controlled component with optional `open`, `onOpenChange`, and `showTrigger` props while maintaining backward compatibility. Dialog can now be opened programmatically from any tab.
+- **Global Dialog Management**: Moved all dialogs (Add Customer, Edit Customer, CSV Import, Messaging) outside tab panels to be accessible from any tab, with centralized state management in Admin Dashboard.
+- **Version Update**: Updated system version to v2.1.0 across all apps.
+
 ### Nov 15, 2025 - Birthday UI Enhancement & Active Status (v2.0.9)
 - **Birthday Layout Redesign**: Redesigned birthday section in Admin Dashboard to match Top 10 Spenders format with 10 customers per row displayed in multiple rows instead of single horizontal scroll. Each customer shown with avatar, cake icon badge, and time period label (Today/Tomorrow/This Week/This Month).
 - **All Customers Active**: Updated all 523 customers to Active status by setting minimum ฿10 spending for previously inactive customers (those with zero total_spent). All customers now appear in Active tab instead of being split between Active (399) and Inactive (124).

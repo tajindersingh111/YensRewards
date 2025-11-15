@@ -31,12 +31,22 @@ interface ParsedCustomer {
   lineUid?: string;
 }
 
-export default function CustomerCSVImport() {
+interface CustomerCSVImportProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+}
+
+export default function CustomerCSVImport({ open, onOpenChange, showTrigger = true }: CustomerCSVImportProps = {}) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [parsedCustomers, setParsedCustomers] = useState<ParsedCustomer[]>([]);
   const [importResult, setImportResult] = useState<any>(null);
+  
+  // Use controlled state if provided, otherwise use internal state
+  const isDialogOpen = open !== undefined ? open : internalOpen;
+  const setIsDialogOpen = onOpenChange || setInternalOpen;
 
   const downloadTemplate = () => {
     const templateData = [
@@ -185,14 +195,18 @@ export default function CustomerCSVImport() {
     setImportResult(null);
   };
 
+  const dialogTrigger = showTrigger ? (
+    <DialogTrigger asChild>
+      <Button variant="outline" className="hover-elevate active-elevate-2" data-testid="button-import-csv-customers">
+        <Upload className="w-4 h-4 mr-2" />
+        {t('admin.customers.importCSV')}
+      </Button>
+    </DialogTrigger>
+  ) : null;
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="hover-elevate active-elevate-2" data-testid="button-import-csv-customers">
-          <Upload className="w-4 h-4 mr-2" />
-          {t('admin.customers.importCSV')}
-        </Button>
-      </DialogTrigger>
+      {dialogTrigger}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('admin.customers.importFromCSV')}</DialogTitle>

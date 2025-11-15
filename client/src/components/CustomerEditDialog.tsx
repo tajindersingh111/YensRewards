@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@shared/schema";
+import { insertCustomerSchema } from "@shared/schema";
 
 interface CustomerEditDialogProps {
   customer: Customer | null;
@@ -32,7 +33,9 @@ const tierColors = {
 };
 
 export default function CustomerEditDialog({ customer, open, onOpenChange }: CustomerEditDialogProps) {
-  const { toast } = useToast();
+  const { toast} = useToast();
+  const isCreateMode = !customer;
+  
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -49,7 +52,7 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
     lineUid: "",
   });
 
-  // Populate form when customer changes
+  // Populate form when customer changes or reset for create
   useEffect(() => {
     if (customer) {
       setFormData({
@@ -67,25 +70,48 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
         tag: customer.tag || "",
         lineUid: customer.lineUid || "",
       });
+    } else {
+      // Reset form for create mode
+      setFormData({
+        name: "",
+        phone: "",
+        email: "",
+        birthday: "",
+        tier: "bronze",
+        points: 0,
+        totalSpent: "0",
+        gender: "",
+        registerBranch: "",
+        registerDate: "",
+        lastUse: "",
+        tag: "",
+        lineUid: "",
+      });
     }
-  }, [customer]);
+  }, [customer, open]);
 
-  const updateMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async (data: Partial<Customer>) => {
-      return await apiRequest('PATCH', `/api/admin/customers/${customer?.id}`, data);
+      if (isCreateMode) {
+        // Create new customer (POST)
+        return await apiRequest('POST', '/api/admin/customers', data);
+      } else {
+        // Update existing customer (PATCH)
+        return await apiRequest('PATCH', `/api/admin/customers/${customer?.id}`, data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
       toast({
         title: "Success",
-        description: "Customer updated successfully",
+        description: isCreateMode ? "Customer created successfully" : "Customer updated successfully",
       });
       onOpenChange(false);
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update customer",
+        description: error.message || (isCreateMode ? "Failed to create customer" : "Failed to update customer"),
         variant: "destructive",
       });
     },
@@ -93,12 +119,28 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate(formData);
+    
+    // Validate form data using Zod schema
+    try {
+      // Transform date strings to Date objects for validation
+      const dataToValidate = {
+        ...formData,
+        registerDate: formData.registerDate ? new Date(formData.registerDate) : undefined,
+        lastUse: formData.lastUse ? new Date(formData.lastUse) : undefined,
+      };
+      
+      const validatedData = insertCustomerSchema.parse(dataToValidate);
+      saveMutation.mutate(validatedData);
+    } catch (error: any) {
+      toast({
+        title: "Validation Error",
+        description: error.errors?.map((e: any) => e.message).join(", ") || "Please check all required fields",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (!customer) return null;
-
-  const initials = customer.name
+  const initials = (customer?.name || formData.name || "NEW")
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -109,28 +151,32 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Customer</DialogTitle>
+          <DialogTitle>{isCreateMode ? "Add New Customer" : "Edit Customer"}</DialogTitle>
           <DialogDescription>
-            Update customer information and manage their account
+            {isCreateMode
+              ? "Create a new customer account and set their initial information"
+              : "Update customer information and manage their account"}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Customer Photo & Basic Info */}
-          <div className="flex items-center gap-4">
-            <Avatar className="w-20 h-20">
-              <AvatarImage src={customer.photo || undefined} alt={customer.name} />
-              <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="text-xl font-bold text-foreground">{customer.name}</h3>
-              <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
-                {customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}
-              </Badge>
+          {!isCreateMode && customer && (
+            <div className="flex items-center gap-4">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={customer.photo || undefined} alt={customer.name} />
+                <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">{customer.name}</h3>
+                <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
+                  {customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}
+                </Badge>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -303,27 +349,31 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
               />
             </div>
 
-            {/* Referral Code (read-only) */}
-            <div className="space-y-2">
-              <Label>Referral Code</Label>
-              <Input
-                value={customer.referralCode || ""}
-                placeholder="N/A"
-                disabled
-                className="bg-muted"
-              />
-            </div>
+            {/* Referral Code (read-only, edit mode only) */}
+            {!isCreateMode && customer && (
+              <div className="space-y-2">
+                <Label>Referral Code</Label>
+                <Input
+                  value={customer.referralCode || ""}
+                  placeholder="N/A"
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+            )}
           </div>
 
-          {/* Customer ID (read-only) */}
-          <div className="space-y-2">
-            <Label>Customer ID</Label>
-            <Input
-              value={customer.id}
-              disabled
-              className="bg-muted font-mono text-xs"
-            />
-          </div>
+          {/* Customer ID (read-only, edit mode only) */}
+          {!isCreateMode && customer && (
+            <div className="space-y-2">
+              <Label>Customer ID</Label>
+              <Input
+                value={customer.id}
+                disabled
+                className="bg-muted font-mono text-xs"
+              />
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2">
@@ -331,7 +381,7 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={updateMutation.isPending}
+              disabled={saveMutation.isPending}
               data-testid="button-cancel-edit"
             >
               <X className="w-4 h-4 mr-2" />
@@ -339,18 +389,18 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
             </Button>
             <Button
               type="submit"
-              disabled={updateMutation.isPending}
+              disabled={saveMutation.isPending}
               data-testid="button-save-edit"
             >
-              {updateMutation.isPending ? (
+              {saveMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
+                  {isCreateMode ? "Creating..." : "Saving..."}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Changes
+                  {isCreateMode ? "Create Customer" : "Save Changes"}
                 </>
               )}
             </Button>

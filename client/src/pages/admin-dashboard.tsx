@@ -42,6 +42,8 @@ export default function AdminDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [messagingCustomer, setMessagingCustomer] = useState<Customer | null>(null);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
@@ -102,9 +104,9 @@ export default function AdminDashboard() {
     retry: false,
   });
 
-  // Fetch all customers - v2.0.9 cache refresh
+  // Fetch all customers - v2.1.0 cache refresh
   const { data: customersData = [], isLoading: customersLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/customers', 'v2.0.9'],
+    queryKey: ['/api/admin/customers', 'v2.1.0'],
     enabled: isAuthenticated && user?.role === "admin",
     retry: false,
     staleTime: 0,
@@ -366,11 +368,21 @@ export default function AdminDashboard() {
                 {t('admin.overview.memberCount', { count: customers.length })}
               </p>
               <div className="flex gap-2">
-                <Button variant="default" className="gap-2" data-testid="button-add-member">
+                <Button 
+                  variant="default" 
+                  className="gap-2" 
+                  onClick={() => setIsAddDialogOpen(true)}
+                  data-testid="button-add-member"
+                >
                   <UserPlus className="w-4 h-4" />
                   {t('admin.overview.addMember')}
                 </Button>
-                <Button variant="outline" className="gap-2" data-testid="button-upload-member">
+                <Button 
+                  variant="outline" 
+                  className="gap-2" 
+                  onClick={() => setIsImportDialogOpen(true)}
+                  data-testid="button-upload-member"
+                >
                   <Upload className="w-4 h-4" />
                   {t('admin.overview.uploadMember')}
                 </Button>
@@ -751,7 +763,7 @@ export default function AdminDashboard() {
           <TabsContent value="customers" className="space-y-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold">{t('admin.customers.title')}</h2>
-              <CustomerCSVImport />
+              <CustomerCSVImport showTrigger={true} />
             </div>
             <CustomerTable
               customers={customers}
@@ -767,18 +779,6 @@ export default function AdminDashboard() {
                 setIsEditDialogOpen(true);
               }}
               data-testid="table-all-customers"
-            />
-            
-            <CustomerEditDialog
-              customer={editingCustomer}
-              open={isEditDialogOpen}
-              onOpenChange={setIsEditDialogOpen}
-            />
-            
-            <CustomerMessageDialog
-              customer={messagingCustomer as any}
-              open={isMessageDialogOpen}
-              onOpenChange={setIsMessageDialogOpen}
             />
           </TabsContent>
 
@@ -803,6 +803,31 @@ export default function AdminDashboard() {
             <MessageTemplates />
           </TabsContent>
         </Tabs>
+
+        {/* Global Dialogs - Available from all tabs */}
+        <CustomerEditDialog
+          customer={editingCustomer}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+        />
+        
+        <CustomerEditDialog
+          customer={null}
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+        />
+        
+        <CustomerCSVImport
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+          showTrigger={false}
+        />
+        
+        <CustomerMessageDialog
+          customer={messagingCustomer as any}
+          open={isMessageDialogOpen}
+          onOpenChange={setIsMessageDialogOpen}
+        />
       </main>
       <InstallPrompt />
     </div>
