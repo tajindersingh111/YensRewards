@@ -14,6 +14,7 @@ import MessagesPage from "@/components/MessagesPage";
 import EnhancedMessaging from "@/components/EnhancedMessaging";
 import UsersPage from "@/pages/admin/UsersPage";
 import YensOverview from "@/components/YensOverview";
+import SitesManager from "@/components/SitesManager";
 import InstallPrompt from "@/components/InstallPrompt";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -343,6 +344,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="promotions" data-testid="tab-promotions">{t('admin.tabs.promotions')}</TabsTrigger>
             <TabsTrigger value="messages" data-testid="tab-messages">{t('admin.tabs.messages')}</TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">{t('admin.tabs.users')}</TabsTrigger>
+            <TabsTrigger value="sites" data-testid="tab-sites">{t('admin.tabs.sites')}</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">{t('admin.tabs.settings')}</TabsTrigger>
           </TabsList>
 
@@ -392,6 +394,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="users" className="space-y-6">
             <UsersPage />
+          </TabsContent>
+
+          <TabsContent value="sites" className="space-y-6">
+            <SitesManager />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
