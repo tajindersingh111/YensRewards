@@ -56,7 +56,7 @@ interface WeeklyOverview {
 }
 
 export default function YensOverview() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const { data: overview, isLoading } = useQuery<WeeklyOverview>({
     queryKey: ['/api/admin/weekly-overview'],
@@ -93,7 +93,8 @@ export default function YensOverview() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' });
+    const locale = i18n.language === 'th' ? 'th-TH' : 'en-US';
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   };
 
   const MetricCard = ({ 
@@ -109,7 +110,9 @@ export default function YensOverview() {
     icon: any; 
     format?: (v: number) => string;
   }) => {
-    const isPositive = change !== undefined && change >= 0;
+    const isPositive = change !== undefined && change > 0;
+    const isNegative = change !== undefined && change < 0;
+    const isNeutral = change !== undefined && change === 0;
     
     return (
       <Card>
@@ -123,12 +126,17 @@ export default function YensOverview() {
           </div>
           {change !== undefined && (
             <div className="flex items-center text-xs mt-1">
-              {isPositive ? (
+              {isPositive && (
                 <ArrowUpRight className="h-3 w-3 text-green-600 mr-1" />
-              ) : (
+              )}
+              {isNegative && (
                 <ArrowDownRight className="h-3 w-3 text-red-600 mr-1" />
               )}
-              <span className={isPositive ? "text-green-600" : "text-red-600"}>
+              <span className={
+                isPositive ? "text-green-600" : 
+                isNegative ? "text-red-600" : 
+                "text-muted-foreground"
+              }>
                 {Math.abs(change).toFixed(1)}%
               </span>
               <span className="text-muted-foreground ml-1">{t('overview.vsLastWeek')}</span>

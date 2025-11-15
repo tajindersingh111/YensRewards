@@ -1,7 +1,15 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.5.1
-**Latest Updates (v2.5.1):**
+## Current Version: v2.6.0
+**Latest Updates (v2.6.0):**
+- New **Yens Overview** tab as first admin dashboard tab
+- Weekly business health dashboard with key metrics (revenue, transactions, customers, loyalty)
+- Visual trend charts for daily revenue and transaction volume
+- Best day of the week highlight
+- Week-over-week performance comparison with change indicators
+- Full bilingual support (Thai/English) with locale-aware date formatting
+
+**Previous Version (v2.5.1):**
 - Enhanced customer selection in Send Message form to display email addresses
 - Email addresses now prominently shown when Email channel is selected
 - Improved UX for verifying recipient contact information before sending
@@ -55,7 +63,7 @@ Preferred communication style: Simple, everyday language.
 - **Messaging System:** Twilio for SMS, Resend for email, multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All admin features fully internationalized including user management, customer management, product management, messaging, and promotions.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, image storage.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete with date filters, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics, tier-based promotions, product menu, automated birthday messaging, user account management (admin-only).
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete with date filters, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only).
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
