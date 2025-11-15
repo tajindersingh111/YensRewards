@@ -435,7 +435,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createNotification({
             customerId: customer.id,
             promotionId: promotion.id,
-            isRead: false,
           });
 
           results.inApp = { success: true, promotionId: promotion.id };
@@ -1123,7 +1122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Log the deletion for audit
-      const userId = req.user?.claims?.sub;
+      const userId = (req.user as any)?.email || 'unknown';
       console.log(`Bulk delete by admin ${userId}: ${result.deletedCount} customers deleted. Reason: ${reason || 'Not provided'}`);
 
       res.json({

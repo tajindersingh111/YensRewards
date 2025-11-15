@@ -10,6 +10,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### Nov 15, 2025 - In-App Customer Messaging (v2.2.0)
+- **In-App Messaging Channel**: Added ability to send messages directly to Customer App alongside SMS/Email. Messages appear in customer's Rewards tab as in-app notifications.
+- **Multi-Channel Support**: Enhanced CustomerMessageDialog with 7 delivery options:
+  - 📱 In-App Notification (default)
+  - 💬 SMS Only
+  - 📧 Email Only
+  - 📱💬 In-App + SMS
+  - 📱📧 In-App + Email
+  - 💬📧 SMS + Email
+  - 📱💬📧 All Channels
+- **Backend Implementation**: Direct messages create promotion entries linked to specific customers via customer_notifications table, appearing immediately in Customer App without requiring external services.
+- **Smart Channel Detection**: UI automatically shows which channels are available based on customer contact info (phone/email) and displays warnings for unavailable channels.
+- **Version Update**: Updated system version to v2.2.0 across all apps.
+
 ### Nov 15, 2025 - Add Member & Upload Member Buttons (v2.1.0)
 - **Functional Overview Buttons**: Wired up "Add Member" and "Upload Member" buttons in Admin Dashboard Overview tab to open respective dialogs for easy customer management without switching tabs.
 - **CustomerEditDialog Enhancement**: Refactored CustomerEditDialog to support both create and edit modes with Zod schema validation, conditional UI (avatar/read-only fields hidden in create mode), and mode-aware mutation endpoints (POST for create, PATCH for edit).
