@@ -242,7 +242,21 @@ export default function SendMessageForm() {
                       />
                       <div className="flex-1">
                         <div className="font-medium text-sm">{customer.name}</div>
-                        <div className="text-xs text-muted-foreground">{customer.phone}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {channel === "email" && customer.email ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-medium text-foreground">📧 {customer.email}</span>
+                              <span>{customer.phone}</span>
+                            </div>
+                          ) : channel === "sms" && customer.phone ? (
+                            <span>📱 {customer.phone}</span>
+                          ) : (
+                            <div className="flex flex-col gap-0.5">
+                              {customer.email && <span>📧 {customer.email}</span>}
+                              {customer.phone && <span>📱 {customer.phone}</span>}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <Badge variant="outline" className="text-xs">
                         {customer.tier}
