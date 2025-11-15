@@ -389,7 +389,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Top Spenders */}
-            <div className="bg-card rounded-lg border p-6">
+            <div className="bg-card rounded-lg border-2 border-[#FCD34D] p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <h3 className="font-semibold text-lg">{t('admin.overview.topSpenders')}</h3>
@@ -594,7 +594,7 @@ export default function AdminDashboard() {
               }
 
               return (
-                <div className="bg-card rounded-lg border p-6">
+                <div className="bg-card rounded-lg border-2 border-[#FCD34D] p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Cake className="w-5 h-5 text-[#FCD34D]" />
