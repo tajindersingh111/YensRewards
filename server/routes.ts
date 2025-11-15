@@ -212,6 +212,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user details (email, name)
+  app.patch('/api/admin/users/:id/details', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { email, firstName, lastName } = req.body;
+      
+      // At least one field must be provided
+      if (!email && !firstName && !lastName) {
+        return res.status(400).json({ message: "At least one field (email, firstName, or lastName) is required" });
+      }
+
+      // Validate email format if provided
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      const user = await storage.updateUserDetails(id, { email, firstName, lastName });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      console.log(`✅ Updated user ${id} details`);
+      res.json(user);
+    } catch (error: any) {
+      console.error("Error updating user details:", error);
+      if (error.code === '23505') { // Unique violation
+        return res.status(409).json({ message: "Email is already in use by another user" });
+      }
+      res.status(500).json({ message: "Failed to update user details" });
+    }
+  });
+
   // Delete user
   app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
