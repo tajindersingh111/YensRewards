@@ -7,8 +7,11 @@
 - Support for fixed stalls and mobile vans with location tracking
 - Active/inactive site status management
 - Dedicated Sites tab in admin dashboard
-- Full bilingual support (Thai/English) for all site-related content
-- End-to-end tested with successful create/edit/delete operations
+- Restored **Dashboard tab** with Top 10 Spenders and Upcoming Birthdays sections
+- Birthday categorization by time periods (today, tomorrow, this week, this month)
+- Send birthday messages functionality with batch sending support
+- Full bilingual support (Thai/English) for all features
+- End-to-end tested with successful operations
 
 **Previous Version (v2.6.0):**
 - New **Yens Overview** tab as first admin dashboard tab
