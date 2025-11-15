@@ -218,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       
       // Prevent deleting yourself
-      if (id === req.user?.claims.sub) {
+      if (id === (req as any).user?.claims.sub) {
         return res.status(400).json({ message: "You cannot delete your own account" });
       }
 

@@ -13,6 +13,7 @@ import ProductManager from "@/components/ProductManager";
 import MessageTemplates from "@/components/MessageTemplates";
 import MessageHistory from "@/components/MessageHistory";
 import EnhancedMessaging from "@/components/EnhancedMessaging";
+import UsersPage from "@/pages/admin/UsersPage";
 import InstallPrompt from "@/components/InstallPrompt";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -341,6 +342,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="products" data-testid="tab-products">{t('admin.tabs.products')}</TabsTrigger>
             <TabsTrigger value="promotions" data-testid="tab-promotions">{t('admin.tabs.promotions')}</TabsTrigger>
             <TabsTrigger value="messages" data-testid="tab-messages">{t('admin.tabs.messages')}</TabsTrigger>
+            <TabsTrigger value="users" data-testid="tab-users">{t('admin.tabs.users')}</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">{t('admin.tabs.settings')}</TabsTrigger>
           </TabsList>
 
@@ -795,6 +797,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="messages" className="space-y-6">
             <MessageHistory />
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <UsersPage />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
