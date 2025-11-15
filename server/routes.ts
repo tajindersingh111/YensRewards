@@ -416,12 +416,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const results: any = {
+        inApp: null,
         sms: null,
         email: null,
       };
 
-      // Send SMS if channel is sms or both
-      if ((channel === 'sms' || channel === 'both') && customer.phone) {
+      // Send In-App notification if channel includes in-app
+      if (channel && channel.includes('in-app')) {
+        try {
+          // Create a promotion for this message
+          const promotion = await storage.createPromotion({
+            title: subject || 'Direct Message',
+            message: message,
+            targetTier: null, // Direct messages are not tier-specific
+            sentCount: 1,
+          });
+
+          // Create customer notification to link this customer to the promotion
+          await storage.createCustomerNotification({
+            customerId: customer.id,
+            promotionId: promotion.id,
+            isRead: false,
+          });
+
+          results.inApp = { success: true, promotionId: promotion.id };
+          console.log(`✅ In-app message created for customer ${customer.name} (promotion ID: ${promotion.id})`);
+        } catch (error: any) {
+          console.error("Error creating in-app message:", error);
+          results.inApp = { success: false, error: error.message };
+        }
+      }
+
+      // Send SMS if channel includes sms
+      if (channel && channel.includes('sms') && customer.phone) {
         try {
           const smsResult = await sendSMS(customer.phone, message);
           results.sms = smsResult;

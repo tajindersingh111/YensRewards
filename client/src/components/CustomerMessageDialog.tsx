@@ -68,6 +68,7 @@ export default function CustomerMessageDialog({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [customMessage, setCustomMessage] = useState("");
   const [customSubject, setCustomSubject] = useState("");
+  const [selectedChannel, setSelectedChannel] = useState<string>("in-app");
 
   // Fetch templates by type
   const { data: templates = [] } = useQuery<MessageTemplate[]>({
@@ -82,6 +83,7 @@ export default function CustomerMessageDialog({
       setSelectedTemplateId("");
       setCustomMessage("");
       setCustomSubject("");
+      setSelectedChannel("in-app"); // Default to in-app
     }
   }, [open, customer?.id]);
 
@@ -150,14 +152,11 @@ export default function CustomerMessageDialog({
       return;
     }
 
-    const template = templates.find((t) => t.id === selectedTemplateId);
-    const channel = template?.channel || "both";
-
     sendMutation.mutate({
       customerId: customer.id,
       message: customMessage,
       subject: customSubject || undefined,
-      channel,
+      channel: selectedChannel,
     });
   };
 
@@ -171,8 +170,11 @@ export default function CustomerMessageDialog({
     .slice(0, 2);
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
-  const canSendEmail = customer.email && (selectedTemplate?.channel === "email" || selectedTemplate?.channel === "both");
-  const canSendSMS = customer.phone && (selectedTemplate?.channel === "sms" || selectedTemplate?.channel === "both");
+  
+  // Determine which channels are active based on selected channel
+  const willSendInApp = selectedChannel === "in-app" || selectedChannel === "in-app-sms" || selectedChannel === "in-app-email" || selectedChannel === "all";
+  const willSendSMS = (selectedChannel === "sms" || selectedChannel === "in-app-sms" || selectedChannel === "sms-email" || selectedChannel === "all") && customer.phone;
+  const willSendEmail = (selectedChannel === "email" || selectedChannel === "in-app-email" || selectedChannel === "sms-email" || selectedChannel === "all") && customer.email;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -180,7 +182,7 @@ export default function CustomerMessageDialog({
         <DialogHeader>
           <DialogTitle>Send Message</DialogTitle>
           <DialogDescription>
-            Send a personalized message to this customer via SMS or Email
+            Send a personalized message to this customer via In-App notification, SMS, or Email
           </DialogDescription>
         </DialogHeader>
 
@@ -232,6 +234,31 @@ export default function CustomerMessageDialog({
             </Select>
           </div>
 
+          {/* Channel Selection */}
+          <div className="space-y-2">
+            <Label>Delivery Channel</Label>
+            <Select value={selectedChannel} onValueChange={setSelectedChannel}>
+              <SelectTrigger data-testid="select-channel">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in-app">📱 In-App Notification (Shows in Customer App)</SelectItem>
+                <SelectItem value="sms">💬 SMS Only</SelectItem>
+                <SelectItem value="email">📧 Email Only</SelectItem>
+                <SelectItem value="in-app-sms">📱💬 In-App + SMS</SelectItem>
+                <SelectItem value="in-app-email">📱📧 In-App + Email</SelectItem>
+                <SelectItem value="sms-email">💬📧 SMS + Email</SelectItem>
+                <SelectItem value="all">📱💬📧 All Channels</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {selectedChannel === "in-app" && "Message will appear in the customer's app Rewards tab"}
+              {selectedChannel === "sms" && "Requires Twilio configuration"}
+              {selectedChannel === "email" && "Requires Resend configuration"}
+              {(selectedChannel === "in-app-sms" || selectedChannel === "in-app-email" || selectedChannel === "sms-email" || selectedChannel === "all") && "Combines multiple delivery methods"}
+            </p>
+          </div>
+
           {/* Template Selection */}
           {templates.length > 0 && messageType !== "custom" && (
             <div className="space-y-2">
@@ -252,14 +279,15 @@ export default function CustomerMessageDialog({
             </div>
           )}
 
-          {/* Email Subject (only for email templates) */}
-          {selectedTemplate?.channel !== "sms" && customSubject && (
+          {/* Email Subject (only when sending via email) */}
+          {willSendEmail && (
             <div className="space-y-2">
-              <Label>Email Subject</Label>
+              <Label>Email Subject (Optional)</Label>
               <Textarea
                 value={customSubject}
                 onChange={(e) => setCustomSubject(e.target.value)}
                 rows={1}
+                placeholder="Message from Yens Thai Ice Cream"
                 className="resize-none"
                 data-testid="input-subject"
               />
@@ -282,27 +310,38 @@ export default function CustomerMessageDialog({
           </div>
 
           {/* Channel Info */}
-          {selectedTemplate && (
-            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm">
-              <div className="flex items-center gap-2">
-                {canSendSMS && (
-                  <Badge variant="outline" className="gap-1">
-                    <MessageSquare className="w-3 h-3" />
-                    SMS
-                  </Badge>
-                )}
-                {canSendEmail && (
-                  <Badge variant="outline" className="gap-1">
-                    <Mail className="w-3 h-3" />
-                    Email
-                  </Badge>
-                )}
-              </div>
-              <span className="text-muted-foreground">
-                Will be sent via {selectedTemplate.channel}
-              </span>
+          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm flex-wrap">
+            <span className="text-muted-foreground font-medium">Will deliver via:</span>
+            <div className="flex items-center gap-2">
+              {willSendInApp && (
+                <Badge variant="default" className="gap-1">
+                  📱 In-App
+                </Badge>
+              )}
+              {willSendSMS && (
+                <Badge variant="outline" className="gap-1">
+                  <MessageSquare className="w-3 h-3" />
+                  SMS
+                </Badge>
+              )}
+              {willSendEmail && (
+                <Badge variant="outline" className="gap-1">
+                  <Mail className="w-3 h-3" />
+                  Email
+                </Badge>
+              )}
+              {!willSendSMS && selectedChannel.includes("sms") && (
+                <Badge variant="destructive" className="gap-1 text-xs">
+                  ⚠️ No phone number
+                </Badge>
+              )}
+              {!willSendEmail && selectedChannel.includes("email") && (
+                <Badge variant="destructive" className="gap-1 text-xs">
+                  ⚠️ No email address
+                </Badge>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         <DialogFooter>
