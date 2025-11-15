@@ -46,11 +46,13 @@ export interface IStorage {
     registeredBefore?: Date;
   }): Promise<Customer[]>;
   bulkDeleteCustomers(filter: {
-    createdAfter?: Date;
-    createdBefore?: Date;
+    createdAfter?: string;
+    createdBefore?: string;
     tags?: string[];
     hasZeroTotals?: boolean;
   }): Promise<{ deletedCount: number; deletedIds: string[] }>;
+  deleteCustomer(id: string): Promise<void>;
+  getDuplicatePhoneNumbers(): Promise<Array<{ phone: string; count: number; customers: Customer[] }>>;
   
   // Transaction methods
   getTransaction(id: string): Promise<Transaction | undefined>;
@@ -375,6 +377,48 @@ export class DbStorage implements IStorage {
       deletedCount: customerIds.length,
       deletedIds: customerIds,
     };
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    // Delete related data first (transactions, notifications, message logs)
+    await db.delete(transactions).where(eq(transactions.customerId, id));
+    await db.delete(customerNotifications).where(eq(customerNotifications.customerId, id));
+    await db.delete(messageLog).where(eq(messageLog.customerId, id));
+    
+    // Delete the customer
+    await db.delete(customers).where(eq(customers.id, id));
+  }
+
+  async getDuplicatePhoneNumbers(): Promise<Array<{ phone: string; count: number; customers: Customer[] }>> {
+    // Find all phone numbers that appear more than once
+    const duplicatePhones = await db
+      .select({
+        phone: customers.phone,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(customers)
+      .groupBy(customers.phone)
+      .having(sql`count(*) > 1`)
+      .orderBy(sql`count(*) desc`);
+    
+    // For each duplicate phone, fetch all customers with that phone
+    const result = await Promise.all(
+      duplicatePhones.map(async (dup) => {
+        const duplicateCustomers = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.phone, dup.phone))
+          .orderBy(desc(customers.createdAt));
+        
+        return {
+          phone: dup.phone,
+          count: dup.count,
+          customers: duplicateCustomers,
+        };
+      })
+    );
+    
+    return result;
   }
 
   // Transaction methods

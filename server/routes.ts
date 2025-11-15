@@ -386,6 +386,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get duplicate phone numbers (must come before /:id route)
+  app.get('/api/admin/customers/duplicates', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const duplicates = await storage.getDuplicatePhoneNumbers();
+      res.json(duplicates);
+    } catch (error) {
+      console.error("Error fetching duplicate phone numbers:", error);
+      res.status(500).json({ message: "Failed to fetch duplicates" });
+    }
+  });
+
+  // Delete individual customer
+  app.delete('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const customerId = req.params.id;
+      const customer = await storage.getCustomer(customerId);
+      
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      await storage.deleteCustomer(customerId);
+      
+      console.log(`✅ Customer deleted: ${customer.name} (${customer.phone}) by admin`);
+      res.json({ success: true, message: "Customer deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      res.status(500).json({ message: "Failed to delete customer" });
+    }
+  });
+
   // Update customer
   app.patch('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {

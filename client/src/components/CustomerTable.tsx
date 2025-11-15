@@ -3,11 +3,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MessageSquare, Edit, Eye } from "lucide-react";
+import { Search, MessageSquare, Edit, Eye, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Customer } from "@shared/schema";
 import CustomerDetailsDialog from "@/components/CustomerDetailsDialog";
 import BulkDeleteCustomersDialog from "@/components/BulkDeleteCustomersDialog";
+import DuplicateCustomersDialog from "@/components/DuplicateCustomersDialog";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -24,6 +38,29 @@ const tierColors = {
 export default function CustomerTable({ customers, onMessage, onEdit }: CustomerTableProps) {
   const [search, setSearch] = useState("");
   const [detailsCustomer, setDetailsCustomer] = useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const { toast } = useToast();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      return await apiRequest('DELETE', `/api/admin/customers/${customerId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/customers"] });
+      toast({
+        title: "Customer deleted",
+        description: "The customer has been successfully deleted.",
+      });
+      setDeletingCustomer(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete customer",
+        variant: "destructive",
+      });
+    },
+  });
 
   const filteredCustomers = customers.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
@@ -45,6 +82,7 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
                 data-testid="input-search-customers"
               />
             </div>
+            <DuplicateCustomersDialog />
             <BulkDeleteCustomersDialog customers={customers} />
           </div>
         </div>
@@ -134,6 +172,15 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
                         >
                           <MessageSquare className="w-4 h-4" />
                         </Button>
+                        <Button
+                          onClick={() => setDeletingCustomer(customer)}
+                          variant="ghost"
+                          size="sm"
+                          data-testid={`button-delete-${customer.id}`}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -149,6 +196,38 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
         open={!!detailsCustomer}
         onOpenChange={(open: boolean) => !open && setDetailsCustomer(null)}
       />
+
+      <AlertDialog open={!!deletingCustomer} onOpenChange={(open) => !open && setDeletingCustomer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deletingCustomer?.name}</strong> ({deletingCustomer?.phone})?
+              <br /><br />
+              This will permanently delete:
+              <ul className="list-disc list-inside mt-2">
+                <li>Customer profile and all personal information</li>
+                <li>Transaction history (฿{Number(deletingCustomer?.totalSpent || 0).toLocaleString()})</li>
+                <li>Points balance ({deletingCustomer?.points} points)</li>
+                <li>Message history and notifications</li>
+              </ul>
+              <br />
+              <strong>This action cannot be undone.</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingCustomer && deleteMutation.mutate(deletingCustomer.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Customer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -304,9 +304,12 @@ export default function CustomerMessageDialog({
               placeholder="Type your message here..."
               data-testid="input-message"
             />
-            <p className="text-xs text-muted-foreground">
-              Available placeholders: {"{name}"}, {"{points}"}, {"{tier}"}
-            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p className="font-medium">Available merge fields (auto-replace with customer data):</p>
+              <p className="pl-2">• <code className="bg-muted px-1 py-0.5 rounded">{"{name}"}</code> - Customer name ({customer.name})</p>
+              <p className="pl-2">• <code className="bg-muted px-1 py-0.5 rounded">{"{points}"}</code> - Points balance ({customer.points})</p>
+              <p className="pl-2">• <code className="bg-muted px-1 py-0.5 rounded">{"{tier}"}</code> - Membership tier ({customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)})</p>
+            </div>
           </div>
 
           {/* Channel Info */}
