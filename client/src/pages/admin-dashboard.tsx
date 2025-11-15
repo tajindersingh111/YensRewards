@@ -312,7 +312,7 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground">{t('admin.title')}</h1>
-                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.6.0</Badge>
+                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.7.0</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {t('admin.overview.loggedInAs')} {user?.email || user?.firstName || t('common.admin')}
@@ -339,6 +339,7 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="overview" data-testid="tab-overview">{t('admin.tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="dashboard" data-testid="tab-dashboard">{t('admin.tabs.dashboard')}</TabsTrigger>
             <TabsTrigger value="customers" data-testid="tab-customers">{t('admin.tabs.customers')}</TabsTrigger>
             <TabsTrigger value="products" data-testid="tab-products">{t('admin.tabs.products')}</TabsTrigger>
             <TabsTrigger value="promotions" data-testid="tab-promotions">{t('admin.tabs.promotions')}</TabsTrigger>
@@ -350,6 +351,277 @@ export default function AdminDashboard() {
 
           <TabsContent value="overview" className="space-y-6">
             <YensOverview />
+          </TabsContent>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Top Spenders */}
+            <div className="bg-card rounded-lg border p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+                <h3 className="font-semibold text-lg">{t('admin.overview.topSpenders')}</h3>
+              </div>
+              <div className="overflow-x-auto pb-2">
+                <div className="flex gap-4 min-w-max">
+                  {[...customers]
+                    .sort((a, b) => Number(b.totalSpent) - Number(a.totalSpent))
+                    .slice(0, 10)
+                    .map((customer, index) => (
+                      <div 
+                        key={customer.id} 
+                        className="flex flex-col items-center gap-2 w-24"
+                        data-testid={`top-spender-${index + 1}`}
+                      >
+                        <div className="relative">
+                          <div className="relative w-16 h-16">
+                            <Avatar className="w-16 h-16 border-2 border-primary">
+                              <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                {customer.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {customer.photo && (
+                              <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                            )}
+                          </div>
+                          <div className="absolute -top-1 -left-1 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                        </div>
+                        <p className="text-xs font-medium text-center line-clamp-1">
+                          {customer.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ฿{Number(customer.totalSpent).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Upcoming Birthdays */}
+            {(() => {
+              // Calculate date ranges
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              
+              const tomorrow = new Date(today);
+              tomorrow.setDate(today.getDate() + 1);
+              tomorrow.setHours(0, 0, 0, 0);
+              
+              const dayAfterTomorrow = new Date(tomorrow);
+              dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
+              dayAfterTomorrow.setHours(0, 0, 0, 0);
+              
+              const startOfWeek = new Date(today);
+              startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
+              startOfWeek.setHours(0, 0, 0, 0);
+              
+              const endOfWeek = new Date(startOfWeek);
+              endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
+              endOfWeek.setHours(23, 59, 59, 999);
+              
+              const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+              startOfMonth.setHours(0, 0, 0, 0);
+              
+              const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+              endOfMonth.setHours(23, 59, 59, 999);
+
+              // Group customers by time periods
+              const todayBirthdays: typeof customers = [];
+              const tomorrowBirthdays: typeof customers = [];
+              const thisWeekBirthdays: typeof customers = [];
+              const thisMonthBirthdays: typeof customers = [];
+              
+              customers.forEach(customer => {
+                if (!customer.birthday) return;
+                
+                try {
+                  // Parse multiple birthday formats: DD/MM/YYYY, YYYY-MM-DD, MM-DD
+                  let month: number;
+                  let day: number;
+                  let year: number | null = null;
+                  
+                  // Handle DD/MM/YYYY format (Thai format with /)
+                  if (customer.birthday.includes('/')) {
+                    const parts = customer.birthday.split('/');
+                    if (parts.length === 3) {
+                      day = parseInt(parts[0]);
+                      month = parseInt(parts[1]);
+                      year = parseInt(parts[2]);
+                    } else {
+                      return; // Invalid format
+                    }
+                  }
+                  // Handle MM-DD or YYYY-MM-DD format (with -)
+                  else if (customer.birthday.includes('-')) {
+                    const parts = customer.birthday.split('-');
+                    if (parts.length === 2) {
+                      // MM-DD format
+                      month = parseInt(parts[0]);
+                      day = parseInt(parts[1]);
+                    } else if (parts.length === 3) {
+                      // YYYY-MM-DD format
+                      year = parseInt(parts[0]);
+                      month = parseInt(parts[1]);
+                      day = parseInt(parts[2]);
+                    } else {
+                      return; // Invalid format
+                    }
+                  } else {
+                    return; // No recognized delimiter
+                  }
+                  
+                  // Validate month and day ranges
+                  if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+                    return;
+                  }
+                  
+                  // Handle Thai Buddhist Era (B.E.) years - convert to Gregorian
+                  if (year !== null && !isNaN(year) && year > today.getFullYear() + 100) {
+                    // Likely Buddhist Era year - subtract 543 to convert to Gregorian
+                    year = year - 543;
+                  }
+                  
+                  // Filter out future dates (invalid birthdays from CSV import errors)
+                  if (year !== null && !isNaN(year)) {
+                    const birthDate = new Date(year, month - 1, day);
+                    if (birthDate > today) {
+                      return; // Skip future dates
+                    }
+                  }
+                  
+                  // Handle Feb 29 on non-leap years
+                  let adjustedDay = day;
+                  if (month === 2 && day === 29) {
+                    const isLeapYear = (today.getFullYear() % 4 === 0 && today.getFullYear() % 100 !== 0) || 
+                                      (today.getFullYear() % 400 === 0);
+                    if (!isLeapYear) {
+                      adjustedDay = 28;
+                    }
+                  }
+                  
+                  // Create birthday for this year
+                  let birthdayThisYear = new Date(today.getFullYear(), month - 1, adjustedDay);
+                  birthdayThisYear.setHours(0, 0, 0, 0);
+                  
+                  // Handle year wrapping
+                  if (birthdayThisYear < startOfMonth) {
+                    birthdayThisYear = new Date(today.getFullYear() + 1, month - 1, adjustedDay);
+                    birthdayThisYear.setHours(0, 0, 0, 0);
+                  }
+                  
+                  // Categorize by time period
+                  if (birthdayThisYear.toDateString() === today.toDateString()) {
+                    todayBirthdays.push(customer);
+                  } else if (birthdayThisYear.toDateString() === tomorrow.toDateString()) {
+                    tomorrowBirthdays.push(customer);
+                  } else if (birthdayThisYear >= dayAfterTomorrow && birthdayThisYear <= endOfWeek) {
+                    thisWeekBirthdays.push(customer);
+                  } else if (birthdayThisYear > endOfWeek && birthdayThisYear <= endOfMonth) {
+                    thisMonthBirthdays.push(customer);
+                  }
+                } catch (error) {
+                  // Skip customers with invalid birthday formats
+                  return;
+                }
+              });
+
+              // Create birthday groups
+              const birthdayGroups = [
+                { key: 'today', label: t('admin.overview.today'), dateLabel: today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: todayBirthdays },
+                { key: 'tomorrow', label: t('admin.overview.tomorrow'), dateLabel: tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: tomorrowBirthdays },
+                { key: 'this-week', label: t('admin.overview.thisWeek'), dateLabel: `${dayAfterTomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisWeekBirthdays },
+                { key: 'this-month', label: t('admin.overview.thisMonth'), dateLabel: `${new Date(endOfWeek.getTime() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisMonthBirthdays },
+              ].filter(group => group.customers.length > 0);
+
+              if (birthdayGroups.length === 0) return null;
+
+              // Get all customer IDs
+              const allBirthdayCustomerIds = birthdayGroups.flatMap(group => group.customers.map(c => c.id));
+
+              // Handlers for sending messages
+              const handleSendAll = () => {
+                if (allBirthdayCustomerIds.length > 0) {
+                  sendBirthdayMessagesMutation.mutate(allBirthdayCustomerIds);
+                }
+              };
+
+              const handleSendGroup = (customerIds: string[]) => {
+                if (customerIds.length > 0) {
+                  sendBirthdayMessagesMutation.mutate(customerIds);
+                }
+              };
+
+              // Flatten all birthday customers and add their time period label
+              const allBirthdayCustomers = birthdayGroups.flatMap(({ label, customers }) =>
+                customers.map(customer => ({ ...customer, timePeriod: label }))
+              );
+
+              // Split into rows of 10
+              const birthdayRows: Array<Array<typeof allBirthdayCustomers[0]>> = [];
+              for (let i = 0; i < allBirthdayCustomers.length; i += 10) {
+                birthdayRows.push(allBirthdayCustomers.slice(i, i + 10));
+              }
+
+              return (
+                <div className="bg-card rounded-lg border p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Cake className="w-5 h-5 text-yellow-500" />
+                      <h3 className="font-semibold text-lg">{t('admin.overview.upcomingBirthdays')}</h3>
+                      <Badge variant="secondary">{allBirthdayCustomers.length}</Badge>
+                    </div>
+                    <Button 
+                      onClick={handleSendAll}
+                      disabled={sendBirthdayMessagesMutation.isPending}
+                      size="sm"
+                      data-testid="button-send-all-birthday-messages"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {sendBirthdayMessagesMutation.isPending ? t('admin.overview.sendingMessages') : t('admin.overview.sendAll')}
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {birthdayRows.map((row, rowIndex) => (
+                      <div key={rowIndex} className="overflow-x-auto pb-2">
+                        <div className="flex gap-4 min-w-max">
+                          {row.map((customer) => (
+                            <div 
+                              key={customer.id}
+                              className="flex flex-col items-center gap-2 w-24"
+                              data-testid={`birthday-customer-${customer.id}`}
+                            >
+                              <div className="relative w-16 h-16">
+                                <Avatar className="w-16 h-16 border-2 border-yellow-500">
+                                  <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                                  <AvatarFallback className="bg-yellow-100 text-yellow-700 font-semibold">
+                                    {customer.name.slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {customer.photo && (
+                                  <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                                )}
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+                                  <Cake className="w-5 h-5 text-yellow-500 drop-shadow-md" />
+                                </div>
+                              </div>
+                              <p className="text-xs font-medium text-center line-clamp-1">
+                                {customer.name}
+                              </p>
+                              <Badge variant="outline" className="text-xs">
+                                {customer.timePeriod}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </TabsContent>
 
 
