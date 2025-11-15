@@ -569,6 +569,17 @@ export default function AdminDashboard() {
                 }
               };
 
+              // Flatten all birthday customers and add their time period label
+              const allBirthdayCustomers = birthdayGroups.flatMap(({ label, customers }) =>
+                customers.map(customer => ({ ...customer, timePeriod: label }))
+              );
+
+              // Split into rows of 10
+              const birthdayRows: Array<Array<typeof allBirthdayCustomers[0]>> = [];
+              for (let i = 0; i < allBirthdayCustomers.length; i += 10) {
+                birthdayRows.push(allBirthdayCustomers.slice(i, i + 10));
+              }
+
               return (
                 <div className="bg-card rounded-lg border p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -586,44 +597,46 @@ export default function AdminDashboard() {
                       {sendBirthdayMessagesMutation.isPending ? t('admin.overview.sendingMessages') : `${t('admin.overview.sendAll')} (${allBirthdayCustomerIds.length})`}
                     </Button>
                   </div>
-                  <div className="overflow-x-auto pb-2">
-                    <div className="flex gap-4 min-w-max">
-                      {birthdayGroups.flatMap(({ key, label, customers }) => 
-                        customers.map((customer) => (
-                          <div 
-                            key={customer.id} 
-                            className="flex flex-col items-center gap-2 w-24"
-                            data-testid={`birthday-customer-${customer.id}`}
-                          >
-                            <div className="relative">
-                              <div className="relative w-16 h-16">
-                                <Avatar className="w-16 h-16 border-2 border-[#FCD34D]">
-                                  <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
-                                  <AvatarFallback className="bg-[#FCD34D]/10 text-[#FCD34D] font-semibold">
-                                    {customer.name.slice(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {customer.photo && (
-                                  <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
-                                )}
-                              </div>
-                              <div className="absolute -top-1 -right-1">
-                                <Cake className="w-5 h-5 text-[#FCD34D] drop-shadow-md" />
-                              </div>
-                            </div>
-                            <p className="text-xs font-medium text-center line-clamp-1">
-                              {customer.name}
-                            </p>
-                            <Badge 
-                              variant="secondary"
-                              className="text-[10px] px-2 py-0 bg-[#FCD34D]/20 text-[#FCD34D] border-[#FCD34D]/30"
+                  <div className="space-y-4">
+                    {birthdayRows.map((row, rowIndex) => (
+                      <div key={rowIndex} className="overflow-x-auto pb-2">
+                        <div className="flex gap-4 min-w-max">
+                          {row.map((customer) => (
+                            <div 
+                              key={customer.id} 
+                              className="flex flex-col items-center gap-2 w-24"
+                              data-testid={`birthday-customer-${customer.id}`}
                             >
-                              {label}
-                            </Badge>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                              <div className="relative">
+                                <div className="relative w-16 h-16">
+                                  <Avatar className="w-16 h-16 border-2 border-[#FCD34D]">
+                                    <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                                    <AvatarFallback className="bg-[#FCD34D]/10 text-[#FCD34D] font-semibold">
+                                      {customer.name.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  {customer.photo && (
+                                    <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                                  )}
+                                </div>
+                                <div className="absolute -top-1 -right-1">
+                                  <Cake className="w-5 h-5 text-[#FCD34D] drop-shadow-md" />
+                                </div>
+                              </div>
+                              <p className="text-xs font-medium text-center line-clamp-1">
+                                {customer.name}
+                              </p>
+                              <Badge 
+                                variant="secondary"
+                                className="text-[10px] px-2 py-0 bg-[#FCD34D]/20 text-[#FCD34D] border-[#FCD34D]/30"
+                              >
+                                {customer.timePeriod}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
