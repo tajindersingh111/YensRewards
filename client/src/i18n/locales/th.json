@@ -217,6 +217,25 @@
       "users": "ผู้ใช้งาน",
       "settings": "ตั้งค่า"
     },
+    "overview": {
+      "title": "ภาพรวมเย็นส์",
+      "subtitle": "สรุปสุขภาพธุรกิจรายสัปดาห์",
+      "loading": "กำลังโหลดภาพรวม...",
+      "noData": "ไม่มีข้อมูล",
+      "totalRevenue": "รายได้รวม",
+      "transactions": "ธุรกรรม",
+      "avgTransaction": "ค่าเฉลี่ยต่อบิล",
+      "newCustomers": "ลูกค้าใหม่",
+      "pointsIssued": "คะแนนที่ให้",
+      "pointsRedeemed": "คะแนนที่ใช้",
+      "returningCustomers": "ลูกค้าเก่า",
+      "dailyRevenue": "แนวโน้มรายได้รายวัน",
+      "dailyTransactions": "ปริมาณธุรกรรมรายวัน",
+      "bestDay": "วันที่ดีที่สุดในสัปดาห์นี้",
+      "bestDayDesc": "วันที่มีรายได้สูงสุด",
+      "revenue": "รายได้",
+      "vsLastWeek": "เทียบกับสัปดาห์ที่แล้ว"
+    },
     "users": {
       "title": "ผู้ใช้งาน",
       "subtitle": "จัดการบัญชีผู้ใช้และสิทธิ์การเข้าถึง",

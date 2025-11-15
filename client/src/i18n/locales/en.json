@@ -220,6 +220,25 @@
     "settings": {
       "comingSoon": "Settings coming soon..."
     },
+    "overview": {
+      "title": "Yens Overview",
+      "subtitle": "Weekly business health snapshot",
+      "loading": "Loading overview...",
+      "noData": "No data available",
+      "totalRevenue": "Total Revenue",
+      "transactions": "Transactions",
+      "avgTransaction": "Avg Transaction",
+      "newCustomers": "New Customers",
+      "pointsIssued": "Points Issued",
+      "pointsRedeemed": "Points Redeemed",
+      "returningCustomers": "Returning Customers",
+      "dailyRevenue": "Daily Revenue Trend",
+      "dailyTransactions": "Daily Transaction Volume",
+      "bestDay": "Best Day This Week",
+      "bestDayDesc": "Highest revenue day",
+      "revenue": "Revenue",
+      "vsLastWeek": "vs last week"
+    },
     "users": {
       "title": "Users",
       "subtitle": "Manage user accounts and permissions",
