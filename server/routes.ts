@@ -429,11 +429,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             title: subject || 'Direct Message',
             message: message,
             targetTier: null, // Direct messages are not tier-specific
-            sentCount: 1,
           });
 
           // Create customer notification to link this customer to the promotion
-          await storage.createCustomerNotification({
+          await storage.createNotification({
             customerId: customer.id,
             promotionId: promotion.id,
             isRead: false,
@@ -470,8 +469,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Send Email if channel is email or both
-      if ((channel === 'email' || channel === 'both') && customer.email) {
+      // Send Email if channel includes email
+      if (channel && channel.includes('email') && customer.email) {
         try {
           const emailResult = await sendEmail(
             customer.email,
@@ -497,17 +496,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const success = results.sms?.success || results.email?.success;
+      // Check if at least one channel succeeded
+      const success = results.inApp?.success || results.sms?.success || results.email?.success;
       
       if (!success) {
         return res.status(500).json({ 
-          message: "Failed to send message",
+          message: "Failed to send message via any channel",
           results 
         });
       }
 
+      // Build success message based on which channels succeeded
+      let successMessage = "Message sent successfully";
+      const successChannels = [];
+      if (results.inApp?.success) successChannels.push("in-app notification");
+      if (results.sms?.success) successChannels.push("SMS");
+      if (results.email?.success) successChannels.push("email");
+      
+      if (successChannels.length > 0) {
+        successMessage = `Message sent via ${successChannels.join(", ")}`;
+      }
+
       res.json({
-        message: "Message sent successfully",
+        message: successMessage,
         results,
       });
     } catch (error) {
