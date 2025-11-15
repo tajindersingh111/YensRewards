@@ -102,11 +102,13 @@ export default function AdminDashboard() {
     retry: false,
   });
 
-  // Fetch all customers
+  // Fetch all customers - v2.0.9 cache refresh
   const { data: customersData = [], isLoading: customersLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/customers'],
+    queryKey: ['/api/admin/customers', 'v2.0.9'],
     enabled: isAuthenticated && user?.role === "admin",
     retry: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   // Transform customers to ensure proper tier types
