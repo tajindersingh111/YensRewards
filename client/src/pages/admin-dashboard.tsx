@@ -104,9 +104,9 @@ export default function AdminDashboard() {
     retry: false,
   });
 
-  // Fetch all customers - v2.1.0 cache refresh
+  // Fetch all customers - v2.1.1 cache refresh
   const { data: customersData = [], isLoading: customersLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/customers', 'v2.1.0'],
+    queryKey: ['/api/admin/customers', 'v2.1.1'],
     enabled: isAuthenticated && user?.role === "admin",
     retry: false,
     staleTime: 0,
