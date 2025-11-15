@@ -10,6 +10,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### Nov 14, 2025 - Birthday Feature Enhancement (v2.0.8)
+- **Birthday This Week Feature**: Enhanced existing "Birthdays This Week" section in Admin Dashboard Overview tab to properly display customers with upcoming birthdays (today/tomorrow/this week/this month) with "Send Birthday Wishes" buttons for each group.
+- **Multi-Format Birthday Parsing**: Updated frontend and backend to parse all birthday formats:
+  - DD/MM/YYYY (Thai format with /)
+  - YYYY-MM-DD (ISO format with -)
+  - MM-DD (month-day only with -)
+- **Thai Buddhist Era Support**: Added automatic detection and conversion of Thai Buddhist Era (พ.ศ.) years to Gregorian calendar (B.E. year - 543 = C.E. year). Years > current year + 100 are automatically identified as B.E. and converted.
+- **Birthday Normalization**: All birthdays are now normalized to canonical MM-DD format during CSV import with comprehensive validation (month 1-12, day 1-31, no future dates).
+- **Data Migration**: Successfully migrated 515 existing customer birthdays:
+  - 506 normalized from various formats to MM-DD
+  - 6 already in correct format (preserved)
+  - 3 invalid entries set to null
+- **Validation & Error Handling**: Invalid birthday formats are logged and skipped during import rather than failing the entire import batch.
+
 ### Nov 14, 2025 - CSV Import Fix & Edit Customer Enhancement (v2.0.7)
 - **CSV Import Response Fix**: Fixed CustomerCSVImport mutation to properly parse JSON response from backend, ensuring detailed import results (imported count, updated count, failed count, error details) are correctly displayed in success dialog and toast notifications.
 - **Edit Customer Dialog Enhancement**: Added all 6 CSV import fields to Edit Customer dialog for full customer record management:
