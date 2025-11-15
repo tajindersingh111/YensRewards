@@ -13,7 +13,7 @@ import { RefreshCw, Mail, MessageSquare, CheckCircle, XCircle, Clock, Send } fro
 import { format } from "date-fns";
 
 type MessageStatus = "pending" | "sent" | "failed" | "delivered";
-type MessageChannel = "sms" | "email";
+type MessageChannel = "sms" | "email" | "app";
 
 interface MessageLog {
   id: string;
@@ -125,11 +125,16 @@ export default function MessageHistory() {
   };
 
   const getChannelIcon = (channel: MessageChannel) => {
-    return channel === "sms" ? (
-      <MessageSquare className="h-4 w-4" />
-    ) : (
-      <Mail className="h-4 w-4" />
-    );
+    switch (channel) {
+      case "sms":
+        return <MessageSquare className="h-4 w-4" />;
+      case "email":
+        return <Mail className="h-4 w-4" />;
+      case "app":
+        return <MessageSquare className="h-4 w-4" />;
+      default:
+        return <MessageSquare className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -254,6 +259,7 @@ export default function MessageHistory() {
                 <SelectItem value="all">{t('messages.allChannels')}</SelectItem>
                 <SelectItem value="sms">{t('messages.sms')}</SelectItem>
                 <SelectItem value="email">{t('messages.email')}</SelectItem>
+                <SelectItem value="app">{t('messages.app')}</SelectItem>
               </SelectContent>
             </Select>
           </div>

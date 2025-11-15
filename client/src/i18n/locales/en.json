@@ -477,6 +477,7 @@
       "messageHistory": "Message History",
       "sms": "SMS",
       "email": "Email",
+      "app": "App",
       "totalMessages": "Total Messages",
       "delivered": "Delivered",
       "failed": "Failed",

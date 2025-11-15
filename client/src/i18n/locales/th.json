@@ -477,6 +477,7 @@
       "messageHistory": "ประวัติข้อความ",
       "sms": "SMS",
       "email": "อีเมล",
+      "app": "แอป",
       "totalMessages": "ข้อความทั้งหมด",
       "delivered": "ส่งสำเร็จ",
       "failed": "ส่งไม่สำเร็จ",
