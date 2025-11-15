@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, users } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, users } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
@@ -1800,6 +1800,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error retrying message:", error);
       res.status(500).json({ message: "Failed to retry message" });
+    }
+  });
+
+  // ============================================
+  // Sites API - Physical locations management
+  // ============================================
+
+  // Get all sites
+  app.get('/api/admin/sites', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const sites = await storage.getAllSites();
+      res.json(sites);
+    } catch (error) {
+      console.error("Error fetching sites:", error);
+      res.status(500).json({ message: "Failed to fetch sites" });
+    }
+  });
+
+  // Get single site
+  app.get('/api/admin/sites/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const site = await storage.getSite(req.params.id);
+      if (!site) {
+        return res.status(404).json({ message: "Site not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      console.error("Error fetching site:", error);
+      res.status(500).json({ message: "Failed to fetch site" });
+    }
+  });
+
+  // Create new site
+  app.post('/api/admin/sites', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertSiteSchema.parse(req.body);
+      const site = await storage.createSite(validatedData);
+      res.status(201).json(site);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: fromError(error).toString() });
+      }
+      console.error("Error creating site:", error);
+      res.status(500).json({ message: "Failed to create site" });
+    }
+  });
+
+  // Update site
+  app.patch('/api/admin/sites/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const site = await storage.updateSite(req.params.id, req.body);
+      if (!site) {
+        return res.status(404).json({ message: "Site not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      console.error("Error updating site:", error);
+      res.status(500).json({ message: "Failed to update site" });
+    }
+  });
+
+  // Delete site
+  app.delete('/api/admin/sites/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteSite(req.params.id);
+      res.json({ message: "Site deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting site:", error);
+      res.status(500).json({ message: "Failed to delete site" });
     }
   });
 
