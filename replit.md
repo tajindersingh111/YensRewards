@@ -1,7 +1,16 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.6.0
-**Latest Updates (v2.6.0):**
+## Current Version: v2.7.0
+**Latest Updates (v2.7.0):**
+- New **Sites Management** system for tracking physical locations (stalls/mobile vans)
+- Site CRUD operations with operating schedules (days and hours)
+- Support for fixed stalls and mobile vans with location tracking
+- Active/inactive site status management
+- Dedicated Sites tab in admin dashboard
+- Full bilingual support (Thai/English) for all site-related content
+- End-to-end tested with successful create/edit/delete operations
+
+**Previous Version (v2.6.0):**
 - New **Yens Overview** tab as first admin dashboard tab
 - Weekly business health dashboard with key metrics (revenue, transactions, customers, loyalty)
 - Visual trend charts for daily revenue and transaction volume
@@ -58,12 +67,12 @@ Preferred communication style: Simple, everyday language.
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
 - **Authentication & Authorization:** Replit Auth (OpenID Connect), session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation in test mode.
-- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log` tables managed with Drizzle ORM.
+- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites` tables managed with Drizzle ORM.
 - **User Management:** Admin-only user account management (CRUD), three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation.
 - **Messaging System:** Twilio for SMS, Resend for email, multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All admin features fully internationalized including user management, customer management, product management, messaging, and promotions.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, image storage.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete with date filters, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only).
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete with date filters, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only), sites management (physical location tracking with operating schedules for current operations and future franchise oversight).
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
