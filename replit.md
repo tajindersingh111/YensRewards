@@ -20,12 +20,13 @@ Preferred communication style: Simple, everyday language.
 - **Monorepo Structure:** `/client` (React app), `/server` (Express API), `/shared` (common types/schemas).
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
-- **Authentication & Authorization:** Replit Auth (OpenID Connect), session management with `connect-pg-simple`, role-based access control ("admin", "barista"), auto-user creation in test mode.
+- **Authentication & Authorization:** Replit Auth (OpenID Connect), session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation in test mode.
 - **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log` tables managed with Drizzle ORM.
+- **User Management:** Admin-only user account management (CRUD), three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation.
 - **Messaging System:** Twilio for SMS, Resend for email, multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
-- **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component.
+- **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All admin features fully internationalized including user management, customer management, product management, messaging, and promotions.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, image storage.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete with date filters, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics, tier-based promotions, product menu, automated birthday messaging.
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete with date filters, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics, tier-based promotions, product menu, automated birthday messaging, user account management (admin-only).
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
