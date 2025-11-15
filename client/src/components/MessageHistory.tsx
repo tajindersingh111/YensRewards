@@ -48,6 +48,7 @@ export default function MessageHistory() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [channelFilter, setChannelFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [messageSearchQuery, setMessageSearchQuery] = useState("");
 
   // Fetch message logs
   const { data: messages = [], isLoading } = useQuery<MessageLog[]>({
@@ -86,6 +87,12 @@ export default function MessageHistory() {
     if (statusFilter !== "all" && msg.status !== statusFilter) return false;
     if (channelFilter !== "all" && msg.channel !== channelFilter) return false;
     if (searchQuery && !msg.recipient.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (messageSearchQuery) {
+      const searchLower = messageSearchQuery.toLowerCase();
+      const messageMatch = msg.message.toLowerCase().includes(searchLower);
+      const subjectMatch = msg.subject?.toLowerCase().includes(searchLower) || false;
+      if (!messageMatch && !subjectMatch) return false;
+    }
     return true;
   });
 
@@ -219,6 +226,13 @@ export default function MessageHistory() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="sm:max-w-xs"
               data-testid="input-search-recipient"
+            />
+            <Input
+              placeholder={t('messages.searchByMessage')}
+              value={messageSearchQuery}
+              onChange={(e) => setMessageSearchQuery(e.target.value)}
+              className="sm:max-w-xs"
+              data-testid="input-search-message"
             />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="sm:w-[180px]" data-testid="select-status-filter">

@@ -486,6 +486,7 @@
       "emailMessages": "ข้อความอีเมล",
       "viewManageMessages": "ดูและจัดการข้อความที่ส่งทั้งหมด",
       "searchByRecipient": "ค้นหาตามผู้รับ...",
+      "searchByMessage": "ค้นหาตามเนื้อหาข้อความ...",
       "filterByStatus": "กรองตามสถานะ",
       "filterByChannel": "กรองตามช่องทาง",
       "allStatuses": "สถานะทั้งหมด",
