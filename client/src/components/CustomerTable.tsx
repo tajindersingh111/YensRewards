@@ -62,9 +62,14 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
     },
   });
 
-  const filteredCustomers = customers.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCustomers = customers.filter((c) => {
+    const searchLower = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(searchLower) ||
+      c.phone.toLowerCase().includes(searchLower) ||
+      (c.email && c.email.toLowerCase().includes(searchLower))
+    );
+  });
 
   return (
     <Card className="p-6" data-testid="card-customer-table">
