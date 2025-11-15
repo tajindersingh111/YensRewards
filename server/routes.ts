@@ -545,6 +545,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get weekly overview
+  app.get('/api/admin/weekly-overview', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const overview = await storage.getWeeklyOverview();
+      res.json(overview);
+    } catch (error) {
+      console.error("Error fetching weekly overview:", error);
+      res.status(500).json({ message: "Failed to fetch weekly overview" });
+    }
+  });
+
   // Get all customers
   app.get('/api/admin/customers', isAuthenticated, isAdmin, async (req, res) => {
     try {

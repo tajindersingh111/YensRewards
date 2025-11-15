@@ -88,6 +88,37 @@ export interface IStorage {
     recentTransactions: Transaction[];
   }>;
   
+  getWeeklyOverview(): Promise<{
+    thisWeek: {
+      revenue: number;
+      transactions: number;
+      avgTransaction: number;
+      pointsIssued: number;
+      pointsRedeemed: number;
+      newCustomers: number;
+      returningCustomers: number;
+    };
+    lastWeek: {
+      revenue: number;
+      transactions: number;
+      avgTransaction: number;
+    };
+    dailyData: Array<{
+      date: string;
+      revenue: number;
+      transactions: number;
+    }>;
+    topProducts: Array<{
+      productName: string;
+      revenue: number;
+      quantity: number;
+    }>;
+    bestDay: {
+      date: string;
+      revenue: number;
+    };
+  }>;
+  
   // Product methods
   getAllProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -687,6 +718,166 @@ export class DbStorage implements IStorage {
       pointsRedeemed,
       salesByLocation,
       recentTransactions,
+    };
+  }
+
+  async getWeeklyOverview(): Promise<{
+    thisWeek: {
+      revenue: number;
+      transactions: number;
+      avgTransaction: number;
+      pointsIssued: number;
+      pointsRedeemed: number;
+      newCustomers: number;
+      returningCustomers: number;
+    };
+    lastWeek: {
+      revenue: number;
+      transactions: number;
+      avgTransaction: number;
+    };
+    dailyData: Array<{
+      date: string;
+      revenue: number;
+      transactions: number;
+    }>;
+    topProducts: Array<{
+      productName: string;
+      revenue: number;
+      quantity: number;
+    }>;
+    bestDay: {
+      date: string;
+      revenue: number;
+    };
+  }> {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Calculate week boundaries
+    const dayOfWeek = today.getDay();
+    const startOfThisWeek = new Date(today);
+    startOfThisWeek.setDate(today.getDate() - dayOfWeek);
+    
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
+    
+    const endOfLastWeek = new Date(startOfThisWeek);
+    
+    // Get this week's transactions
+    const thisWeekTransactions = await db
+      .select()
+      .from(transactions)
+      .where(sql`${transactions.createdAt} >= ${startOfThisWeek}`);
+    
+    // Get last week's transactions
+    const lastWeekTransactions = await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          sql`${transactions.createdAt} >= ${startOfLastWeek}`,
+          sql`${transactions.createdAt} < ${endOfLastWeek}`
+        )
+      );
+    
+    // Calculate this week's metrics
+    const thisWeekRevenue = thisWeekTransactions
+      .filter(t => t.type === 'purchase')
+      .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+    
+    const thisWeekTransCount = thisWeekTransactions.filter(t => t.type === 'purchase').length;
+    const thisWeekAvgTrans = thisWeekTransCount > 0 ? thisWeekRevenue / thisWeekTransCount : 0;
+    
+    const thisWeekPointsIssued = thisWeekTransactions
+      .filter(t => t.type === 'purchase')
+      .reduce((sum, t) => sum + t.points, 0);
+    
+    const thisWeekPointsRedeemed = thisWeekTransactions
+      .filter(t => t.type === 'reward')
+      .reduce((sum, t) => sum + Math.abs(t.points), 0);
+    
+    // Calculate last week's metrics
+    const lastWeekRevenue = lastWeekTransactions
+      .filter(t => t.type === 'purchase')
+      .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+    
+    const lastWeekTransCount = lastWeekTransactions.filter(t => t.type === 'purchase').length;
+    const lastWeekAvgTrans = lastWeekTransCount > 0 ? lastWeekRevenue / lastWeekTransCount : 0;
+    
+    // Get new customers this week
+    const newCustomersThisWeek = await db
+      .select()
+      .from(customers)
+      .where(sql`${customers.createdAt} >= ${startOfThisWeek}`);
+    
+    // Get unique returning customers this week (had transaction before this week)
+    const returningCustomerIds = new Set<string>();
+    for (const trans of thisWeekTransactions) {
+      const customer = await db
+        .select()
+        .from(customers)
+        .where(
+          and(
+            eq(customers.id, trans.customerId),
+            sql`${customers.createdAt} < ${startOfThisWeek}`
+          )
+        )
+        .limit(1);
+      
+      if (customer.length > 0) {
+        returningCustomerIds.add(trans.customerId);
+      }
+    }
+    
+    // Get daily data for the last 7 days
+    const dailyData: Array<{ date: string; revenue: number; transactions: number }> = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const nextDate = new Date(date);
+      nextDate.setDate(date.getDate() + 1);
+      
+      const dayTransactions = thisWeekTransactions.filter(t => {
+        const transDate = new Date(t.createdAt);
+        return transDate >= date && transDate < nextDate && t.type === 'purchase';
+      });
+      
+      const dayRevenue = dayTransactions.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+      
+      dailyData.push({
+        date: date.toISOString().split('T')[0],
+        revenue: dayRevenue,
+        transactions: dayTransactions.length,
+      });
+    }
+    
+    // Find best day
+    const bestDay = dailyData.reduce((best, day) => 
+      day.revenue > best.revenue ? day : best
+    , dailyData[0] || { date: '', revenue: 0 });
+    
+    // Get top products (mock data for now - will need product tracking in transactions)
+    const topProducts: Array<{ productName: string; revenue: number; quantity: number }> = [];
+    
+    return {
+      thisWeek: {
+        revenue: thisWeekRevenue,
+        transactions: thisWeekTransCount,
+        avgTransaction: thisWeekAvgTrans,
+        pointsIssued: thisWeekPointsIssued,
+        pointsRedeemed: thisWeekPointsRedeemed,
+        newCustomers: newCustomersThisWeek.length,
+        returningCustomers: returningCustomerIds.size,
+      },
+      lastWeek: {
+        revenue: lastWeekRevenue,
+        transactions: lastWeekTransCount,
+        avgTransaction: lastWeekAvgTrans,
+      },
+      dailyData,
+      topProducts,
+      bestDay,
     };
   }
 
