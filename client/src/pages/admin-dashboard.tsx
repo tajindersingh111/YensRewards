@@ -588,60 +588,41 @@ export default function AdminDashboard() {
                   </div>
                   <div className="overflow-x-auto pb-2">
                     <div className="flex gap-4 min-w-max">
-                      {birthdayGroups.map(({ key, label, dateLabel, customers }) => (
-                        <div 
-                          key={key}
-                          className="bg-gradient-to-br from-[#FCD34D]/10 to-[#3B82F6]/10 rounded-lg border-2 border-[#FCD34D]/30 min-w-[220px] flex flex-col"
-                          data-testid={`birthday-card-${key}`}
-                        >
-                          <div className="p-4 flex-1">
-                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#FCD34D]/20">
-                              <Cake className="w-4 h-4 text-[#FCD34D]" />
-                              <div className="flex-1">
-                                <p className="font-semibold text-sm">{label}</p>
-                                <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                      {birthdayGroups.flatMap(({ key, label, customers }) => 
+                        customers.map((customer) => (
+                          <div 
+                            key={customer.id} 
+                            className="flex flex-col items-center gap-2 w-24"
+                            data-testid={`birthday-customer-${customer.id}`}
+                          >
+                            <div className="relative">
+                              <div className="relative w-16 h-16">
+                                <Avatar className="w-16 h-16 border-2 border-[#FCD34D]">
+                                  <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                                  <AvatarFallback className="bg-[#FCD34D]/10 text-[#FCD34D] font-semibold">
+                                    {customer.name.slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {customer.photo && (
+                                  <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                                )}
+                              </div>
+                              <div className="absolute -top-1 -right-1">
+                                <Cake className="w-5 h-5 text-[#FCD34D] drop-shadow-md" />
                               </div>
                             </div>
-                            <div className="space-y-3">
-                              {customers.map(customer => (
-                                <div 
-                                  key={customer.id}
-                                  className="flex items-center gap-3 p-2 rounded-md hover-elevate"
-                                  data-testid={`birthday-customer-${customer.id}`}
-                                >
-                                  <div className="relative w-10 h-10">
-                                    <Avatar className="w-10 h-10 border-2 border-[#FCD34D]">
-                                      <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
-                                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                                        {customer.name.slice(0, 2).toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    {customer.photo && (
-                                      <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{customer.name}</p>
-                                    <p className="text-xs text-muted-foreground">{customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="p-4 pt-0">
-                            <Button
-                              onClick={() => handleSendGroup(customers.map(c => c.id))}
-                              disabled={sendBirthdayMessagesMutation.isPending}
-                              className="w-full bg-[#FCD34D] hover:bg-[#FCD34D]/90 text-gray-900"
-                              size="sm"
-                              data-testid={`button-send-group-${key}`}
+                            <p className="text-xs font-medium text-center line-clamp-1">
+                              {customer.name}
+                            </p>
+                            <Badge 
+                              variant="secondary"
+                              className="text-[10px] px-2 py-0 bg-[#FCD34D]/20 text-[#FCD34D] border-[#FCD34D]/30"
                             >
-                              <Send className="w-3 h-3 mr-2" />
-                              Send ({customers.length})
-                            </Button>
+                              {label}
+                            </Badge>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
