@@ -1544,6 +1544,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send custom messages (admin only)
+  app.post('/api/admin/messages/send', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { channel, recipientType, tier, customerIds, subject, message } = req.body;
+
+      if (!message || !channel) {
+        return res.status(400).json({ message: "Message and channel are required" });
+      }
+
+      // Get target customers based on recipient type
+      let targetCustomers = [];
+      
+      if (recipientType === 'all') {
+        targetCustomers = await storage.getAllCustomers();
+      } else if (recipientType === 'tier' && tier) {
+        const allCustomers = await storage.getAllCustomers();
+        targetCustomers = allCustomers.filter(c => c.tier === tier);
+      } else if (recipientType === 'individual' && customerIds && Array.isArray(customerIds)) {
+        targetCustomers = await Promise.all(
+          customerIds.map(id => storage.getCustomer(id))
+        );
+        targetCustomers = targetCustomers.filter(c => c !== undefined);
+      } else {
+        return res.status(400).json({ message: "Invalid recipient configuration" });
+      }
+
+      if (targetCustomers.length === 0) {
+        return res.status(400).json({ message: "No customers found matching criteria" });
+      }
+
+      // Send messages to all target customers
+      const results = await Promise.all(
+        targetCustomers.map(async (customer) => {
+          if (!customer) return null;
+
+          // For app channel, create notification
+          if (channel === 'app') {
+            // Create a promotion to represent the app notification
+            const promotion = await storage.createPromotion({
+              title: subject || 'Message',
+              message: message,
+              targetTier: tier || null,
+            });
+
+            // Create customer notification
+            await storage.createCustomerNotification({
+              customerId: customer.id,
+              promotionId: promotion.id,
+            });
+
+            // Log the app message
+            await storage.createMessageLog({
+              customerId: customer.id,
+              templateId: null,
+              channel: 'app',
+              recipient: customer.phone,
+              subject: subject || null,
+              message: message,
+              status: 'sent',
+              externalId: promotion.id,
+              errorMessage: null,
+            });
+
+            return { success: true, channel: 'app', customer: customer.name };
+          }
+
+          // For SMS channel
+          if (channel === 'sms' && customer.phone) {
+            const smsResult = await sendSMS(customer.phone, message);
+            
+            await storage.createMessageLog({
+              customerId: customer.id,
+              templateId: null,
+              channel: 'sms',
+              recipient: customer.phone,
+              subject: null,
+              message: message,
+              status: smsResult.success ? 'sent' : 'failed',
+              externalId: smsResult.messageId || null,
+              errorMessage: smsResult.error || null,
+            });
+
+            return { success: smsResult.success, channel: 'sms', customer: customer.name };
+          }
+
+          // For email channel
+          if (channel === 'email' && customer.email) {
+            const emailSubject = subject || 'Message from Yens Thai Ice Cream';
+            const emailResult = await sendEmail(customer.email, emailSubject, message);
+            
+            await storage.createMessageLog({
+              customerId: customer.id,
+              templateId: null,
+              channel: 'email',
+              recipient: customer.email,
+              subject: emailSubject,
+              message: message,
+              status: emailResult.success ? 'sent' : 'failed',
+              externalId: emailResult.messageId || null,
+              errorMessage: emailResult.error || null,
+            });
+
+            return { success: emailResult.success, channel: 'email', customer: customer.name };
+          }
+
+          return { success: false, reason: 'No valid contact method' };
+        })
+      );
+
+      const successful = results.filter(r => r && r.success).length;
+      const failed = results.filter(r => r && !r.success).length;
+
+      res.json({
+        success: true,
+        sent: successful,
+        failed: failed,
+        total: targetCustomers.length,
+      });
+    } catch (error) {
+      console.error("Error sending messages:", error);
+      res.status(500).json({ message: "Failed to send messages" });
+    }
+  });
+
   // Retry failed message (admin only)
   app.post('/api/admin/messages/:id/retry', isAuthenticated, isAdmin, async (req, res) => {
     try {

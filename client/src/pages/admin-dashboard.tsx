@@ -10,8 +10,7 @@ import CustomerMessageDialog from "@/components/CustomerMessageDialog";
 import PromotionCreator from "@/components/PromotionCreator";
 import CustomerCSVImport from "@/components/CustomerCSVImport";
 import ProductManager from "@/components/ProductManager";
-import MessageTemplates from "@/components/MessageTemplates";
-import MessageHistory from "@/components/MessageHistory";
+import MessagesPage from "@/components/MessagesPage";
 import EnhancedMessaging from "@/components/EnhancedMessaging";
 import UsersPage from "@/pages/admin/UsersPage";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -796,7 +795,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
-            <MessageHistory />
+            <MessagesPage />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
@@ -804,7 +803,10 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <MessageTemplates />
+            <div className="text-center py-12 text-muted-foreground">
+              <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>{t('admin.settings.comingSoon')}</p>
+            </div>
           </TabsContent>
         </Tabs>
 
