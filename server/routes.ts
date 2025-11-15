@@ -237,7 +237,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error: any) {
       console.error("Error updating user details:", error);
-      if (error.code === '23505') { // Unique violation
+      // Check for duplicate email error (both from storage layer and DB)
+      if (error.message?.includes("already in use") || error.code === '23505') {
         return res.status(409).json({ message: "Email is already in use by another user" });
       }
       res.status(500).json({ message: "Failed to update user details" });

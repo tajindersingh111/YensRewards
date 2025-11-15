@@ -189,9 +189,27 @@ export class DbStorage implements IStorage {
   }
 
   async updateUserDetails(id: string, details: { email?: string; firstName?: string; lastName?: string }): Promise<User | undefined> {
+    let normalizedEmail: string | undefined;
+    
+    // Normalize and check for duplicate email if email is being updated (case-insensitive)
+    if (details.email !== undefined) {
+      normalizedEmail = details.email.toLowerCase();
+      
+      // Find any user with the same email (case-insensitive)
+      const allUsers = await db.select().from(users);
+      const existingUser = allUsers.find(
+        u => u.email.toLowerCase() === normalizedEmail && u.id !== id
+      );
+      
+      if (existingUser) {
+        throw new Error("Email is already in use by another user");
+      }
+    }
+
     const updateData: any = { updatedAt: new Date() };
     
-    if (details.email !== undefined) updateData.email = details.email;
+    // Store email in lowercase for consistency
+    if (normalizedEmail !== undefined) updateData.email = normalizedEmail;
     if (details.firstName !== undefined) updateData.firstName = details.firstName;
     if (details.lastName !== undefined) updateData.lastName = details.lastName;
     
