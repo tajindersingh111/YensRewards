@@ -16,9 +16,11 @@ import {
   type InsertMessageTemplate,
   type MessageLog,
   type InsertMessageLog,
+  type Site,
+  type InsertSite,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites } from "@shared/schema";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -140,6 +142,13 @@ export interface IStorage {
   createMessageLog(log: InsertMessageLog): Promise<MessageLog>;
   getMessageLogs(customerId?: string): Promise<MessageLog[]>;
   updateMessageLogStatus(id: string, status: string, externalId?: string, errorMessage?: string): Promise<void>;
+  
+  // Site methods
+  getAllSites(): Promise<Site[]>;
+  getSite(id: string): Promise<Site | undefined>;
+  createSite(site: InsertSite): Promise<Site>;
+  updateSite(id: string, site: Partial<Site>): Promise<Site | undefined>;
+  deleteSite(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -1034,6 +1043,37 @@ export class DbStorage implements IStorage {
       .update(messageLog)
       .set(updates)
       .where(eq(messageLog.id, id));
+  }
+
+  // Site methods
+  async getAllSites(): Promise<Site[]> {
+    return await db.select().from(sites).orderBy(asc(sites.name));
+  }
+
+  async getSite(id: string): Promise<Site | undefined> {
+    const result = await db.select().from(sites).where(eq(sites.id, id));
+    return result[0];
+  }
+
+  async createSite(insertSite: InsertSite): Promise<Site> {
+    const result = await db
+      .insert(sites)
+      .values(insertSite)
+      .returning();
+    return result[0];
+  }
+
+  async updateSite(id: string, site: Partial<Site>): Promise<Site | undefined> {
+    const result = await db
+      .update(sites)
+      .set({ ...site, updatedAt: new Date() })
+      .where(eq(sites.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSite(id: string): Promise<void> {
+    await db.delete(sites).where(eq(sites.id, id));
   }
 }
 
