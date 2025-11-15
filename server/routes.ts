@@ -1589,7 +1589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
 
             // Create customer notification
-            await storage.createCustomerNotification({
+            await storage.createNotification({
               customerId: customer.id,
               promotionId: promotion.id,
             });
