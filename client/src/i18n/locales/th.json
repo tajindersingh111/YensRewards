@@ -221,6 +221,7 @@
       "title": "ผู้ใช้งาน",
       "subtitle": "จัดการบัญชีผู้ใช้และสิทธิ์การเข้าถึง",
       "addUser": "เพิ่มผู้ใช้",
+      "editDetails": "แก้ไขข้อมูล",
       "changeRole": "เปลี่ยนบทบาท",
       "user": "ผู้ใช้",
       "email": "อีเมล",
@@ -244,6 +245,8 @@
       "cancel": "ยกเลิก",
       "createUser": "สร้างผู้ใช้",
       "creating": "กำลังสร้าง...",
+      "editDetailsTitle": "แก้ไขข้อมูลผู้ใช้",
+      "editDetailsDesc": "อัปเดตข้อมูลสำหรับ {{email}}",
       "editRoleTitle": "เปลี่ยนบทบาทผู้ใช้",
       "editRoleDesc": "อัปเดตบทบาทสำหรับ {{email}}",
       "saveChanges": "บันทึกการเปลี่ยนแปลง",
@@ -263,6 +266,10 @@
       "userDeleted": "ลบผู้ใช้แล้ว",
       "userDeletedDesc": "ลบผู้ใช้สำเร็จแล้ว",
       "userDeleteFailed": "ไม่สามารถลบผู้ใช้ได้",
+      "detailsUpdated": "อัปเดตข้อมูลแล้ว",
+      "detailsUpdatedDesc": "อัปเดตข้อมูลผู้ใช้สำเร็จแล้ว",
+      "detailsUpdateFailed": "ไม่สามารถอัปเดตข้อมูลได้",
+      "emailInUse": "อีเมลนี้ถูกใช้งานโดยผู้ใช้อื่นแล้ว",
       "genericError": "เกิดข้อผิดพลาด"
     },
     "toasts": {

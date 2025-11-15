@@ -221,6 +221,7 @@
       "title": "Users",
       "subtitle": "Manage user accounts and permissions",
       "addUser": "Add User",
+      "editDetails": "Edit Details",
       "changeRole": "Change Role",
       "user": "User",
       "email": "Email",
@@ -244,6 +245,8 @@
       "cancel": "Cancel",
       "createUser": "Create User",
       "creating": "Creating...",
+      "editDetailsTitle": "Edit User Details",
+      "editDetailsDesc": "Update information for {{email}}",
       "editRoleTitle": "Change User Role",
       "editRoleDesc": "Update the role for {{email}}",
       "saveChanges": "Save Changes",
@@ -263,6 +266,10 @@
       "userDeleted": "User deleted",
       "userDeletedDesc": "The user has been successfully deleted.",
       "userDeleteFailed": "Failed to delete user",
+      "detailsUpdated": "Details updated",
+      "detailsUpdatedDesc": "The user details have been successfully updated.",
+      "detailsUpdateFailed": "Failed to update details",
+      "emailInUse": "Email is already in use by another user",
       "genericError": "An error occurred"
     },
     "toasts": {

@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Trash2, Shield, Users } from "lucide-react";
+import { UserPlus, Trash2, Shield, Users, Pencil } from "lucide-react";
 import { User } from "@shared/schema";
 
 
@@ -49,12 +49,18 @@ export default function UsersPage() {
   const { t } = useTranslation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingDetailsUser, setEditingDetailsUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
     email: "",
     firstName: "",
     lastName: "",
     role: "barista",
+  });
+  const [editDetails, setEditDetails] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
   });
   const { toast } = useToast();
 
@@ -106,6 +112,30 @@ export default function UsersPage() {
     },
   });
 
+  const updateDetailsMutation = useMutation({
+    mutationFn: async ({ id, details }: { id: string; details: typeof editDetails }) => {
+      return await apiRequest("PATCH", `/api/admin/users/${id}/details`, details);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: t("admin.users.detailsUpdated"),
+        description: t("admin.users.detailsUpdatedDesc"),
+      });
+      setEditingDetailsUser(null);
+    },
+    onError: (error: any) => {
+      const errorMessage = error.message?.includes("already in use") 
+        ? t("admin.users.emailInUse")
+        : error.message || t("admin.users.genericError");
+      toast({
+        title: t("admin.users.detailsUpdateFailed"),
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       return await apiRequest("DELETE", `/api/admin/users/${id}`);
@@ -144,6 +174,12 @@ export default function UsersPage() {
   const handleUpdateRole = () => {
     if (editingUser && editingRole) {
       updateRoleMutation.mutate({ id: editingUser.id, role: editingRole });
+    }
+  };
+
+  const handleUpdateDetails = () => {
+    if (editingDetailsUser && editDetails.email) {
+      updateDetailsMutation.mutate({ id: editingDetailsUser.id, details: editDetails });
     }
   };
 
@@ -296,6 +332,22 @@ export default function UsersPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => {
+                              setEditingDetailsUser(user);
+                              setEditDetails({
+                                email: user.email || "",
+                                firstName: user.firstName || "",
+                                lastName: user.lastName || "",
+                              });
+                            }}
+                            data-testid={`button-edit-details-${user.id}`}
+                          >
+                            <Pencil className="w-4 h-4 mr-1" />
+                            {t("admin.users.editDetails")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setEditingUser(user)}
                             data-testid={`button-edit-role-${user.id}`}
                           >
@@ -375,6 +427,71 @@ export default function UsersPage() {
               data-testid="button-save-role"
             >
               {updateRoleMutation.isPending ? t("admin.users.updating") : t("admin.users.saveChanges")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Details Dialog */}
+      <Dialog 
+        open={!!editingDetailsUser} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingDetailsUser(null);
+          }
+        }}
+      >
+        <DialogContent data-testid="dialog-edit-details">
+          <DialogHeader>
+            <DialogTitle>{t("admin.users.editDetailsTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("admin.users.editDetailsDesc", { email: editingDetailsUser?.email })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editEmail">{t("admin.users.emailLabel")}</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                value={editDetails.email}
+                onChange={(e) => setEditDetails({ ...editDetails, email: e.target.value })}
+                data-testid="input-edit-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editFirstName">{t("admin.users.firstNameLabel")}</Label>
+              <Input
+                id="editFirstName"
+                value={editDetails.firstName}
+                onChange={(e) => setEditDetails({ ...editDetails, firstName: e.target.value })}
+                data-testid="input-edit-firstName"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editLastName">{t("admin.users.lastNameLabel")}</Label>
+              <Input
+                id="editLastName"
+                value={editDetails.lastName}
+                onChange={(e) => setEditDetails({ ...editDetails, lastName: e.target.value })}
+                data-testid="input-edit-lastName"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditingDetailsUser(null)}
+              data-testid="button-cancel-edit-details"
+            >
+              {t("admin.users.cancel")}
+            </Button>
+            <Button
+              onClick={handleUpdateDetails}
+              disabled={updateDetailsMutation.isPending || !editDetails.email}
+              data-testid="button-save-details"
+            >
+              {updateDetailsMutation.isPending ? t("admin.users.updating") : t("admin.users.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
