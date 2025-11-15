@@ -7,6 +7,7 @@ import {
   type InsertPromotion,
   type User,
   type UpsertUser,
+  type InsertUser,
   type CustomerNotification,
   type InsertCustomerNotification,
   type Product,
@@ -25,6 +26,12 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   isUserAdmin(id: string): Promise<boolean>;
+  
+  // User management methods
+  getAllUsers(): Promise<User[]>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUserRole(id: string, role: string): Promise<User | undefined>;
+  deleteUser(id: string): Promise<void>;
   
   // Customer methods
   getCustomer(id: string): Promise<Customer | undefined>;
@@ -159,6 +166,29 @@ export class DbStorage implements IStorage {
   async isUserAdmin(id: string): Promise<boolean> {
     const user = await this.getUser(id);
     return user?.role === "admin";
+  }
+
+  // User management methods
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const result = await db.insert(users).values(userData).returning();
+    return result[0];
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Customer methods

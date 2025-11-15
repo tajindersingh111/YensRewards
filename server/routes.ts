@@ -138,6 +138,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ User Management Endpoints (Admin Only) ============
+  
+  // Get all users
+  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Create a new user
+  app.post('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, firstName, lastName, role } = req.body;
+      
+      if (!email || !role) {
+        return res.status(400).json({ message: "Email and role are required" });
+      }
+
+      // Validate role
+      if (!['admin', 'manager', 'barista'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, manager, or barista" });
+      }
+
+      // Create user with a temporary ID (will be replaced on first login)
+      const user = await storage.createUser({
+        email,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        role,
+      });
+      
+      console.log(`✅ Created user: ${email} with role ${role}`);
+      res.json(user);
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      if (error.code === '23505') { // Unique violation
+        return res.status(409).json({ message: "User with this email already exists" });
+      }
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  // Update user role
+  app.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      
+      if (!role) {
+        return res.status(400).json({ message: "Role is required" });
+      }
+
+      // Validate role
+      if (!['admin', 'manager', 'barista'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, manager, or barista" });
+      }
+
+      const user = await storage.updateUserRole(id, role);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      console.log(`✅ Updated user ${user.email} role to ${role}`);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // Delete user
+  app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Prevent deleting yourself
+      if (id === req.user?.claims.sub) {
+        return res.status(400).json({ message: "You cannot delete your own account" });
+      }
+
+      await storage.deleteUser(id);
+      console.log(`✅ Deleted user ${id}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   // ============ Testing Endpoints (Admin Only) ============
   
   // Test SMS sending

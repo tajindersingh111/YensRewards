@@ -14,15 +14,15 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Staff users table for Replit Auth (baristas and admins)
+// Staff users table for Replit Auth (baristas, managers, and admins)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: text("role").notNull().default("barista"), // barista or admin
-  location: text("location"), // for baristas
+  role: text("role").notNull().default("barista"), // barista, manager, or admin
+  location: text("location"), // for baristas/managers
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
