@@ -6,6 +6,12 @@
 - Email addresses now prominently shown when Email channel is selected
 - Improved UX for verifying recipient contact information before sending
 
+**⚠️ Known Issue - Email Delivery:**
+- Resend API configured but emails not being delivered (messageId returns undefined)
+- Pending migration to SendGrid for more reliable email delivery
+- To set up SendGrid later: Will need SendGrid API key and verified sender email address
+- Current workaround: SMS messaging via Twilio works reliably; in-app notifications functional
+
 **Previous Version (v2.5.0):**
 - Major Messages tab reorganization with Send/History/Templates sub-tabs
 - New Send Message feature for custom messages to all customers, by tier, or individual selection
@@ -64,5 +70,5 @@ Preferred communication style: Simple, everyday language.
 - **Development Tools:** Vite, TypeScript, PostCSS with Tailwind and Autoprefixer.
 - **Form & Validation:** React Hook Form, `@hookform/resolvers`.
 - **Session Management:** `connect-pg-simple`.
-- **Messaging Services:** Twilio (via Replit Twilio connector), Resend (via Replit Resend connector).
+- **Messaging Services:** Twilio for SMS (via Replit Twilio connector, working), Resend for email (via Replit Resend connector, has delivery issues - pending switch to SendGrid).
 - **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid`.
