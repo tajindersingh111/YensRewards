@@ -456,21 +456,58 @@ export default function AdminDashboard() {
               
               customers.forEach(customer => {
                 if (customer.birthday) {
-                  // Handle both MM-DD and YYYY-MM-DD formats
+                  // Parse multiple birthday formats: DD/MM/YYYY, YYYY-MM-DD, MM-DD
                   let month: number;
                   let day: number;
+                  let year: number | null = null;
                   
-                  const parts = customer.birthday.split('-');
-                  if (parts.length === 2) {
-                    [month, day] = [parseInt(parts[0]), parseInt(parts[1])];
-                  } else if (parts.length === 3) {
-                    [, month, day] = parts.map((p: string) => parseInt(p));
+                  // Handle DD/MM/YYYY format (Thai format with /)
+                  if (customer.birthday.includes('/')) {
+                    const parts = customer.birthday.split('/');
+                    if (parts.length === 3) {
+                      day = parseInt(parts[0]);
+                      month = parseInt(parts[1]);
+                      year = parseInt(parts[2]);
+                    } else {
+                      return; // Invalid format
+                    }
+                  }
+                  // Handle MM-DD or YYYY-MM-DD format (with -)
+                  else if (customer.birthday.includes('-')) {
+                    const parts = customer.birthday.split('-');
+                    if (parts.length === 2) {
+                      // MM-DD format
+                      month = parseInt(parts[0]);
+                      day = parseInt(parts[1]);
+                    } else if (parts.length === 3) {
+                      // YYYY-MM-DD format
+                      year = parseInt(parts[0]);
+                      month = parseInt(parts[1]);
+                      day = parseInt(parts[2]);
+                    } else {
+                      return; // Invalid format
+                    }
                   } else {
+                    return; // No recognized delimiter
+                  }
+                  
+                  // Validate month and day ranges
+                  if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
                     return;
                   }
                   
-                  if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
-                    return;
+                  // Handle Thai Buddhist Era (B.E.) years - convert to Gregorian
+                  if (year !== null && !isNaN(year) && year > today.getFullYear() + 100) {
+                    // Likely Buddhist Era year - subtract 543 to convert to Gregorian
+                    year = year - 543;
+                  }
+                  
+                  // Filter out future dates (invalid birthdays from CSV import errors)
+                  if (year !== null && !isNaN(year)) {
+                    const birthDate = new Date(year, month - 1, day);
+                    if (birthDate > today) {
+                      return; // Skip future dates
+                    }
                   }
                   
                   // Handle Feb 29 on non-leap years

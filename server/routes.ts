@@ -867,7 +867,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Optional fields from validated data
           if (validData.email?.trim()) normalized.email = validData.email.trim();
           if (validData.gender?.trim()) normalized.gender = validData.gender.trim();
-          if (validData.birthday?.trim()) normalized.birthday = validData.birthday.trim();
+          
+          // Normalize birthday to MM-DD format (month-day only)
+          if (validData.birthday?.trim()) {
+            try {
+              const birthdayStr = validData.birthday.trim();
+              let month: number;
+              let day: number;
+              let year: number | null = null;
+              
+              // Handle DD/MM/YYYY format (Thai format with /)
+              if (birthdayStr.includes('/')) {
+                const parts = birthdayStr.split('/');
+                if (parts.length === 3) {
+                  day = parseInt(parts[0]);
+                  month = parseInt(parts[1]);
+                  year = parseInt(parts[2]);
+                } else {
+                  throw new Error(`Invalid birthday format: ${birthdayStr}`);
+                }
+              }
+              // Handle MM-DD or YYYY-MM-DD format (with -)
+              else if (birthdayStr.includes('-')) {
+                const parts = birthdayStr.split('-');
+                if (parts.length === 2) {
+                  // MM-DD format - already normalized
+                  month = parseInt(parts[0]);
+                  day = parseInt(parts[1]);
+                } else if (parts.length === 3) {
+                  // YYYY-MM-DD format
+                  year = parseInt(parts[0]);
+                  month = parseInt(parts[1]);
+                  day = parseInt(parts[2]);
+                } else {
+                  throw new Error(`Invalid birthday format: ${birthdayStr}`);
+                }
+              } else {
+                throw new Error(`Invalid birthday format: ${birthdayStr}`);
+              }
+              
+              // Validate month and day ranges
+              if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+                throw new Error(`Invalid month/day values: ${birthdayStr}`);
+              }
+              
+              // Handle Thai Buddhist Era (B.E.) years - convert to Gregorian
+              const currentYear = new Date().getFullYear();
+              if (year !== null && !isNaN(year) && year > currentYear + 100) {
+                // Likely Buddhist Era year (B.E. = C.E. + 543)
+                year = year - 543;
+              }
+              
+              // Filter out future dates (invalid birthdays from CSV import errors)
+              if (year !== null && !isNaN(year)) {
+                const birthDate = new Date(year, month - 1, day);
+                const today = new Date();
+                if (birthDate > today) {
+                  throw new Error(`Birthday cannot be in the future: ${birthdayStr}`);
+                }
+              }
+              
+              // Normalize to MM-DD format (zero-padded)
+              const monthStr = month.toString().padStart(2, '0');
+              const dayStr = day.toString().padStart(2, '0');
+              normalized.birthday = `${monthStr}-${dayStr}`;
+            } catch (e: any) {
+              console.warn(`Invalid birthday for ${validData.phone}:`, e.message);
+              // Skip invalid birthday - don't store it
+            }
+          }
+          
           if (validData.tag?.trim()) normalized.tag = validData.tag.trim();
           if (validData.lineUid?.trim()) normalized.lineUid = validData.lineUid.trim();
           if (validData.registerBranch?.trim()) normalized.registerBranch = validData.registerBranch.trim();
