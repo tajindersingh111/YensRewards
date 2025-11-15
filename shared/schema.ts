@@ -130,6 +130,22 @@ export const messageLog = pgTable("message_log", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Sites table - physical locations/stalls where Yens products are sold
+export const sites = pgTable("sites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // Site name (e.g., "Central Plaza Stall", "Mobile Van #1")
+  type: text("type").notNull(), // "stall" or "mobile_van"
+  location: text("location").notNull(), // Address or area description
+  operatingDays: text("operating_days").array(), // ["monday", "tuesday", etc.]
+  openTime: text("open_time"), // "09:00"
+  closeTime: text("close_time"), // "18:00"
+  isActive: boolean("is_active").notNull().default(true),
+  notes: text("notes"), // For ad-hoc sites or special instructions
+  managerId: varchar("manager_id").references(() => users.id), // Optional: assigned manager
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -201,6 +217,12 @@ export const insertMessageLogSchema = createInsertSchema(messageLog).omit({
   deliveredAt: true,
 });
 
+export const insertSiteSchema = createInsertSchema(sites).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -226,3 +248,6 @@ export type InsertMessageTemplate = z.infer<typeof insertMessageTemplateSchema>;
 
 export type MessageLog = typeof messageLog.$inferSelect;
 export type InsertMessageLog = z.infer<typeof insertMessageLogSchema>;
+
+export type Site = typeof sites.$inferSelect;
+export type InsertSite = z.infer<typeof insertSiteSchema>;
