@@ -10,6 +10,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### Nov 15, 2025 - Birthday UI Enhancement & Active Status (v2.0.9)
+- **Birthday Layout Redesign**: Redesigned birthday section in Admin Dashboard to match Top 10 Spenders format with 10 customers per row displayed in multiple rows instead of single horizontal scroll. Each customer shown with avatar, cake icon badge, and time period label (Today/Tomorrow/This Week/This Month).
+- **All Customers Active**: Updated all 523 customers to Active status by setting minimum ฿10 spending for previously inactive customers (those with zero total_spent). All customers now appear in Active tab instead of being split between Active (399) and Inactive (124).
+- **Version Update**: Updated system version to v2.0.9 across all apps.
+
 ### Nov 14, 2025 - Birthday Feature Enhancement (v2.0.8)
 - **Birthday This Week Feature**: Enhanced existing "Birthdays This Week" section in Admin Dashboard Overview tab to properly display customers with upcoming birthdays (today/tomorrow/this week/this month) with "Send Birthday Wishes" buttons for each group.
 - **Multi-Format Birthday Parsing**: Updated frontend and backend to parse all birthday formats:
