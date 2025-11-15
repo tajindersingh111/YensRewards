@@ -1,7 +1,12 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.5.0
-**Latest Updates (v2.5.0):**
+## Current Version: v2.5.1
+**Latest Updates (v2.5.1):**
+- Enhanced customer selection in Send Message form to display email addresses
+- Email addresses now prominently shown when Email channel is selected
+- Improved UX for verifying recipient contact information before sending
+
+**Previous Version (v2.5.0):**
 - Major Messages tab reorganization with Send/History/Templates sub-tabs
 - New Send Message feature for custom messages to all customers, by tier, or individual selection
 - Multi-channel support (SMS/Email/App) with unified sending interface
