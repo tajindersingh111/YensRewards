@@ -42,6 +42,14 @@ const upload = multer({
   },
 });
 
+// Helper function to replace merge fields in messages
+function replaceMergeFields(text: string, customer: { name: string; points: number; tier: string }): string {
+  return text
+    .replace(/\{name\}/g, customer.name)
+    .replace(/\{points\}/g, customer.points.toString())
+    .replace(/\{tier\}/g, customer.tier);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
@@ -446,6 +454,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Customer not found" });
       }
 
+      // Replace merge fields with actual customer data
+      const personalizedMessage = replaceMergeFields(message, customer);
+      const personalizedSubject = subject ? replaceMergeFields(subject, customer) : subject;
+
       const results: any = {
         inApp: null,
         sms: null,
@@ -457,8 +469,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Create a promotion for this message
           const promotion = await storage.createPromotion({
-            title: subject || 'Direct Message',
-            message: message,
+            title: personalizedSubject || 'Direct Message',
+            message: personalizedMessage,
             targetTier: null, // Direct messages are not tier-specific
           });
 
@@ -479,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send SMS if channel includes sms
       if (channel && channel.includes('sms') && customer.phone) {
         try {
-          const smsResult = await sendSMS(customer.phone, message);
+          const smsResult = await sendSMS(customer.phone, personalizedMessage);
           results.sms = smsResult;
           
           // Log SMS message
@@ -488,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             channel: 'sms',
             recipient: customer.phone,
             subject: null,
-            message,
+            message: personalizedMessage,
             status: smsResult.success ? 'sent' : 'failed',
             externalId: smsResult.messageId || null,
             errorMessage: smsResult.error || null,
@@ -504,8 +516,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const emailResult = await sendEmail(
             customer.email,
-            subject || 'Message from Yens Thai Ice Cream',
-            message
+            personalizedSubject || 'Message from Yens Thai Ice Cream',
+            personalizedMessage
           );
           results.email = emailResult;
 
@@ -514,8 +526,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             customerId: customer.id,
             channel: 'email',
             recipient: customer.email,
-            subject: subject || null,
-            message,
+            subject: personalizedSubject || null,
+            message: personalizedMessage,
             status: emailResult.success ? 'sent' : 'failed',
             externalId: emailResult.messageId || null,
             errorMessage: emailResult.error || null,
