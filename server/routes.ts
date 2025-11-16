@@ -50,6 +50,18 @@ function replaceMergeFields(text: string, customer: { name: string; points: numb
     .replace(/\{tier\}/g, customer.tier);
 }
 
+// Helper function to sanitize user objects by removing sensitive fields
+function sanitizeUser(user: any) {
+  if (!user) return null;
+  const { password, twoFactorSecret, ...safeUser } = user;
+  return safeUser;
+}
+
+// Helper function to sanitize array of users
+function sanitizeUsers(users: any[]) {
+  return users.map(sanitizeUser);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
@@ -131,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       // Note: Existing users WITHOUT is_admin claim keep their database role (no downgrade)
       
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -180,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      res.json(allUsers);
+      res.json(sanitizeUsers(allUsers));
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
@@ -210,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       console.log(`✅ Created user: ${email} with role ${role}`);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error: any) {
       console.error("Error creating user:", error);
       if (error.code === '23505') { // Unique violation
@@ -241,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`✅ Updated user ${user.email} role to ${role}`);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).json({ message: "Failed to update user role" });
@@ -270,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`✅ Updated user ${id} details`);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error: any) {
       console.error("Error updating user details:", error);
       // Check for duplicate email error (both from storage layer and DB)
