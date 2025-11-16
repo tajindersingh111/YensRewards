@@ -1,7 +1,12 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.7.1
-**Latest Updates (v2.7.1):**
+## Current Version: v2.7.2
+**Latest Updates (v2.7.2):**
+- Restored **customer count badge** in Customers tab showing total number of customers
+- Removed non-functional **Tag column** from Customers table for cleaner layout
+- Improved table readability with 7 essential columns
+
+**Previous Version (v2.7.1):**
 - Dashboard tab renamed to **Customer Dashboard** for clarity
 - Yellow borders added around Top 10 Spenders and Upcoming Birthdays sections
 - Enhanced visual identity with Yens brand color (#FCD34D)

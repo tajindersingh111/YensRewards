@@ -312,7 +312,7 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground">{t('admin.title')}</h1>
-                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.7.1</Badge>
+                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.7.2</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {t('admin.overview.loggedInAs')} {user?.email || user?.firstName || t('common.admin')}
