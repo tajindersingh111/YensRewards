@@ -37,7 +37,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Trash2, Shield, Users, Pencil, Lock, ShieldCheck, ShieldOff } from "lucide-react";
 import { User } from "@shared/schema";
-import { QRCodeSVG } from "react-qr-code";
+import QRCodeSVG from "react-qr-code";
 
 
 const roleColors = {
