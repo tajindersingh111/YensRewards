@@ -1,7 +1,14 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.7.3
-**Latest Updates (v2.7.3):**
+## Current Version: v2.7.4
+**Latest Updates (v2.7.4):**
+- Added **action buttons** to Customer Dashboard avatars (View, Edit, Message, Delete)
+- Action buttons appear on hover for Top 10 Spenders
+- Action buttons appear on hover for Current Week and This Month birthday customers
+- Buttons trigger same dialogs as Customers tab for consistent experience
+- Includes customer details view, edit, messaging, and delete confirmation
+
+**Previous Version (v2.7.3):**
 - Split **Upcoming Birthdays** into two sections: "Current Week" and "This Month"
 - Applied **thicker border (4px)** to Current Week section for visual emphasis
 - Applied standard border (2px) to This Month section

@@ -7,6 +7,7 @@ import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
 import CustomerEditDialog from "@/components/CustomerEditDialog";
 import CustomerMessageDialog from "@/components/CustomerMessageDialog";
+import CustomerDetailsDialog from "@/components/CustomerDetailsDialog";
 import PromotionCreator from "@/components/PromotionCreator";
 import CustomerCSVImport from "@/components/CustomerCSVImport";
 import ProductManager from "@/components/ProductManager";
@@ -24,7 +25,17 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy, Cake, Send, Settings } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DollarSign, Users, TrendingUp, Award, ArrowLeft, LogOut, Home, Search, UserPlus, Upload, Trophy, Cake, Send, Settings, Eye, Edit, MessageSquare, Trash2 } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
@@ -44,6 +55,8 @@ export default function AdminDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [messagingCustomer, setMessagingCustomer] = useState<Customer | null>(null);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [detailsCustomer, setDetailsCustomer] = useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -219,6 +232,28 @@ export default function AdminDashboard() {
     },
   });
 
+  // Delete customer mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      return await apiRequest('DELETE', `/api/admin/customers/${customerId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/customers"] });
+      toast({
+        title: "Customer deleted",
+        description: "The customer has been successfully deleted.",
+      });
+      setDeletingCustomer(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete customer",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleImportCSV = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -312,7 +347,7 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground">{t('admin.title')}</h1>
-                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.7.3</Badge>
+                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.7.4</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {t('admin.overview.loggedInAs')} {user?.email || user?.firstName || t('common.admin')}
@@ -368,7 +403,7 @@ export default function AdminDashboard() {
                     .map((customer, index) => (
                       <div 
                         key={customer.id} 
-                        className="flex flex-col items-center gap-2 w-24"
+                        className="flex flex-col items-center gap-2 w-24 group relative"
                         data-testid={`top-spender-${index + 1}`}
                       >
                         <div className="relative">
@@ -393,6 +428,54 @@ export default function AdminDashboard() {
                         <p className="text-xs text-muted-foreground">
                           ฿{Number(customer.totalSpent).toLocaleString()}
                         </p>
+                        <div className="invisible group-hover:visible absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-background border rounded-md shadow-lg p-1 z-10">
+                          <Button
+                            onClick={() => setDetailsCustomer(customer as Customer)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            data-testid={`button-details-spender-${index + 1}`}
+                            title="View details"
+                          >
+                            <Eye className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setEditingCustomer(customer as Customer);
+                              setIsEditDialogOpen(true);
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            data-testid={`button-edit-spender-${index + 1}`}
+                            title="Edit"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setMessagingCustomer(customer as Customer);
+                              setIsMessageDialogOpen(true);
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            data-testid={`button-message-spender-${index + 1}`}
+                            title="Message"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            onClick={() => setDeletingCustomer(customer as Customer)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                            data-testid={`button-delete-spender-${index + 1}`}
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                 </div>
@@ -581,7 +664,7 @@ export default function AdminDashboard() {
                       {row.map((customer) => (
                         <div 
                           key={customer.id}
-                          className="flex flex-col items-center gap-2 w-24"
+                          className="flex flex-col items-center gap-2 w-24 group relative"
                           data-testid={`birthday-customer-${customer.id}`}
                         >
                           <div className="relative w-16 h-16">
@@ -604,6 +687,54 @@ export default function AdminDashboard() {
                           <Badge variant="outline" className="text-xs">
                             {customer.timePeriod}
                           </Badge>
+                          <div className="invisible group-hover:visible absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-background border rounded-md shadow-lg p-1 z-10">
+                            <Button
+                              onClick={() => setDetailsCustomer(customer as Customer)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              data-testid={`button-details-birthday-${customer.id}`}
+                              title="View details"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setEditingCustomer(customer as Customer);
+                                setIsEditDialogOpen(true);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              data-testid={`button-edit-birthday-${customer.id}`}
+                              title="Edit"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setMessagingCustomer(customer as Customer);
+                                setIsMessageDialogOpen(true);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              data-testid={`button-message-birthday-${customer.id}`}
+                              title="Message"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              onClick={() => setDeletingCustomer(customer as Customer)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              data-testid={`button-delete-birthday-${customer.id}`}
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -749,6 +880,44 @@ export default function AdminDashboard() {
           open={isMessageDialogOpen}
           onOpenChange={setIsMessageDialogOpen}
         />
+
+        <CustomerDetailsDialog 
+          customer={detailsCustomer}
+          open={!!detailsCustomer}
+          onOpenChange={(open: boolean) => !open && setDetailsCustomer(null)}
+        />
+
+        <AlertDialog open={!!deletingCustomer} onOpenChange={(open) => !open && setDeletingCustomer(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Customer?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <strong>{deletingCustomer?.name}</strong> ({deletingCustomer?.phone})?
+                <br /><br />
+                This will permanently delete:
+                <ul className="list-disc list-inside mt-2">
+                  <li>Customer profile and all personal information</li>
+                  <li>Transaction history (฿{Number(deletingCustomer?.totalSpent || 0).toLocaleString()})</li>
+                  <li>Points balance ({deletingCustomer?.points} points)</li>
+                  <li>Message history and notifications</li>
+                </ul>
+                <br />
+                <strong>This action cannot be undone.</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deletingCustomer && deleteMutation.mutate(deletingCustomer.id)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete Customer"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
       <InstallPrompt />
     </div>
