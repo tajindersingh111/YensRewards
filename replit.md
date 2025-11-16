@@ -1,7 +1,19 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.8.0
-**Latest Updates (v2.8.0):**
+## Current Version: v2.9.0 (Backend Complete)
+**Latest Updates (v2.9.0) - Backend Implementation:**
+- Implemented **password authentication** infrastructure for all admin users (works alongside Replit Auth)
+- Added **Two-Factor Authentication (2FA)** support using TOTP (Time-based One-Time Password)
+- Database schema extended with `password` (bcrypt hashed), `twoFactorSecret`, and `twoFactorEnabled` fields
+- Password management: Set/change passwords with bcrypt hashing (10 salt rounds, 2025 best practices)
+- 2FA management: Setup, enable/disable with QR code generation for authenticator apps (Google Authenticator, Authy, etc.)
+- New API endpoints: password setup, 2FA setup/enable/disable, password-based login, 2FA verification
+- Security packages: bcrypt for password hashing, otpauth for TOTP implementation, qrcode for QR code generation
+- Password-based login endpoint supports both password-only and password+2FA flows
+- Session management: 7-day session duration after successful authentication
+- **Frontend UI pending**: Password and 2FA dialogs, QR code display, bilingual translations (Thai/English)
+
+**Previous Version (v2.8.0):**
 - Added **server-side pagination** to Customers tab for efficient navigation through large customer lists
 - Page size options: 50 or 100 customers per page
 - Real-time search with debounced filtering (300ms) across name, phone, and email
@@ -103,9 +115,9 @@ Preferred communication style: Simple, everyday language.
 - **Monorepo Structure:** `/client` (React app), `/server` (Express API), `/shared` (common types/schemas).
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
-- **Authentication & Authorization:** Replit Auth (OpenID Connect), session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation in test mode.
-- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites` tables managed with Drizzle ORM.
-- **User Management:** Admin-only user account management (CRUD), three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation.
+- **Authentication & Authorization:** Dual authentication system - Replit Auth (OpenID Connect) and password-based authentication with optional 2FA. Session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation in test mode. Password hashing via bcrypt (10 salt rounds), TOTP-based 2FA via otpauth.
+- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields for enhanced security.
+- **User Management:** Admin-only user account management (CRUD), three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation, password management, and 2FA setup/management.
 - **Messaging System:** Twilio for SMS, Resend for email, multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All admin features fully internationalized including user management, customer management, product management, messaging, and promotions.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, image storage.
