@@ -761,7 +761,13 @@ export default function UsersPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder={t("admin.users.confirmPasswordPlaceholder")}
                 data-testid="input-confirm-password"
+                className={confirmPassword && password !== confirmPassword ? "border-destructive" : ""}
               />
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-sm text-destructive" data-testid="error-password-mismatch">
+                  {t("admin.users.passwordMismatch")}
+                </p>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {t("admin.users.passwordRequirements")}
@@ -781,7 +787,13 @@ export default function UsersPage() {
             </Button>
             <Button
               onClick={handleSetPassword}
-              disabled={setPasswordMutation.isPending || !password || !confirmPassword}
+              disabled={
+                setPasswordMutation.isPending || 
+                !password || 
+                !confirmPassword || 
+                password !== confirmPassword ||
+                password.length < 8
+              }
               data-testid="button-save-password"
             >
               {setPasswordMutation.isPending ? t("admin.users.setting") : t("admin.users.setPassword")}

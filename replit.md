@@ -1,17 +1,24 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.9.0 (Backend Complete)
-**Latest Updates (v2.9.0) - Backend Implementation:**
-- Implemented **password authentication** infrastructure for all admin users (works alongside Replit Auth)
-- Added **Two-Factor Authentication (2FA)** support using TOTP (Time-based One-Time Password)
-- Database schema extended with `password` (bcrypt hashed), `twoFactorSecret`, and `twoFactorEnabled` fields
-- Password management: Set/change passwords with bcrypt hashing (10 salt rounds, 2025 best practices)
-- 2FA management: Setup, enable/disable with QR code generation for authenticator apps (Google Authenticator, Authy, etc.)
-- New API endpoints: password setup, 2FA setup/enable/disable, password-based login, 2FA verification
-- Security packages: bcrypt for password hashing, otpauth for TOTP implementation, qrcode for QR code generation
-- Password-based login endpoint supports both password-only and password+2FA flows
-- Session management: 7-day session duration after successful authentication
-- **Frontend UI pending**: Password and 2FA dialogs, QR code display, bilingual translations (Thai/English)
+## Current Version: v2.9.0 (Complete)
+**Latest Updates (v2.9.0) - Password & 2FA System:**
+- Implemented complete **password authentication** and **Two-Factor Authentication (2FA)** system for all admin users
+- Works seamlessly alongside existing Replit Auth
+- Database schema: `password` (bcrypt hashed), `two_factor_secret`, `two_factor_enabled` (snake_case columns)
+- Backend security: bcrypt (10 salt rounds), otpauth for TOTP, sanitized API responses (no password/secret leaks)
+- Frontend UI complete with full bilingual support (Thai/English):
+  * SetPasswordDialog with real-time password strength indicator (weak/medium/strong)
+  * Real-time validation: password mismatch detection, minimum length enforcement (8 chars)
+  * Visual feedback: red border and error message for mismatched passwords
+  * Submit button disabled until all validations pass
+  * Setup2FADialog with QR code generation using react-qr-code library
+  * Two-step flow: Generate QR → Scan with authenticator app → Verify 6-digit code
+  * Enable/disable 2FA with proper confirmation dialogs
+  * 44 new translation keys covering all password and 2FA UI elements
+- New action buttons in Users table: "Set Password", "Setup 2FA", "Disable 2FA"
+- API endpoints: password setup, 2FA setup/enable/disable, password-based login with optional 2FA
+- Architect-reviewed and approved frontend implementation
+- Enhanced security: password hashes and 2FA secrets never exposed to frontend
 
 **Previous Version (v2.8.0):**
 - Added **server-side pagination** to Customers tab for efficient navigation through large customer lists
