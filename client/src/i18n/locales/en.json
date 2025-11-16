@@ -200,7 +200,7 @@
   "admin": {
     "title": "Admin Dashboard",
     "nav": {
-      "dashboard": "Dashboard",
+      "dashboard": "Customer Dashboard",
       "products": "Products",
       "customers": "Customers",
       "transactions": "Transactions",
@@ -210,7 +210,7 @@
     },
     "tabs": {
       "overview": "Overview",
-      "dashboard": "Dashboard",
+      "dashboard": "Customer Dashboard",
       "customers": "Customers",
       "products": "Products",
       "promotions": "Promotions",

@@ -200,7 +200,7 @@
   "admin": {
     "title": "แดชบอร์ดผู้ดูแล",
     "nav": {
-      "dashboard": "แดชบอร์ด",
+      "dashboard": "แดชบอร์ดลูกค้า",
       "products": "สินค้า",
       "customers": "ลูกค้า",
       "transactions": "ธุรกรรม",
@@ -210,7 +210,7 @@
     },
     "tabs": {
       "overview": "ภาพรวม",
-      "dashboard": "แดชบอร์ด",
+      "dashboard": "แดชบอร์ดลูกค้า",
       "customers": "ลูกค้า",
       "products": "สินค้า",
       "promotions": "โปรโมชั่น",
