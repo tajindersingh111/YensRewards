@@ -1,7 +1,16 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.9.0 (Complete)
-**Latest Updates (v2.9.0) - Password & 2FA System:**
+## Current Version: v2.9.1 (Complete)
+**Latest Updates (v2.9.1) - Sites Predefined Locations:**
+- Enhanced **Sites Management** with predefined location dropdown
+- Three predefined locations: "Yens Head Office", "River", "Market"
+- "Custom Location" option allows entering any custom address
+- Dropdown auto-populates location field for predefined options
+- Smart location detection when editing existing sites
+- Full bilingual support (Thai/English) for custom location option
+- Improves data consistency and speeds up site creation workflow
+
+**Previous Version (v2.9.0) - Password & 2FA System:**
 - Implemented complete **password authentication** and **Two-Factor Authentication (2FA)** system for all admin users
 - Works seamlessly alongside existing Replit Auth
 - Database schema: `password` (bcrypt hashed), `two_factor_secret`, `two_factor_enabled` (snake_case columns)

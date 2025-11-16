@@ -46,11 +46,19 @@ const DAYS_OF_WEEK = [
   "sunday",
 ] as const;
 
+const PREDEFINED_LOCATIONS = [
+  "Yens Head Office",
+  "River",
+  "Market",
+  "custom", // Option to enter custom location
+] as const;
+
 export default function SitesManager() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string>("Yens Head Office");
   const [formData, setFormData] = useState<SiteFormData>({
     name: "",
     type: "stall",
@@ -110,6 +118,7 @@ export default function SitesManager() {
 
   const resetForm = () => {
     setEditingSite(null);
+    setSelectedLocation("Yens Head Office");
     setFormData({
       name: "",
       type: "stall",
@@ -123,6 +132,9 @@ export default function SitesManager() {
 
   const handleEdit = (site: Site) => {
     setEditingSite(site);
+    // Check if location matches a predefined option
+    const isPredefined = PREDEFINED_LOCATIONS.slice(0, -1).includes(site.location as any);
+    setSelectedLocation(isPredefined ? site.location : "custom");
     setFormData({
       name: site.name,
       type: site.type as "stall" | "mobile_van",
@@ -226,14 +238,37 @@ export default function SitesManager() {
 
             <div>
               <Label htmlFor="location">{t('sites.location')} *</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                required
-                placeholder={t('sites.locationPlaceholder')}
-                data-testid="input-site-location"
-              />
+              <Select
+                value={selectedLocation}
+                onValueChange={(value) => {
+                  setSelectedLocation(value);
+                  // Auto-populate location field for predefined options
+                  if (value !== "custom") {
+                    setFormData({ ...formData, location: value });
+                  }
+                }}
+              >
+                <SelectTrigger data-testid="select-location">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Yens Head Office">Yens Head Office</SelectItem>
+                  <SelectItem value="River">River</SelectItem>
+                  <SelectItem value="Market">Market</SelectItem>
+                  <SelectItem value="custom">{t('sites.customLocation')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {selectedLocation === "custom" && (
+                <Input
+                  id="custom-location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  required
+                  placeholder={t('sites.locationPlaceholder')}
+                  className="mt-2"
+                  data-testid="input-custom-location"
+                />
+              )}
             </div>
 
             <div>

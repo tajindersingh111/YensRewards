@@ -28,7 +28,7 @@
     "info": "ข้อมูล",
     "new": "ใหม่",
     "admin": "ผู้ดูแล",
-    "version": "v2.9.0"
+    "version": "v2.9.1"
   },
   "home": {
     "title": "ระบบสะสมคะแนนเย็นส์",
@@ -451,6 +451,7 @@
       "typeMobileVan": "รถเคลื่อนที่",
       "location": "สถานที่",
       "locationPlaceholder": "เช่น เซ็นทรัลพลาซ่า ทางเข้าหลัก",
+      "customLocation": "สถานที่กำหนดเอง",
       "operatingDays": "วันทำการ",
       "operatingHoursStart": "เวลาเปิด",
       "operatingHoursEnd": "เวลาปิด",
