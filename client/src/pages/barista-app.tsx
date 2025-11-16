@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Customer } from "@shared/schema";
+import type { Customer, Site } from "@shared/schema";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,7 +28,42 @@ export default function BaristaApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [amount, setAmount] = useState("");
-  const [location, setLocation] = useState("Main Store");
+  const [location, setLocation] = useState("");
+
+  // Fetch ALL sites (including inactive) so effect runs when activation status changes
+  const { data: allSites = [], isLoading: sitesLoading, isError: sitesError } = useQuery<Site[]>({
+    queryKey: ['/api/admin/sites'],
+  });
+
+  // Derive transaction eligibility from live sites - filter active downstream
+  const activeSites = allSites.filter(s => s.isActive);
+  const locationIsValid = location ? activeSites.some(s => s.name === location) : false;
+  const canTransact = activeSites.length > 0 && locationIsValid;
+
+  // Keep location in sync with active sites
+  useEffect(() => {
+    if (activeSites.length > 0) {
+      // If current location is not in the sites list, reset to first site
+      if (!locationIsValid) {
+        setLocation(activeSites[0].name);
+      }
+    } else {
+      // No active sites - clear location
+      setLocation("");
+    }
+  }, [allSites]);
+
+  // Immediately reset workflow when all sites deactivate
+  useEffect(() => {
+    if (activeSites.length === 0 && step !== "search") {
+      toast({
+        title: t('common.warning'),
+        description: t('barista.sitesDeactivated'),
+        variant: "destructive",
+      });
+      handleReset();
+    }
+  }, [activeSites.length, step]);
 
   // Search customers by phone number
   const { data: searchResults = [], isError, error } = useQuery<Customer[]>({
@@ -73,11 +108,30 @@ export default function BaristaApp() {
   });
 
   const handleSelectCustomer = (customer: Customer) => {
+    // Block if cannot transact
+    if (!canTransact) {
+      toast({
+        title: t('common.error'),
+        description: t('barista.noActiveSitesError'),
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedCustomer(customer);
     setStep("verify");
   };
 
   const handleVerifyConfirm = () => {
+    // Block if cannot transact
+    if (!canTransact) {
+      toast({
+        title: t('common.error'),
+        description: t('barista.noActiveSitesError'),
+        variant: "destructive",
+      });
+      handleReset();
+      return;
+    }
     setStep("enter-amount");
   };
 
@@ -95,11 +149,32 @@ export default function BaristaApp() {
       });
       return;
     }
+    // Block if cannot transact
+    if (!canTransact) {
+      toast({
+        title: t('common.error'),
+        description: t('barista.noActiveSitesError'),
+        variant: "destructive",
+      });
+      handleReset();
+      return;
+    }
     setStep("confirm");
   };
 
   const handleConfirm = () => {
     if (!selectedCustomer) return;
+    
+    // Critical: Block transaction if cannot transact (no active sites or invalid location)
+    if (!canTransact) {
+      toast({
+        title: t('common.error'),
+        description: t('barista.noActiveSitesError'),
+        variant: "destructive",
+      });
+      handleReset();
+      return;
+    }
     
     const amountNum = parseFloat(amount);
     const points = Math.floor(amountNum / 10);
@@ -165,16 +240,22 @@ export default function BaristaApp() {
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <select
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="bg-transparent border-b border-white/30 outline-none text-xs py-0.5"
-              data-testid="select-location"
-            >
-              <option value="Main Store" className="text-foreground">{t('barista.locations.main')}</option>
-              <option value="Night Bazaar" className="text-foreground">{t('barista.locations.bazaar')}</option>
-              <option value="Central Plaza Expo" className="text-foreground">{t('barista.locations.expo')}</option>
-            </select>
+            {activeSites.length > 0 ? (
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="bg-transparent border-b border-white/30 outline-none text-xs py-0.5"
+                data-testid="select-location"
+              >
+                {activeSites.map((site) => (
+                  <option key={site.id} value={site.name} className="text-foreground">
+                    {site.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs opacity-70">{t('barista.noActiveSites')}</span>
+            )}
             {step !== "search" && (
               <Button
                 onClick={handleCancel}
@@ -192,6 +273,24 @@ export default function BaristaApp() {
 
       {/* Main Content */}
       <main className="max-w-md mx-auto p-4">
+        {/* Sites Loading/Error States */}
+        {sitesLoading && (
+          <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
+            <p className="text-sm text-blue-800">{t('common.loading')}</p>
+          </Card>
+        )}
+        {sitesError && (
+          <Card className="p-4 mb-4 bg-red-50 border-red-200">
+            <p className="text-sm text-red-800">{t('barista.sitesLoadError')}</p>
+          </Card>
+        )}
+        {!sitesLoading && activeSites.length === 0 && (
+          <Card className="p-4 mb-4 bg-yellow-50 border-yellow-200">
+            <p className="text-sm text-yellow-800 font-semibold">{t('barista.noActiveSitesWarning')}</p>
+            <p className="text-xs text-yellow-700 mt-1">{t('barista.contactAdmin')}</p>
+          </Card>
+        )}
+
         {/* SEARCH STEP */}
         {step === "search" && (
           <div className="pt-8 space-y-6">
@@ -311,6 +410,7 @@ export default function BaristaApp() {
                   onClick={handleVerifyConfirm}
                   className="w-full"
                   size="lg"
+                  disabled={!canTransact}
                   data-testid="button-confirm-customer"
                 >
                   {t('barista.confirmCustomer')}
@@ -375,7 +475,7 @@ export default function BaristaApp() {
                   onClick={handleAmountSubmit}
                   className="w-full"
                   size="lg"
-                  disabled={!amount || parseFloat(amount) <= 0}
+                  disabled={!amount || parseFloat(amount) <= 0 || !canTransact}
                   data-testid="button-continue-amount"
                 >
                   {t('common.next')}
@@ -445,7 +545,7 @@ export default function BaristaApp() {
                   onClick={handleConfirm}
                   className="w-full"
                   size="lg"
-                  disabled={createTransaction.isPending}
+                  disabled={createTransaction.isPending || !canTransact}
                   data-testid="button-confirm-transaction"
                 >
                   {createTransaction.isPending ? t('barista.processing') : t('barista.confirmTransaction')}

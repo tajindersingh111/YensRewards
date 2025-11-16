@@ -172,6 +172,12 @@
       "bazaar": "Bazaar",
       "expo": "Expo"
     },
+    "noActiveSites": "No active sites",
+    "noActiveSitesError": "Cannot process transactions without an active site. Please contact your administrator.",
+    "noActiveSitesWarning": "No active sites available",
+    "contactAdmin": "Please contact your administrator to activate a site location.",
+    "sitesLoadError": "Failed to load site locations. Please refresh the page.",
+    "sitesDeactivated": "All sites have been deactivated. Transaction cancelled.",
     "findCustomer": "Find Customer",
     "searchByPhone": "Search by phone number",
     "enterPhone": "Enter phone number...",
