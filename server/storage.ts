@@ -40,6 +40,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
   updateUserDetails(id: string, details: { email?: string; firstName?: string; lastName?: string }): Promise<User | undefined>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   deleteUser(id: string): Promise<void>;
   
   // Password & 2FA methods
@@ -299,6 +300,15 @@ export class DbStorage implements IStorage {
     const result = await db
       .update(users)
       .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return result[0];

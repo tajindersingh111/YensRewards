@@ -362,7 +362,13 @@
       "twoFADisableFailed": "Failed to disable 2FA",
       "generating": "Generating...",
       "enabling": "Enabling...",
-      "disabling": "Disabling..."
+      "disabling": "Disabling...",
+      "enableUser": "Enable User",
+      "disableUser": "Disable User",
+      "userEnabled": "User enabled successfully",
+      "userDisabled": "User disabled successfully",
+      "active": "Active",
+      "inactive": "Inactive"
     },
     "toasts": {
       "authRequired": "Authentication Required",

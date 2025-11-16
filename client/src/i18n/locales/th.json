@@ -359,7 +359,13 @@
       "twoFADisableFailed": "ไม่สามารถปิด 2FA ได้",
       "generating": "กำลังสร้าง...",
       "enabling": "กำลังเปิดใช้งาน...",
-      "disabling": "กำลังปิด..."
+      "disabling": "กำลังปิด...",
+      "enableUser": "เปิดใช้งานผู้ใช้",
+      "disableUser": "ปิดใช้งานผู้ใช้",
+      "userEnabled": "เปิดใช้งานผู้ใช้สำเร็จ",
+      "userDisabled": "ปิดใช้งานผู้ใช้สำเร็จ",
+      "active": "ใช้งาน",
+      "inactive": "ไม่ใช้งาน"
     },
     "toasts": {
       "authRequired": "ต้องการการยืนยันตัวตน",

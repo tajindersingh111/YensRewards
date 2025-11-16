@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Trash2, Shield, Users, Pencil, Lock, ShieldCheck, ShieldOff } from "lucide-react";
+import { UserPlus, Trash2, Shield, Users, Pencil, Lock, ShieldCheck, ShieldOff, CheckCircle, XCircle } from "lucide-react";
 import { User } from "@shared/schema";
 import QRCodeSVG from "react-qr-code";
 
@@ -160,6 +160,25 @@ export default function UsersPage() {
     onError: (error: any) => {
       toast({
         title: t("admin.users.userDeleteFailed"),
+        description: error.message || t("admin.users.genericError"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      return await apiRequest("PATCH", `/api/admin/users/${id}/active`, { isActive });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: variables.isActive ? t("admin.users.userEnabled") : t("admin.users.userDisabled"),
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t("common.error"),
         description: error.message || t("admin.users.genericError"),
         variant: "destructive",
       });
@@ -552,6 +571,25 @@ export default function UsersPage() {
                               <>
                                 <ShieldCheck className="w-4 h-4 mr-1" />
                                 {t("admin.users.setup2FA")}
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant={user.isActive ? "destructive" : "outline"}
+                            size="sm"
+                            onClick={() => toggleActiveMutation.mutate({ id: user.id, isActive: !user.isActive })}
+                            disabled={toggleActiveMutation.isPending}
+                            data-testid={`button-toggle-active-${user.id}`}
+                          >
+                            {user.isActive ? (
+                              <>
+                                <XCircle className="w-4 h-4 mr-1" />
+                                {t("admin.users.disableUser")}
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                {t("admin.users.enableUser")}
                               </>
                             )}
                           </Button>
