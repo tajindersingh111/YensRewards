@@ -16,6 +16,8 @@ import EnhancedMessaging from "@/components/EnhancedMessaging";
 import UsersPage from "@/pages/admin/UsersPage";
 import YensOverview from "@/components/YensOverview";
 import SitesManager from "@/components/SitesManager";
+import { SchedulesManager } from "@/components/SchedulesManager";
+import { BaristaHubManager } from "@/components/BaristaHubManager";
 import InstallPrompt from "@/components/InstallPrompt";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -381,6 +383,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="messages" data-testid="tab-messages">{t('admin.tabs.messages')}</TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">{t('admin.tabs.users')}</TabsTrigger>
             <TabsTrigger value="sites" data-testid="tab-sites">{t('admin.tabs.sites')}</TabsTrigger>
+            <TabsTrigger value="schedules" data-testid="tab-schedules">{t('admin.tabs.schedules')}</TabsTrigger>
+            <TabsTrigger value="barista" data-testid="tab-barista">{t('admin.tabs.barista')}</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">{t('admin.tabs.settings')}</TabsTrigger>
           </TabsList>
 
@@ -842,6 +846,14 @@ export default function AdminDashboard() {
 
           <TabsContent value="sites" className="space-y-6">
             <SitesManager />
+          </TabsContent>
+
+          <TabsContent value="schedules" className="space-y-6">
+            <SchedulesManager />
+          </TabsContent>
+
+          <TabsContent value="barista" className="space-y-6">
+            <BaristaHubManager />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

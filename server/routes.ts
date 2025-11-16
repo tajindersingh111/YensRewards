@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, users } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, users } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
@@ -2319,6 +2319,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting announcements:", error);
       res.status(500).json({ message: "Failed to get announcements" });
+    }
+  });
+
+  // ============ Admin Work Schedule Routes ============
+  
+  // Get all work schedules
+  app.get('/api/admin/work-schedules', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const schedules = await storage.getAllWorkSchedules();
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error getting all schedules:", error);
+      res.status(500).json({ message: "Failed to get schedules" });
+    }
+  });
+
+  // Get work schedule by ID
+  app.get('/api/admin/work-schedules/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const schedule = await storage.getWorkSchedule(req.params.id);
+      if (!schedule) {
+        return res.status(404).json({ message: "Schedule not found" });
+      }
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error getting schedule:", error);
+      res.status(500).json({ message: "Failed to get schedule" });
+    }
+  });
+
+  // Create work schedule
+  app.post('/api/admin/work-schedules', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validated = insertWorkScheduleSchema.parse(req.body);
+      const newSchedule = await storage.createWorkSchedule(validated);
+      res.json(newSchedule);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error("Error creating schedule:", error);
+      res.status(500).json({ message: "Failed to create schedule" });
+    }
+  });
+
+  // Update work schedule
+  app.patch('/api/admin/work-schedules/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const updates = insertWorkScheduleSchema.partial().parse(req.body);
+      const updated = await storage.updateWorkSchedule(req.params.id, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "Schedule not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error("Error updating schedule:", error);
+      res.status(500).json({ message: "Failed to update schedule" });
+    }
+  });
+
+  // Delete work schedule
+  app.delete('/api/admin/work-schedules/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteWorkSchedule(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting schedule:", error);
+      res.status(500).json({ message: "Failed to delete schedule" });
+    }
+  });
+
+  // ============ Admin Barista Announcements Routes ============
+  
+  // Get all barista announcements (including inactive)
+  app.get('/api/admin/barista-announcements', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const announcements = await storage.getAllAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      console.error("Error getting all announcements:", error);
+      res.status(500).json({ message: "Failed to get announcements" });
+    }
+  });
+
+  // Get barista announcement by ID
+  app.get('/api/admin/barista-announcements/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const announcement = await storage.getAnnouncement(req.params.id);
+      if (!announcement) {
+        return res.status(404).json({ message: "Announcement not found" });
+      }
+      res.json(announcement);
+    } catch (error) {
+      console.error("Error getting announcement:", error);
+      res.status(500).json({ message: "Failed to get announcement" });
+    }
+  });
+
+  // Create barista announcement
+  app.post('/api/admin/barista-announcements', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validated = insertBaristaAnnouncementSchema.parse(req.body);
+      const newAnnouncement = await storage.createAnnouncement(validated);
+      res.json(newAnnouncement);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error("Error creating announcement:", error);
+      res.status(500).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  // Update barista announcement
+  app.patch('/api/admin/barista-announcements/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const updates = insertBaristaAnnouncementSchema.partial().parse(req.body);
+      const updated = await storage.updateAnnouncement(req.params.id, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "Announcement not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error("Error updating announcement:", error);
+      res.status(500).json({ message: "Failed to update announcement" });
+    }
+  });
+
+  // Delete barista announcement
+  app.delete('/api/admin/barista-announcements/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteAnnouncement(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
+      res.status(500).json({ message: "Failed to delete announcement" });
     }
   });
 

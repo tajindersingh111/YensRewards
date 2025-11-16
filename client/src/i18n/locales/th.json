@@ -236,6 +236,8 @@
       "messages": "ข้อความ",
       "users": "ผู้ใช้งาน",
       "sites": "สาขา",
+      "schedules": "ตารางงาน",
+      "barista": "บาริสต้า",
       "settings": "ตั้งค่า"
     },
     "overview": {
@@ -498,6 +500,47 @@
         "friday": "ศ.",
         "saturday": "ส.",
         "sunday": "อา."
+      }
+    },
+    "schedules": {
+      "title": "ตารางการทำงาน",
+      "subtitle": "จัดการตารางการทำงานของบาริสต้า",
+      "addSchedule": "เพิ่มตาราง",
+      "editSchedule": "แก้ไขตาราง",
+      "barista": "บาริสต้า",
+      "site": "สาขา",
+      "date": "วันที่",
+      "startTime": "เวลาเริ่ม",
+      "endTime": "เวลาจบ",
+      "notes": "หมายเหตุ",
+      "noSchedules": "ยังไม่มีตารางงาน",
+      "created": "สร้างตารางสำเร็จ",
+      "updated": "อัปเดตตารางสำเร็จ",
+      "deleted": "ลบตารางสำเร็จ",
+      "error": "จัดการตารางไม่สำเร็จ"
+    },
+    "barista": {
+      "title": "ศูนย์บาริสต้า",
+      "subtitle": "จัดการประกาศและโปรโมชั่นสำหรับบาริสต้า",
+      "addAnnouncement": "เพิ่มประกาศ",
+      "editAnnouncement": "แก้ไขประกาศ",
+      "announcementTitle": "หัวข้อ",
+      "content": "เนื้อหา",
+      "type": "ประเภท",
+      "priority": "ลำดับความสำคัญ",
+      "expiryDate": "วันหมดอายุ",
+      "inactive": "ไม่ใช้งาน",
+      "expires": "หมดอายุ",
+      "noAnnouncements": "ยังไม่มีประกาศ",
+      "created": "สร้างประกาศสำเร็จ",
+      "updated": "อัปเดตประกาศสำเร็จ",
+      "deleted": "ลบประกาศสำเร็จ",
+      "error": "จัดการประกาศไม่สำเร็จ",
+      "types": {
+        "general": "ทั่วไป",
+        "promotion": "โปรโมชั่น",
+        "incentive": "แรงจูงใจ",
+        "policy": "นโยบาย"
       }
     },
     "customers": {

@@ -236,6 +236,8 @@
       "messages": "Messages",
       "users": "Users",
       "sites": "Sites",
+      "schedules": "Schedules",
+      "barista": "Barista Hub",
       "settings": "Settings"
     },
     "settings": {
@@ -501,6 +503,47 @@
         "friday": "Fri",
         "saturday": "Sat",
         "sunday": "Sun"
+      }
+    },
+    "schedules": {
+      "title": "Work Schedules",
+      "subtitle": "Manage barista work schedules",
+      "addSchedule": "Add Schedule",
+      "editSchedule": "Edit Schedule",
+      "barista": "Barista",
+      "site": "Site",
+      "date": "Date",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "notes": "Notes",
+      "noSchedules": "No schedules yet",
+      "created": "Schedule created successfully",
+      "updated": "Schedule updated successfully",
+      "deleted": "Schedule deleted successfully",
+      "error": "Failed to manage schedule"
+    },
+    "barista": {
+      "title": "Barista Hub",
+      "subtitle": "Manage barista announcements and promotions",
+      "addAnnouncement": "Add Announcement",
+      "editAnnouncement": "Edit Announcement",
+      "announcementTitle": "Title",
+      "content": "Content",
+      "type": "Type",
+      "priority": "Priority",
+      "expiryDate": "Expiry Date",
+      "inactive": "Inactive",
+      "expires": "Expires",
+      "noAnnouncements": "No announcements yet",
+      "created": "Announcement created successfully",
+      "updated": "Announcement updated successfully",
+      "deleted": "Announcement deleted successfully",
+      "error": "Failed to manage announcement",
+      "types": {
+        "general": "General",
+        "promotion": "Promotion",
+        "incentive": "Incentive",
+        "policy": "Policy"
       }
     },
     "customers": {
