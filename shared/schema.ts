@@ -26,6 +26,7 @@ export const users = pgTable("users", {
   password: varchar("password"), // bcrypt hashed password (nullable - optional auth method)
   twoFactorSecret: varchar("two_factor_secret"), // TOTP secret for 2FA (nullable)
   twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true), // Admin can disable access remotely
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -149,6 +150,45 @@ export const sites = pgTable("sites", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Time Entries table - tracks barista clock in/out times
+export const timeEntries = pgTable("time_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id), // Barista who clocked in
+  siteId: varchar("site_id").notNull().references(() => sites.id), // Location where they're working
+  date: text("date").notNull(), // YYYY-MM-DD format
+  clockInTime: timestamp("clock_in_time").notNull(), // When they clocked in
+  clockOutTime: timestamp("clock_out_time"), // When they clocked out (null if still clocked in)
+  notes: text("notes"), // Optional notes
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Work Schedules table - barista work schedules
+export const workSchedules = pgTable("work_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id), // Barista assigned to shift
+  siteId: varchar("site_id").notNull().references(() => sites.id), // Location of shift
+  scheduledDate: text("scheduled_date").notNull(), // YYYY-MM-DD format
+  startTime: text("start_time").notNull(), // HH:MM format (e.g., "09:00")
+  endTime: text("end_time").notNull(), // HH:MM format (e.g., "17:00")
+  notes: text("notes"), // Optional shift notes
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Barista Announcements table - promotions and notices for baristas
+export const baristaAnnouncements = pgTable("barista_announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(), // Announcement title
+  content: text("content").notNull(), // Announcement body
+  type: text("type").notNull().default("general"), // general, promotion, incentive, policy
+  isActive: boolean("is_active").notNull().default(true), // Show/hide announcement
+  priority: integer("priority").notNull().default(0), // Higher priority shows first
+  expiresAt: timestamp("expires_at"), // Optional expiry date
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -226,6 +266,24 @@ export const insertSiteSchema = createInsertSchema(sites).omit({
   updatedAt: true,
 });
 
+export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkScheduleSchema = createInsertSchema(workSchedules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBaristaAnnouncementSchema = createInsertSchema(baristaAnnouncements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -254,3 +312,12 @@ export type InsertMessageLog = z.infer<typeof insertMessageLogSchema>;
 
 export type Site = typeof sites.$inferSelect;
 export type InsertSite = z.infer<typeof insertSiteSchema>;
+
+export type TimeEntry = typeof timeEntries.$inferSelect;
+export type InsertTimeEntry = z.infer<typeof insertTimeEntrySchema>;
+
+export type WorkSchedule = typeof workSchedules.$inferSelect;
+export type InsertWorkSchedule = z.infer<typeof insertWorkScheduleSchema>;
+
+export type BaristaAnnouncement = typeof baristaAnnouncements.$inferSelect;
+export type InsertBaristaAnnouncement = z.infer<typeof insertBaristaAnnouncementSchema>;
