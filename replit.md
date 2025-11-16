@@ -1,7 +1,13 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.7.0
-**Latest Updates (v2.7.0):**
+## Current Version: v2.7.1
+**Latest Updates (v2.7.1):**
+- Dashboard tab renamed to **Customer Dashboard** for clarity
+- Yellow borders added around Top 10 Spenders and Upcoming Birthdays sections
+- Enhanced visual identity with Yens brand color (#FCD34D)
+- Full bilingual support (Thai/English) for tab label changes
+
+**Previous Version (v2.7.0):**
 - New **Sites Management** system for tracking physical locations (stalls/mobile vans)
 - Site CRUD operations with operating schedules (days and hours)
 - Support for fixed stalls and mobile vans with location tracking
