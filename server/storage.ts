@@ -172,6 +172,7 @@ export interface IStorage {
   
   // Time Entry methods (clock in/out)
   getCurrentTimeEntry(userId: string): Promise<TimeEntry | undefined>;
+  getTimeEntry(id: string): Promise<TimeEntry | undefined>;
   clockIn(userId: string, siteId: string, date: string): Promise<TimeEntry>;
   clockOut(timeEntryId: string): Promise<TimeEntry | undefined>;
   getTimeEntries(userId: string, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
@@ -1249,6 +1250,15 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async getTimeEntry(id: string): Promise<TimeEntry | undefined> {
+    const result = await db
+      .select()
+      .from(timeEntries)
+      .where(eq(timeEntries.id, id))
+      .limit(1);
+    return result[0];
+  }
+
   async clockIn(userId: string, siteId: string, date: string): Promise<TimeEntry> {
     // Check if user already has an active (un-clocked-out) entry
     const existingEntry = await this.getCurrentTimeEntry(userId);
@@ -1278,6 +1288,21 @@ export class DbStorage implements IStorage {
   }
 
   async clockOut(timeEntryId: string): Promise<TimeEntry | undefined> {
+    // First get the time entry to validate
+    const existing = await db
+      .select()
+      .from(timeEntries)
+      .where(eq(timeEntries.id, timeEntryId))
+      .limit(1);
+    
+    if (!existing[0]) {
+      throw new Error("Time entry not found");
+    }
+
+    if (existing[0].clockOutTime) {
+      throw new Error("Already clocked out");
+    }
+
     const result = await db
       .update(timeEntries)
       .set({

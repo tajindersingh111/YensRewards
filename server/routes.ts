@@ -2182,6 +2182,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Barista Time Tracking Routes ============
+  
+  // Get current user's active time entry (currently clocked in)
+  app.get('/api/barista/time-entry/current', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const entry = await storage.getCurrentTimeEntry(userId);
+      res.json(entry || null);
+    } catch (error) {
+      console.error("Error getting current time entry:", error);
+      res.status(500).json({ message: "Failed to get current time entry" });
+    }
+  });
+
+  // Clock in
+  app.post('/api/barista/clock-in', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { siteId, date } = req.body;
+      if (!siteId || !date) {
+        return res.status(400).json({ message: "Site ID and date are required" });
+      }
+
+      const entry = await storage.clockIn(userId, siteId, date);
+      console.log(`✅ User ${userId} clocked in at site ${siteId}`);
+      res.status(201).json(entry);
+    } catch (error: any) {
+      console.error("Error clocking in:", error);
+      // Return 400 for validation errors (already clocked in, invalid site, etc.)
+      if (error.message?.includes("already clocked in") || 
+          error.message?.includes("Invalid site") || 
+          error.message?.includes("inactive site")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to clock in" });
+    }
+  });
+
+  // Clock out
+  app.post('/api/barista/clock-out/:timeEntryId', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // First, verify ownership BEFORE mutating the record
+      const existingEntry = await storage.getTimeEntry(req.params.timeEntryId);
+      if (!existingEntry) {
+        return res.status(404).json({ message: "Time entry not found" });
+      }
+
+      if (existingEntry.userId !== userId) {
+        console.log(`❌ User ${userId} attempted to clock out another user's entry ${req.params.timeEntryId}`);
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Now safe to clock out
+      const entry = await storage.clockOut(req.params.timeEntryId);
+
+      console.log(`✅ User ${userId} clocked out from time entry ${req.params.timeEntryId}`);
+      res.json(entry);
+    } catch (error: any) {
+      console.error("Error clocking out:", error);
+      // Return 400 for validation errors
+      if (error.message?.includes("not found")) {
+        return res.status(404).json({ message: error.message });
+      }
+      if (error.message?.includes("Already clocked out")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to clock out" });
+    }
+  });
+
+  // Get time entries for current user
+  app.get('/api/barista/time-entries', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { startDate, endDate } = req.query;
+      const entries = await storage.getTimeEntries(
+        userId,
+        startDate as string | undefined,
+        endDate as string | undefined
+      );
+      res.json(entries);
+    } catch (error) {
+      console.error("Error getting time entries:", error);
+      res.status(500).json({ message: "Failed to get time entries" });
+    }
+  });
+
+  // ============ Barista Work Schedule Routes ============
+  
+  // Get work schedules for current user
+  app.get('/api/barista/schedules', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { startDate, endDate } = req.query;
+      const schedules = await storage.getUserWorkSchedules(
+        userId,
+        startDate as string | undefined,
+        endDate as string | undefined
+      );
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error getting schedules:", error);
+      res.status(500).json({ message: "Failed to get schedules" });
+    }
+  });
+
+  // ============ Barista Announcements Routes ============
+  
+  // Get active barista announcements
+  app.get('/api/barista/announcements', isAuthenticated, async (req, res) => {
+    try {
+      const announcements = await storage.getActiveAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      console.error("Error getting announcements:", error);
+      res.status(500).json({ message: "Failed to get announcements" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
