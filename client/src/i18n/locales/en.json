@@ -28,7 +28,7 @@
     "info": "Information",
     "new": "NEW",
     "admin": "Admin",
-    "version": "v2.7.2"
+    "version": "v2.7.3"
   },
   "home": {
     "title": "Yen's Loyalty System",
@@ -325,6 +325,7 @@
       "today": "Today",
       "tomorrow": "Tomorrow",
       "thisWeek": "This Week",
+      "currentWeek": "Current Week",
       "thisMonth": "This Month",
       "sendAll": "Send All",
       "sendToGroup": "Send to Group",

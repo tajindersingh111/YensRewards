@@ -1,7 +1,14 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.7.2
-**Latest Updates (v2.7.2):**
+## Current Version: v2.7.3
+**Latest Updates (v2.7.3):**
+- Split **Upcoming Birthdays** into two sections: "Current Week" and "This Month"
+- Applied **thicker border (4px)** to Current Week section for visual emphasis
+- Applied standard border (2px) to This Month section
+- Each section has independent "Send All" button and customer count badge
+- Full bilingual support (Thai/English) for new section headings
+
+**Previous Version (v2.7.2):**
 - Restored **customer count badge** in Customers tab showing total number of customers
 - Removed non-functional **Tag column** from Customers table for cleaner layout
 - Improved table readability with 7 essential columns

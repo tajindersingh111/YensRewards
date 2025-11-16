@@ -312,7 +312,7 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground">{t('admin.title')}</h1>
-                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.7.2</Badge>
+                <Badge variant="outline" className="text-xs" data-testid="badge-version">v2.7.3</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {t('admin.overview.loggedInAs')} {user?.email || user?.firstName || t('common.admin')}
@@ -527,18 +527,33 @@ export default function AdminDashboard() {
                 }
               });
 
-              // Create birthday groups
-              const birthdayGroups = [
-                { key: 'today', label: t('admin.overview.today'), dateLabel: today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: todayBirthdays },
-                { key: 'tomorrow', label: t('admin.overview.tomorrow'), dateLabel: tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), customers: tomorrowBirthdays },
-                { key: 'this-week', label: t('admin.overview.thisWeek'), dateLabel: `${dayAfterTomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisWeekBirthdays },
-                { key: 'this-month', label: t('admin.overview.thisMonth'), dateLabel: `${new Date(endOfWeek.getTime() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, customers: thisMonthBirthdays },
+              // Split into Current Week and This Month sections
+              const currentWeekGroups = [
+                { key: 'today', label: t('admin.overview.today'), customers: todayBirthdays },
+                { key: 'tomorrow', label: t('admin.overview.tomorrow'), customers: tomorrowBirthdays },
+                { key: 'this-week', label: t('admin.overview.thisWeek'), customers: thisWeekBirthdays },
               ].filter(group => group.customers.length > 0);
 
-              if (birthdayGroups.length === 0) return null;
+              const thisMonthGroup = thisMonthBirthdays.length > 0 ? {
+                key: 'this-month',
+                label: t('admin.overview.thisMonth'),
+                customers: thisMonthBirthdays
+              } : null;
 
-              // Get all customer IDs
-              const allBirthdayCustomerIds = birthdayGroups.flatMap(group => group.customers.map(c => c.id));
+              if (currentWeekGroups.length === 0 && !thisMonthGroup) return null;
+
+              // Flatten Current Week customers
+              const currentWeekCustomers = currentWeekGroups.flatMap(({ label, customers }) =>
+                customers.map(customer => ({ ...customer, timePeriod: label }))
+              );
+
+              // Prepare This Month customers
+              const thisMonthCustomers = thisMonthGroup 
+                ? thisMonthGroup.customers.map(customer => ({ ...customer, timePeriod: thisMonthGroup.label }))
+                : [];
+
+              // Get all customer IDs for "Send All" button
+              const allBirthdayCustomerIds = [...currentWeekCustomers, ...thisMonthCustomers].map(c => c.id);
 
               // Handlers for sending messages
               const handleSendAll = () => {
@@ -553,72 +568,102 @@ export default function AdminDashboard() {
                 }
               };
 
-              // Flatten all birthday customers and add their time period label
-              const allBirthdayCustomers = birthdayGroups.flatMap(({ label, customers }) =>
-                customers.map(customer => ({ ...customer, timePeriod: label }))
-              );
+              // Helper function to render customer avatars
+              const renderCustomerAvatars = (customers: Array<typeof currentWeekCustomers[0]>) => {
+                const rows: Array<Array<typeof customers[0]>> = [];
+                for (let i = 0; i < customers.length; i += 10) {
+                  rows.push(customers.slice(i, i + 10));
+                }
 
-              // Split into rows of 10
-              const birthdayRows: Array<Array<typeof allBirthdayCustomers[0]>> = [];
-              for (let i = 0; i < allBirthdayCustomers.length; i += 10) {
-                birthdayRows.push(allBirthdayCustomers.slice(i, i + 10));
-              }
+                return rows.map((row, rowIndex) => (
+                  <div key={rowIndex} className="overflow-x-auto pb-2">
+                    <div className="flex gap-4 min-w-max">
+                      {row.map((customer) => (
+                        <div 
+                          key={customer.id}
+                          className="flex flex-col items-center gap-2 w-24"
+                          data-testid={`birthday-customer-${customer.id}`}
+                        >
+                          <div className="relative w-16 h-16">
+                            <Avatar className="w-16 h-16 border-2 border-yellow-500">
+                              <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
+                              <AvatarFallback className="bg-yellow-100 text-yellow-700 font-semibold">
+                                {customer.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {customer.photo && (
+                              <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
+                            )}
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+                              <Cake className="w-5 h-5 text-yellow-500 drop-shadow-md" />
+                            </div>
+                          </div>
+                          <p className="text-xs font-medium text-center line-clamp-1">
+                            {customer.name}
+                          </p>
+                          <Badge variant="outline" className="text-xs">
+                            {customer.timePeriod}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              };
 
               return (
-                <div className="bg-card rounded-lg border-2 border-[#FCD34D] p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Cake className="w-5 h-5 text-yellow-500" />
-                      <h3 className="font-semibold text-lg">{t('admin.overview.upcomingBirthdays')}</h3>
-                      <Badge variant="secondary">{allBirthdayCustomers.length}</Badge>
-                    </div>
-                    <Button 
-                      onClick={handleSendAll}
-                      disabled={sendBirthdayMessagesMutation.isPending}
-                      size="sm"
-                      data-testid="button-send-all-birthday-messages"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      {sendBirthdayMessagesMutation.isPending ? t('admin.overview.sendingMessages') : t('admin.overview.sendAll')}
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    {birthdayRows.map((row, rowIndex) => (
-                      <div key={rowIndex} className="overflow-x-auto pb-2">
-                        <div className="flex gap-4 min-w-max">
-                          {row.map((customer) => (
-                            <div 
-                              key={customer.id}
-                              className="flex flex-col items-center gap-2 w-24"
-                              data-testid={`birthday-customer-${customer.id}`}
-                            >
-                              <div className="relative w-16 h-16">
-                                <Avatar className="w-16 h-16 border-2 border-yellow-500">
-                                  <AvatarImage src={customer.photo} className="mix-blend-luminosity" />
-                                  <AvatarFallback className="bg-yellow-100 text-yellow-700 font-semibold">
-                                    {customer.name.slice(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {customer.photo && (
-                                  <div className="absolute inset-0 bg-[#FCD34D] opacity-40 rounded-full pointer-events-none mix-blend-multiply"></div>
-                                )}
-                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-                                  <Cake className="w-5 h-5 text-yellow-500 drop-shadow-md" />
-                                </div>
-                              </div>
-                              <p className="text-xs font-medium text-center line-clamp-1">
-                                {customer.name}
-                              </p>
-                              <Badge variant="outline" className="text-xs">
-                                {customer.timePeriod}
-                              </Badge>
-                            </div>
-                          ))}
+                <div className="space-y-4">
+                  {/* Current Week Section - Thicker Border */}
+                  {currentWeekCustomers.length > 0 && (
+                    <div className="bg-card rounded-lg border-4 border-[#FCD34D] p-6" data-testid="section-current-week-birthdays">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <Cake className="w-5 h-5 text-yellow-500" />
+                          <h3 className="font-semibold text-lg">{t('admin.overview.currentWeek')}</h3>
+                          <Badge variant="secondary">{currentWeekCustomers.length}</Badge>
                         </div>
+                        <Button 
+                          onClick={() => handleSendGroup(currentWeekCustomers.map(c => c.id))}
+                          disabled={sendBirthdayMessagesMutation.isPending}
+                          size="sm"
+                          data-testid="button-send-current-week-messages"
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          {sendBirthdayMessagesMutation.isPending ? t('admin.overview.sendingMessages') : t('admin.overview.sendAll')}
+                        </Button>
                       </div>
-                    ))}
-                  </div>
+                      
+                      <div className="space-y-6">
+                        {renderCustomerAvatars(currentWeekCustomers)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* This Month Section - Standard Border */}
+                  {thisMonthCustomers.length > 0 && (
+                    <div className="bg-card rounded-lg border-2 border-[#FCD34D] p-6" data-testid="section-this-month-birthdays">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <Cake className="w-5 h-5 text-yellow-500" />
+                          <h3 className="font-semibold text-lg">{t('admin.overview.thisMonth')}</h3>
+                          <Badge variant="secondary">{thisMonthCustomers.length}</Badge>
+                        </div>
+                        <Button 
+                          onClick={() => handleSendGroup(thisMonthCustomers.map(c => c.id))}
+                          disabled={sendBirthdayMessagesMutation.isPending}
+                          size="sm"
+                          data-testid="button-send-this-month-messages"
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          {sendBirthdayMessagesMutation.isPending ? t('admin.overview.sendingMessages') : t('admin.overview.sendAll')}
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-6">
+                        {renderCustomerAvatars(thisMonthCustomers)}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
