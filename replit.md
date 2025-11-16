@@ -1,7 +1,7 @@
 # Yens Thai Ice Cream Loyalty System
 
 ## Current Version: v2.9.1 (Complete)
-**Latest Updates (v2.9.1) - Sites Predefined Locations:**
+**Latest Updates (v2.9.1) - Sites Predefined Locations & Barista Integration:**
 - Enhanced **Sites Management** with predefined location dropdown
 - Three predefined locations: "Yens Head Office", "River", "Market"
 - "Custom Location" option allows entering any custom address
@@ -9,6 +9,14 @@
 - Smart location detection when editing existing sites
 - Full bilingual support (Thai/English) for custom location option
 - Improves data consistency and speeds up site creation workflow
+- **Barista-Sites Integration**: Barista app dynamically fetches and displays active sites from Sites API for transaction processing
+- **Transaction Safety**: Comprehensive guards prevent transactions without valid active sites, including race condition protection when sites are deactivated mid-flow
+- **Auto-reset mechanism**: Workflow automatically resets when all sites are deactivated
+- **Disabled UI controls**: All transaction buttons disabled when no active sites exist
+- **Validation across all steps**: Active site validation in all transaction handlers (select, verify, amount, confirm)
+- **Reactive state**: Queries all sites and filters active ones client-side to maintain reactivity when activation status changes
+- **8 new translation keys**: English and Thai translations for sites integration warnings and messages
+- **Architect-reviewed**: All safety mechanisms passed architect review for production readiness
 
 **Previous Version (v2.9.0) - Password & 2FA System:**
 - Implemented complete **password authentication** and **Two-Factor Authentication (2FA)** system for all admin users
