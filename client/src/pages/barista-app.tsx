@@ -31,11 +31,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const response: any = await apiRequest({
-        method: "POST",
-        url: "/api/auth/login",
-        data: { email, password },
-      });
+      const response: any = await apiRequest("POST", "/api/auth/login", { email, password });
       return response as { 
         success: boolean; 
         requires2FA: boolean; 
@@ -81,11 +77,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
 
   const verify2FAMutation = useMutation({
     mutationFn: async ({ userId, token }: { userId: string; token: string }) => {
-      const response: any = await apiRequest({
-        method: "POST",
-        url: "/api/auth/login-2fa",
-        data: { userId, token },
-      });
+      const response: any = await apiRequest("POST", "/api/auth/login-2fa", { userId, token });
       return response as { 
         success: boolean; 
         user?: User;

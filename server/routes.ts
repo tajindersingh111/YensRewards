@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, users } from "@shared/schema";
+import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
@@ -2446,11 +2447,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create barista announcement
   app.post('/api/admin/barista-announcements', isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log("Creating announcement with data:", JSON.stringify(req.body, null, 2));
       const validated = insertBaristaAnnouncementSchema.parse(req.body);
       const newAnnouncement = await storage.createAnnouncement(validated);
       res.json(newAnnouncement);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ message: "Invalid request data", errors: error.errors });
       }
       console.error("Error creating announcement:", error);

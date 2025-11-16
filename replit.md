@@ -1,126 +1,7 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.9.1 (Complete)
-**Latest Updates (v2.9.1) - Sites Predefined Locations & Barista Integration:**
-- Enhanced **Sites Management** with predefined location dropdown
-- Three predefined locations: "Yens Head Office", "River", "Market"
-- "Custom Location" option allows entering any custom address
-- Dropdown auto-populates location field for predefined options
-- Smart location detection when editing existing sites
-- Full bilingual support (Thai/English) for custom location option
-- Improves data consistency and speeds up site creation workflow
-- **Barista-Sites Integration**: Barista app dynamically fetches and displays active sites from Sites API for transaction processing
-- **Transaction Safety**: Comprehensive guards prevent transactions without valid active sites, including race condition protection when sites are deactivated mid-flow
-- **Auto-reset mechanism**: Workflow automatically resets when all sites are deactivated
-- **Disabled UI controls**: All transaction buttons disabled when no active sites exist
-- **Validation across all steps**: Active site validation in all transaction handlers (select, verify, amount, confirm)
-- **Reactive state**: Queries all sites and filters active ones client-side to maintain reactivity when activation status changes
-- **8 new translation keys**: English and Thai translations for sites integration warnings and messages
-- **Architect-reviewed**: All safety mechanisms passed architect review for production readiness
-
-**Previous Version (v2.9.0) - Password & 2FA System:**
-- Implemented complete **password authentication** and **Two-Factor Authentication (2FA)** system for all admin users
-- Works seamlessly alongside existing Replit Auth
-- Database schema: `password` (bcrypt hashed), `two_factor_secret`, `two_factor_enabled` (snake_case columns)
-- Backend security: bcrypt (10 salt rounds), otpauth for TOTP, sanitized API responses (no password/secret leaks)
-- Frontend UI complete with full bilingual support (Thai/English):
-  * SetPasswordDialog with real-time password strength indicator (weak/medium/strong)
-  * Real-time validation: password mismatch detection, minimum length enforcement (8 chars)
-  * Visual feedback: red border and error message for mismatched passwords
-  * Submit button disabled until all validations pass
-  * Setup2FADialog with QR code generation using react-qr-code library
-  * Two-step flow: Generate QR → Scan with authenticator app → Verify 6-digit code
-  * Enable/disable 2FA with proper confirmation dialogs
-  * 44 new translation keys covering all password and 2FA UI elements
-- New action buttons in Users table: "Set Password", "Setup 2FA", "Disable 2FA"
-- API endpoints: password setup, 2FA setup/enable/disable, password-based login with optional 2FA
-- Architect-reviewed and approved frontend implementation
-- Enhanced security: password hashes and 2FA secrets never exposed to frontend
-
-**Previous Version (v2.8.0):**
-- Added **server-side pagination** to Customers tab for efficient navigation through large customer lists
-- Page size options: 50 or 100 customers per page
-- Real-time search with debounced filtering (300ms) across name, phone, and email
-- Pagination controls at top and bottom of table with page indicators and navigation buttons
-- Full bilingual support (Thai/English) for all pagination UI elements
-- Automatic page reset when search query or page size changes
-- Performance optimized with parallel data/count queries
-
-**Previous Version (v2.7.4):**
-- Added **action buttons** to Customer Dashboard avatars (View, Edit, Message, Delete)
-- Action buttons appear on hover for Top 10 Spenders
-- Action buttons appear on hover for Current Week and This Month birthday customers
-- Buttons trigger same dialogs as Customers tab for consistent experience
-- Includes customer details view, edit, messaging, and delete confirmation
-
-**Previous Version (v2.7.3):**
-- Split **Upcoming Birthdays** into two sections: "Current Week" and "This Month"
-- Applied **thicker border (4px)** to Current Week section for visual emphasis
-- Applied standard border (2px) to This Month section
-- Each section has independent "Send All" button and customer count badge
-- Full bilingual support (Thai/English) for new section headings
-
-**Previous Version (v2.7.2):**
-- Restored **customer count badge** in Customers tab showing total number of customers
-- Removed non-functional **Tag column** from Customers table for cleaner layout
-- Improved table readability with 7 essential columns
-
-**Previous Version (v2.7.1):**
-- Dashboard tab renamed to **Customer Dashboard** for clarity
-- Yellow borders added around Top 10 Spenders and Upcoming Birthdays sections
-- Enhanced visual identity with Yens brand color (#FCD34D)
-- Full bilingual support (Thai/English) for tab label changes
-
-**Previous Version (v2.7.0):**
-- New **Sites Management** system for tracking physical locations (stalls/mobile vans)
-- Site CRUD operations with operating schedules (days and hours)
-- Support for fixed stalls and mobile vans with location tracking
-- Active/inactive site status management
-- Dedicated Sites tab in admin dashboard
-- Restored **Dashboard tab** with Top 10 Spenders and Upcoming Birthdays sections
-- Birthday categorization by time periods (today, tomorrow, this week, this month)
-- Send birthday messages functionality with batch sending support
-- Full bilingual support (Thai/English) for all features
-- End-to-end tested with successful operations
-
-**Previous Version (v2.6.0):**
-- New **Yens Overview** tab as first admin dashboard tab
-- Weekly business health dashboard with key metrics (revenue, transactions, customers, loyalty)
-- Visual trend charts for daily revenue and transaction volume
-- Best day of the week highlight
-- Week-over-week performance comparison with change indicators
-- Full bilingual support (Thai/English) with locale-aware date formatting
-
-**Previous Version (v2.5.1):**
-- Enhanced customer selection in Send Message form to display email addresses
-- Email addresses now prominently shown when Email channel is selected
-- Improved UX for verifying recipient contact information before sending
-
-**⚠️ Known Issue - Email Delivery:**
-- Resend API configured but emails not being delivered (messageId returns undefined)
-- Pending migration to SendGrid for more reliable email delivery
-- To set up SendGrid later: Will need SendGrid API key and verified sender email address
-- Current workaround: SMS messaging via Twilio works reliably; in-app notifications functional
-
-**Previous Version (v2.5.0):**
-- Major Messages tab reorganization with Send/History/Templates sub-tabs
-- New Send Message feature for custom messages to all customers, by tier, or individual selection
-- Multi-channel support (SMS/Email/App) with unified sending interface
-- Message Templates moved from Settings to Messages tab for better workflow
-- Compact tab layout with improved navigation
-
-**Previous Version (v2.4.0):**
-- Added message content search functionality in Messages tab
-- Added "App" channel filter for in-app notifications (alongside SMS and Email)
-- Enhanced message filtering capabilities
-
-**Version (v2.3.0):**
-- User management system with edit details functionality
-- Email validation and normalization (case-insensitive duplicate detection)
-- Full bilingual UI for user management
-
 ## Overview
-A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty and business efficiency.
+A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, and a comprehensive admin dashboard with business health metrics and reporting. Recent additions include a Barista App with clock in/out, work schedules, and announcements, alongside enhanced security features like password authentication and 2FA for admin users.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -132,6 +13,7 @@ Preferred communication style: Simple, everyday language.
 - **Responsiveness:** True mobile-first design, iPhone safe-area padding, 44px minimum touch targets, light mode only.
 - **Component Library:** Shadcn UI built on Radix UI primitives.
 - **PWAs:** Dedicated PWA manifests and installation flows for Customer, Barista, and Admin apps.
+- **Brand Consistency:** Yens yellow (#FCD34D) color scheme.
 
 ### Technical Implementations
 - **Frontend:** React 18 with TypeScript, Vite, Wouter for routing, TanStack Query for server state management. Atomic design pattern.
@@ -140,25 +22,25 @@ Preferred communication style: Simple, everyday language.
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
 - **Authentication & Authorization:** Dual authentication system - Replit Auth (OpenID Connect) and password-based authentication with optional 2FA. Session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation in test mode. Password hashing via bcrypt (10 salt rounds), TOTP-based 2FA via otpauth.
-- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields for enhanced security.
-- **User Management:** Admin-only user account management (CRUD), three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation, password management, and 2FA setup/management.
-- **Messaging System:** Twilio for SMS, Resend for email, multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
-- **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All admin features fully internationalized including user management, customer management, product management, messaging, and promotions.
+- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites`, `clock_sessions`, `work_schedules`, `barista_announcements` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields.
+- **User Management:** Admin-only user account management (CRUD) with enable/disable functionality, three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation, password management, and 2FA setup/management.
+- **Messaging System:** Twilio for SMS, Resend for email (pending SendGrid migration), multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
+- **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All features fully internationalized.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, image storage.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete with date filters, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only), sites management (physical location tracking with operating schedules for current operations and future franchise oversight).
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking, server-side pagination), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only), sites management (physical location tracking with operating schedules, predefined locations, and mobile van support), Barista App functionalities (Clock In/Out, Work Schedules Management, Barista Announcements/Hub).
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
 - **Scalability:** Interface-based storage design, serverless-ready architecture.
 - **Progressive Enhancement:** Mock functionality for parallel development.
 - **Mobile-First:** All interfaces optimized for mobile devices.
-- **Brand Consistency:** Yens yellow (#FCD34D) color scheme.
 
 ## External Dependencies
-- **UI Components:** Radix UI primitives, Shadcn UI, Lucide React (icons), `date-fns`.
+- **UI Components:** Radix UI primitives, Shadcn UI, Lucide React (icons), `date-fns`, `react-qr-code`.
 - **Database & ORM:** Neon serverless PostgreSQL, Drizzle ORM, Drizzle Kit, Drizzle Zod.
 - **Development Tools:** Vite, TypeScript, PostCSS with Tailwind and Autoprefixer.
-- **Form & Validation:** React Hook Form, `@hookform/resolvers`.
+- **Form & Validation:** React Hook Form, `@hookform/resolvers`, Zod.
 - **Session Management:** `connect-pg-simple`.
-- **Messaging Services:** Twilio for SMS (via Replit Twilio connector, working), Resend for email (via Replit Resend connector, has delivery issues - pending switch to SendGrid).
-- **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid`.
+- **Messaging Services:** Twilio for SMS, Resend for email (planned migration to SendGrid), `otpauth` for 2FA.
+- **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid`, `bcrypt`.
+- **Internationalization:** `react-i18next`.
