@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Customer, Site, User } from "@shared/schema";
+import type { Customer, Site, User, WorkSchedule, BaristaAnnouncement } from "@shared/schema";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -272,6 +272,16 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Fetch current time entry for clock in/out status
   const { data: currentTimeEntry } = useQuery<TimeEntry | null>({
     queryKey: ['/api/barista/time-entry/current'],
+  });
+
+  // Fetch work schedules for logged-in barista
+  const { data: workSchedules = [] } = useQuery<WorkSchedule[]>({
+    queryKey: ['/api/work-schedules/me'],
+  });
+
+  // Fetch active barista announcements
+  const { data: announcements = [] } = useQuery<BaristaAnnouncement[]>({
+    queryKey: ['/api/barista-announcements'],
   });
 
   // Derive transaction eligibility from live sites - filter active downstream
@@ -632,6 +642,60 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                 )}
               </div>
             </div>
+          </Card>
+        )}
+
+        {/* WORK SCHEDULE SECTION */}
+        {step === "search" && (
+          <Card className="p-4 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-5 h-5 text-chart-2" />
+              <h3 className="font-semibold">{t('barista.mySchedule')}</h3>
+            </div>
+            {workSchedules.length > 0 ? (
+              <div className="space-y-2">
+                {workSchedules.slice(0, 3).map((schedule) => (
+                  <div key={schedule.id} className="text-sm flex justify-between items-center p-2 bg-muted rounded">
+                    <div>
+                      <p className="font-medium">{new Date(schedule.date).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{schedule.siteName || 'N/A'}</p>
+                    </div>
+                    <div className="text-right text-xs">
+                      <p>{schedule.startTime} - {schedule.endTime}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('barista.noSchedules')}</p>
+            )}
+          </Card>
+        )}
+
+        {/* ANNOUNCEMENTS SECTION */}
+        {step === "search" && (
+          <Card className="p-4 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Bell className="w-5 h-5 text-chart-3" />
+              <h3 className="font-semibold">{t('barista.announcements')}</h3>
+            </div>
+            {announcements.length > 0 ? (
+              <div className="space-y-2">
+                {announcements.slice(0, 2).map((announcement) => (
+                  <div key={announcement.id} className="text-sm p-3 bg-muted rounded">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <p className="font-medium">{announcement.title}</p>
+                      <Badge variant={announcement.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                        {t(`admin.barista.types.${announcement.type}`)}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{announcement.content}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('barista.noAnnouncements')}</p>
+            )}
           </Card>
         )}
 

@@ -214,7 +214,13 @@
     "clockInFailed": "Clock In Failed",
     "clockOutSuccess": "Clocked Out",
     "clockOutSuccessDesc": "You have successfully clocked out",
-    "clockOutFailed": "Clock Out Failed"
+    "clockOutFailed": "Clock Out Failed",
+    "mySchedule": "My Schedule",
+    "upcomingShifts": "Upcoming Shifts",
+    "noSchedules": "No scheduled shifts",
+    "shift": "Shift",
+    "announcements": "Announcements",
+    "noAnnouncements": "No announcements"
   },
   "admin": {
     "title": "Admin Dashboard",

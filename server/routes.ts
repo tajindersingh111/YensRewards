@@ -2464,6 +2464,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === BARISTA-FACING ROUTES ===
+
+  // Get work schedules for logged-in barista
+  app.get('/api/work-schedules/me', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const schedules = await storage.getWorkSchedules(userId);
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching work schedules:", error);
+      res.status(500).json({ message: "Failed to fetch work schedules" });
+    }
+  });
+
+  // Get active barista announcements
+  app.get('/api/barista-announcements', isAuthenticated, async (req, res) => {
+    try {
+      const announcements = await storage.getAnnouncements();
+      const activeAnnouncements = announcements.filter(a => {
+        const isActive = a.isActive;
+        const isNotExpired = !a.expiryDate || new Date(a.expiryDate) > new Date();
+        return isActive && isNotExpired;
+      });
+      res.json(activeAnnouncements);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      res.status(500).json({ message: "Failed to fetch announcements" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

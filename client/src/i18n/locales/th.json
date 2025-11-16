@@ -214,7 +214,13 @@
     "clockInFailed": "เข้างานไม่สำเร็จ",
     "clockOutSuccess": "ออกงานแล้ว",
     "clockOutSuccessDesc": "คุณออกงานสำเร็จ",
-    "clockOutFailed": "ออกงานไม่สำเร็จ"
+    "clockOutFailed": "ออกงานไม่สำเร็จ",
+    "mySchedule": "ตารางงานของฉัน",
+    "upcomingShifts": "กะงานที่จะถึง",
+    "noSchedules": "ไม่มีกะงานที่กำหนดไว้",
+    "shift": "กะ",
+    "announcements": "ประกาศ",
+    "noAnnouncements": "ไม่มีประกาศ"
   },
   "admin": {
     "title": "แดชบอร์ดผู้ดูแล",
