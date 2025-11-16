@@ -1,7 +1,16 @@
 # Yens Thai Ice Cream Loyalty System
 
-## Current Version: v2.7.4
-**Latest Updates (v2.7.4):**
+## Current Version: v2.8.0
+**Latest Updates (v2.8.0):**
+- Added **server-side pagination** to Customers tab for efficient navigation through large customer lists
+- Page size options: 50 or 100 customers per page
+- Real-time search with debounced filtering (300ms) across name, phone, and email
+- Pagination controls at top and bottom of table with page indicators and navigation buttons
+- Full bilingual support (Thai/English) for all pagination UI elements
+- Automatic page reset when search query or page size changes
+- Performance optimized with parallel data/count queries
+
+**Previous Version (v2.7.4):**
 - Added **action buttons** to Customer Dashboard avatars (View, Edit, Message, Delete)
 - Action buttons appear on hover for Top 10 Spenders
 - Action buttons appear on hover for Current Week and This Month birthday customers

@@ -28,7 +28,7 @@
     "info": "ข้อมูล",
     "new": "ใหม่",
     "admin": "ผู้ดูแล",
-    "version": "v2.7.4"
+    "version": "v2.8.0"
   },
   "home": {
     "title": "ระบบสะสมคะแนนเย็นส์",
@@ -494,7 +494,19 @@
       "errors": "ข้อผิดพลาด",
       "importError": "ไม่สามารถนำเข้าลูกค้าได้",
       "downloadTemplate": "ดาวน์โหลดแบบฟอร์ม",
-      "templateDownloaded": "ดาวน์โหลดแบบฟอร์ม CSV สำเร็จ"
+      "templateDownloaded": "ดาวน์โหลดแบบฟอร์ม CSV สำเร็จ",
+      "pagination": {
+        "showing": "แสดง",
+        "to": "ถึง",
+        "of": "จาก",
+        "customers": "ลูกค้า",
+        "pageSize": "จำนวนต่อหน้า:",
+        "previous": "ก่อนหน้า",
+        "next": "ถัดไป",
+        "page": "หน้า",
+        "noCustomers": "ไม่พบลูกค้า",
+        "searchPlaceholder": "ค้นหาด้วยชื่อ เบอร์โทร หรืออีเมล..."
+      }
     },
     "transactions": {
       "title": "ธุรกรรม",

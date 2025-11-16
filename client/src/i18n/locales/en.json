@@ -28,7 +28,7 @@
     "info": "Information",
     "new": "NEW",
     "admin": "Admin",
-    "version": "v2.7.4"
+    "version": "v2.8.0"
   },
   "home": {
     "title": "Yen's Loyalty System",
@@ -497,7 +497,19 @@
       "errors": "Errors",
       "importError": "Failed to import customers",
       "downloadTemplate": "Download Template",
-      "templateDownloaded": "CSV template downloaded successfully"
+      "templateDownloaded": "CSV template downloaded successfully",
+      "pagination": {
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "customers": "customers",
+        "pageSize": "Per page:",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page",
+        "noCustomers": "No customers found",
+        "searchPlaceholder": "Search by name, phone, or email..."
+      }
     },
     "transactions": {
       "title": "Transactions",

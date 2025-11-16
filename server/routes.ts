@@ -556,11 +556,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all customers
+  // Get all customers (with optional pagination and search)
   app.get('/api/admin/customers', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const customers = await storage.getAllCustomers();
-      res.json(customers);
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string, 10) : undefined;
+      const search = req.query.search as string | undefined;
+
+      // If pagination params provided, use paginated query
+      if (page !== undefined && pageSize !== undefined) {
+        // Validate pagination params
+        if (page < 1 || pageSize < 1 || pageSize > 200) {
+          return res.status(400).json({ message: "Invalid pagination parameters" });
+        }
+
+        const result = await storage.listCustomers({ page, pageSize, search });
+        res.json(result);
+      } else {
+        // Legacy behavior: return all customers
+        const customers = await storage.getAllCustomers();
+        res.json(customers);
+      }
     } catch (error) {
       console.error("Error fetching customers:", error);
       res.status(500).json({ message: "Failed to fetch customers" });

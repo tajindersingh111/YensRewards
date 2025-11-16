@@ -45,6 +45,11 @@ export interface IStorage {
   updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer | undefined>;
   upsertCustomerByPhone(customer: InsertCustomer & Partial<Customer>): Promise<{ action: 'insert' | 'update', customer: Customer }>;
   getAllCustomers(): Promise<Customer[]>;
+  listCustomers(params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+  }): Promise<{ data: Customer[]; totalCount: number }>;
   getFilteredCustomers(filters: {
     tier?: string[];
     minSpend?: number;
@@ -363,6 +368,40 @@ export class DbStorage implements IStorage {
 
   async getAllCustomers(): Promise<Customer[]> {
     return await db.select().from(customers).orderBy(desc(customers.createdAt));
+  }
+
+  async listCustomers(params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+  }): Promise<{ data: Customer[]; totalCount: number }> {
+    const { page, pageSize, search } = params;
+    const offset = (page - 1) * pageSize;
+
+    // Build base query with optional search
+    let query = db.select().from(customers);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(customers);
+
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      const searchCondition = sql`(
+        ${customers.name} ILIKE ${searchTerm} OR 
+        ${customers.phone} ILIKE ${searchTerm} OR 
+        ${customers.email} ILIKE ${searchTerm}
+      )`;
+      query = query.where(searchCondition) as any;
+      countQuery = countQuery.where(searchCondition) as any;
+    }
+
+    // Execute both queries in parallel
+    const [data, countResult] = await Promise.all([
+      query.orderBy(desc(customers.createdAt)).limit(pageSize).offset(offset),
+      countQuery
+    ]);
+
+    const totalCount = countResult[0]?.count ?? 0;
+
+    return { data, totalCount };
   }
 
   async getFilteredCustomers(filters: {
