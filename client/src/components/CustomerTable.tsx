@@ -75,7 +75,10 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
     <Card className="p-6" data-testid="card-customer-table">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h3 className="text-lg font-semibold text-foreground">Customers</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground">Customers</h3>
+            <Badge variant="secondary" data-testid="badge-customer-count">{customers.length}</Badge>
+          </div>
           <div className="flex items-center gap-2">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -102,7 +105,6 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tier</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Points</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Total Spent</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tag</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
@@ -141,15 +143,6 @@ export default function CustomerTable({ customers, onMessage, onEdit }: Customer
                       {customer.points}
                     </td>
                     <td className="py-3 px-4 text-foreground">฿{Number(customer.totalSpent).toLocaleString()}</td>
-                    <td className="py-3 px-4">
-                      {customer.tag ? (
-                        <Badge variant="outline" className="text-xs" data-testid={`badge-tag-${customer.id}`}>
-                          {customer.tag}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         <Button
