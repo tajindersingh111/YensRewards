@@ -23,6 +23,9 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: text("role").notNull().default("barista"), // barista, manager, or admin
   location: text("location"), // for baristas/managers
+  password: varchar("password"), // bcrypt hashed password (nullable - optional auth method)
+  twoFactorSecret: varchar("two_factor_secret"), // TOTP secret for 2FA (nullable)
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

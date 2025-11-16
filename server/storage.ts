@@ -36,6 +36,15 @@ export interface IStorage {
   updateUserDetails(id: string, details: { email?: string; firstName?: string; lastName?: string }): Promise<User | undefined>;
   deleteUser(id: string): Promise<void>;
   
+  // Password & 2FA methods
+  setUserPassword(userId: string, hashedPassword: string): Promise<User | undefined>;
+  verifyUserPassword(userId: string, password: string): Promise<boolean>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  enable2FA(userId: string, secret: string): Promise<User | undefined>;
+  disable2FA(userId: string): Promise<User | undefined>;
+  verify2FAToken(userId: string, token: string): Promise<boolean>;
+  get2FASecret(userId: string): Promise<string | null>;
+  
   // Customer methods
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
@@ -268,6 +277,88 @@ export class DbStorage implements IStorage {
 
   async deleteUser(id: string): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  // Password & 2FA methods
+  async setUserPassword(userId: string, hashedPassword: string): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ 
+        password: hashedPassword,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  async verifyUserPassword(userId: string, password: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user?.password) {
+      return false;
+    }
+    const bcrypt = await import('bcrypt');
+    return await bcrypt.compare(password, user.password);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
+    return result[0];
+  }
+
+  async enable2FA(userId: string, secret: string): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ 
+        twoFactorSecret: secret,
+        twoFactorEnabled: true,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  async disable2FA(userId: string): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ 
+        twoFactorSecret: null,
+        twoFactorEnabled: false,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  async verify2FAToken(userId: string, token: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user?.twoFactorSecret || !user.twoFactorEnabled) {
+      return false;
+    }
+    
+    const OTPAuth = await import('otpauth');
+    const totp = new OTPAuth.TOTP({
+      secret: user.twoFactorSecret,
+      digits: 6,
+      period: 30,
+      algorithm: 'SHA1',
+    });
+    
+    // Validate with 1-step window for clock drift
+    const delta = totp.validate({ token, window: 1 });
+    return delta !== null;
+  }
+
+  async get2FASecret(userId: string): Promise<string | null> {
+    const user = await this.getUser(userId);
+    return user?.twoFactorSecret || null;
   }
 
   // Customer methods

@@ -300,6 +300,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Password & 2FA Endpoints (Admin Only) ============
+
+  // Set user password
+  app.post('/api/admin/users/:id/password', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+
+      if (!password || password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      // Hash password with bcrypt (10 rounds)
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const user = await storage.setUserPassword(id, hashedPassword);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      console.log(`✅ Set password for user ${id}`);
+      res.json({ success: true, message: "Password set successfully" });
+    } catch (error: any) {
+      console.error("Error setting password:", error);
+      res.status(500).json({ message: "Failed to set password" });
+    }
+  });
+
+  // Setup 2FA (generate secret and return QR code URI)
+  app.post('/api/admin/users/:id/2fa/setup', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Generate TOTP secret
+      const OTPAuth = await import('otpauth');
+      const totp = new OTPAuth.TOTP({
+        issuer: 'Yens Thai Ice Cream',
+        label: user.email || user.firstName || 'Admin User',
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+      });
+
+      const secret = totp.secret.base32;
+      const uri = totp.toString(); // otpauth:// URI for QR code
+
+      console.log(`✅ Generated 2FA secret for user ${id}`);
+      res.json({ 
+        success: true, 
+        secret,
+        uri, // This will be used to generate QR code on frontend
+        message: "2FA secret generated. Scan QR code with authenticator app." 
+      });
+    } catch (error: any) {
+      console.error("Error setting up 2FA:", error);
+      res.status(500).json({ message: "Failed to setup 2FA" });
+    }
+  });
+
+  // Enable 2FA (verify token and save secret)
+  app.post('/api/admin/users/:id/2fa/enable', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { secret, token } = req.body;
+
+      if (!secret || !token) {
+        return res.status(400).json({ message: "Secret and token are required" });
+      }
+
+      // Verify the token before enabling
+      const OTPAuth = await import('otpauth');
+      const totp = new OTPAuth.TOTP({
+        secret,
+        digits: 6,
+        period: 30,
+        algorithm: 'SHA1',
+      });
+
+      const delta = totp.validate({ token, window: 1 });
+      if (delta === null) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      const user = await storage.enable2FA(id, secret);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      console.log(`✅ Enabled 2FA for user ${id}`);
+      res.json({ success: true, message: "2FA enabled successfully" });
+    } catch (error: any) {
+      console.error("Error enabling 2FA:", error);
+      res.status(500).json({ message: "Failed to enable 2FA" });
+    }
+  });
+
+  // Disable 2FA
+  app.post('/api/admin/users/:id/2fa/disable', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const user = await storage.disable2FA(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      console.log(`✅ Disabled 2FA for user ${id}`);
+      res.json({ success: true, message: "2FA disabled successfully" });
+    } catch (error: any) {
+      console.error("Error disabling 2FA:", error);
+      res.status(500).json({ message: "Failed to disable 2FA" });
+    }
+  });
+
+  // Verify 2FA token (for login or verification)
+  app.post('/api/auth/verify-2fa', async (req, res) => {
+    try {
+      const { userId, token } = req.body;
+
+      if (!userId || !token) {
+        return res.status(400).json({ message: "User ID and token are required" });
+      }
+
+      const isValid = await storage.verify2FAToken(userId, token);
+      
+      if (isValid) {
+        console.log(`✅ 2FA verification successful for user ${userId}`);
+        res.json({ success: true, message: "Verification successful" });
+      } else {
+        console.log(`❌ 2FA verification failed for user ${userId}`);
+        res.status(400).json({ success: false, message: "Invalid verification code" });
+      }
+    } catch (error: any) {
+      console.error("Error verifying 2FA:", error);
+      res.status(500).json({ message: "Failed to verify 2FA token" });
+    }
+  });
+
+  // Password-based login endpoint (alongside Replit Auth)
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      const isValidPassword = await storage.verifyUserPassword(user.id, password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Check if 2FA is enabled
+      if (user.twoFactorEnabled) {
+        console.log(`🔐 User ${user.id} requires 2FA verification`);
+        return res.json({ 
+          success: true, 
+          requires2FA: true,
+          userId: user.id,
+          message: "Password correct. 2FA verification required." 
+        });
+      }
+
+      // Create session for password-based login
+      const sessionUser = {
+        claims: {
+          sub: user.id,
+          email: user.email,
+          first_name: user.firstName,
+          last_name: user.lastName,
+          profile_image_url: user.profileImageUrl,
+          is_admin: user.role === 'admin',
+        },
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week
+      };
+
+      (req as any).login(sessionUser, (err: any) => {
+        if (err) {
+          console.error("Error creating session:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        console.log(`✅ Password login successful for user ${user.id}`);
+        res.json({ 
+          success: true, 
+          requires2FA: false,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          },
+          message: "Login successful" 
+        });
+      });
+    } catch (error: any) {
+      console.error("Error during password login:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Complete login with 2FA
+  app.post('/api/auth/login-2fa', async (req, res) => {
+    try {
+      const { userId, token } = req.body;
+
+      if (!userId || !token) {
+        return res.status(400).json({ message: "User ID and token are required" });
+      }
+
+      const isValid = await storage.verify2FAToken(userId, token);
+      if (!isValid) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Create session after successful 2FA
+      const sessionUser = {
+        claims: {
+          sub: user.id,
+          email: user.email,
+          first_name: user.firstName,
+          last_name: user.lastName,
+          profile_image_url: user.profileImageUrl,
+          is_admin: user.role === 'admin',
+        },
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week
+      };
+
+      (req as any).login(sessionUser, (err: any) => {
+        if (err) {
+          console.error("Error creating session after 2FA:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        console.log(`✅ 2FA login successful for user ${user.id}`);
+        res.json({ 
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          },
+          message: "Login successful" 
+        });
+      });
+    } catch (error: any) {
+      console.error("Error during 2FA login:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
   // ============ Testing Endpoints (Admin Only) ============
   
   // Test SMS sending
