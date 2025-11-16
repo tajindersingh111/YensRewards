@@ -201,7 +201,20 @@
     "processing": "กำลังประมวลผล...",
     "editAmount": "แก้ไขจำนวนเงิน",
     "pointsAdded": "คะแนนที่เพิ่ม",
-    "startingNew": "กำลังเริ่มธุรกรรมใหม่..."
+    "startingNew": "กำลังเริ่มธุรกรรมใหม่...",
+    "clockedIn": "เข้างานแล้ว",
+    "notClockedIn": "ยังไม่ได้เข้างาน",
+    "since": "ตั้งแต่",
+    "clockOut": "ออกงาน",
+    "clockOutting": "กำลังออกงาน...",
+    "clockIn": "เข้างาน",
+    "clockingIn": "กำลังเข้างาน...",
+    "clockInSuccess": "เข้างานแล้ว",
+    "clockInSuccessDesc": "คุณเข้างานสำเร็จ",
+    "clockInFailed": "เข้างานไม่สำเร็จ",
+    "clockOutSuccess": "ออกงานแล้ว",
+    "clockOutSuccessDesc": "คุณออกงานสำเร็จ",
+    "clockOutFailed": "ออกงานไม่สำเร็จ"
   },
   "admin": {
     "title": "แดชบอร์ดผู้ดูแล",

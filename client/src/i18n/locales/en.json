@@ -201,7 +201,20 @@
     "processing": "Processing...",
     "editAmount": "Edit Amount",
     "pointsAdded": "points added",
-    "startingNew": "Starting new transaction..."
+    "startingNew": "Starting new transaction...",
+    "clockedIn": "Clocked In",
+    "notClockedIn": "Not Clocked In",
+    "since": "Since",
+    "clockOut": "Clock Out",
+    "clockOutting": "Clocking Out...",
+    "clockIn": "Clock In",
+    "clockingIn": "Clocking In...",
+    "clockInSuccess": "Clocked In",
+    "clockInSuccessDesc": "You have successfully clocked in",
+    "clockInFailed": "Clock In Failed",
+    "clockOutSuccess": "Clocked Out",
+    "clockOutSuccessDesc": "You have successfully clocked out",
+    "clockOutFailed": "Clock Out Failed"
   },
   "admin": {
     "title": "Admin Dashboard",

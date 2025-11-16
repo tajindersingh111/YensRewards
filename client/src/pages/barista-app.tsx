@@ -11,10 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import type { TimeEntry } from "@shared/schema";
 
 type Step = "search" | "verify" | "enter-amount" | "confirm" | "success";
 
@@ -268,6 +269,11 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
     queryKey: ['/api/admin/sites'],
   });
 
+  // Fetch current time entry for clock in/out status
+  const { data: currentTimeEntry } = useQuery<TimeEntry | null>({
+    queryKey: ['/api/barista/time-entry/current'],
+  });
+
   // Derive transaction eligibility from live sites - filter active downstream
   const activeSites = allSites.filter(s => s.isActive);
   const locationIsValid = location ? activeSites.some(s => s.name === location) : false;
@@ -335,6 +341,59 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       toast({
         title: t('common.error'),
         description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Clock in mutation
+  const clockInMutation = useMutation({
+    mutationFn: async () => {
+      const site = activeSites.find(s => s.name === location);
+      if (!site) {
+        throw new Error("Please select a site");
+      }
+      const today = new Date().toISOString().split('T')[0];
+      return await apiRequest('POST', '/api/barista/clock-in', {
+        siteId: site.id,
+        date: today,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/barista/time-entry/current'] });
+      toast({
+        title: t('barista.clockInSuccess'),
+        description: t('barista.clockInSuccessDesc'),
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('barista.clockInFailed'),
+        description: error?.message || "Failed to clock in",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Clock out mutation
+  const clockOutMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentTimeEntry?.id) {
+        throw new Error("No active clock-in entry");
+      }
+      return await apiRequest('POST', `/api/barista/clock-out/${currentTimeEntry.id}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/barista/time-entry/current'] });
+      toast({
+        title: t('barista.clockOutSuccess'),
+        description: t('barista.clockOutSuccessDesc'),
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('barista.clockOutFailed'),
+        description: error?.message || "Failed to clock out",
         variant: "destructive",
       });
     },
@@ -530,6 +589,49 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
           <Card className="p-4 mb-4 bg-yellow-50 border-yellow-200">
             <p className="text-sm text-yellow-800 font-semibold">{t('barista.noActiveSitesWarning')}</p>
             <p className="text-xs text-yellow-700 mt-1">{t('barista.contactAdmin')}</p>
+          </Card>
+        )}
+
+        {/* CLOCK IN/OUT SECTION */}
+        {step === "search" && (
+          <Card className="p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-chart-1" />
+                <div>
+                  <p className="text-sm font-medium">
+                    {currentTimeEntry ? t('barista.clockedIn') : t('barista.notClockedIn')}
+                  </p>
+                  {currentTimeEntry && currentTimeEntry.clockInTime && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('barista.since')} {new Date(currentTimeEntry.clockInTime).toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div>
+                {currentTimeEntry ? (
+                  <Button
+                    onClick={() => clockOutMutation.mutate()}
+                    disabled={clockOutMutation.isPending}
+                    variant="destructive"
+                    size="sm"
+                    data-testid="button-clock-out"
+                  >
+                    {clockOutMutation.isPending ? t('barista.clockOutting') : t('barista.clockOut')}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => clockInMutation.mutate()}
+                    disabled={clockInMutation.isPending || activeSites.length === 0}
+                    size="sm"
+                    data-testid="button-clock-in"
+                  >
+                    {clockInMutation.isPending ? t('barista.clockingIn') : t('barista.clockIn')}
+                  </Button>
+                )}
+              </div>
+            </div>
           </Card>
         )}
 
