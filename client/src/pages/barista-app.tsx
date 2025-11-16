@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Customer, Site } from "@shared/schema";
+import type { Customer, Site, User } from "@shared/schema";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,14 +11,247 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, Search, UserPlus, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 type Step = "search" | "verify" | "enter-amount" | "confirm" | "success";
 
-export default function BaristaApp() {
+// Login screen component
+function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [twoFactorToken, setTwoFactorToken] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [requires2FA, setRequires2FA] = useState(false);
+
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const response: any = await apiRequest({
+        method: "POST",
+        url: "/api/auth/login",
+        data: { email, password },
+      });
+      return response as { 
+        success: boolean; 
+        requires2FA: boolean; 
+        userId?: string;
+        user?: User;
+        message: string;
+      };
+    },
+    onSuccess: (data) => {
+      if (data.requires2FA && data.userId) {
+        setRequires2FA(true);
+        setUserId(data.userId);
+        toast({
+          title: t('common.success'),
+          description: t('users.enter2FACode'),
+        });
+      } else if (data.user) {
+        // Check if barista role
+        if (data.user.role !== 'barista' && data.user.role !== 'manager' && data.user.role !== 'admin') {
+          toast({
+            title: t('common.error'),
+            description: "Only baristas can access this app",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        toast({
+          title: t('common.success'),
+          description: t('common.loginSuccess'),
+        });
+        onLoginSuccess(data.user);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message || "Login failed",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verify2FAMutation = useMutation({
+    mutationFn: async ({ userId, token }: { userId: string; token: string }) => {
+      const response: any = await apiRequest({
+        method: "POST",
+        url: "/api/auth/login-2fa",
+        data: { userId, token },
+      });
+      return response as { 
+        success: boolean; 
+        user?: User;
+        message: string;
+      };
+    },
+    onSuccess: (data) => {
+      if (data.user) {
+        toast({
+          title: t('common.success'),
+          description: t('common.loginSuccess'),
+        });
+        onLoginSuccess(data.user);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message || "2FA verification failed",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({
+        title: t('common.error'),
+        description: "Please enter email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+    loginMutation.mutate({ email, password });
+  };
+
+  const handleVerify2FA = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId || !twoFactorToken) {
+      toast({
+        title: t('common.error'),
+        description: t('users.enter2FACode'),
+        variant: "destructive",
+      });
+      return;
+    }
+    verify2FAMutation.mutate({ userId, token: twoFactorToken });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-chart-1 to-chart-2">
+      <header className="bg-gradient-to-r from-chart-1 to-chart-2 text-white p-4 shadow-lg">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 object-cover rounded-full" />
+            <div>
+              <h1 className="text-sm font-bold">{t('barista.title')}</h1>
+              <span className="text-xs opacity-70">{t('common.version')}</span>
+            </div>
+          </div>
+          <LanguageSwitcher />
+        </div>
+      </header>
+
+      <main className="max-w-md mx-auto p-4 pt-12">
+        <Card className="p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-chart-1/10 mb-4">
+              <Lock className="w-8 h-8 text-chart-1" />
+            </div>
+            <h2 className="text-2xl font-bold">
+              {requires2FA ? t('users.enter2FACode') : t('common.login')}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {requires2FA 
+                ? "Enter the 6-digit code from your authenticator app"
+                : "Sign in to access the barista app"}
+            </p>
+          </div>
+
+          {!requires2FA ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  autoComplete="email"
+                  data-testid="input-email"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  data-testid="input-password"
+                  required
+                />
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={loginMutation.isPending}
+                data-testid="button-login"
+              >
+                {loginMutation.isPending ? t('common.loading') : t('common.login')}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerify2FA} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('users.verificationCode')}</label>
+                <Input
+                  type="text"
+                  value={twoFactorToken}
+                  onChange={(e) => setTwoFactorToken(e.target.value)}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="text-center text-2xl tracking-widest"
+                  autoComplete="one-time-code"
+                  data-testid="input-2fa-token"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="flex-1" 
+                  onClick={() => {
+                    setRequires2FA(false);
+                    setUserId(null);
+                    setTwoFactorToken("");
+                  }}
+                  data-testid="button-back-to-login"
+                >
+                  {t('common.back')}
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1" 
+                  disabled={verify2FAMutation.isPending}
+                  data-testid="button-verify-2fa"
+                >
+                  {verify2FAMutation.isPending ? t('common.loading') : t('users.verify')}
+                </Button>
+              </div>
+            </form>
+          )}
+        </Card>
+      </main>
+    </div>
+  );
+}
+
+function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Auto-update detection
   useAutoUpdate();
   const { t } = useTranslation();
@@ -267,6 +500,15 @@ export default function BaristaApp() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             )}
+            <Button
+              onClick={onLogout}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              data-testid="button-logout"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
         </div>
       </header>
@@ -587,4 +829,19 @@ export default function BaristaApp() {
       <InstallPrompt />
     </div>
   );
+}
+
+// Main Barista App Wrapper with Authentication
+export default function BaristaAppWithAuth() {
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+
+  const handleLogout = () => {
+    setLoggedInUser(null);
+  };
+
+  if (!loggedInUser) {
+    return <BaristaLogin onLoginSuccess={setLoggedInUser} />;
+  }
+
+  return <BaristaApp user={loggedInUser} onLogout={handleLogout} />;
 }

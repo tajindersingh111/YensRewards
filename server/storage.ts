@@ -18,10 +18,16 @@ import {
   type InsertMessageLog,
   type Site,
   type InsertSite,
+  type TimeEntry,
+  type InsertTimeEntry,
+  type WorkSchedule,
+  type InsertWorkSchedule,
+  type BaristaAnnouncement,
+  type InsertBaristaAnnouncement,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites } from "@shared/schema";
-import { eq, desc, sql, and, asc } from "drizzle-orm";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites, timeEntries, workSchedules, baristaAnnouncements } from "@shared/schema";
+import { eq, desc, sql, and, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Auth methods (required for Replit Auth)
@@ -163,6 +169,28 @@ export interface IStorage {
   createSite(site: InsertSite): Promise<Site>;
   updateSite(id: string, site: Partial<Site>): Promise<Site | undefined>;
   deleteSite(id: string): Promise<void>;
+  
+  // Time Entry methods (clock in/out)
+  getCurrentTimeEntry(userId: string): Promise<TimeEntry | undefined>;
+  clockIn(userId: string, siteId: string, date: string): Promise<TimeEntry>;
+  clockOut(timeEntryId: string): Promise<TimeEntry | undefined>;
+  getTimeEntries(userId: string, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
+  
+  // Work Schedule methods
+  getAllWorkSchedules(): Promise<WorkSchedule[]>;
+  getWorkSchedule(id: string): Promise<WorkSchedule | undefined>;
+  getUserWorkSchedules(userId: string, startDate?: string, endDate?: string): Promise<WorkSchedule[]>;
+  createWorkSchedule(schedule: InsertWorkSchedule): Promise<WorkSchedule>;
+  updateWorkSchedule(id: string, schedule: Partial<WorkSchedule>): Promise<WorkSchedule | undefined>;
+  deleteWorkSchedule(id: string): Promise<void>;
+  
+  // Barista Announcement methods
+  getActiveAnnouncements(): Promise<BaristaAnnouncement[]>;
+  getAllAnnouncements(): Promise<BaristaAnnouncement[]>;
+  getAnnouncement(id: string): Promise<BaristaAnnouncement | undefined>;
+  createAnnouncement(announcement: InsertBaristaAnnouncement): Promise<BaristaAnnouncement>;
+  updateAnnouncement(id: string, announcement: Partial<BaristaAnnouncement>): Promise<BaristaAnnouncement | undefined>;
+  deleteAnnouncement(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -1204,6 +1232,197 @@ export class DbStorage implements IStorage {
 
   async deleteSite(id: string): Promise<void> {
     await db.delete(sites).where(eq(sites.id, id));
+  }
+
+  // Time Entry methods (clock in/out)
+  async getCurrentTimeEntry(userId: string): Promise<TimeEntry | undefined> {
+    // Get the most recent time entry that hasn't been clocked out yet
+    const result = await db
+      .select()
+      .from(timeEntries)
+      .where(and(
+        eq(timeEntries.userId, userId),
+        sql`${timeEntries.clockOutTime} IS NULL`
+      ))
+      .orderBy(desc(timeEntries.clockInTime))
+      .limit(1);
+    return result[0];
+  }
+
+  async clockIn(userId: string, siteId: string, date: string): Promise<TimeEntry> {
+    // Check if user already has an active (un-clocked-out) entry
+    const existingEntry = await this.getCurrentTimeEntry(userId);
+    if (existingEntry) {
+      throw new Error("You are already clocked in. Please clock out before clocking in again.");
+    }
+
+    // Validate that the site exists and is active
+    const site = await this.getSite(siteId);
+    if (!site) {
+      throw new Error("Invalid site ID");
+    }
+    if (!site.isActive) {
+      throw new Error("Cannot clock in to an inactive site");
+    }
+
+    const result = await db
+      .insert(timeEntries)
+      .values({
+        userId,
+        siteId,
+        date,
+        clockInTime: new Date(),
+      })
+      .returning();
+    return result[0];
+  }
+
+  async clockOut(timeEntryId: string): Promise<TimeEntry | undefined> {
+    const result = await db
+      .update(timeEntries)
+      .set({
+        clockOutTime: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(timeEntries.id, timeEntryId))
+      .returning();
+    return result[0];
+  }
+
+  async getTimeEntries(
+    userId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<TimeEntry[]> {
+    const conditions = [eq(timeEntries.userId, userId)];
+
+    if (startDate) {
+      conditions.push(gte(timeEntries.date, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(timeEntries.date, endDate));
+    }
+
+    return await db
+      .select()
+      .from(timeEntries)
+      .where(and(...conditions))
+      .orderBy(desc(timeEntries.date), desc(timeEntries.clockInTime));
+  }
+
+  // Work Schedule methods
+  async getAllWorkSchedules(): Promise<WorkSchedule[]> {
+    return await db
+      .select()
+      .from(workSchedules)
+      .orderBy(desc(workSchedules.scheduledDate), asc(workSchedules.startTime));
+  }
+
+  async getWorkSchedule(id: string): Promise<WorkSchedule | undefined> {
+    const result = await db
+      .select()
+      .from(workSchedules)
+      .where(eq(workSchedules.id, id));
+    return result[0];
+  }
+
+  async getUserWorkSchedules(
+    userId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<WorkSchedule[]> {
+    const conditions = [eq(workSchedules.userId, userId)];
+
+    if (startDate) {
+      conditions.push(gte(workSchedules.scheduledDate, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(workSchedules.scheduledDate, endDate));
+    }
+
+    return await db
+      .select()
+      .from(workSchedules)
+      .where(and(...conditions))
+      .orderBy(asc(workSchedules.scheduledDate), asc(workSchedules.startTime));
+  }
+
+  async createWorkSchedule(schedule: InsertWorkSchedule): Promise<WorkSchedule> {
+    const result = await db
+      .insert(workSchedules)
+      .values(schedule)
+      .returning();
+    return result[0];
+  }
+
+  async updateWorkSchedule(
+    id: string,
+    schedule: Partial<WorkSchedule>
+  ): Promise<WorkSchedule | undefined> {
+    const result = await db
+      .update(workSchedules)
+      .set({ ...schedule, updatedAt: new Date() })
+      .where(eq(workSchedules.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteWorkSchedule(id: string): Promise<void> {
+    await db.delete(workSchedules).where(eq(workSchedules.id, id));
+  }
+
+  // Barista Announcement methods
+  async getActiveAnnouncements(): Promise<BaristaAnnouncement[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(baristaAnnouncements)
+      .where(and(
+        eq(baristaAnnouncements.isActive, true),
+        sql`(${baristaAnnouncements.expiresAt} IS NULL OR ${baristaAnnouncements.expiresAt} > ${now})`
+      ))
+      .orderBy(desc(baristaAnnouncements.priority), desc(baristaAnnouncements.createdAt));
+  }
+
+  async getAllAnnouncements(): Promise<BaristaAnnouncement[]> {
+    return await db
+      .select()
+      .from(baristaAnnouncements)
+      .orderBy(desc(baristaAnnouncements.createdAt));
+  }
+
+  async getAnnouncement(id: string): Promise<BaristaAnnouncement | undefined> {
+    const result = await db
+      .select()
+      .from(baristaAnnouncements)
+      .where(eq(baristaAnnouncements.id, id));
+    return result[0];
+  }
+
+  async createAnnouncement(
+    announcement: InsertBaristaAnnouncement
+  ): Promise<BaristaAnnouncement> {
+    const result = await db
+      .insert(baristaAnnouncements)
+      .values(announcement)
+      .returning();
+    return result[0];
+  }
+
+  async updateAnnouncement(
+    id: string,
+    announcement: Partial<BaristaAnnouncement>
+  ): Promise<BaristaAnnouncement | undefined> {
+    const result = await db
+      .update(baristaAnnouncements)
+      .set({ ...announcement, updatedAt: new Date() })
+      .where(eq(baristaAnnouncements.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAnnouncement(id: string): Promise<void> {
+    await db.delete(baristaAnnouncements).where(eq(baristaAnnouncements.id, id));
   }
 }
 

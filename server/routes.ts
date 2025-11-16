@@ -475,6 +475,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
+      // Check if account is active
+      if (!user.isActive) {
+        console.log(`❌ Login denied - account disabled for user ${user.id}`);
+        return res.status(403).json({ message: "Your account has been disabled. Please contact an administrator." });
+      }
+
       // Check if 2FA is enabled
       if (user.twoFactorEnabled) {
         console.log(`🔐 User ${user.id} requires 2FA verification`);
@@ -542,6 +548,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if account is active
+      if (!user.isActive) {
+        console.log(`❌ 2FA login denied - account disabled for user ${user.id}`);
+        return res.status(403).json({ message: "Your account has been disabled. Please contact an administrator." });
       }
 
       // Create session after successful 2FA
