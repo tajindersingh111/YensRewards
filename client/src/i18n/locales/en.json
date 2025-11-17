@@ -344,7 +344,7 @@
       "roleLabel": "Role*",
       "roleAdmin": "Admin",
       "roleManager": "Manager",
-      "roleBarista": "User",
+      "roleBarista": "Barista",
       "cancel": "Cancel",
       "createUser": "Create User",
       "creating": "Creating...",
