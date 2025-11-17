@@ -55,7 +55,7 @@ export function ProductCard({
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-contain"
             data-testid={`img-product-${product.id}`}
           />
         ) : (
