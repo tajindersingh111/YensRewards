@@ -682,7 +682,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                   <div key={schedule.id} className="text-sm flex justify-between items-center p-2 bg-muted rounded">
                     <div>
                       <p className="font-medium">{new Date(schedule.scheduledDate).toLocaleDateString()}</p>
-                      <p className="text-xs text-muted-foreground">{sites.find(s => s.id === schedule.siteId)?.name || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">{allSites.find((s: Site) => s.id === schedule.siteId)?.name || 'N/A'}</p>
                     </div>
                     <div className="text-right text-xs">
                       <p>{schedule.startTime} - {schedule.endTime}</p>

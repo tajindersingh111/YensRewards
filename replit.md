@@ -1,18 +1,13 @@
-# Yens Thai Ice Cream Loyalty System v3.0.2
+# Yens Thai Ice Cream Loyalty System v3.0.3
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.0.2)
-**Major Barista App Expansion:**
-- ✅ Password authentication with optional 2FA security
-- ✅ Clock In/Out time tracking with site selection
-- ✅ Work Schedule display (admin management + barista view)
-- ✅ Barista Announcements hub (types: general, promotion, incentive, policy)
-- ✅ Access Control: Admin can enable/disable barista accounts
-- ✅ Admin self-service password and 2FA management for Barista app access
-- ✅ Full bilingual support (Thai/English) across all features
-- ✅ Production-ready with comprehensive testing and bug fixes
+## Latest Release (v3.0.3)
+**Bug Fix Release:**
+- 🐛 Fixed TypeScript errors in barista-app.tsx (scheduledDate field reference, site name lookup, priority comparison)
+- 🔧 Improved type safety for work schedules and announcements display
+- 🧹 Code cleanup and LSP error resolution
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
