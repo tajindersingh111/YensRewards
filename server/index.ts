@@ -56,6 +56,12 @@ app.use((req, res, next) => {
     const path = await import("path");
     app.use(express.static(path.resolve(import.meta.dirname, "..", "public")));
     
+    // Serve static files from object storage public directory
+    const objectStoragePublicDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0];
+    if (objectStoragePublicDir) {
+      app.use(express.static(objectStoragePublicDir));
+    }
+    
     await setupVite(app, server);
   } else {
     serveStatic(app);

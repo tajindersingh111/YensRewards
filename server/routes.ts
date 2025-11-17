@@ -64,6 +64,13 @@ function sanitizeUsers(users: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve static files from object storage (product images, etc.)
+  const express = await import("express");
+  if (publicDir && publicDir !== '/tmp/public') {
+    app.use(express.default.static(publicDir));
+    console.log(`📁 Serving static files from object storage: ${publicDir}`);
+  }
+  
   // Setup authentication
   await setupAuth(app);
 
