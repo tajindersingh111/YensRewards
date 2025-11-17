@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 interface ProductCardProps {
   product: Product;
-  variant?: "management" | "transaction" | "browse";
+  variant?: "management" | "transaction" | "browse" | "reference";
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
@@ -93,7 +93,7 @@ export function ProductCard({
           <h3 className="font-semibold text-base leading-tight line-clamp-2" data-testid={`text-product-name-${product.id}`}>
             {product.name}
           </h3>
-          {product.description && variant !== "transaction" && (
+          {product.description && variant !== "transaction" && variant !== "reference" && (
             <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-product-description-${product.id}`}>
               {product.description}
             </p>
@@ -104,7 +104,10 @@ export function ProductCard({
       <CardContent className="pb-3 flex-1">
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
-            <span className="text-lg font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
+            <span 
+              className={variant === "reference" ? "text-2xl font-bold text-primary" : "text-lg font-bold text-primary"} 
+              data-testid={`text-product-price-${product.id}`}
+            >
               {formatPrice(product.price)}
             </span>
             {variant === "management" && product.cost && (
@@ -132,57 +135,59 @@ export function ProductCard({
         </div>
       </CardContent>
 
-      {/* Actions Footer */}
-      <CardFooter className="pt-3 border-t gap-2">
-        {variant === "management" && (
-          <>
+      {/* Actions Footer - Only shown for non-reference variants */}
+      {variant !== "reference" && (
+        <CardFooter className="pt-3 border-t gap-2">
+          {variant === "management" && (
+            <>
+              <Button
+                onClick={() => onEdit?.(product)}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                data-testid={`button-edit-product-${product.id}`}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                {t('common.edit')}
+              </Button>
+              <Button
+                onClick={() => onDelete?.(product)}
+                variant="outline"
+                size="sm"
+                data-testid={`button-delete-product-${product.id}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+          
+          {variant === "transaction" && product.available && (
             <Button
-              onClick={() => onEdit?.(product)}
+              onClick={() => onAddToCart?.(product)}
+              variant="default"
+              size="sm"
+              className="w-full"
+              data-testid={`button-add-cart-${product.id}`}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              {t('barista.addToCart')}
+            </Button>
+          )}
+          
+          {variant === "browse" && (
+            <Button
+              onClick={() => onView?.(product)}
               variant="outline"
               size="sm"
-              className="flex-1"
-              data-testid={`button-edit-product-${product.id}`}
+              className="w-full"
+              data-testid={`button-view-product-${product.id}`}
             >
-              <Edit className="w-4 h-4 mr-2" />
-              {t('common.edit')}
+              <Eye className="w-4 h-4 mr-2" />
+              {t('customer.viewDetails')}
             </Button>
-            <Button
-              onClick={() => onDelete?.(product)}
-              variant="outline"
-              size="sm"
-              data-testid={`button-delete-product-${product.id}`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </>
-        )}
-        
-        {variant === "transaction" && product.available && (
-          <Button
-            onClick={() => onAddToCart?.(product)}
-            variant="default"
-            size="sm"
-            className="w-full"
-            data-testid={`button-add-cart-${product.id}`}
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            {t('barista.addToCart')}
-          </Button>
-        )}
-        
-        {variant === "browse" && (
-          <Button
-            onClick={() => onView?.(product)}
-            variant="outline"
-            size="sm"
-            className="w-full"
-            data-testid={`button-view-product-${product.id}`}
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            {t('customer.viewDetails')}
-          </Button>
-        )}
-      </CardFooter>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 }

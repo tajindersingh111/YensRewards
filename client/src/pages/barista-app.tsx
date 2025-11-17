@@ -10,13 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import type { TimeEntry } from "@shared/schema";
+import type { TimeEntry, Product } from "@shared/schema";
+import { ProductCard } from "@/components/ProductCard";
 
 type Step = "search" | "verify" | "enter-amount" | "confirm" | "success";
 
@@ -276,6 +279,84 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
   );
 }
 
+// Product Menu Sheet Component
+function ProductMenuSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { t } = useTranslation();
+  const [activeCategory, setActiveCategory] = useState("all");
+
+  const CATEGORIES = [
+    { value: "all", label: t('customer.menu.allItems') },
+    { value: "soft_serve", label: t('customer.menu.categories.soft_serve') },
+    { value: "milk_tea", label: t('customer.menu.categories.milk_tea') },
+    { value: "fruit_tea", label: t('customer.menu.categories.fruit_tea') },
+    { value: "shakes", label: t('customer.menu.categories.shakes') },
+    { value: "sundaes", label: t('customer.menu.categories.sundaes') },
+    { value: "float_drinks", label: t('customer.menu.categories.float_drinks') },
+  ];
+
+  const { data: allProducts = [], isLoading } = useQuery<Product[]>({
+    queryKey: ['/api/products'],
+  });
+
+  const filteredProducts = activeCategory === "all"
+    ? allProducts.filter(p => p.available)
+    : allProducts.filter(p => p.available && p.category === activeCategory);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetHeader className="mb-4">
+          <SheetTitle className="text-2xl font-bold">{t('customer.productMenu')}</SheetTitle>
+          <SheetDescription>
+            {t('barista.productMenuDescription')}
+          </SheetDescription>
+        </SheetHeader>
+
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+          <TabsList className="mb-4 flex-wrap h-auto w-full">
+            {CATEGORIES.map((cat) => (
+              <TabsTrigger 
+                key={cat.value} 
+                value={cat.value}
+                className="flex-1 min-w-[80px]"
+                data-testid={`tab-category-${cat.value}`}
+              >
+                {cat.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {CATEGORIES.map((cat) => (
+            <TabsContent key={cat.value} value={cat.value} className="mt-0">
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">{t('common.loading')}</p>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <Card className="p-12 text-center">
+                  <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">{t('customer.menu.noItems')}</h3>
+                  <p className="text-muted-foreground">{t('customer.menu.checkBack')}</p>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredProducts.map((product) => (
+                    <ProductCard 
+                      key={product.id} 
+                      product={product} 
+                      variant="reference"
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Auto-update detection
   useAutoUpdate();
@@ -287,6 +368,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [amount, setAmount] = useState("");
   const [location, setLocation] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   
   // Track if barista is clocked in - determines which view to show
   const [isClockedIn, setIsClockedIn] = useState(false);
@@ -611,6 +693,15 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
             ) : (
               <span className="text-xs opacity-70">{t('barista.noActiveSites')}</span>
             )}
+            <Button
+              onClick={() => setMenuOpen(true)}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              data-testid="button-menu"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
             {step !== "search" && (
               <Button
                 onClick={handleCancel}
@@ -1158,6 +1249,9 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
 
       {/* Install Prompt */}
       <InstallPrompt />
+      
+      {/* Product Menu Sheet */}
+      <ProductMenuSheet open={menuOpen} onOpenChange={setMenuOpen} />
     </div>
   );
 }
