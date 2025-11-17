@@ -681,8 +681,8 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                 {workSchedules.slice(0, 3).map((schedule) => (
                   <div key={schedule.id} className="text-sm flex justify-between items-center p-2 bg-muted rounded">
                     <div>
-                      <p className="font-medium">{new Date(schedule.date).toLocaleDateString()}</p>
-                      <p className="text-xs text-muted-foreground">{schedule.siteName || 'N/A'}</p>
+                      <p className="font-medium">{new Date(schedule.scheduledDate).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{sites.find(s => s.id === schedule.siteId)?.name || 'N/A'}</p>
                     </div>
                     <div className="text-right text-xs">
                       <p>{schedule.startTime} - {schedule.endTime}</p>
@@ -709,7 +709,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                   <div key={announcement.id} className="text-sm p-3 bg-muted rounded">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="font-medium">{announcement.title}</p>
-                      <Badge variant={announcement.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                      <Badge variant={announcement.priority >= 5 ? 'destructive' : 'secondary'} className="text-xs">
                         {t(`admin.barista.types.${announcement.type}`)}
                       </Badge>
                     </div>
