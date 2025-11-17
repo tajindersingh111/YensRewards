@@ -30,7 +30,8 @@
     "admin": "ผู้ดูแล",
     "version": "v3.1.1",
     "saving": "กำลังบันทึก...",
-    "deleting": "กำลังลบ..."
+    "deleting": "กำลังลบ...",
+    "optional": "ไม่บังคับ"
   },
   "home": {
     "title": "ระบบสะสมคะแนนเย็นส์",
@@ -76,9 +77,13 @@
     "newCustomer": "ลูกค้าใหม่? กรอกหมายเลขโทรศัพท์ของคุณแล้วเราจะตั้งค่าบัญชีให้!",
     "createAccount": "สร้างบัญชี",
     "setupAccount": "ยินดีต้อนรับ! มาตั้งค่าบัญชี Yen's Rewards ของคุณกันเถอะ",
+    "name": "ชื่อ",
     "phone": "โทรศัพท์",
+    "email": "อีเมล",
     "yourName": "ชื่อของคุณ",
     "enterName": "กรอกชื่อของคุณ",
+    "enterPhone": "กรอกหมายเลขโทรศัพท์",
+    "enterEmail": "กรอกอีเมล",
     "emailOptional": "อีเมล (ถ้ามี)",
     "emailPlaceholder": "your@email.com",
     "birthdayOptional": "วันเกิด (ถ้ามี)",
@@ -245,7 +250,14 @@
     "baristas": "บาริสต้า",
     "you": "คุณ",
     "noPerformanceData": "ยังไม่มีข้อมูลผลงาน",
-    "startSellingToEarnPoints": "เริ่มขายเพื่อรับคะแนน!"
+    "startSellingToEarnPoints": "เริ่มขายเพื่อรับคะแนน!",
+    "quickRegister": "ลงทะเบียนด่วน",
+    "quickRegisterDesc": "ลงทะเบียนลูกค้าได้ทันที",
+    "register": "ลงทะเบียน",
+    "customerRegistered": "ลงทะเบียนลูกค้าสำเร็จ",
+    "customerRegisteredDesc": "ลงทะเบียน {{name}} สำเร็จแล้ว",
+    "registrationFailed": "ลงทะเบียนไม่สำเร็จ",
+    "fillRequiredFields": "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน"
   },
   "admin": {
     "title": "แดชบอร์ดผู้ดูแล",

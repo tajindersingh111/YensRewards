@@ -11,10 +11,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -22,6 +24,36 @@ import type { TimeEntry, Product } from "@shared/schema";
 import { ProductCard } from "@/components/ProductCard";
 
 type Step = "search" | "verify" | "enter-amount" | "confirm" | "success";
+
+// Icon options for weekly specials
+const SPECIAL_ICONS = [
+  { id: 'trophy', Icon: Trophy, color: 'text-yellow-500' },
+  { id: 'star', Icon: Star, color: 'text-yellow-400' },
+  { id: 'zap', Icon: Zap, color: 'text-blue-500' },
+  { id: 'heart', Icon: Heart, color: 'text-red-500' },
+  { id: 'gift', Icon: Gift, color: 'text-green-500' },
+  { id: 'trending', Icon: TrendingUp, color: 'text-emerald-500' },
+  { id: 'target', Icon: Target, color: 'text-orange-500' },
+  { id: 'award', Icon: Award, color: 'text-purple-500' },
+  { id: 'rocket', Icon: Rocket, color: 'text-indigo-500' },
+  { id: 'crown', Icon: Crown, color: 'text-amber-500' },
+];
+
+const COLOR_THEMES = [
+  { id: 'yellow', name: 'Sunshine', gradient: 'from-yellow-400 to-orange-500', textColor: 'text-yellow-900' },
+  { id: 'blue', name: 'Ocean', gradient: 'from-blue-400 to-cyan-500', textColor: 'text-blue-900' },
+  { id: 'purple', name: 'Royal', gradient: 'from-purple-400 to-pink-500', textColor: 'text-purple-900' },
+  { id: 'green', name: 'Fresh', gradient: 'from-green-400 to-emerald-500', textColor: 'text-green-900' },
+  { id: 'red', name: 'Fire', gradient: 'from-red-400 to-rose-500', textColor: 'text-red-900' },
+];
+
+// Parse imageUrl to get icon and theme
+const parseImageUrl = (imageUrl: string | null) => {
+  const [iconId = 'trophy', themeId = 'yellow'] = (imageUrl || 'trophy:yellow').split(':');
+  const iconData = SPECIAL_ICONS.find(i => i.id === iconId) || SPECIAL_ICONS[0];
+  const themeData = COLOR_THEMES.find(t => t.id === themeId) || COLOR_THEMES[0];
+  return { iconData, themeData };
+};
 
 // Login screen component
 function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
@@ -370,6 +402,12 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [location, setLocation] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   
+  // Quick Register state
+  const [quickRegisterOpen, setQuickRegisterOpen] = useState(false);
+  const [quickRegisterName, setQuickRegisterName] = useState("");
+  const [quickRegisterEmail, setQuickRegisterEmail] = useState("");
+  const [quickRegisterPhone, setQuickRegisterPhone] = useState("");
+  
   // Track if barista is clocked in - determines which view to show
   const [isClockedIn, setIsClockedIn] = useState(false);
 
@@ -543,6 +581,50 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       });
     },
   });
+
+  // Quick Register mutation
+  const quickRegisterMutation = useMutation({
+    mutationFn: async (data: { name: string; email: string; phone: string }) => {
+      const response = await apiRequest('POST', '/api/customers', data);
+      return await response.json();
+    },
+    onSuccess: (newCustomer: Customer) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/search'] });
+      setQuickRegisterOpen(false);
+      setQuickRegisterName("");
+      setQuickRegisterEmail("");
+      setQuickRegisterPhone("");
+      toast({
+        title: t('barista.customerRegistered'),
+        description: t('barista.customerRegisteredDesc', { name: newCustomer.name }),
+      });
+      // Optionally auto-select the new customer
+      handleSelectCustomer(newCustomer);
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('barista.registrationFailed'),
+        description: error?.message || "Failed to register customer",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleQuickRegisterSubmit = () => {
+    if (!quickRegisterName || !quickRegisterPhone) {
+      toast({
+        title: t('common.error'),
+        description: t('barista.fillRequiredFields'),
+        variant: "destructive",
+      });
+      return;
+    }
+    quickRegisterMutation.mutate({
+      name: quickRegisterName,
+      email: quickRegisterEmail,
+      phone: quickRegisterPhone,
+    });
+  };
 
   const handleSelectCustomer = (customer: Customer) => {
     // Block if cannot transact
@@ -929,34 +1011,34 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         {/* SEARCH STEP */}
         {isClockedIn && step === "search" && (
           <div className="pt-8 space-y-6">
-            {/* Weekly Special Banner */}
-            {weeklySpecial && (
-              <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-300 p-6" data-testid="weekly-special-banner">
-                <div className="flex items-start gap-4">
-                  {weeklySpecial.imageUrl && (
-                    <img 
-                      src={weeklySpecial.imageUrl} 
-                      alt={weeklySpecial.title}
-                      className="w-20 h-20 rounded-lg object-cover"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Sparkles className="w-5 h-5 text-yellow-600" />
-                      <span className="text-sm font-semibold text-yellow-700 uppercase">{t('barista.weeklySpecial')}</span>
+            {/* Weekly Special Banner with Icon/Gradient System */}
+            {weeklySpecial && (() => {
+              const { iconData, themeData } = parseImageUrl(weeklySpecial.imageUrl);
+              const SpecialIcon = iconData.Icon;
+              return (
+                <Card className={`bg-gradient-to-r ${themeData.gradient} border-0 p-6 shadow-lg`} data-testid="weekly-special-banner">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-20 h-20 bg-white/30 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                      <SpecialIcon className={`w-12 h-12 ${iconData.color}`} />
                     </div>
-                    <h3 className="text-lg font-bold text-foreground mb-1">{weeklySpecial.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{weeklySpecial.description}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">
-                        {t('barista.earnBonus', { points: weeklySpecial.bonusPoints })}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{t('barista.promoteThis')}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className={`w-5 h-5 ${themeData.textColor}`} />
+                        <span className={`text-sm font-semibold ${themeData.textColor} uppercase`}>{t('barista.weeklySpecial')}</span>
+                      </div>
+                      <h3 className={`text-lg font-bold ${themeData.textColor} mb-1`}>{weeklySpecial.title}</h3>
+                      <p className={`text-sm ${themeData.textColor} opacity-90 mb-2`}>{weeklySpecial.description}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`bg-white/20 ${themeData.textColor} hover:bg-white/30 backdrop-blur-sm border-white/30`}>
+                          {t('barista.earnBonus', { points: weeklySpecial.bonusPoints })}
+                        </Badge>
+                        <span className={`text-xs ${themeData.textColor} opacity-75`}>{t('barista.promoteThis')}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            )}
+                </Card>
+              );
+            })()}
 
             <Card className="p-6 space-y-4">
               <div className="text-center space-y-2">
@@ -1024,12 +1106,23 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
               )}
             </Card>
 
-            {/* New Customer Registration */}
-            <Card className="p-6 text-center space-y-4">
-              <UserPlus className="w-10 h-10 mx-auto text-muted-foreground" />
-              <div>
-                <h3 className="font-semibold text-lg text-foreground">{t('barista.newCustomer')}</h3>
-                <p className="text-sm text-muted-foreground">{t('barista.registerOnApp')}</p>
+            {/* Quick Register - Yellow Yens Button */}
+            <Card className="p-6 bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0 w-14 h-14 bg-chart-1 rounded-xl flex items-center justify-center">
+                  <UserPlus className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg text-foreground mb-1">{t('barista.quickRegister')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('barista.quickRegisterDesc')}</p>
+                </div>
+                <Button 
+                  className="bg-chart-1 hover:bg-chart-1/90 text-white"
+                  onClick={() => setQuickRegisterOpen(true)}
+                  data-testid="button-quick-register"
+                >
+                  {t('barista.register')}
+                </Button>
               </div>
             </Card>
           </div>
@@ -1252,6 +1345,69 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       
       {/* Product Menu Sheet */}
       <ProductMenuSheet open={menuOpen} onOpenChange={setMenuOpen} />
+
+      {/* Quick Register Dialog */}
+      <Dialog open={quickRegisterOpen} onOpenChange={setQuickRegisterOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="dialog-quick-register">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-chart-1" />
+              {t('barista.quickRegister')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="quick-name">{t('customer.name')} *</Label>
+              <Input
+                id="quick-name"
+                placeholder={t('customer.enterName')}
+                value={quickRegisterName}
+                onChange={(e) => setQuickRegisterName(e.target.value)}
+                data-testid="input-quick-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quick-phone">{t('customer.phone')} *</Label>
+              <Input
+                id="quick-phone"
+                type="tel"
+                placeholder={t('customer.enterPhone')}
+                value={quickRegisterPhone}
+                onChange={(e) => setQuickRegisterPhone(e.target.value)}
+                data-testid="input-quick-phone"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quick-email">{t('customer.email')} ({t('common.optional')})</Label>
+              <Input
+                id="quick-email"
+                type="email"
+                placeholder={t('customer.enterEmail')}
+                value={quickRegisterEmail}
+                onChange={(e) => setQuickRegisterEmail(e.target.value)}
+                data-testid="input-quick-email"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setQuickRegisterOpen(false)}
+              data-testid="button-cancel-register"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button 
+              className="bg-chart-1 hover:bg-chart-1/90 text-white"
+              onClick={handleQuickRegisterSubmit}
+              disabled={quickRegisterMutation.isPending}
+              data-testid="button-submit-register"
+            >
+              {quickRegisterMutation.isPending ? t('common.saving') : t('barista.register')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

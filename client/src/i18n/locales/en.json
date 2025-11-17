@@ -30,7 +30,8 @@
     "admin": "Admin",
     "version": "v3.1.1",
     "saving": "Saving...",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "optional": "optional"
   },
   "home": {
     "title": "Yen's Loyalty System",
@@ -76,9 +77,13 @@
     "newCustomer": "New customer? Enter your phone number and we'll set up your account!",
     "createAccount": "Create Account",
     "setupAccount": "Welcome! Let's set up your Yen's Rewards account",
+    "name": "Name",
     "phone": "Phone",
+    "email": "Email",
     "yourName": "Your Name",
     "enterName": "Enter your name",
+    "enterPhone": "Enter phone number",
+    "enterEmail": "Enter email address",
     "emailOptional": "Email (Optional)",
     "emailPlaceholder": "your@email.com",
     "birthdayOptional": "Birthday (Optional)",
@@ -245,7 +250,14 @@
     "baristas": "Baristas",
     "you": "You",
     "noPerformanceData": "No performance data yet",
-    "startSellingToEarnPoints": "Start selling to earn points!"
+    "startSellingToEarnPoints": "Start selling to earn points!",
+    "quickRegister": "Quick Register",
+    "quickRegisterDesc": "Register customer on the spot",
+    "register": "Register",
+    "customerRegistered": "Customer Registered",
+    "customerRegisteredDesc": "{{name}} has been registered successfully",
+    "registrationFailed": "Registration Failed",
+    "fillRequiredFields": "Please fill in all required fields"
   },
   "admin": {
     "title": "Admin Dashboard",
