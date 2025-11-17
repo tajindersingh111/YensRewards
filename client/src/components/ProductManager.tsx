@@ -368,7 +368,7 @@ export default function ProductManager() {
           <p className="text-muted-foreground mb-4">{t('products.noProductsDesc')}</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {products.map((product) => (
             <ProductCard
               key={product.id}
