@@ -105,7 +105,7 @@ export function ProductCard({
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
             <span 
-              className={variant === "reference" ? "text-2xl font-bold text-primary" : "text-lg font-bold text-primary"} 
+              className={variant === "reference" ? "text-2xl font-bold text-chart-1" : "text-lg font-bold text-primary"} 
               data-testid={`text-product-price-${product.id}`}
             >
               {formatPrice(product.price)}

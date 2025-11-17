@@ -1,17 +1,30 @@
-# Yens Thai Ice Cream Loyalty System v3.1.1
+# Yens Thai Ice Cream Loyalty System v3.1.2
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.1.1)
-**Product Image Upload Fix:**
+## Latest Release (v3.1.2)
+**Product Display Enhancement & Cross-App Sharing:**
+- 📦 **Shared ProductCard Component:** Reusable component with 4 variants (management, transaction, browse, reference) for consistent product display
+- 📐 **Fixed Admin Display:** Responsive 1→2→3 column grid with proper 4:3 aspect ratio images (previously too large)
+- 🔍 **Barista Product Menu:** Sheet drawer with category filters for quick price reference during customer interactions
+- 🎨 **Yens Theme Compliance:** Reference variant uses Yens yellow (text-chart-1) for price emphasis, maintaining brand consistency
+- 📱 **Optimized Customer Menu:** Retained mobile-first 4:5 portrait cards (center-aligned) as separate implementation for optimal mobile browsing UX
+- 🌐 **Full Translations:** Complete EN/TH support for all product features
+
+**Design Decision - Product Card Implementations:**
+- **Admin & Barista**: Use shared ProductCard (4:3 landscape, left-aligned) with management/reference variants
+- **Customer App**: Separate mobile-optimized implementation (4:5 portrait, center-aligned) using same theme tokens for consistency
+- **Rationale**: Customer browsing UX requires portrait orientation and simpler center-aligned design; sharing theme tokens ensures visual consistency while allowing UX optimization per context
+
+**Previous (v3.1.1) - Product Image Upload Fix:**
 - 🖼️ **Object Storage Integration:** Proper Replit object storage for product images using Google Cloud Storage
 - 🔒 **Secure Upload Flow:** Three-step presigned URL upload (get URL → upload to GCS → set ACL)
 - 🛡️ **ACL-Based Access Control:** Server-side proxy enforces visibility policies before serving images
 - 📁 **Path Validation:** Ensures uploaded images are in products/ directory
 - ✅ **Fixed Upload Issues:** Resolved filesystem path errors and Public Access Prevention constraints
 
-**Previous (v3.1.0) - Gamification System:**
+**v3.1.0 - Gamification System:**
 - ✨ Weekly Special Offers for barista motivation
 - 📊 Performance Tracking with automatic point calculation
 - 🏆 Real-time Leaderboards
