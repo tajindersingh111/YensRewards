@@ -1,10 +1,17 @@
-# Yens Thai Ice Cream Loyalty System v3.1.4
+# Yens Thai Ice Cream Loyalty System v3.1.5
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.1.4)
-**Enhanced Weekly Specials & UX Improvements:**
+## Latest Release (v3.1.5)
+**Barista Quick Register & Enhanced Weekly Specials Display:**
+- ⚡ **Quick Register:** Yellow Yens-branded card on Barista search screen for instant customer registration (Name, Phone, Email optional)
+- 🎯 **One-Click Registration:** Dialog form with validation, auto-selects new customer for immediate transaction
+- 🎨 **Beautiful Weekly Specials:** Barista app now displays specials with gradient backgrounds, large icons, and glassmorphic design
+- 🌈 **Icon/Gradient System:** Weekly Specials use icon picker (10 icons) + 5 color themes instead of image uploads
+- 🌐 **Full Bilingual Support:** All new features fully translated (Thai/English)
+
+**Previous (v3.1.4) - Admin Weekly Specials Enhancement:**
 - 🎨 **Icon Picker:** Choose from 10 fun icons (Trophy, Star, Zap, Heart, Gift, Trending, Target, Award, Rocket, Crown) - no image upload needed!
 - 🌈 **Color Themes:** 5 beautiful gradient backgrounds (Sunshine, Ocean, Royal, Fresh, Fire) for visual appeal
 - ⚡ **Quick Templates:** 3 pre-filled templates for instant setup (Double Points Weekend, New Customer Bonus, Top Seller Challenge)
