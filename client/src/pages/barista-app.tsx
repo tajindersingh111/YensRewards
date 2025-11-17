@@ -1011,35 +1011,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         {/* SEARCH STEP */}
         {isClockedIn && step === "search" && (
           <div className="pt-8 space-y-6">
-            {/* Weekly Special Banner with Icon/Gradient System */}
-            {weeklySpecial && (() => {
-              const { iconData, themeData } = parseImageUrl(weeklySpecial.imageUrl);
-              const SpecialIcon = iconData.Icon;
-              return (
-                <Card className={`bg-gradient-to-r ${themeData.gradient} border-0 p-6 shadow-lg`} data-testid="weekly-special-banner">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-20 h-20 bg-white/30 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                      <SpecialIcon className={`w-12 h-12 ${iconData.color}`} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className={`w-5 h-5 ${themeData.textColor}`} />
-                        <span className={`text-sm font-semibold ${themeData.textColor} uppercase`}>{t('barista.weeklySpecial')}</span>
-                      </div>
-                      <h3 className={`text-lg font-bold ${themeData.textColor} mb-1`}>{weeklySpecial.title}</h3>
-                      <p className={`text-sm ${themeData.textColor} opacity-90 mb-2`}>{weeklySpecial.description}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge className={`bg-white/20 ${themeData.textColor} hover:bg-white/30 backdrop-blur-sm border-white/30`}>
-                          {t('barista.earnBonus', { points: weeklySpecial.bonusPoints })}
-                        </Badge>
-                        <span className={`text-xs ${themeData.textColor} opacity-75`}>{t('barista.promoteThis')}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })()}
-
+            {/* Customer Search Card - Now at the top */}
             <Card className="p-6 space-y-4">
               <div className="text-center space-y-2">
                 <Search className="w-12 h-12 mx-auto text-chart-1" />
@@ -1125,6 +1097,35 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                 </Button>
               </div>
             </Card>
+
+            {/* Weekly Special Banner - Now at the bottom for future expansion */}
+            {weeklySpecial && (() => {
+              const { iconData, themeData } = parseImageUrl(weeklySpecial.imageUrl);
+              const SpecialIcon = iconData.Icon;
+              return (
+                <Card className={`bg-gradient-to-r ${themeData.gradient} border-0 p-6 shadow-lg`} data-testid="weekly-special-banner">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-20 h-20 bg-white/30 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                      <SpecialIcon className={`w-12 h-12 ${iconData.color}`} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className={`w-5 h-5 ${themeData.textColor}`} />
+                        <span className={`text-sm font-semibold ${themeData.textColor} uppercase`}>{t('barista.weeklySpecial')}</span>
+                      </div>
+                      <h3 className={`text-lg font-bold ${themeData.textColor} mb-1`}>{weeklySpecial.title}</h3>
+                      <p className={`text-sm ${themeData.textColor} opacity-90 mb-2`}>{weeklySpecial.description}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`bg-white/20 ${themeData.textColor} hover:bg-white/30 backdrop-blur-sm border-white/30`}>
+                          {t('barista.earnBonus', { points: weeklySpecial.bonusPoints })}
+                        </Badge>
+                        <span className={`text-xs ${themeData.textColor} opacity-75`}>{t('barista.promoteThis')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })()}
           </div>
         )}
 
