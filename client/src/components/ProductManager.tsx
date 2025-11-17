@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Package } from "lucide-react";
 import ProductCSVImport from "@/components/ProductCSVImport";
 import ProductPhotoUpload from "@/components/ProductPhotoUpload";
+import { ProductCard } from "@/components/ProductCard";
 import type { Product } from "@shared/schema";
 
 const CATEGORY_VALUES = ["soft_serve", "milk_tea", "fruit_tea", "shakes", "sundaes", "float_drinks"];
@@ -367,76 +368,16 @@ export default function ProductManager() {
           <p className="text-muted-foreground mb-4">{t('products.noProductsDesc')}</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product) => {
-            const badgeInfo = getBadgeInfo(product.badge);
-            return (
-              <Card key={product.id} className="overflow-hidden" data-testid={`product-card-${product.id}`}>
-                {product.imageUrl && (
-                  <div className="aspect-video w-full overflow-hidden bg-muted">
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground" data-testid={`text-product-name-${product.id}`}>
-                        {product.name}
-                      </h3>
-                      {product.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {product.description}
-                        </p>
-                      )}
-                    </div>
-                    {badgeInfo && (
-                      <Badge className={`${badgeInfo.color} text-white text-xs`}>
-                        {t(`menu.badges.${product.badge}`)}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-foreground" data-testid={`text-product-price-${product.id}`}>
-                      ฿{parseFloat(product.price.toString()).toFixed(2)}
-                    </span>
-                    <div className="flex gap-1">
-                      {product.featured && (
-                        <Badge variant="outline" className="text-xs">{t('products.featuredShort')}</Badge>
-                      )}
-                      {!product.available && (
-                        <Badge variant="secondary" className="text-xs">{t('products.soldOut')}</Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEdit(product)}
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 hover-elevate active-elevate-2"
-                      data-testid={`button-edit-${product.id}`}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      {t('products.editProduct')}
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(product.id)}
-                      variant="outline"
-                      size="sm"
-                      className="hover-elevate active-elevate-2"
-                      data-testid={`button-delete-${product.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              variant="management"
+              onEdit={handleEdit}
+              onDelete={(p) => handleDelete(p.id)}
+            />
+          ))}
         </div>
       )}
     </div>

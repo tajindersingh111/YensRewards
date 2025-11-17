@@ -92,6 +92,7 @@
     "birthday": "Birthday",
     "home": "Home",
     "menuNav": "Menu",
+    "viewDetails": "View Details",
     "menu": {
       "title": "Our Menu",
       "subtitle": "Yens Thai Ice Cream",
@@ -161,6 +162,7 @@
     "processTransaction": "Process Transaction",
     "amountSpent": "Amount Spent (฿)",
     "addTransaction": "Add Transaction",
+    "addToCart": "Add to Cart",
     "pointsToEarn": "Points to Earn",
     "transactionSuccess": "Success!",
     "transactionSuccessDesc": "Transaction processed successfully",
@@ -554,7 +556,17 @@
       "updateFailed": "Failed to update product",
       "deleteFailed": "Failed to delete product",
       "success": "Success",
-      "error": "Error"
+      "error": "Error",
+      "noImage": "No Image",
+      "cost": "Cost",
+      "categories": {
+        "soft_serve": "Soft Serve",
+        "milk_tea": "Milk Tea",
+        "fruit_tea": "Fruit Tea",
+        "shakes": "Shakes",
+        "sundaes": "Sundaes",
+        "float_drinks": "Float Drinks"
+      }
     },
     "sites": {
       "title": "Sites Management",
