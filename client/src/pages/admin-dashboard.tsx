@@ -87,7 +87,7 @@ export default function AdminDashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocationPath("/admin/login");
       }, 500);
       return;
     }

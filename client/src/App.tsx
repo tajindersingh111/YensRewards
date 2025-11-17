@@ -9,6 +9,7 @@ import CustomerApp from "@/pages/customer-app";
 import CustomerMenu from "@/pages/customer-menu";
 import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminLogin from "@/pages/admin-login";
 import PromoteAdmin from "@/pages/promote-admin";
 import MessageTest from "@/pages/message-test";
 import MessagingTroubleshoot from "@/pages/messaging-troubleshoot";
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/promote-admin" component={PromoteAdmin} />
       <Route path="/test-messages" component={MessageTest} />
       <Route path="/messaging-troubleshoot" component={MessagingTroubleshoot} />
