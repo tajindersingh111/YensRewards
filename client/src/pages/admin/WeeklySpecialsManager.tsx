@@ -76,15 +76,15 @@ export default function WeeklySpecialsManager() {
   });
 
   const { data: specials = [], isLoading } = useQuery<WeeklySpecial[]>({
-    queryKey: ["/api/weekly-special"],
+    queryKey: ["/api/admin/weekly-specials"],
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return await apiRequest("POST", "/api/weekly-special", data);
+      return await apiRequest("POST", "/api/admin/weekly-specials", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/weekly-special"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/weekly-specials"] });
       queryClient.invalidateQueries({ queryKey: ["/api/weekly-special/active"] });
       toast({
         title: t("admin.specials.created"),
@@ -104,10 +104,10 @@ export default function WeeklySpecialsManager() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<WeeklySpecial> }) => {
-      return await apiRequest("PATCH", `/api/weekly-special/${id}`, data);
+      return await apiRequest("PATCH", `/api/admin/weekly-specials/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/weekly-special"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/weekly-specials"] });
       queryClient.invalidateQueries({ queryKey: ["/api/weekly-special/active"] });
       toast({
         title: t("admin.specials.updated"),
@@ -127,10 +127,10 @@ export default function WeeklySpecialsManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/weekly-special/${id}`);
+      return await apiRequest("DELETE", `/api/admin/weekly-specials/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/weekly-special"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/weekly-specials"] });
       queryClient.invalidateQueries({ queryKey: ["/api/weekly-special/active"] });
       toast({
         title: t("admin.specials.deleted"),
