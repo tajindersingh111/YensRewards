@@ -413,7 +413,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
 
   // Fetch ALL sites (including inactive) so effect runs when activation status changes
   const { data: allSites = [], isLoading: sitesLoading, isError: sitesError } = useQuery<Site[]>({
-    queryKey: ['/api/admin/sites'],
+    queryKey: ['/api/sites'],
   });
 
   // Fetch current time entry for clock in/out status
