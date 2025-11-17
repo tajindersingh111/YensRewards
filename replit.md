@@ -1,10 +1,18 @@
-# Yens Thai Ice Cream Loyalty System v3.1.3
+# Yens Thai Ice Cream Loyalty System v3.1.4
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.1.3)
-**Admin Product Grid Optimization:**
+## Latest Release (v3.1.4)
+**Enhanced Weekly Specials & UX Improvements:**
+- 🎨 **Icon Picker:** Choose from 10 fun icons (Trophy, Star, Zap, Heart, Gift, Trending, Target, Award, Rocket, Crown) - no image upload needed!
+- 🌈 **Color Themes:** 5 beautiful gradient backgrounds (Sunshine, Ocean, Royal, Fresh, Fire) for visual appeal
+- ⚡ **Quick Templates:** 3 pre-filled templates for instant setup (Double Points Weekend, New Customer Bonus, Top Seller Challenge)
+- 🎯 **Beautiful Cards:** Gradient backgrounds with large icons and clear information display
+- 🔧 **Fixed API Endpoints:** Corrected Weekly Specials save functionality
+- 👤 **Role Labels:** Updated "User" to "Barista" throughout the Admin Dashboard for clarity
+
+**Previous (v3.1.3) - Admin Product Grid Optimization:**
 - 📊 **Compact Grid Layout:** Admin Products now displays 6 products per line (previously 3) for better screen space utilization
 - 📐 **Responsive Design:** 2→4→6 column grid across breakpoints (mobile→tablet→desktop)
 - 🎯 **Tighter Spacing:** Reduced gap from gap-6 to gap-4 for more compact, professional appearance
