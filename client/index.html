@@ -44,24 +44,26 @@
       (function() {
         const path = window.location.pathname;
         const manifestLink = document.getElementById('app-manifest');
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
         
         if (path.startsWith('/customer')) {
-          manifestLink.href = '/manifest-customer.json';
+          if (manifestLink) manifestLink.href = '/manifest-customer.json';
           document.title = 'Yens Customer';
-          document.querySelector('meta[name="theme-color"]').content = '#FCD34D';
-          document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Yens Customer';
+          if (themeColorMeta) themeColorMeta.content = '#FCD34D';
+          if (appleTitleMeta) appleTitleMeta.content = 'Yens Customer';
         } else if (path.startsWith('/barista')) {
-          manifestLink.href = '/manifest-barista.json';
+          if (manifestLink) manifestLink.href = '/manifest-barista.json';
           document.title = 'Yens Barista';
-          document.querySelector('meta[name="theme-color"]').content = '#1E40AF';
-          document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Yens Barista';
+          if (themeColorMeta) themeColorMeta.content = '#1E40AF';
+          if (appleTitleMeta) appleTitleMeta.content = 'Yens Barista';
         } else if (path.startsWith('/admin')) {
-          manifestLink.href = '/manifest-admin.json';
+          if (manifestLink) manifestLink.href = '/manifest-admin.json';
           document.title = 'Yens Admin';
-          document.querySelector('meta[name="theme-color"]').content = '#1E40AF';
-          document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Yens Admin';
+          if (themeColorMeta) themeColorMeta.content = '#1E40AF';
+          if (appleTitleMeta) appleTitleMeta.content = 'Yens Admin';
         } else {
-          manifestLink.href = '/manifest.json';
+          if (manifestLink) manifestLink.href = '/manifest.json';
         }
       })();
     </script>
