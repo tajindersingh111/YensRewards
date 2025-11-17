@@ -177,16 +177,32 @@ export default function AccountSettings() {
           </div>
         </CardHeader>
         <CardContent>
-          {!userStatus?.hasPassword && (
-            <Alert className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {t('admin.settings.passwordNotSet')}
-              </AlertDescription>
-            </Alert>
-          )}
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {userStatus?.hasPassword 
+                ? `Use this email and password to sign into the Barista app: ${user?.email || ''}`
+                : `Set a password to access the Barista app with your email: ${user?.email || ''}`
+              }
+            </AlertDescription>
+          </Alert>
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            {/* Email Display (Read-only) */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={user?.email || ''}
+                disabled
+                className="bg-muted"
+                data-testid="input-email-readonly"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('admin.settings.emailHelp')}
+              </p>
+            </div>
             {userStatus?.hasPassword && (
               <div className="space-y-2">
                 <Label htmlFor="current-password">{t('admin.settings.currentPassword')}</Label>

@@ -272,6 +272,7 @@
       "twoFactorFailed": "Failed to setup 2FA",
       "baristaAccess": "Barista App Access",
       "baristaAccessDesc": "Set a password to access the Barista app with your admin credentials",
+      "emailHelp": "Use this email to login to the Barista app",
       "passwordNotSet": "You haven't set a password for Barista app access yet",
       "passwordIsSet": "Password is set. You can now login to the Barista app"
     },
