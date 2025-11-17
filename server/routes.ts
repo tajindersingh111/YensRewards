@@ -9,39 +9,7 @@ import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import multer from "multer";
-import path from "path";
-import fs from "fs/promises";
-
-// Configure multer for file uploads to object storage
-const publicDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0] || '/tmp/public';
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: async (req, file, cb) => {
-      const uploadDir = path.join(publicDir, 'products');
-      try {
-        await fs.mkdir(uploadDir, { recursive: true });
-        cb(null, uploadDir);
-      } catch (error: any) {
-        cb(error, uploadDir);
-      }
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = `${Date.now()}_${Math.round(Math.random() * 1E9)}`;
-      cb(null, `product_${uniqueSuffix}${path.extname(file.originalname)}`);
-    },
-  }),
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
-    }
-  },
-});
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 // Helper function to replace merge fields in messages
 function replaceMergeFields(text: string, customer: { name: string; points: number; tier: string }): string {
@@ -64,12 +32,30 @@ function sanitizeUsers(users: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve static files from object storage (product images, etc.)
-  const express = await import("express");
-  if (publicDir && publicDir !== '/tmp/public') {
-    app.use(express.default.static(publicDir));
-    console.log(`📁 Serving static files from object storage: ${publicDir}`);
-  }
+  // Serve public product images from object storage
+  app.get("/products/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(`products/${filePath}`);
+      if (!file) {
+        return res.status(404).json({ error: "Image not found" });
+      }
+
+      // Verify the file is marked as public via ACL policy
+      const canAccess = await objectStorageService.canAccessPublicObject(file);
+      if (!canAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error serving product image:", error);
+      if (!res.headersSent) {
+        return res.status(500).json({ error: "Failed to serve image" });
+      }
+    }
+  });
   
   // Setup authentication
   await setupAuth(app);
@@ -1551,7 +1537,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create product (admin only)
   app.post('/api/admin/products', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const validatedData = insertProductSchema.parse(req.body);
+      // Convert empty string to null for numeric fields
+      const cleanedData = {
+        ...req.body,
+        cost: req.body.cost === '' ? null : req.body.cost,
+        price: req.body.price === '' ? null : req.body.price,
+      };
+      const validatedData = insertProductSchema.parse(cleanedData);
       const product = await storage.createProduct(validatedData);
       res.status(201).json(product);
     } catch (error: any) {
@@ -1626,20 +1618,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload product image (admin only)
-  app.post('/api/admin/upload-product-image', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
+  // Get presigned URL for product image upload
+  app.post('/api/admin/product-images/upload-url', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getProductImageUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error generating product image upload URL:", error);
+      res.status(500).json({ message: "Failed to generate upload URL" });
+    }
+  });
+
+  // Set ACL policy after product image upload
+  app.post('/api/admin/product-images/set-acl', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { imageURL } = req.body;
+      if (!imageURL) {
+        return res.status(400).json({ message: "Image URL is required" });
       }
 
-      // Generate public URL for the uploaded file
-      const filename = req.file.filename;
-      const publicUrl = `/products/${filename}`;
-
-      res.json({ url: publicUrl });
+      const objectStorageService = new ObjectStorageService();
+      const imagePath = await objectStorageService.setProductImageAclPolicy(imageURL);
+      res.json({ url: imagePath });
     } catch (error) {
-      console.error("Error uploading product image:", error);
-      res.status(500).json({ message: "Failed to upload image" });
+      console.error("Error setting product image ACL:", error);
+      res.status(500).json({ message: "Failed to set image ACL" });
     }
   });
 

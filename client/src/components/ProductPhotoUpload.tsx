@@ -41,22 +41,44 @@ export default function ProductPhotoUpload({ currentImageUrl, onImageChange }: P
     setUploading(true);
 
     try {
-      // Create form data
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Upload to server
-      const response = await fetch('/api/admin/upload-product-image', {
+      // Step 1: Get presigned upload URL from server
+      const urlResponse = await fetch('/api/admin/product-images/upload-url', {
         method: 'POST',
-        body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
+      if (!urlResponse.ok) {
+        throw new Error('Failed to get upload URL');
       }
 
-      const data = await response.json();
-      const imageUrl = data.url;
+      const { uploadURL } = await urlResponse.json();
+
+      // Step 2: Upload directly to Google Cloud Storage
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      // Step 3: Set ACL policy and get final URL
+      const aclResponse = await fetch('/api/admin/product-images/set-acl', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageURL: uploadURL }),
+      });
+
+      if (!aclResponse.ok) {
+        throw new Error('Failed to set image permissions');
+      }
+
+      const { url: imageUrl } = await aclResponse.json();
 
       setPreviewUrl(imageUrl);
       onImageChange(imageUrl);
