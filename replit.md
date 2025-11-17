@@ -1,13 +1,17 @@
-# Yens Thai Ice Cream Loyalty System v3.0.3
+# Yens Thai Ice Cream Loyalty System v3.1.0
 
 ## Overview
-A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, and a comprehensive admin dashboard with business health metrics and reporting.
+A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.0.3)
-**Bug Fix Release:**
-- 🐛 Fixed TypeScript errors in barista-app.tsx (scheduledDate field reference, site name lookup, priority comparison)
-- 🔧 Improved type safety for work schedules and announcements display
-- 🧹 Code cleanup and LSP error resolution
+## Latest Release (v3.1.0)
+**Gamification System Release:**
+- ✨ **Weekly Special Offers:** Admin-managed promotional campaigns to motivate baristas
+- 📊 **Performance Tracking:** Automatic point calculation for special sales and new customer signups
+- 🏆 **Leaderboards:** Real-time ranking system showing top-performing baristas
+- 📈 **Performance Widget:** Personal stats display with weekly points, rank, and metrics
+- 🌐 **Full Bilingual Support:** Complete Thai/English translations for all gamification features
+- 🎯 **Admin Interface:** Weekly Specials management tab with CRUD operations
+- 🎨 **Enhanced Barista UI:** Promotional banner on search screen, stats widget, and leaderboard view
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -28,12 +32,13 @@ Preferred communication style: Simple, everyday language.
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
 - **Authentication & Authorization:** Dual authentication system - Replit Auth (OpenID Connect) for admin dashboard and password-based authentication with optional 2FA for operational apps (Barista/Customer). Session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation from OIDC claims. Password hashing via bcrypt (10 salt rounds), TOTP-based 2FA via otpauth. Admin self-service account management allows admins to set passwords and enable 2FA for Barista app access via Settings tab.
-- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites`, `clock_sessions`, `work_schedules`, `barista_announcements` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields.
+- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites`, `clock_sessions`, `work_schedules`, `barista_announcements`, `weekly_specials`, `barista_performance` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields.
 - **User Management:** Admin-only user account management (CRUD) with enable/disable functionality, three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation, password management, and 2FA setup/management.
 - **Messaging System:** Twilio for SMS, Resend for email (pending SendGrid migration), multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All features fully internationalized.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, image storage.
 - **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking, server-side pagination), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only with enable/disable functionality), admin self-service password and 2FA management (Settings tab with password set/update, 2FA setup with QR codes, enable/disable 2FA), sites management (physical location tracking with operating schedules, predefined locations, and mobile van support), Barista App functionalities (Clock In/Out, Work Schedules Management, Barista Announcements/Hub).
+- **Gamification System:** Weekly special offers with admin management (create, edit, activate/deactivate, delete with scheduled start/end dates), barista performance tracking (automatic point calculation for special sales and new customer signups), real-time leaderboards (top 10 performers with rank, points, and sales metrics), personal performance stats widget (weekly points, current rank, sales count, signup count), promotional banner on barista search screen, fire-and-forget performance updates on transaction processing, dedicated Weekly Specials admin tab, full bilingual support (Thai/English) for all gamification UI elements.
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
