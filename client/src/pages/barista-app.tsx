@@ -287,6 +287,9 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [amount, setAmount] = useState("");
   const [location, setLocation] = useState("");
+  
+  // Track if barista is clocked in - determines which view to show
+  const [isClockedIn, setIsClockedIn] = useState(false);
 
   // Fetch ALL sites (including inactive) so effect runs when activation status changes
   const { data: allSites = [], isLoading: sitesLoading, isError: sitesError } = useQuery<Site[]>({
@@ -325,6 +328,17 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       setLocation("");
     }
   }, [allSites]);
+
+  // Sync isClockedIn state with currentTimeEntry and reset step if needed
+  useEffect(() => {
+    const newClockedInStatus = !!currentTimeEntry && !!currentTimeEntry.clockInTime && !currentTimeEntry.clockOutTime;
+    setIsClockedIn(newClockedInStatus);
+    
+    // Reset to search step if user is not clocked in
+    if (!newClockedInStatus && step !== "search") {
+      setStep("search");
+    }
+  }, [currentTimeEntry]);
 
   // Immediately reset workflow when all sites deactivate
   useEffect(() => {
@@ -626,25 +640,102 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
           </Card>
         )}
 
-        {/* CLOCK IN/OUT SECTION */}
-        {step === "search" && (
-          <Card className="p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-chart-1" />
+        {/* CLOCK IN DASHBOARD - Show when NOT clocked in */}
+        {!isClockedIn && (
+          <>
+            {/* CLOCK IN SECTION */}
+            <Card className="p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-chart-1" />
+                  <div>
+                    <p className="text-sm font-medium">{t('barista.notClockedIn')}</p>
+                    <p className="text-xs text-muted-foreground">{t('barista.clockInToStart')}</p>
+                  </div>
+                </div>
                 <div>
-                  <p className="text-sm font-medium">
-                    {currentTimeEntry ? t('barista.clockedIn') : t('barista.notClockedIn')}
-                  </p>
-                  {currentTimeEntry && currentTimeEntry.clockInTime && (
-                    <p className="text-xs text-muted-foreground">
-                      {t('barista.since')} {new Date(currentTimeEntry.clockInTime).toLocaleTimeString()}
-                    </p>
-                  )}
+                  <Button
+                    onClick={() => clockInMutation.mutate()}
+                    disabled={clockInMutation.isPending || activeSites.length === 0}
+                    size="sm"
+                    data-testid="button-clock-in"
+                  >
+                    {clockInMutation.isPending ? t('barista.clockingIn') : t('barista.clockIn')}
+                  </Button>
                 </div>
               </div>
-              <div>
-                {currentTimeEntry ? (
+            </Card>
+
+            {/* WORK SCHEDULE SECTION */}
+            <Card className="p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-5 h-5 text-chart-2" />
+                <h3 className="font-semibold">{t('barista.mySchedule')}</h3>
+              </div>
+              {workSchedules.length > 0 ? (
+                <div className="space-y-2">
+                  {workSchedules.slice(0, 3).map((schedule) => (
+                    <div key={schedule.id} className="text-sm flex justify-between items-center p-2 bg-muted rounded">
+                      <div>
+                        <p className="font-medium">{new Date(schedule.scheduledDate).toLocaleDateString()}</p>
+                        <p className="text-xs text-muted-foreground">{allSites.find((s: Site) => s.id === schedule.siteId)?.name || 'N/A'}</p>
+                      </div>
+                      <div className="text-right text-xs">
+                        <p>{schedule.startTime} - {schedule.endTime}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t('barista.noSchedules')}</p>
+              )}
+            </Card>
+
+            {/* ANNOUNCEMENTS SECTION */}
+            <Card className="p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Bell className="w-5 h-5 text-chart-3" />
+                <h3 className="font-semibold">{t('barista.announcements')}</h3>
+              </div>
+              {announcements.length > 0 ? (
+                <div className="space-y-2">
+                  {announcements.slice(0, 2).map((announcement) => (
+                    <div key={announcement.id} className="text-sm p-3 bg-muted rounded">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="font-medium">{announcement.title}</p>
+                        <Badge variant={announcement.priority >= 5 ? 'destructive' : 'secondary'} className="text-xs">
+                          {t(`admin.barista.types.${announcement.type}`)}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{announcement.content}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t('barista.noAnnouncements')}</p>
+              )}
+            </Card>
+          </>
+        )}
+
+        {/* CUSTOMER SEARCH & TRANSACTION WORKFLOW - Show ONLY when clocked in */}
+        {isClockedIn && step === "search" && (
+          <>
+            {/* CLOCK OUT INFO CARD */}
+            <Card className="p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Timer className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-700">{t('barista.clockedIn')}</p>
+                    {currentTimeEntry && currentTimeEntry.clockInTime && (
+                      <p className="text-xs text-muted-foreground">
+                        {t('barista.since')} {new Date(currentTimeEntry.clockInTime).toLocaleTimeString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div>
                   <Button
                     onClick={() => clockOutMutation.mutate()}
                     disabled={clockOutMutation.isPending}
@@ -654,77 +745,14 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                   >
                     {clockOutMutation.isPending ? t('barista.clockOutting') : t('barista.clockOut')}
                   </Button>
-                ) : (
-                  <Button
-                    onClick={() => clockInMutation.mutate()}
-                    disabled={clockInMutation.isPending || activeSites.length === 0}
-                    size="sm"
-                    data-testid="button-clock-in"
-                  >
-                    {clockInMutation.isPending ? t('barista.clockingIn') : t('barista.clockIn')}
-                  </Button>
-                )}
+                </div>
               </div>
-            </div>
-          </Card>
-        )}
-
-        {/* WORK SCHEDULE SECTION */}
-        {step === "search" && (
-          <Card className="p-4 mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-5 h-5 text-chart-2" />
-              <h3 className="font-semibold">{t('barista.mySchedule')}</h3>
-            </div>
-            {workSchedules.length > 0 ? (
-              <div className="space-y-2">
-                {workSchedules.slice(0, 3).map((schedule) => (
-                  <div key={schedule.id} className="text-sm flex justify-between items-center p-2 bg-muted rounded">
-                    <div>
-                      <p className="font-medium">{new Date(schedule.scheduledDate).toLocaleDateString()}</p>
-                      <p className="text-xs text-muted-foreground">{allSites.find((s: Site) => s.id === schedule.siteId)?.name || 'N/A'}</p>
-                    </div>
-                    <div className="text-right text-xs">
-                      <p>{schedule.startTime} - {schedule.endTime}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t('barista.noSchedules')}</p>
-            )}
-          </Card>
-        )}
-
-        {/* ANNOUNCEMENTS SECTION */}
-        {step === "search" && (
-          <Card className="p-4 mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-5 h-5 text-chart-3" />
-              <h3 className="font-semibold">{t('barista.announcements')}</h3>
-            </div>
-            {announcements.length > 0 ? (
-              <div className="space-y-2">
-                {announcements.slice(0, 2).map((announcement) => (
-                  <div key={announcement.id} className="text-sm p-3 bg-muted rounded">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="font-medium">{announcement.title}</p>
-                      <Badge variant={announcement.priority >= 5 ? 'destructive' : 'secondary'} className="text-xs">
-                        {t(`admin.barista.types.${announcement.type}`)}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{announcement.content}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t('barista.noAnnouncements')}</p>
-            )}
-          </Card>
+            </Card>
+          </>
         )}
 
         {/* SEARCH STEP */}
-        {step === "search" && (
+        {isClockedIn && step === "search" && (
           <div className="pt-8 space-y-6">
             <Card className="p-6 space-y-4">
               <div className="text-center space-y-2">
@@ -804,7 +832,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         )}
 
         {/* VERIFY STEP */}
-        {step === "verify" && selectedCustomer && (
+        {isClockedIn && step === "verify" && selectedCustomer && (
           <div className="pt-8">
             <Card className="p-6 space-y-6">
               <div className="text-center space-y-4">
@@ -861,7 +889,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         )}
 
         {/* ENTER AMOUNT STEP */}
-        {step === "enter-amount" && selectedCustomer && (
+        {isClockedIn && step === "enter-amount" && selectedCustomer && (
           <div className="pt-8">
             <Card className="p-6 space-y-6">
               <div className="text-center">
@@ -926,7 +954,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         )}
 
         {/* CONFIRM STEP */}
-        {step === "confirm" && selectedCustomer && (
+        {isClockedIn && step === "confirm" && selectedCustomer && (
           <div className="pt-8">
             <Card className="p-6 space-y-6">
               <div className="text-center">
@@ -997,7 +1025,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         )}
 
         {/* SUCCESS STEP */}
-        {step === "success" && (
+        {isClockedIn && step === "success" && (
           <div className="pt-8">
             <Card className="p-12 text-center space-y-4">
               <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">

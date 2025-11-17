@@ -204,6 +204,7 @@
     "startingNew": "Starting new transaction...",
     "clockedIn": "Clocked In",
     "notClockedIn": "Not Clocked In",
+    "clockInToStart": "Please clock in to start serving customers",
     "since": "Since",
     "clockOut": "Clock Out",
     "clockOutting": "Clocking Out...",
