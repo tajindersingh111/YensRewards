@@ -1,12 +1,17 @@
-# Yens Thai Ice Cream Loyalty System v3.1.2
+# Yens Thai Ice Cream Loyalty System v3.1.3
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.1.2)
-**Product Display Enhancement & Cross-App Sharing:**
+## Latest Release (v3.1.3)
+**Admin Product Grid Optimization:**
+- 📊 **Compact Grid Layout:** Admin Products now displays 6 products per line (previously 3) for better screen space utilization
+- 📐 **Responsive Design:** 2→4→6 column grid across breakpoints (mobile→tablet→desktop)
+- 🎯 **Tighter Spacing:** Reduced gap from gap-6 to gap-4 for more compact, professional appearance
+- ✅ **Maintained Readability:** All product information (name, price, cost, category, Edit/Delete buttons) remains clearly visible
+
+**Previous (v3.1.2) - Product Display Enhancement & Cross-App Sharing:**
 - 📦 **Shared ProductCard Component:** Reusable component with 4 variants (management, transaction, browse, reference) for consistent product display
-- 📐 **Fixed Admin Display:** Responsive 1→2→3 column grid with proper 4:3 aspect ratio images (previously too large)
 - 🔍 **Barista Product Menu:** Sheet drawer with category filters for quick price reference during customer interactions
 - 🎨 **Yens Theme Compliance:** Reference variant uses Yens yellow (text-chart-1) for price emphasis, maintaining brand consistency
 - 📱 **Optimized Customer Menu:** Retained mobile-first 4:5 portrait cards (center-aligned) as separate implementation for optimal mobile browsing UX
