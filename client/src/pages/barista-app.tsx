@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Customer, Site, User, WorkSchedule, BaristaAnnouncement } from "@shared/schema";
+import type { Customer, Site, User, WorkSchedule, BaristaAnnouncement, WeeklySpecial, BaristaPerformance } from "@shared/schema";
 import InstallPrompt from "@/components/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -309,6 +309,21 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Fetch active barista announcements
   const { data: announcements = [] } = useQuery<BaristaAnnouncement[]>({
     queryKey: ['/api/barista-announcements'],
+  });
+
+  // Fetch active weekly special
+  const { data: weeklySpecial } = useQuery<WeeklySpecial | null>({
+    queryKey: ['/api/weekly-special/active'],
+  });
+
+  // Fetch my performance stats
+  const { data: myPerformance } = useQuery<BaristaPerformance | null>({
+    queryKey: ['/api/barista/performance/me'],
+  });
+
+  // Fetch weekly leaderboard
+  const { data: leaderboard = [] } = useQuery<Array<BaristaPerformance & { user: User }>>({
+    queryKey: ['/api/barista/leaderboard'],
   });
 
   // Derive transaction eligibility from live sites - filter active downstream
@@ -715,6 +730,75 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                 <p className="text-sm text-muted-foreground">{t('barista.noAnnouncements')}</p>
               )}
             </Card>
+
+            {/* MY PERFORMANCE SECTION */}
+            <Card className="p-4 mb-4" data-testid="performance-stats">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-yellow-600" />
+                <h3 className="font-semibold">{t('barista.myPerformance')}</h3>
+                <Badge variant="outline" className="ml-auto text-xs">{t('barista.thisWeek')}</Badge>
+              </div>
+              {myPerformance ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 bg-muted rounded">
+                    <p className="text-2xl font-bold text-chart-1">{myPerformance.transactionCount}</p>
+                    <p className="text-xs text-muted-foreground">{t('barista.totalTransactions')}</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded">
+                    <p className="text-2xl font-bold text-yellow-600">{myPerformance.totalPoints}</p>
+                    <p className="text-xs text-muted-foreground">{t('barista.totalPoints')}</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded">
+                    <p className="text-2xl font-bold text-chart-3">{myPerformance.specialOffersSold}</p>
+                    <p className="text-xs text-muted-foreground">{t('barista.specialsSold')}</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded">
+                    <p className="text-2xl font-bold text-chart-4">{myPerformance.newCustomerSignups}</p>
+                    <p className="text-xs text-muted-foreground">{t('barista.newSignups')}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">{t('barista.noPerformanceData')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('barista.startSellingToEarnPoints')}</p>
+                </div>
+              )}
+            </Card>
+
+            {/* LEADERBOARD SECTION */}
+            <Card className="p-4 mb-4" data-testid="leaderboard">
+              <div className="flex items-center gap-2 mb-3">
+                <Trophy className="w-5 h-5 text-yellow-600" />
+                <h3 className="font-semibold">{t('barista.leaderboard')}</h3>
+                <Badge variant="outline" className="ml-auto text-xs">{t('barista.top')} 5</Badge>
+              </div>
+              {leaderboard.length > 0 ? (
+                <div className="space-y-2">
+                  {leaderboard.slice(0, 5).map((entry: any, index: number) => (
+                    <div key={entry.id} className="flex items-center gap-3 p-2 bg-muted rounded" data-testid={`leaderboard-entry-${index}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                        index === 0 ? 'bg-yellow-500 text-white' :
+                        index === 1 ? 'bg-gray-400 text-white' :
+                        index === 2 ? 'bg-orange-600 text-white' :
+                        'bg-muted-foreground/20 text-muted-foreground'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{entry.user?.firstName} {entry.user?.lastName}</p>
+                        <p className="text-xs text-muted-foreground">{entry.transactionCount} {t('barista.totalTransactions').toLowerCase()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-yellow-600">{entry.totalPoints}</p>
+                        <p className="text-xs text-muted-foreground">{t('barista.totalPoints').toLowerCase()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">{t('barista.noPerformanceData')}</p>
+              )}
+            </Card>
           </>
         )}
 
@@ -754,6 +838,35 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         {/* SEARCH STEP */}
         {isClockedIn && step === "search" && (
           <div className="pt-8 space-y-6">
+            {/* Weekly Special Banner */}
+            {weeklySpecial && (
+              <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-300 p-6" data-testid="weekly-special-banner">
+                <div className="flex items-start gap-4">
+                  {weeklySpecial.imageUrl && (
+                    <img 
+                      src={weeklySpecial.imageUrl} 
+                      alt={weeklySpecial.title}
+                      className="w-20 h-20 rounded-lg object-cover"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sparkles className="w-5 h-5 text-yellow-600" />
+                      <span className="text-sm font-semibold text-yellow-700 uppercase">{t('barista.weeklySpecial')}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-foreground mb-1">{weeklySpecial.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">{weeklySpecial.description}</p>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">
+                        {t('barista.earnBonus', { points: weeklySpecial.bonusPoints })}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{t('barista.promoteThis')}</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             <Card className="p-6 space-y-4">
               <div className="text-center space-y-2">
                 <Search className="w-12 h-12 mx-auto text-chart-1" />

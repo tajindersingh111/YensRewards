@@ -24,9 +24,13 @@ import {
   type InsertWorkSchedule,
   type BaristaAnnouncement,
   type InsertBaristaAnnouncement,
+  type WeeklySpecial,
+  type InsertWeeklySpecial,
+  type BaristaPerformance,
+  type InsertBaristaPerformance,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites, timeEntries, workSchedules, baristaAnnouncements } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites, timeEntries, workSchedules, baristaAnnouncements, weeklySpecials, baristaPerformance } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -193,6 +197,20 @@ export interface IStorage {
   createAnnouncement(announcement: InsertBaristaAnnouncement): Promise<BaristaAnnouncement>;
   updateAnnouncement(id: string, announcement: Partial<BaristaAnnouncement>): Promise<BaristaAnnouncement | undefined>;
   deleteAnnouncement(id: string): Promise<void>;
+  
+  // Weekly Special methods
+  getActiveWeeklySpecial(): Promise<WeeklySpecial | undefined>;
+  getAllWeeklySpecials(): Promise<WeeklySpecial[]>;
+  getWeeklySpecial(id: string): Promise<WeeklySpecial | undefined>;
+  createWeeklySpecial(special: InsertWeeklySpecial): Promise<WeeklySpecial>;
+  updateWeeklySpecial(id: string, special: Partial<WeeklySpecial>): Promise<WeeklySpecial | undefined>;
+  deleteWeeklySpecial(id: string): Promise<void>;
+  
+  // Barista Performance methods
+  getBaristaPerformance(userId: string, weekStart: string): Promise<BaristaPerformance | undefined>;
+  getWeeklyLeaderboard(weekStart: string, limit?: number): Promise<Array<BaristaPerformance & { user: User }>>;
+  updateBaristaPerformance(performance: InsertBaristaPerformance): Promise<BaristaPerformance>;
+  getUserPerformanceHistory(userId: string, limit?: number): Promise<BaristaPerformance[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -1458,6 +1476,132 @@ export class DbStorage implements IStorage {
 
   async deleteAnnouncement(id: string): Promise<void> {
     await db.delete(baristaAnnouncements).where(eq(baristaAnnouncements.id, id));
+  }
+  
+  // Weekly Special methods
+  async getActiveWeeklySpecial(): Promise<WeeklySpecial | undefined> {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const result = await db
+      .select()
+      .from(weeklySpecials)
+      .where(and(
+        eq(weeklySpecials.isActive, true),
+        lte(weeklySpecials.startDate, today),
+        gte(weeklySpecials.endDate, today)
+      ))
+      .orderBy(desc(weeklySpecials.createdAt))
+      .limit(1);
+    return result[0];
+  }
+
+  async getAllWeeklySpecials(): Promise<WeeklySpecial[]> {
+    return await db
+      .select()
+      .from(weeklySpecials)
+      .orderBy(desc(weeklySpecials.createdAt));
+  }
+
+  async getWeeklySpecial(id: string): Promise<WeeklySpecial | undefined> {
+    const result = await db
+      .select()
+      .from(weeklySpecials)
+      .where(eq(weeklySpecials.id, id));
+    return result[0];
+  }
+
+  async createWeeklySpecial(special: InsertWeeklySpecial): Promise<WeeklySpecial> {
+    const result = await db
+      .insert(weeklySpecials)
+      .values(special)
+      .returning();
+    return result[0];
+  }
+
+  async updateWeeklySpecial(
+    id: string,
+    special: Partial<WeeklySpecial>
+  ): Promise<WeeklySpecial | undefined> {
+    const result = await db
+      .update(weeklySpecials)
+      .set({ ...special, updatedAt: new Date() })
+      .where(eq(weeklySpecials.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteWeeklySpecial(id: string): Promise<void> {
+    await db.delete(weeklySpecials).where(eq(weeklySpecials.id, id));
+  }
+  
+  // Barista Performance methods
+  async getBaristaPerformance(userId: string, weekStart: string): Promise<BaristaPerformance | undefined> {
+    const result = await db
+      .select()
+      .from(baristaPerformance)
+      .where(and(
+        eq(baristaPerformance.userId, userId),
+        eq(baristaPerformance.weekStart, weekStart)
+      ));
+    return result[0];
+  }
+
+  async getWeeklyLeaderboard(weekStart: string, limit: number = 10): Promise<Array<BaristaPerformance & { user: User }>> {
+    const result = await db
+      .select({
+        id: baristaPerformance.id,
+        userId: baristaPerformance.userId,
+        weekStart: baristaPerformance.weekStart,
+        transactionCount: baristaPerformance.transactionCount,
+        specialOffersSold: baristaPerformance.specialOffersSold,
+        newCustomerSignups: baristaPerformance.newCustomerSignups,
+        totalPoints: baristaPerformance.totalPoints,
+        weeklyRank: baristaPerformance.weeklyRank,
+        createdAt: baristaPerformance.createdAt,
+        updatedAt: baristaPerformance.updatedAt,
+        user: users
+      })
+      .from(baristaPerformance)
+      .leftJoin(users, eq(baristaPerformance.userId, users.id))
+      .where(eq(baristaPerformance.weekStart, weekStart))
+      .orderBy(desc(baristaPerformance.totalPoints))
+      .limit(limit);
+    
+    return result as Array<BaristaPerformance & { user: User }>;
+  }
+
+  async updateBaristaPerformance(performance: InsertBaristaPerformance): Promise<BaristaPerformance> {
+    const existing = await this.getBaristaPerformance(performance.userId, performance.weekStart);
+    
+    if (existing) {
+      const result = await db
+        .update(baristaPerformance)
+        .set({
+          transactionCount: performance.transactionCount,
+          specialOffersSold: performance.specialOffersSold,
+          newCustomerSignups: performance.newCustomerSignups,
+          totalPoints: performance.totalPoints,
+          weeklyRank: performance.weeklyRank,
+          updatedAt: new Date()
+        })
+        .where(eq(baristaPerformance.id, existing.id))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db
+        .insert(baristaPerformance)
+        .values(performance)
+        .returning();
+      return result[0];
+    }
+  }
+
+  async getUserPerformanceHistory(userId: string, limit: number = 10): Promise<BaristaPerformance[]> {
+    return await db
+      .select()
+      .from(baristaPerformance)
+      .where(eq(baristaPerformance.userId, userId))
+      .orderBy(desc(baristaPerformance.weekStart))
+      .limit(limit);
   }
 }
 

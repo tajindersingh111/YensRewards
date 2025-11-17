@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, users } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, users } from "@shared/schema";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
@@ -1023,14 +1023,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ Barista API Endpoints ============
 
   // Create transaction (process purchase)
-  // TODO: Add barista authentication in production
-  app.post('/api/transactions', async (req, res) => {
+  app.post('/api/transactions', isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertTransactionSchema.parse(req.body);
-      const transaction = await storage.createTransaction(validatedData);
+      
+      // Add barista ID from authenticated user
+      const transactionData = {
+        ...validatedData,
+        baristaId: req.user!.id,
+      };
+      
+      const transaction = await storage.createTransaction(transactionData);
       
       // Get updated customer data
       const customer = await storage.getCustomer(validatedData.customerId);
+      
+      // Update barista performance if baristaId is present
+      if (transactionData.baristaId) {
+        // Get active weekly special for bonus points
+        const weeklySpecial = await storage.getActiveWeeklySpecial();
+        const bonusPoints = (validatedData.includedSpecialOffer && weeklySpecial) ? weeklySpecial.bonusPoints : 0;
+        
+        // Update performance stats (don't await - fire and forget to avoid slowing down response)
+        updateBaristaPerformanceAfterTransaction(
+          transactionData.baristaId,
+          parseFloat(validatedData.amount),
+          validatedData.includedSpecialOffer || false,
+          validatedData.isNewCustomer || false,
+          bonusPoints
+        ).catch(error => {
+          console.error("Error updating barista performance:", error);
+        });
+      }
       
       res.status(201).json({ transaction, customer });
     } catch (error: any) {
@@ -2689,7 +2713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/work-schedules/me', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const schedules = await storage.getWorkSchedules(userId);
+      const schedules = await storage.getUserWorkSchedules(userId);
       res.json(schedules);
     } catch (error) {
       console.error("Error fetching work schedules:", error);
@@ -2700,19 +2724,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get active barista announcements
   app.get('/api/barista-announcements', isAuthenticated, async (req, res) => {
     try {
-      const announcements = await storage.getAnnouncements();
-      const activeAnnouncements = announcements.filter(a => {
-        const isActive = a.isActive;
-        const isNotExpired = !a.expiryDate || new Date(a.expiryDate) > new Date();
-        return isActive && isNotExpired;
-      });
-      res.json(activeAnnouncements);
+      const announcements = await storage.getActiveAnnouncements();
+      res.json(announcements);
     } catch (error) {
       console.error("Error fetching announcements:", error);
       res.status(500).json({ message: "Failed to fetch announcements" });
     }
   });
 
+  // === WEEKLY SPECIALS - ADMIN ROUTES ===
+  
+  // Get all weekly specials
+  app.get('/api/admin/weekly-specials', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const specials = await storage.getAllWeeklySpecials();
+      res.json(specials);
+    } catch (error) {
+      console.error("Error fetching weekly specials:", error);
+      res.status(500).json({ message: "Failed to fetch weekly specials" });
+    }
+  });
+
+  // Create weekly special
+  app.post('/api/admin/weekly-specials', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const specialData = insertWeeklySpecialSchema.parse(req.body);
+      const special = await storage.createWeeklySpecial(specialData);
+      res.status(201).json(special);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error("Error creating weekly special:", error);
+      res.status(500).json({ message: "Failed to create weekly special" });
+    }
+  });
+
+  // Update weekly special
+  app.patch('/api/admin/weekly-specials/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const updates = insertWeeklySpecialSchema.partial().parse(req.body);
+      const updated = await storage.updateWeeklySpecial(req.params.id, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "Weekly special not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error("Error updating weekly special:", error);
+      res.status(500).json({ message: "Failed to update weekly special" });
+    }
+  });
+
+  // Delete weekly special
+  app.delete('/api/admin/weekly-specials/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteWeeklySpecial(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting weekly special:", error);
+      res.status(500).json({ message: "Failed to delete weekly special" });
+    }
+  });
+
+  // === WEEKLY SPECIALS - BARISTA ROUTES ===
+  
+  // Get active weekly special
+  app.get('/api/weekly-special/active', isAuthenticated, async (req, res) => {
+    try {
+      const special = await storage.getActiveWeeklySpecial();
+      res.json(special || null);
+    } catch (error) {
+      console.error("Error fetching active weekly special:", error);
+      res.status(500).json({ message: "Failed to fetch active weekly special" });
+    }
+  });
+
+  // === BARISTA PERFORMANCE ROUTES ===
+  
+  // Get weekly leaderboard
+  app.get('/api/barista/leaderboard', isAuthenticated, async (req, res) => {
+    try {
+      const weekStart = req.query.weekStart as string || getMonday(new Date()).toISOString().split('T')[0];
+      const limit = parseInt(req.query.limit as string) || 10;
+      const leaderboard = await storage.getWeeklyLeaderboard(weekStart, limit);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Get my performance stats
+  app.get('/api/barista/performance/me', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const weekStart = req.query.weekStart as string || getMonday(new Date()).toISOString().split('T')[0];
+      const performance = await storage.getBaristaPerformance(userId, weekStart);
+      res.json(performance || null);
+    } catch (error) {
+      console.error("Error fetching performance:", error);
+      res.status(500).json({ message: "Failed to fetch performance" });
+    }
+  });
+
+  // Get performance history
+  app.get('/api/barista/performance/history', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const history = await storage.getUserPerformanceHistory(userId, limit);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching performance history:", error);
+      res.status(500).json({ message: "Failed to fetch performance history" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Helper function to get Monday of current week
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+}
+
+// Helper function to update barista performance after transaction
+async function updateBaristaPerformanceAfterTransaction(
+  baristaId: string,
+  amount: number,
+  isSpecialOffer: boolean,
+  isNewCustomerSignup: boolean,
+  weeklySpecialBonusPoints: number = 0
+) {
+  const weekStart = getMonday(new Date()).toISOString().split('T')[0];
+  
+  // Get existing performance for this week
+  const existing = await storage.getBaristaPerformance(baristaId, weekStart);
+  
+  // Calculate points: 1 point per transaction + special offer bonus + new customer bonus
+  const basePoints = 1; // 1 point per transaction
+  const specialOfferPoints = isSpecialOffer ? weeklySpecialBonusPoints : 0;
+  const newCustomerPoints = isNewCustomerSignup ? 2 : 0; // 2 bonus points for new customer
+  const totalNewPoints = basePoints + specialOfferPoints + newCustomerPoints;
+  
+  const performanceData = {
+    userId: baristaId,
+    weekStart,
+    transactionCount: (existing?.transactionCount || 0) + 1,
+    specialOffersSold: (existing?.specialOffersSold || 0) + (isSpecialOffer ? 1 : 0),
+    newCustomerSignups: (existing?.newCustomerSignups || 0) + (isNewCustomerSignup ? 1 : 0),
+    totalPoints: (existing?.totalPoints || 0) + totalNewPoints,
+    weeklyRank: existing?.weeklyRank || null,
+  };
+  
+  await storage.updateBaristaPerformance(performanceData);
 }
