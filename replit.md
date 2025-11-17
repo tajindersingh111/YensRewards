@@ -10,6 +10,7 @@ A multi-interface loyalty management system for Yens Thai Ice Cream, comprising 
 - ✅ Work Schedule display (admin management + barista view)
 - ✅ Barista Announcements hub (types: general, promotion, incentive, policy)
 - ✅ Access Control: Admin can enable/disable barista accounts
+- ✅ Admin self-service password and 2FA management for Barista app access
 - ✅ Full bilingual support (Thai/English) across all features
 - ✅ Production-ready with comprehensive testing and bug fixes
 
@@ -31,13 +32,13 @@ Preferred communication style: Simple, everyday language.
 - **Monorepo Structure:** `/client` (React app), `/server` (Express API), `/shared` (common types/schemas).
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
-- **Authentication & Authorization:** Dual authentication system - Replit Auth (OpenID Connect) and password-based authentication with optional 2FA. Session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation in test mode. Password hashing via bcrypt (10 salt rounds), TOTP-based 2FA via otpauth.
+- **Authentication & Authorization:** Dual authentication system - Replit Auth (OpenID Connect) for admin dashboard and password-based authentication with optional 2FA for operational apps (Barista/Customer). Session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation from OIDC claims. Password hashing via bcrypt (10 salt rounds), TOTP-based 2FA via otpauth. Admin self-service account management allows admins to set passwords and enable 2FA for Barista app access via Settings tab.
 - **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites`, `clock_sessions`, `work_schedules`, `barista_announcements` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields.
 - **User Management:** Admin-only user account management (CRUD) with enable/disable functionality, three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation, password management, and 2FA setup/management.
 - **Messaging System:** Twilio for SMS, Resend for email (pending SendGrid migration), multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All features fully internationalized.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, image storage.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking, server-side pagination), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only), sites management (physical location tracking with operating schedules, predefined locations, and mobile van support), Barista App functionalities (Clock In/Out, Work Schedules Management, Barista Announcements/Hub).
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking, server-side pagination), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only with enable/disable functionality), admin self-service password and 2FA management (Settings tab with password set/update, 2FA setup with QR codes, enable/disable 2FA), sites management (physical location tracking with operating schedules, predefined locations, and mobile van support), Barista App functionalities (Clock In/Out, Work Schedules Management, Barista Announcements/Hub).
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
