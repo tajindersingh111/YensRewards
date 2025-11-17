@@ -1,10 +1,16 @@
-# Yens Thai Ice Cream Loyalty System v3.1.5
+# Yens Thai Ice Cream Loyalty System v3.1.6
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.1.5)
-**Barista Quick Register & Enhanced Weekly Specials Display:**
+## Latest Release (v3.1.6)
+**Bug Fixes & UX Improvements:**
+- 🔧 **Sites API Fix:** Added `/api/sites` endpoint for baristas to access active sites (fixes "Cannot load branches" error)
+- 🖼️ **Product Image Display:** Changed product images from `object-cover` to `object-contain` for full image visibility
+- 📐 **Barista Layout:** Reorganized search screen - Customer Search at top, Quick Register middle, Weekly Special bottom
+- ✨ **Better Image Support:** Product images now display completely without cropping, perfect for transparent backgrounds
+
+**Previous (v3.1.5) - Barista Quick Register & Enhanced Weekly Specials Display:**
 - ⚡ **Quick Register:** Yellow Yens-branded card on Barista search screen for instant customer registration (Name, Phone, Email optional)
 - 🎯 **One-Click Registration:** Dialog form with validation, auto-selects new customer for immediate transaction
 - 🎨 **Beautiful Weekly Specials:** Barista app now displays specials with gradient backgrounds, large icons, and glassmorphic design
