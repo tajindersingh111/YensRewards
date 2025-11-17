@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell } from "lucide-react";
@@ -195,6 +196,12 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
               >
                 {loginMutation.isPending ? t('common.loading') : t('common.login')}
               </Button>
+
+              <Alert className="mt-4">
+                <AlertDescription className="text-xs text-muted-foreground text-center">
+                  {t('barista.adminLoginHelp')}
+                </AlertDescription>
+              </Alert>
             </form>
           ) : (
             <form onSubmit={handleVerify2FA} className="space-y-4">

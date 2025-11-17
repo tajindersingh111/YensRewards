@@ -618,6 +618,199 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Account Management Endpoints ============
+
+  // Get account status (password set, 2FA enabled)
+  app.get('/api/auth/account-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      let user = await storage.getUser(userId);
+      
+      // Auto-create user if they don't exist yet (OIDC first-time login)
+      if (!user) {
+        console.log('⚠️  Account status - User not found, creating from claims...');
+        const email = req.user.claims.email;
+        const firstName = req.user.claims.first_name || '';
+        const lastName = req.user.claims.last_name || '';
+        const isAdmin = req.user.claims.is_admin || false;
+        
+        user = await storage.upsertUser({
+          id: userId,
+          email,
+          firstName,
+          lastName,
+          profileImageUrl: req.user.claims.profile_image_url || null,
+          role: isAdmin ? 'admin' : 'barista',
+        });
+        console.log('✅ User created for account status:', user.role);
+      }
+
+      res.json({
+        hasPassword: !!user.password,
+        twoFactorEnabled: user.twoFactorEnabled || false,
+      });
+    } catch (error: any) {
+      console.error("Error getting account status:", error);
+      res.status(500).json({ message: "Failed to get account status" });
+    }
+  });
+
+  // Set or update password
+  app.post('/api/auth/set-password', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // If user already has a password, verify current password
+      if (user.password) {
+        if (!currentPassword) {
+          return res.status(400).json({ message: "Current password required" });
+        }
+
+        const bcrypt = await import('bcrypt');
+        const valid = await bcrypt.compare(currentPassword, user.password);
+        if (!valid) {
+          return res.status(401).json({ message: "Current password is incorrect" });
+        }
+      }
+
+      // Hash new password
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await db.update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ Password ${user.password ? 'updated' : 'set'} for user ${userId}`);
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (error: any) {
+      console.error("Error setting password:", error);
+      res.status(500).json({ message: "Failed to set password" });
+    }
+  });
+
+  // Setup 2FA (generate QR code)
+  app.post('/api/auth/setup-2fa', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!user.password) {
+        return res.status(400).json({ message: "Password must be set before enabling 2FA" });
+      }
+
+      // Generate secret and QR code
+      const { TOTP, Secret } = await import('otpauth');
+      const secret = new Secret();
+      const totp = new TOTP({
+        issuer: "Yens Thai Ice Cream",
+        label: user.email || user.id,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: secret,
+      });
+
+      // Generate QR code
+      const QRCode = await import('qrcode');
+      const qrCodeUrl = await QRCode.toDataURL(totp.toString());
+
+      // Store secret temporarily (not enabled yet)
+      await db.update(users)
+        .set({ twoFactorSecret: secret.base32 })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ 2FA setup initiated for user ${userId}`);
+      res.json({ 
+        success: true,
+        qrCode: qrCodeUrl,
+        secret: secret.base32,
+      });
+    } catch (error: any) {
+      console.error("Error setting up 2FA:", error);
+      res.status(500).json({ message: "Failed to setup 2FA" });
+    }
+  });
+
+  // Verify and enable 2FA
+  app.post('/api/auth/verify-2fa-setup', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { token } = req.body;
+
+      if (!token || token.length !== 6) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.twoFactorSecret) {
+        return res.status(400).json({ message: "2FA setup not initiated" });
+      }
+
+      // Verify token
+      const { TOTP, Secret } = await import('otpauth');
+      const totp = new TOTP({
+        issuer: "Yens Thai Ice Cream",
+        label: user.email || user.id,
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: Secret.fromBase32(user.twoFactorSecret),
+      });
+
+      const delta = totp.validate({ token, window: 1 });
+      if (delta === null) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Enable 2FA
+      await db.update(users)
+        .set({ twoFactorEnabled: true })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ 2FA enabled for user ${userId}`);
+      res.json({ success: true, message: "2FA enabled successfully" });
+    } catch (error: any) {
+      console.error("Error verifying 2FA setup:", error);
+      res.status(500).json({ message: "Failed to verify 2FA" });
+    }
+  });
+
+  // Disable 2FA
+  app.post('/api/auth/disable-2fa', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      await db.update(users)
+        .set({ 
+          twoFactorEnabled: false,
+          twoFactorSecret: null,
+        })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ 2FA disabled for user ${userId}`);
+      res.json({ success: true, message: "2FA disabled successfully" });
+    } catch (error: any) {
+      console.error("Error disabling 2FA:", error);
+      res.status(500).json({ message: "Failed to disable 2FA" });
+    }
+  });
+
   // ============ Testing Endpoints (Admin Only) ============
   
   // Test SMS sending

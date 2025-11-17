@@ -18,6 +18,7 @@ import YensOverview from "@/components/YensOverview";
 import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
 import { BaristaHubManager } from "@/components/BaristaHubManager";
+import AccountSettings from "@/components/AccountSettings";
 import InstallPrompt from "@/components/InstallPrompt";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -856,11 +857,8 @@ export default function AdminDashboard() {
             <BaristaHubManager />
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
-            <div className="text-center py-12 text-muted-foreground">
-              <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>{t('admin.settings.comingSoon')}</p>
-            </div>
+          <TabsContent value="settings">
+            <AccountSettings />
           </TabsContent>
         </Tabs>
 

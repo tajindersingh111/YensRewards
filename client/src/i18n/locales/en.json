@@ -220,7 +220,8 @@
     "noSchedules": "No scheduled shifts",
     "shift": "Shift",
     "announcements": "Announcements",
-    "noAnnouncements": "No announcements"
+    "noAnnouncements": "No announcements",
+    "adminLoginHelp": "Admin users: Set up your password in the Admin Dashboard → Settings tab first"
   },
   "admin": {
     "title": "Admin Dashboard",
@@ -247,7 +248,32 @@
       "settings": "Settings"
     },
     "settings": {
-      "comingSoon": "Settings coming soon..."
+      "comingSoon": "Settings coming soon...",
+      "account": "Account Settings",
+      "accountSubtitle": "Manage your credentials for Barista app access",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "setPassword": "Set Password for Barista App",
+      "updatePassword": "Update Password",
+      "passwordSet": "Password has been set successfully",
+      "passwordUpdated": "Password updated successfully",
+      "passwordFailed": "Failed to update password",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "enable2FA": "Enable 2FA (Recommended for Admins)",
+      "disable2FA": "Disable 2FA",
+      "twoFactorSetup": "Two-Factor Authentication",
+      "scanQR": "Scan this QR code with your authenticator app",
+      "enterCode": "Enter verification code",
+      "verify": "Verify",
+      "twoFactorEnabled": "2FA enabled successfully",
+      "twoFactorDisabled": "2FA disabled successfully",
+      "twoFactorFailed": "Failed to setup 2FA",
+      "baristaAccess": "Barista App Access",
+      "baristaAccessDesc": "Set a password to access the Barista app with your admin credentials",
+      "passwordNotSet": "You haven't set a password for Barista app access yet",
+      "passwordIsSet": "Password is set. You can now login to the Barista app"
     },
     "overview": {
       "title": "Yens Overview",
