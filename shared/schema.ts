@@ -58,11 +58,14 @@ export const customers = pgTable("customers", {
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerId: varchar("customer_id").notNull().references(() => customers.id),
+  baristaId: varchar("barista_id").references(() => users.id), // Track which barista processed
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   points: integer("points").notNull(),
   location: text("location").notNull(),
   receiptUrl: text("receipt_url"),
   type: text("type").notNull().default("purchase"), // purchase, reward, birthday_bonus, referral
+  includedSpecialOffer: boolean("included_special_offer").notNull().default(false), // Did barista sell weekly special?
+  isNewCustomer: boolean("is_new_customer").notNull().default(false), // Was this a new customer signup?
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -189,6 +192,35 @@ export const baristaAnnouncements = pgTable("barista_announcements", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Weekly Specials table - featured promotions for baristas to push
+export const weeklySpecials = pgTable("weekly_specials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(), // e.g., "Mango Sticky Rice Sundae"
+  description: text("description").notNull(), // What makes it special
+  productId: varchar("product_id").references(() => products.id), // Optional link to product
+  imageUrl: text("image_url"), // Optional image
+  bonusPoints: integer("bonus_points").notNull().default(5), // Extra points for barista when sold
+  startDate: text("start_date").notNull(), // YYYY-MM-DD
+  endDate: text("end_date").notNull(), // YYYY-MM-DD
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Barista Performance table - tracks weekly/monthly performance
+export const baristaPerformance = pgTable("barista_performance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  weekStart: text("week_start").notNull(), // YYYY-MM-DD (Monday of week)
+  transactionCount: integer("transaction_count").notNull().default(0), // # transactions completed
+  specialOffersSold: integer("special_offers_sold").notNull().default(0), // # weekly specials sold
+  newCustomerSignups: integer("new_customer_signups").notNull().default(0), // # new customers registered
+  totalPoints: integer("total_points").notNull().default(0), // Total points earned this week
+  weeklyRank: integer("weekly_rank"), // Ranking among all baristas (1 = first place)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -284,6 +316,18 @@ export const insertBaristaAnnouncementSchema = createInsertSchema(baristaAnnounc
   updatedAt: true,
 });
 
+export const insertWeeklySpecialSchema = createInsertSchema(weeklySpecials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBaristaPerformanceSchema = createInsertSchema(baristaPerformance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -321,3 +365,9 @@ export type InsertWorkSchedule = z.infer<typeof insertWorkScheduleSchema>;
 
 export type BaristaAnnouncement = typeof baristaAnnouncements.$inferSelect;
 export type InsertBaristaAnnouncement = z.infer<typeof insertBaristaAnnouncementSchema>;
+
+export type WeeklySpecial = typeof weeklySpecials.$inferSelect;
+export type InsertWeeklySpecial = z.infer<typeof insertWeeklySpecialSchema>;
+
+export type BaristaPerformance = typeof baristaPerformance.$inferSelect;
+export type InsertBaristaPerformance = z.infer<typeof insertBaristaPerformanceSchema>;
