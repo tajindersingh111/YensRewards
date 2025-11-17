@@ -159,8 +159,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstName = req.user.claims.first_name || '';
       const lastName = req.user.claims.last_name || '';
       
-      // First ensure the user exists (in case of OIDC test mode)
-      await storage.upsertUser({
+      console.log(`🔧 Promoting user ${email} (${userId}) to admin...`);
+      
+      // First ensure the user exists in the database
+      // upsertUser will create if needed, or update profile if exists (preserving role)
+      const user = await storage.upsertUser({
         id: userId,
         email,
         firstName,
@@ -168,10 +171,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImageUrl: req.user.claims.profile_image_url || null,
       });
       
-      // Then update the user's role to admin
-      await db.update(users).set({ role: 'admin' }).where(eq(users.id, userId));
+      console.log(`📊 User after upsert - role: ${user.role}`);
       
-      console.log(`✅ Promoted user ${email} (${userId}) to admin`);
+      // Now update the user's role to admin
+      const result = await db.update(users)
+        .set({ role: 'admin' })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      if (!result || result.length === 0) {
+        console.error(`❌ Failed to update role for ${email} (${userId})`);
+        return res.status(500).json({ message: "Failed to update user role" });
+      }
+      
+      console.log(`✅ Successfully promoted ${email} (${userId}) to admin - final role: ${result[0].role}`);
       
       res.json({ message: "Successfully promoted to admin", email, userId });
     } catch (error) {
