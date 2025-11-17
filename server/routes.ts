@@ -2382,7 +2382,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sites API - Physical locations management
   // ============================================
 
-  // Get all sites
+  // Get active sites (public endpoint for baristas/customers)
+  app.get('/api/sites', async (req, res) => {
+    try {
+      const allSites = await storage.getAllSites();
+      // Filter to only return active sites
+      const activeSites = allSites.filter(site => site.isActive);
+      res.json(activeSites);
+    } catch (error) {
+      console.error("Error fetching active sites:", error);
+      res.status(500).json({ message: "Failed to fetch sites" });
+    }
+  });
+
+  // Get all sites (admin only)
   app.get('/api/admin/sites', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const sites = await storage.getAllSites();
