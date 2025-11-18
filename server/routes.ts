@@ -128,14 +128,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: roleForNewUser,
         });
         console.log('✅ User created with role:', user.role, JSON.stringify(user, null, 2));
-      } else if (isTestMode && isAdminClaim && user.role !== 'admin') {
-        // In test mode only, upgrade existing users with is_admin claim to admin role
-        console.log('⬆️  Upgrading existing user to admin (test mode + is_admin claim)');
-        await db.update(users).set({ role: 'admin' }).where(eq(users.id, userId));
-        user.role = 'admin';
-        console.log('✅ User upgraded to admin:', JSON.stringify(user, null, 2));
       }
-      // Note: Existing users WITHOUT is_admin claim keep their database role (no downgrade)
+      // Note: Existing users keep their database role (database role is authoritative)
       
       res.json(sanitizeUser(user));
     } catch (error) {
