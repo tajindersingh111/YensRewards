@@ -22,6 +22,8 @@ import {
   type InsertTimeEntry,
   type WorkSchedule,
   type InsertWorkSchedule,
+  type WorkScheduleSeries,
+  type InsertWorkScheduleSeries,
   type BaristaAnnouncement,
   type InsertBaristaAnnouncement,
   type WeeklySpecial,
@@ -30,7 +32,7 @@ import {
   type InsertBaristaPerformance,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites, timeEntries, workSchedules, baristaAnnouncements, weeklySpecials, baristaPerformance } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -187,8 +189,10 @@ export interface IStorage {
   getWorkSchedule(id: string): Promise<WorkSchedule | undefined>;
   getUserWorkSchedules(userId: string, startDate?: string, endDate?: string): Promise<WorkSchedule[]>;
   createWorkSchedule(schedule: InsertWorkSchedule): Promise<WorkSchedule>;
+  createWorkScheduleSeries(series: InsertWorkScheduleSeries, createdBy: string): Promise<{ series: WorkScheduleSeries; schedules: WorkSchedule[] }>;
   updateWorkSchedule(id: string, schedule: Partial<WorkSchedule>): Promise<WorkSchedule | undefined>;
   deleteWorkSchedule(id: string): Promise<void>;
+  deleteWorkScheduleSeries(seriesId: string): Promise<void>;
   
   // Barista Announcement methods
   getActiveAnnouncements(): Promise<BaristaAnnouncement[]>;
@@ -1420,8 +1424,82 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async createWorkScheduleSeries(
+    series: InsertWorkScheduleSeries,
+    createdBy: string
+  ): Promise<{ series: WorkScheduleSeries; schedules: WorkSchedule[] }> {
+    // Validation
+    const repeatWeeks = series.repeatWeeks ?? 1;
+    if (repeatWeeks < 1 || repeatWeeks > 52) {
+      throw new Error('Repeat weeks must be between 1 and 52');
+    }
+    if (!series.daysOfWeek || series.daysOfWeek.length === 0) {
+      throw new Error('At least one day of week must be selected');
+    }
+    
+    // Validate weekStartDate is a Monday
+    const startDate = new Date(series.weekStartDate);
+    const dayOfWeek = startDate.getDay();
+    if (dayOfWeek !== 1) { // Monday = 1
+      throw new Error('Week start date must be a Monday');
+    }
+
+    // Create series record
+    const seriesResult = await db
+      .insert(workScheduleSeries)
+      .values({ ...series, createdBy })
+      .returning();
+    const createdSeries = seriesResult[0];
+
+    // Generate individual schedule occurrences
+    const schedules: InsertWorkSchedule[] = [];
+    
+    // Day name to index mapping (Monday = 0)
+    const dayMap: Record<string, number> = {
+      monday: 0, tuesday: 1, wednesday: 2, thursday: 3,
+      friday: 4, saturday: 5, sunday: 6
+    };
+
+    let occurrenceIndex = 0;
+    for (let week = 0; week < repeatWeeks; week++) {
+      for (const dayName of series.daysOfWeek) {
+        const dayIndex = dayMap[dayName.toLowerCase()];
+        const scheduleDate = new Date(startDate);
+        scheduleDate.setDate(startDate.getDate() + (week * 7) + dayIndex);
+        
+        const dateStr = scheduleDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        schedules.push({
+          userId: series.userId,
+          siteId: series.siteId,
+          scheduledDate: dateStr,
+          startTime: series.startTime,
+          endTime: series.endTime,
+          notes: series.notes || null,
+          seriesId: createdSeries.id,
+          occurrenceIndex: occurrenceIndex++,
+        });
+      }
+    }
+
+    // Bulk insert schedules
+    const createdSchedules = await db
+      .insert(workSchedules)
+      .values(schedules)
+      .returning();
+
+    return { series: createdSeries, schedules: createdSchedules };
+  }
+
   async deleteWorkSchedule(id: string): Promise<void> {
     await db.delete(workSchedules).where(eq(workSchedules.id, id));
+  }
+
+  async deleteWorkScheduleSeries(seriesId: string): Promise<void> {
+    // Delete all schedules in the series
+    await db.delete(workSchedules).where(eq(workSchedules.seriesId, seriesId));
+    // Delete the series itself
+    await db.delete(workScheduleSeries).where(eq(workScheduleSeries.id, seriesId));
   }
 
   // Barista Announcement methods

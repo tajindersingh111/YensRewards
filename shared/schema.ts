@@ -167,6 +167,23 @@ export const timeEntries = pgTable("time_entries", {
 });
 
 // Work Schedules table - barista work schedules
+// Weekly schedule series configuration
+export const workScheduleSeries = pgTable("work_schedule_series", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id), // Barista for this series
+  siteId: varchar("site_id").notNull().references(() => sites.id), // Location for this series
+  weekStartDate: text("week_start_date").notNull(), // ISO date of Monday starting the series (YYYY-MM-DD)
+  daysOfWeek: text("days_of_week").array().notNull(), // e.g., ['monday', 'wednesday', 'friday']
+  repeatWeeks: integer("repeat_weeks").notNull().default(1), // Number of weeks to repeat (1, 2, 4, 8, 12)
+  startTime: text("start_time").notNull(), // HH:MM format
+  endTime: text("end_time").notNull(), // HH:MM format
+  notes: text("notes"), // Optional notes for the series
+  createdBy: varchar("created_by").references(() => users.id), // Admin who created this series
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Individual work schedule occurrences
 export const workSchedules = pgTable("work_schedules", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id), // Barista assigned to shift
@@ -175,6 +192,8 @@ export const workSchedules = pgTable("work_schedules", {
   startTime: text("start_time").notNull(), // HH:MM format (e.g., "09:00")
   endTime: text("end_time").notNull(), // HH:MM format (e.g., "17:00")
   notes: text("notes"), // Optional shift notes
+  seriesId: varchar("series_id").references(() => workScheduleSeries.id), // Link to parent series (null for single-day schedules)
+  occurrenceIndex: integer("occurrence_index"), // Index within series (null for single-day schedules)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -304,6 +323,12 @@ export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
   updatedAt: true,
 });
 
+export const insertWorkScheduleSeriesSchema = createInsertSchema(workScheduleSeries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertWorkScheduleSchema = createInsertSchema(workSchedules).omit({
   id: true,
   createdAt: true,
@@ -359,6 +384,9 @@ export type InsertSite = z.infer<typeof insertSiteSchema>;
 
 export type TimeEntry = typeof timeEntries.$inferSelect;
 export type InsertTimeEntry = z.infer<typeof insertTimeEntrySchema>;
+
+export type WorkScheduleSeries = typeof workScheduleSeries.$inferSelect;
+export type InsertWorkScheduleSeries = z.infer<typeof insertWorkScheduleSeriesSchema>;
 
 export type WorkSchedule = typeof workSchedules.$inferSelect;
 export type InsertWorkSchedule = z.infer<typeof insertWorkScheduleSchema>;

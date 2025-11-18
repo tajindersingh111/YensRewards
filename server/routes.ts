@@ -2637,18 +2637,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create work schedule
+  // Create work schedule (single or weekly series)
   app.post('/api/admin/work-schedules', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const validated = insertWorkScheduleSchema.parse(req.body);
-      const newSchedule = await storage.createWorkSchedule(validated);
-      res.json(newSchedule);
+      const { mode, ...data } = req.body;
+      
+      // Weekly mode: create series with multiple schedules
+      if (mode === 'weekly') {
+        const { weekStartDate, daysOfWeek, repeatWeeks, userId, siteId, startTime, endTime, notes } = data;
+        
+        // Validation
+        if (!userId || !siteId) {
+          return res.status(400).json({ message: "Weekly mode requires userId and siteId" });
+        }
+        if (!weekStartDate || typeof weekStartDate !== 'string') {
+          return res.status(400).json({ message: "Weekly mode requires valid weekStartDate" });
+        }
+        if (!daysOfWeek || !Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
+          return res.status(400).json({ message: "Weekly mode requires at least one day selected" });
+        }
+        if (!startTime || !endTime) {
+          return res.status(400).json({ message: "Weekly mode requires startTime and endTime" });
+        }
+        const weeks = Number(repeatWeeks);
+        if (isNaN(weeks) || weeks < 1 || weeks > 52) {
+          return res.status(400).json({ message: "Repeat weeks must be between 1 and 52" });
+        }
+        
+        const createdBy = (req.user as any)?.claims?.sub;
+        const result = await storage.createWorkScheduleSeries(
+          {
+            userId,
+            siteId,
+            weekStartDate,
+            daysOfWeek,
+            repeatWeeks: weeks,
+            startTime,
+            endTime,
+            notes: notes || null,
+          },
+          createdBy
+        );
+        
+        res.json({
+          mode: 'weekly',
+          seriesId: result.series.id,
+          schedulesCreated: result.schedules.length,
+          schedules: result.schedules,
+        });
+      } else {
+        // Single mode: create one schedule
+        const validated = insertWorkScheduleSchema.parse(data);
+        const newSchedule = await storage.createWorkSchedule(validated);
+        res.json({ mode: 'single', schedule: newSchedule, schedulesCreated: 1 });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid request data", errors: error.errors });
       }
       console.error("Error creating schedule:", error);
-      res.status(500).json({ message: "Failed to create schedule" });
+      const errorMessage = error instanceof Error ? error.message : "Failed to create schedule";
+      res.status(500).json({ message: errorMessage });
     }
   });
 
@@ -2678,6 +2727,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting schedule:", error);
       res.status(500).json({ message: "Failed to delete schedule" });
+    }
+  });
+
+  // Delete work schedule series (deletes all occurrences)
+  app.delete('/api/admin/work-schedule-series/:seriesId', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteWorkScheduleSeries(req.params.seriesId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting schedule series:", error);
+      res.status(500).json({ message: "Failed to delete schedule series" });
     }
   });
 
