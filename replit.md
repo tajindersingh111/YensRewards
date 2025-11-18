@@ -1,10 +1,15 @@
-# Yens Thai Ice Cream Loyalty System v3.2.0
+# Yens Thai Ice Cream Loyalty System v3.2.1
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.2.0)
-**🎯 Weekly Recurring Schedules:**
+## Latest Release (v3.2.1)
+**🔧 Critical Bug Fix:**
+- **Role Auto-Promotion Fix:** Removed automatic role upgrade logic that was overwriting manually assigned user roles on login
+- **Database Role Authority:** User roles stored in database are now fully authoritative and won't be changed by authentication claims
+- **Persistent Role Management:** Admin-assigned roles (via Users tab) now persist correctly across logins
+
+**Previous (v3.2.0) - Weekly Recurring Schedules:**
 - ✨ **Weekly Schedule Mode:** New mode toggle in schedule creation (Single Day / Weekly Schedule)
 - 📅 **Day Selection:** Multi-select checkboxes for Mon-Sun with visual active states
 - 🔄 **Repeat Options:** Configurable duration (1/2/4/8/12 weeks) for recurring schedules
