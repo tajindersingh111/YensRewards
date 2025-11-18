@@ -1,9 +1,21 @@
-# Yens Thai Ice Cream Loyalty System v3.1.7
+# Yens Thai Ice Cream Loyalty System v3.2.0
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.1.7)
+## Latest Release (v3.2.0)
+**🎯 Weekly Recurring Schedules:**
+- ✨ **Weekly Schedule Mode:** New mode toggle in schedule creation (Single Day / Weekly Schedule)
+- 📅 **Day Selection:** Multi-select checkboxes for Mon-Sun with visual active states
+- 🔄 **Repeat Options:** Configurable duration (1/2/4/8/12 weeks) for recurring schedules
+- 📊 **Smart Summary:** Live preview showing "X day(s) × Y week(s) = Z schedule(s) will be created"
+- 🗄️ **Series Management:** New workScheduleSeries table stores weekly configurations, linked schedules track seriesId
+- ✅ **Full Validation:** Frontend and backend validation (Monday weekStart, repeatWeeks bounds, day selection)
+- 🌐 **Complete Localization:** All new features fully translated (EN/TH)
+- 💾 **Mode Persistence:** Last-used mode (single/weekly) persists via localStorage for better UX
+- 🛡️ **SSR-Safe:** Proper guards for server-side rendering compatibility
+
+**Previous (v3.1.7) - Critical Bug Fixes:**
 **Critical Bug Fixes:**
 - 🔧 **TypeScript Errors Fixed:** Corrected `req.user.id` → `req.user.claims.sub` in 4 barista endpoints (transactions, schedules, performance)
 - 🛡️ **Duplicate Phone Handling:** Quick Register now gracefully handles existing customers with 409 response instead of 500 error
@@ -84,13 +96,13 @@ Preferred communication style: Simple, everyday language.
 - **API Design:** RESTful endpoints, centralized error handling, Zod for schema validation.
 - **State Management:** React Query for API data, local React hooks for UI state.
 - **Authentication & Authorization:** Dual authentication system - Replit Auth (OpenID Connect) for admin dashboard and password-based authentication with optional 2FA for operational apps (Barista/Customer). Session management with `connect-pg-simple`, role-based access control ("admin", "manager", "barista"), auto-user creation from OIDC claims. Password hashing via bcrypt (10 salt rounds), TOTP-based 2FA via otpauth. Admin self-service account management allows admins to set passwords and enable 2FA for Barista app access via Settings tab.
-- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites`, `clock_sessions`, `work_schedules`, `barista_announcements`, `weekly_specials`, `barista_performance` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields.
+- **Database Schema:** `customers`, `transactions`, `promotions`, `products`, `referrals`, `users`, `message_templates`, `message_log`, `sites`, `clock_sessions`, `work_schedules`, `work_schedule_series`, `barista_announcements`, `weekly_specials`, `barista_performance` tables managed with Drizzle ORM. Users table includes password (hashed), twoFactorSecret, and twoFactorEnabled fields. Work schedules support both single and recurring series via seriesId/occurrenceIndex linkage.
 - **Object Storage:** Replit App Storage (Google Cloud Storage backend) for product images. Images stored in `public/products/` directory with ACL metadata, served via proxy endpoint (`/products/:filePath`) with visibility enforcement. Upload flow uses presigned URLs for direct-to-GCS uploads, followed by server-side ACL policy setting.
 - **User Management:** Admin-only user account management (CRUD) with enable/disable functionality, three-role system (admin/manager/barista), role assignment and editing, user deletion, bilingual UI (Thai/English), email-based user creation, password management, and 2FA setup/management.
 - **Messaging System:** Twilio for SMS, Resend for email (pending SendGrid migration), multi-channel support (including in-app notifications), admin-managed templates with dynamic placeholders, comprehensive logging, automated birthday messages.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using react-i18next, Thai as default, localStorage persistence, LanguageSwitcher component. All features fully internationalized.
 - **Product Management:** CSV bulk import with photo URL support and Thai category mapping, product codes and costs, secure object storage for product images with presigned URL uploads and ACL-enforced serving.
-- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking, server-side pagination), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only with enable/disable functionality), admin self-service password and 2FA management (Settings tab with password set/update, 2FA setup with QR codes, enable/disable 2FA), sites management (physical location tracking with operating schedules, predefined locations, and mobile van support), Barista App functionalities (Clock In/Out, Work Schedules Management, Barista Announcements/Hub).
+- **Core Features:** Customer loyalty (points, tiers), transaction processing (QR, OCR), customer management (self-registration, profile, referrals, CSV bulk import with smart upsert logic and validation, bulk delete, expandable customer details, individual customer deletion, duplicate phone detection), admin analytics (weekly overview dashboard with metrics and charts, performance tracking, server-side pagination), tier-based promotions, product menu, automated birthday messaging, user account management (admin-only with enable/disable functionality), admin self-service password and 2FA management (Settings tab with password set/update, 2FA setup with QR codes, enable/disable 2FA), sites management (physical location tracking with operating schedules, predefined locations, and mobile van support), Barista App functionalities (Clock In/Out, Work Schedules Management with weekly recurring support, Barista Announcements/Hub).
 - **Gamification System:** Weekly special offers with admin management (create, edit, activate/deactivate, delete with scheduled start/end dates), barista performance tracking (automatic point calculation for special sales and new customer signups), real-time leaderboards (top 10 performers with rank, points, and sales metrics), personal performance stats widget (weekly points, current rank, sales count, signup count), promotional banner on barista search screen, fire-and-forget performance updates on transaction processing, dedicated Weekly Specials admin tab, full bilingual support (Thai/English) for all gamification UI elements.
 
 ### System Design Choices
