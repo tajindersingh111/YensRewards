@@ -946,6 +946,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/customers', async (req, res) => {
     try {
       const validatedData = insertCustomerSchema.parse(req.body);
+      
+      // Check if customer with this phone already exists
+      const existingCustomer = await storage.getCustomerByPhone(validatedData.phone);
+      if (existingCustomer) {
+        return res.status(409).json({ 
+          message: "A customer with this phone number already exists",
+          customer: existingCustomer 
+        });
+      }
+      
       const customer = await storage.createCustomer(validatedData);
       res.status(201).json(customer);
     } catch (error: any) {
@@ -1036,7 +1046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add barista ID from authenticated user
       const transactionData = {
         ...validatedData,
-        baristaId: req.user!.id,
+        baristaId: (req.user as any)!.claims.sub,
       };
       
       const transaction = await storage.createTransaction(transactionData);
@@ -2749,7 +2759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get work schedules for logged-in barista
   app.get('/api/work-schedules/me', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any)!.claims.sub;
       const schedules = await storage.getUserWorkSchedules(userId);
       res.json(schedules);
     } catch (error) {
@@ -2857,7 +2867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get my performance stats
   app.get('/api/barista/performance/me', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any)!.claims.sub;
       const weekStart = req.query.weekStart as string || getMonday(new Date()).toISOString().split('T')[0];
       const performance = await storage.getBaristaPerformance(userId, weekStart);
       res.json(performance || null);
@@ -2870,7 +2880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get performance history
   app.get('/api/barista/performance/history', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any)!.claims.sub;
       const limit = parseInt(req.query.limit as string) || 10;
       const history = await storage.getUserPerformanceHistory(userId, limit);
       res.json(history);

@@ -256,6 +256,8 @@
     "register": "ลงทะเบียน",
     "customerRegistered": "ลงทะเบียนลูกค้าสำเร็จ",
     "customerRegisteredDesc": "ลงทะเบียน {{name}} สำเร็จแล้ว",
+    "customerExists": "ลูกค้ามีอยู่แล้ว",
+    "customerExistsDesc": "{{name}} ลงทะเบียนแล้ว พร้อมทำธุรกรรม",
     "registrationFailed": "ลงทะเบียนไม่สำเร็จ",
     "fillRequiredFields": "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน"
   },

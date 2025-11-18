@@ -586,20 +586,38 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   const quickRegisterMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; phone: string }) => {
       const response = await apiRequest('POST', '/api/customers', data);
-      return await response.json();
+      const result = await response.json();
+      
+      // If 409 conflict (customer already exists), return the existing customer with a flag
+      if (response.status === 409 && result.customer) {
+        return { ...result.customer, isExisting: true };
+      }
+      
+      return result;
     },
-    onSuccess: (newCustomer: Customer) => {
+    onSuccess: (customerData: Customer & { isExisting?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/customers/search'] });
       setQuickRegisterOpen(false);
       setQuickRegisterName("");
       setQuickRegisterEmail("");
       setQuickRegisterPhone("");
-      toast({
-        title: t('barista.customerRegistered'),
-        description: t('barista.customerRegisteredDesc', { name: newCustomer.name }),
-      });
-      // Optionally auto-select the new customer
-      handleSelectCustomer(newCustomer);
+      
+      if (customerData.isExisting) {
+        // Customer already existed - show different message
+        toast({
+          title: t('barista.customerExists'),
+          description: t('barista.customerExistsDesc', { name: customerData.name }),
+        });
+      } else {
+        // New customer registered
+        toast({
+          title: t('barista.customerRegistered'),
+          description: t('barista.customerRegisteredDesc', { name: customerData.name }),
+        });
+      }
+      
+      // Auto-select the customer (whether new or existing)
+      handleSelectCustomer(customerData);
     },
     onError: (error: any) => {
       toast({

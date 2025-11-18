@@ -1,10 +1,16 @@
-# Yens Thai Ice Cream Loyalty System v3.1.6
+# Yens Thai Ice Cream Loyalty System v3.1.7
 
 ## Overview
 A multi-interface loyalty management system for Yens Thai Ice Cream, comprising a Customer App, Barista App, and Admin Dashboard. Its purpose is to enhance customer engagement and streamline operations by managing loyalty points, transactions, and promotions. The system aims to provide a seamless, mobile-first experience for customers to earn and redeem points, empower baristas with efficient transaction processing through gamification, and offer administrators comprehensive analytics and promotional tools, ultimately boosting customer loyalty, employee motivation, and business efficiency. Key capabilities include customer loyalty programs, transaction processing, customer and user management, sites management, messaging, barista gamification with weekly challenges and performance tracking, and a comprehensive admin dashboard with business health metrics and reporting.
 
-## Latest Release (v3.1.6)
-**Bug Fixes & UX Improvements:**
+## Latest Release (v3.1.7)
+**Critical Bug Fixes:**
+- 🔧 **TypeScript Errors Fixed:** Corrected `req.user.id` → `req.user.claims.sub` in 4 barista endpoints (transactions, schedules, performance)
+- 🛡️ **Duplicate Phone Handling:** Quick Register now gracefully handles existing customers with 409 response instead of 500 error
+- 🔒 **Auth Integration:** Fixed barista authentication to properly access OIDC user claims for transaction tracking
+- ✨ **UX Improvement:** Auto-selects existing customer when duplicate phone detected, shows friendly message in both EN/TH
+
+**Previous (v3.1.6) - Bug Fixes & UX Improvements:**
 - 🔧 **Sites API Fix:** Added `/api/sites` endpoint for baristas to access active sites (fixes "Cannot load branches" error)
 - 🖼️ **Product Image Display:** Changed product images from `object-cover` to `object-contain` for full image visibility
 - 📐 **Barista Layout:** Reorganized search screen - Customer Search at top, Quick Register middle, Weekly Special bottom

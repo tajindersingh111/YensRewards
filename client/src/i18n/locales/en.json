@@ -256,6 +256,8 @@
     "register": "Register",
     "customerRegistered": "Customer Registered",
     "customerRegisteredDesc": "{{name}} has been registered successfully",
+    "customerExists": "Customer Already Exists",
+    "customerExistsDesc": "{{name}} is already registered. Ready to process transaction.",
     "registrationFailed": "Registration Failed",
     "fillRequiredFields": "Please fill in all required fields"
   },
