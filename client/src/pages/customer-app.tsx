@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream } from "lucide-react";
+import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
@@ -598,7 +598,7 @@ export default function CustomerApp() {
             }`}
             data-testid="button-nav-messages"
           >
-            <Award className="w-6 h-6" />
+            <MessageSquare className="w-6 h-6" />
             <span className="text-xs">{t('customer.messages')}</span>
             {unreadCount > 0 && (
               <Badge 
