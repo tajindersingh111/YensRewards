@@ -199,9 +199,9 @@ export default function CustomerApp() {
     },
   });
 
-  // Mark all as read when user views Rewards tab
+  // Mark all as read when user views Messages tab
   useEffect(() => {
-    if (activeTab === "rewards" && customer && unreadCount > 0) {
+    if (activeTab === "messages" && customer && unreadCount > 0) {
       markAllRead.mutate();
     }
   }, [activeTab, customer?.id]);
@@ -504,7 +504,7 @@ export default function CustomerApp() {
             {/* Message/Announcement Area - ALWAYS SHOW */}
             <MessageCard
               title={promotions && promotions[0] ? promotions[0].title : "Welcome to Yen's!"}
-              message={promotions && promotions[0] ? promotions[0].message : "Check the Rewards tab for special offers and promotions!"}
+              message={promotions && promotions[0] ? promotions[0].message : "Check the Messages tab for special offers and promotions!"}
               isNew={promotions && promotions[0] ? !promotions[0].isRead : true}
             />
             
@@ -517,7 +517,7 @@ export default function CustomerApp() {
             )}
           </TabsContent>
 
-          <TabsContent value="rewards" className="py-4 space-y-6 mt-0">
+          <TabsContent value="messages" className="py-4 space-y-6 mt-0">
             {promotions && promotions.length > 0 ? (
               promotions.map((promo) => (
                 <PromotionCard
@@ -592,14 +592,14 @@ export default function CustomerApp() {
             <span className="text-xs">{t('customer.menuNav')}</span>
           </button>
           <button
-            onClick={() => setActiveTab("rewards")}
+            onClick={() => setActiveTab("messages")}
             className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 relative ${
-              activeTab === "rewards" ? "text-primary" : "text-muted-foreground"
+              activeTab === "messages" ? "text-primary" : "text-muted-foreground"
             }`}
-            data-testid="button-nav-rewards"
+            data-testid="button-nav-messages"
           >
             <Award className="w-6 h-6" />
-            <span className="text-xs">{t('customer.rewards')}</span>
+            <span className="text-xs">{t('customer.messages')}</span>
             {unreadCount > 0 && (
               <Badge 
                 className="absolute top-1 right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs font-bold rounded-full"
