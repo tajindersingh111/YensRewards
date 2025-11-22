@@ -53,11 +53,11 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                 {topSpenders.map((customer, index) => (
                   <div
                     key={customer.id}
-                    className="flex flex-col items-center gap-2 min-w-[110px] group"
+                    className="flex flex-col items-center gap-2 min-w-[115px] group"
                     data-testid={`top-spender-${index + 1}`}
                   >
                     <div className="relative">
-                      <Avatar className="w-16 h-16 border-4 border-yellow-400">
+                      <Avatar className="w-20 h-20 border-4 border-yellow-400">
                         <AvatarImage src={customer.photo || undefined} />
                         <AvatarFallback>{customer.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
