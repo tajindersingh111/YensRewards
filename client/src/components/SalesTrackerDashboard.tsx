@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -16,15 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Menu, Users, Package, Megaphone, Star, MessageSquare, UserCog, MapPin, CalendarDays, Coffee, Settings } from "lucide-react";
+import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales } from "@shared/schema";
@@ -46,7 +37,6 @@ interface SalesFormData {
 export default function SalesTrackerDashboard() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<SalesFormData>({
     date: new Date().toISOString().split('T')[0],
@@ -187,80 +177,10 @@ export default function SalesTrackerDashboard() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FCD34D' }}>
-      {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
-          <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="bg-white" data-testid="button-admin-menu">
-                <Menu className="w-4 h-4 mr-2" />
-                Admin Menu
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Management</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-customers">
-                <Users className="w-4 h-4 mr-2" />
-                Customers
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-products">
-                <Package className="w-4 h-4 mr-2" />
-                Products
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-promotions">
-                <Megaphone className="w-4 h-4 mr-2" />
-                Promotions
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-specials">
-                <Star className="w-4 h-4 mr-2" />
-                Weekly Specials
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Communication</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-messages">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Messages
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>System</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-users">
-                <UserCog className="w-4 h-4 mr-2" />
-                User Management
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-sites">
-                <MapPin className="w-4 h-4 mr-2" />
-                Sites
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-schedules">
-                <CalendarDays className="w-4 h-4 mr-2" />
-                Schedules
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-barista">
-                <Coffee className="w-4 h-4 mr-2" />
-                Barista Hub
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/admin-old'} data-testid="menu-settings">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            onClick={() => setLocation('/admin?tab=analytics')}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            data-testid="button-view-analytics"
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            View Analytics
-          </Button>
-        </div>
+      {/* Header - Simplified without navigation */}
+      <div className="px-6 py-4 flex items-center gap-3">
+        <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
+        <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
       </div>
 
       {/* KPI Cards */}
