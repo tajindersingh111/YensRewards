@@ -49,11 +49,11 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
             <p className="text-sm text-muted-foreground text-center py-4">No spenders yet</p>
           ) : (
             <div className="overflow-x-auto">
-              <div className="flex gap-4 pb-2">
+              <div className="flex gap-2 pb-2">
                 {topSpenders.map((customer, index) => (
                   <div
                     key={customer.id}
-                    className="flex flex-col items-center gap-2 min-w-[120px] group"
+                    className="flex flex-col items-center gap-2 min-w-[110px] group"
                     data-testid={`top-spender-${index + 1}`}
                   >
                     <div className="relative">
