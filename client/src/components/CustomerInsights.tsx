@@ -34,44 +34,86 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
     .slice(0, 10);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      {/* Top 10 Spenders - Condensed */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Trophy className="w-4 h-4 text-yellow-500" />
+    <div className="space-y-6 mb-6">
+      {/* Top 10 Spenders - Horizontal Scrollable */}
+      <Card className="border-4 border-yellow-400">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-500" />
             Top 10 Spenders
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent>
           {topSpenders.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No spenders yet</p>
           ) : (
-            <div className="space-y-1.5">
-              {topSpenders.map((customer, index) => (
-                <div
-                  key={customer.id}
-                  className="flex items-center gap-2 p-2 rounded hover-elevate"
-                  data-testid={`top-spender-${index + 1}`}
-                >
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-700 text-xs font-bold shrink-0">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+            <div className="overflow-x-auto">
+              <div className="flex gap-4 pb-2">
+                {topSpenders.map((customer, index) => (
+                  <div
+                    key={customer.id}
+                    className="flex flex-col items-center gap-2 min-w-[120px] group"
+                    data-testid={`top-spender-${index + 1}`}
+                  >
+                    <div className="relative">
+                      <Avatar className="w-16 h-16 border-4 border-yellow-400">
+                        <AvatarImage src={customer.photo || undefined} />
+                        <AvatarFallback>{customer.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 text-xs font-bold border-2 border-white">
+                        {index + 1}
+                      </div>
+                      {/* Hover actions */}
+                      <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-white hover:bg-white/20"
+                          onClick={() => onViewDetails?.(customer)}
+                          data-testid={`button-view-${customer.id}`}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-white hover:bg-white/20"
+                          onClick={() => onEdit?.(customer)}
+                          data-testid={`button-edit-${customer.id}`}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-white hover:bg-white/20"
+                          onClick={() => onMessage?.(customer)}
+                          data-testid={`button-message-${customer.id}`}
+                        >
+                          <MessageSquare className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-white hover:bg-white/20"
+                          onClick={() => onDelete?.(customer)}
+                          data-testid={`button-delete-${customer.id}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-center w-full">
                       <p className="font-medium text-sm truncate">{customer.name}</p>
-                      <Badge variant="outline" className={`text-xs px-1.5 py-0 ${tierColors[customer.tier as keyof typeof tierColors]}`}>
+                      <Badge className={`text-xs mt-1 ${tierColors[customer.tier as keyof typeof tierColors]}`}>
                         {customer.tier}
                       </Badge>
+                      <p className="text-xs font-semibold text-yellow-600 mt-1">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                      <p className="text-xs text-muted-foreground">{customer.points} pts</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{customer.phone}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-semibold text-sm">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-                    <p className="text-xs text-muted-foreground">{customer.points} pts</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
