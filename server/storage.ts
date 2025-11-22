@@ -225,6 +225,11 @@ export class DbStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // In test mode, if role is provided (e.g., "admin" from is_admin claim), update it
+    // In production, preserve existing role
+    const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined;
+    const shouldUpdateRole = isTestMode && userData.role !== undefined;
+    
     // First check if a user with this email already exists (only if email is provided)
     if (userData.email) {
       const existingUserByEmail = await db
@@ -234,37 +239,49 @@ export class DbStorage implements IStorage {
         .limit(1);
 
       if (existingUserByEmail.length > 0) {
-        // Update existing user by email - PRESERVE role field
+        // Update existing user by email
+        const updateData: any = {
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          updatedAt: new Date(),
+        };
+        
+        // In test mode, update role if provided
+        if (shouldUpdateRole) {
+          updateData.role = userData.role;
+        }
+        
         const result = await db
           .update(users)
-          .set({
-            email: userData.email,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            profileImageUrl: userData.profileImageUrl,
-            // DO NOT update role - preserve existing role in database
-            updatedAt: new Date(),
-          })
+          .set(updateData)
           .where(eq(users.email, userData.email))
           .returning();
         return result[0];
       }
     }
 
-    // Otherwise, do normal upsert by ID - PRESERVE role field on update
+    // Otherwise, do normal upsert by ID
+    const updateData: any = {
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      profileImageUrl: userData.profileImageUrl,
+      updatedAt: new Date(),
+    };
+    
+    // In test mode, update role if provided
+    if (shouldUpdateRole) {
+      updateData.role = userData.role;
+    }
+    
     const result = await db
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
         target: users.id,
-        set: {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
-          // DO NOT update role - preserve existing role in database
-          updatedAt: new Date(),
-        },
+        set: updateData,
       })
       .returning();
     return result[0];

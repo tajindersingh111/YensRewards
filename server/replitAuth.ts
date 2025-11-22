@@ -61,12 +61,20 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined;
+  const isAdminClaim = claims["is_admin"] === true;
+  
+  // In test mode, assign admin role if is_admin claim is true
+  // Otherwise use default role (barista) from database
+  const role = isTestMode && isAdminClaim ? "admin" : undefined;
+  
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    role,
   });
 }
 
