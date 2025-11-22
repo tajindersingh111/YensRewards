@@ -15,6 +15,7 @@ import MessagesPage from "@/components/MessagesPage";
 import EnhancedMessaging from "@/components/EnhancedMessaging";
 import UsersPage from "@/pages/admin/UsersPage";
 import WeeklySpecialsManager from "@/pages/admin/WeeklySpecialsManager";
+import SalesOverview from "@/components/SalesOverview";
 import YensOverview from "@/components/YensOverview";
 import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
@@ -379,6 +380,7 @@ export default function AdminDashboard() {
           <TabsList className="mb-6">
             <TabsTrigger value="overview" data-testid="tab-overview">{t('admin.tabs.overview')}</TabsTrigger>
             <TabsTrigger value="dashboard" data-testid="tab-dashboard">{t('admin.tabs.dashboard')}</TabsTrigger>
+            <TabsTrigger value="sales" data-testid="tab-sales">{t('admin.tabs.sales')}</TabsTrigger>
             <TabsTrigger value="customers" data-testid="tab-customers">{t('admin.tabs.customers')}</TabsTrigger>
             <TabsTrigger value="products" data-testid="tab-products">{t('admin.tabs.products')}</TabsTrigger>
             <TabsTrigger value="promotions" data-testid="tab-promotions">{t('admin.tabs.promotions')}</TabsTrigger>
@@ -393,6 +395,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="overview" className="space-y-6">
             <YensOverview />
+          </TabsContent>
+
+          <TabsContent value="sales" className="space-y-6">
+            <SalesOverview />
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">

@@ -1354,6 +1354,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get sales metrics for current and last month
+  app.get('/api/admin/sales-metrics', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      // Calculate current month range
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      // Calculate last month range
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+      // Fetch current month sales
+      const currentMonthSales = await db.select()
+        .from(dailySales)
+        .where(sql`${dailySales.date} >= ${currentMonthStart.toISOString().split('T')[0]} AND ${dailySales.date} <= ${currentMonthEnd.toISOString().split('T')[0]}`);
+      
+      // Fetch last month sales
+      const lastMonthSales = await db.select()
+        .from(dailySales)
+        .where(sql`${dailySales.date} >= ${lastMonthStart.toISOString().split('T')[0]} AND ${dailySales.date} <= ${lastMonthEnd.toISOString().split('T')[0]}`);
+
+      // Calculate metrics
+      const currentMonthRevenue = currentMonthSales.reduce((sum, sale) => sum + parseFloat(sale.totalSales), 0);
+      const lastMonthRevenue = lastMonthSales.reduce((sum, sale) => sum + parseFloat(sale.totalSales), 0);
+      const momGrowth = lastMonthRevenue > 0 
+        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+        : 0;
+      const avgTransaction = currentMonthSales.length > 0 
+        ? currentMonthRevenue / currentMonthSales.length 
+        : 0;
+      const transactionCount = currentMonthSales.length;
+
+      res.json({
+        currentMonthRevenue,
+        lastMonthRevenue,
+        momGrowth,
+        avgTransaction,
+        transactionCount,
+      });
+    } catch (error) {
+      console.error("Error fetching sales metrics:", error);
+      res.status(500).json({ message: "Failed to fetch sales metrics" });
+    }
+  });
+
+  // Get sales overview data (recent 50 records for display)
+  app.get('/api/admin/sales-overview', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const sales = await db.select()
+        .from(dailySales)
+        .orderBy(sql`${dailySales.date} DESC, ${dailySales.orderChannel}`)
+        .limit(50);
+      
+      res.json(sales);
+    } catch (error) {
+      console.error("Error fetching sales overview:", error);
+      res.status(500).json({ message: "Failed to fetch sales data" });
+    }
+  });
+
+  // Add a new daily sale manually
+  app.post('/api/admin/sales', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertDailySalesSchema.parse(req.body);
+      const userId = (req.user as any).claims.sub;
+
+      // Calculate day of week from date
+      const date = new Date(validatedData.date);
+      const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
+
+      const [newSale] = await db.insert(dailySales).values({
+        ...validatedData,
+        dayOfWeek,
+        importedBy: userId,
+      }).onConflictDoUpdate({
+        target: [dailySales.date, dailySales.orderChannel],
+        set: {
+          netSales: validatedData.netSales,
+          grabFee: validatedData.grabFee,
+          totalSales: validatedData.totalSales,
+          importedAt: sql`CURRENT_TIMESTAMP`,
+        }
+      }).returning();
+
+      res.json(newSale);
+    } catch (error) {
+      console.error("Error adding sale:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: fromError(error).toString() });
+      }
+      res.status(500).json({ message: "Failed to add sale record" });
+    }
+  });
+
   // Import daily sales from Excel file
   app.post('/api/admin/import-sales-excel', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
     try {
