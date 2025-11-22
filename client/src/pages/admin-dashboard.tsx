@@ -211,10 +211,10 @@ export default function AdminDashboard() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.open('/customers-old', '_blank')}
+                  onClick={() => window.open('/insights-old', '_blank')}
                   data-testid="button-view-old-dashboard"
                 >
-                  View Original (40px circles)
+                  View This Morning's Version
                 </Button>
                 <CustomerCSVImport showTrigger={true} />
               </div>

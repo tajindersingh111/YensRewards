@@ -12,6 +12,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import AdminDashboardOld from "@/pages/admin-dashboard-old-backup";
 import CustomersComparison from "@/pages/customers-comparison";
 import OverviewComparison from "@/pages/overview-comparison";
+import InsightsOld from "@/pages/insights-old";
 import AdminLogin from "@/pages/admin-login";
 import PromoteAdmin from "@/pages/promote-admin";
 import MessageTest from "@/pages/message-test";
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/admin-old" component={AdminDashboardOld} />
       <Route path="/customers-old" component={CustomersComparison} />
       <Route path="/overview-old" component={OverviewComparison} />
+      <Route path="/insights-old" component={InsightsOld} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/promote-admin" component={PromoteAdmin} />
       <Route path="/test-messages" component={MessageTest} />
