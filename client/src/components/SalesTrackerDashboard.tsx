@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -54,11 +54,39 @@ export default function SalesTrackerDashboard() {
     queryKey: ['/api/admin/sales-tracker-metrics'],
   });
 
-  // Fetch recent sales (last 10)
-  const { data: recentSales = [] } = useQuery<DailySales[]>({
+  // Fetch all recent sales
+  const { data: allSales = [] } = useQuery<DailySales[]>({
     queryKey: ['/api/admin/sales-overview'],
-    select: (data) => data.slice(0, 10),
   });
+
+  // Filter to current week only using useMemo
+  const recentSales = useMemo(() => {
+    // Get start of current week (Monday) using UTC to match database dates
+    const now = new Date();
+    const currentDayUTC = now.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday (UTC)
+    
+    // Calculate days to subtract to get to Monday
+    let daysToSubtract;
+    if (currentDayUTC === 0) {
+      daysToSubtract = 6; // Sunday: go back 6 days to previous Monday
+    } else {
+      daysToSubtract = currentDayUTC - 1; // Mon-Sat: go back to Monday of this week
+    }
+    
+    // Use UTC date arithmetic to avoid timezone issues
+    const mondayUTC = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() - daysToSubtract,
+      0, 0, 0, 0
+    ));
+    const startOfWeek = mondayUTC.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Filter sales from current week only (date >= startOfWeek)
+    const filtered = allSales.filter(sale => sale.date >= startOfWeek);
+    
+    return filtered.slice(0, 10);
+  }, [allSales]);
 
   // Add sale mutation
   const addSaleMutation = useMutation({
