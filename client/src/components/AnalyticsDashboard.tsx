@@ -85,7 +85,7 @@ export default function AnalyticsDashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("monthly");
 
-  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
+  const { data: analytics, isLoading, isError, error } = useQuery<AnalyticsData>({
     queryKey: ['/api/admin/analytics'],
   });
 
@@ -101,6 +101,21 @@ export default function AnalyticsDashboard() {
       <div className="flex items-center justify-center py-12">
         <div className="text-muted-foreground">{t('sales.loading')}</div>
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="bg-destructive/10 border-destructive" data-testid="card-analytics-error">
+        <CardHeader>
+          <CardTitle className="text-destructive">{t('sales.metricsError')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            {error instanceof Error ? error.message : t('sales.metricsErrorDesc')}
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
