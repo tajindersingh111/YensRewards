@@ -83,22 +83,28 @@ export default function CustomerInsights() {
     .sort((a, b) => parseFloat(b.totalSpent) - parseFloat(a.totalSpent))
     .slice(0, 10);
 
-  // Birthdays This Week
+  // Birthdays This Week - sorted by day of month (chronological)
   const birthdaysThisWeek = customers
     .filter(c => isBirthdayThisWeek(c.birthday))
     .sort((a, b) => {
-      const aDate = a.birthday ? new Date(a.birthday).getDate() : 0;
-      const bDate = b.birthday ? new Date(b.birthday).getDate() : 0;
-      return aDate - bDate;
+      if (!a.birthday || !b.birthday) return 0;
+      const aParts = a.birthday.split('-');
+      const bParts = b.birthday.split('-');
+      const aDay = parseInt(aParts.length === 3 ? aParts[2] : aParts[1]);
+      const bDay = parseInt(bParts.length === 3 ? bParts[2] : bParts[1]);
+      return aDay - bDay;
     });
 
-  // Birthdays This Month
+  // Birthdays This Month - sorted by day of month (chronological)
   const birthdaysThisMonth = customers
     .filter(c => isBirthdayThisMonth(c.birthday))
     .sort((a, b) => {
-      const aDate = a.birthday ? new Date(a.birthday).getDate() : 0;
-      const bDate = b.birthday ? new Date(b.birthday).getDate() : 0;
-      return aDate - bDate;
+      if (!a.birthday || !b.birthday) return 0;
+      const aParts = a.birthday.split('-');
+      const bParts = b.birthday.split('-');
+      const aDay = parseInt(aParts.length === 3 ? aParts[2] : aParts[1]);
+      const bDay = parseInt(bParts.length === 3 ? bParts[2] : bParts[1]);
+      return aDay - bDay;
     });
 
   return (
@@ -119,26 +125,26 @@ export default function CustomerInsights() {
               {topSpenders.map((customer, index) => (
                 <div
                   key={customer.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover-elevate bg-muted/30"
+                  className="flex items-center gap-4 p-4 rounded-lg hover-elevate bg-muted/30"
                   data-testid={`top-spender-${index}`}
                 >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-700 font-bold text-sm">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100 text-yellow-700 font-bold text-base">
                     {index + 1}
                   </div>
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-12 h-12">
                     <AvatarImage src={customer.photo || undefined} />
-                    <AvatarFallback>{getInitials(customer.name)}</AvatarFallback>
+                    <AvatarFallback className="text-base">{getInitials(customer.name)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{customer.name}</p>
+                    <p className="font-semibold text-base truncate">{customer.name}</p>
                     <p className="text-sm text-muted-foreground">{customer.phone}</p>
                   </div>
                   <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
                     {customer.tier}
                   </Badge>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-                    <p className="text-xs text-muted-foreground">{customer.points} pts</p>
+                  <div className="text-right min-w-[100px]">
+                    <p className="font-bold text-lg text-foreground">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{customer.points} pts</p>
                   </div>
                 </div>
               ))}
@@ -163,22 +169,23 @@ export default function CustomerInsights() {
               {birthdaysThisWeek.map((customer) => (
                 <div
                   key={customer.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover-elevate bg-pink-50/50"
+                  className="flex items-center gap-4 p-4 rounded-lg hover-elevate bg-pink-50/50"
                   data-testid={`birthday-week-${customer.id}`}
                 >
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-12 h-12">
                     <AvatarImage src={customer.photo || undefined} />
-                    <AvatarFallback>{getInitials(customer.name)}</AvatarFallback>
+                    <AvatarFallback className="text-base">{getInitials(customer.name)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{customer.name}</p>
+                    <p className="font-semibold text-base truncate">{customer.name}</p>
                     <p className="text-sm text-muted-foreground">{customer.phone}</p>
                   </div>
                   <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
                     {customer.tier}
                   </Badge>
-                  <div className="text-right">
-                    <p className="font-semibold text-pink-600">{getBirthdayDate(customer.birthday)}</p>
+                  <div className="text-right min-w-[100px]">
+                    <p className="font-semibold text-base text-pink-600">{getBirthdayDate(customer.birthday)}</p>
+                    <p className="text-sm font-medium text-foreground">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                     <p className="text-xs text-muted-foreground">{customer.points} pts</p>
                   </div>
                 </div>
@@ -204,22 +211,23 @@ export default function CustomerInsights() {
               {birthdaysThisMonth.map((customer) => (
                 <div
                   key={customer.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover-elevate bg-blue-50/50"
+                  className="flex items-center gap-4 p-4 rounded-lg hover-elevate bg-blue-50/50"
                   data-testid={`birthday-month-${customer.id}`}
                 >
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-12 h-12">
                     <AvatarImage src={customer.photo || undefined} />
-                    <AvatarFallback>{getInitials(customer.name)}</AvatarFallback>
+                    <AvatarFallback className="text-base">{getInitials(customer.name)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{customer.name}</p>
+                    <p className="font-semibold text-base truncate">{customer.name}</p>
                     <p className="text-sm text-muted-foreground">{customer.phone}</p>
                   </div>
                   <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
                     {customer.tier}
                   </Badge>
-                  <div className="text-right">
-                    <p className="font-semibold text-blue-600">{getBirthdayDate(customer.birthday)}</p>
+                  <div className="text-right min-w-[100px]">
+                    <p className="font-semibold text-base text-blue-600">{getBirthdayDate(customer.birthday)}</p>
+                    <p className="text-sm font-medium text-foreground">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                     <p className="text-xs text-muted-foreground">{customer.points} pts</p>
                   </div>
                 </div>
