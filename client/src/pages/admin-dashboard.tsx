@@ -112,7 +112,7 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, authLoading, user, toast, setLocationPath, t]);
 
-  // Fetch analytics data
+  // Fetch overview analytics data (for Dashboard tab)
   const { data: analytics, isLoading: analyticsLoading } = useQuery<{
     totalSales: number;
     totalCustomers: number;
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
     pointsRedeemed: number;
     salesByLocation: Array<{ label: string; value: number }>;
   }>({
-    queryKey: ['/api/admin/analytics'],
+    queryKey: ['/api/admin/overview-analytics'],
     enabled: isAuthenticated && user?.role === "admin",
     retry: false,
   });

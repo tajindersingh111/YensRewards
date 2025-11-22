@@ -1087,14 +1087,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ Admin API Endpoints ============
   // All admin endpoints require authentication and admin role
 
-  // Get analytics/KPIs
-  app.get('/api/admin/analytics', isAuthenticated, isAdmin, async (req, res) => {
+  // Get overview analytics/KPIs (for Dashboard tab - legacy)
+  app.get('/api/admin/overview-analytics', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const analytics = await storage.getAnalytics();
       res.json(analytics);
     } catch (error) {
-      console.error("Error fetching analytics:", error);
-      res.status(500).json({ message: "Failed to fetch analytics" });
+      console.error("Error fetching overview analytics:", error);
+      res.status(500).json({ message: "Failed to fetch overview analytics" });
     }
   });
 

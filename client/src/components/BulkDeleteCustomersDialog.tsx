@@ -61,7 +61,7 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/overview-analytics'] });
       
       toast({
         title: "Success",
