@@ -47,9 +47,10 @@ export default function SalesTrackerDashboard() {
 
   // Fetch sales metrics
   const { data: metrics } = useQuery<{
-    todaySales: number;
-    weekSales: number;
-    monthSales: number;
+    ytdSales: number;
+    bestChannel: { name: string; total: number } | null;
+    bestDay: string | null;
+    bestMonth: string | null;
   }>({
     queryKey: ['/api/admin/sales-tracker-metrics'],
   });
@@ -208,50 +209,51 @@ export default function SalesTrackerDashboard() {
         <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
       </div>
 
-      {/* KPI Cards */}
-      <div className="px-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {/* Today's Sales */}
-        <Card className="bg-white rounded-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-600">Today's Sales</p>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-gray-900" data-testid="text-today-sales">
-              ฿{(metrics?.todaySales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      {/* KPI Cards - 4 Smaller Boxes */}
+      <div className="px-6 grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {/* Best Channel */}
+        <Card className="bg-yellow-400 rounded-xl">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-gray-800 mb-1">Best Channel</p>
+            <p className="text-2xl font-bold text-gray-900" data-testid="text-best-channel">
+              {metrics?.bestChannel?.name || 'N/A'}
+            </p>
+            {metrics?.bestChannel && (
+              <p className="text-xs text-gray-700 mt-1">
+                ฿{metrics.bestChannel.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Best Day */}
+        <Card className="bg-blue-500 rounded-xl">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-white/90 mb-1">Best Day</p>
+            <p className="text-2xl font-bold text-white" data-testid="text-best-day">
+              {metrics?.bestDay || 'N/A'}
             </p>
           </CardContent>
         </Card>
 
-        {/* This Week */}
-        <Card className="bg-blue-600 rounded-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-white/90">This Week</p>
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-white" data-testid="text-week-sales">
-              ฿{(metrics?.weekSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {/* Best Month */}
+        <Card className="bg-green-500 rounded-xl">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-white/90 mb-1">Best Month</p>
+            <p className="text-2xl font-bold text-white" data-testid="text-best-month">
+              {metrics?.bestMonth ? new Date(metrics.bestMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
             </p>
           </CardContent>
         </Card>
 
-        {/* This Month */}
-        <Card className="bg-blue-600 rounded-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-white/90">This Month</p>
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-white" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-white" data-testid="text-month-sales">
-              ฿{(metrics?.monthSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {/* YTD (Year to Date) */}
+        <Card className="bg-purple-500 rounded-xl">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-white/90 mb-1">YTD Sales</p>
+            <p className="text-xl font-bold text-white" data-testid="text-ytd-sales">
+              ฿{(metrics?.ytdSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
+            <p className="text-xs text-white/80 mt-1">Since Jan 1</p>
           </CardContent>
         </Card>
       </div>

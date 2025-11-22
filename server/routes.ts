@@ -1453,42 +1453,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get sales tracker metrics (today, week, month)
+  // Get sales tracker metrics (Best Channel, Best Day, Best Month, YTD)
   app.get('/api/admin/sales-tracker-metrics', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const now = new Date();
       const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
       
-      // Calculate week start (Monday)
-      const dayOfWeek = now.getDay();
-      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - daysToMonday);
-      const weekStartStr = weekStart.toISOString().split('T')[0];
-      
-      // Calculate month start
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      // Calculate year start (January 1st)
+      const yearStart = `${now.getFullYear()}-01-01`;
       
       // Fetch all sales for calculations
       const allSales = await db.select().from(dailySales);
       
-      // Calculate metrics using string comparison
-      const todaySales = allSales
-        .filter(s => s.date === today)
+      // Calculate YTD (Year to Date) - from Jan 1 to today
+      const ytdSales = allSales
+        .filter(s => s.date >= yearStart && s.date <= today)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
-      const weekSales = allSales
-        .filter(s => s.date >= weekStartStr && s.date <= today)
-        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      // Find best channel (highest total sales)
+      const channelTotals = allSales.reduce((acc, sale) => {
+        const channel = sale.orderChannel;
+        if (!acc[channel]) {
+          acc[channel] = 0;
+        }
+        acc[channel] += parseFloat(sale.totalSales);
+        return acc;
+      }, {} as Record<string, number>);
       
-      const monthSales = allSales
-        .filter(s => s.date >= monthStart && s.date <= today)
-        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      const bestChannel = Object.entries(channelTotals).length > 0
+        ? Object.entries(channelTotals).sort(([, a], [, b]) => b - a)[0]
+        : null;
+      
+      // Find best day of week (highest average sales)
+      const dayTotals = allSales.reduce((acc, sale) => {
+        const day = sale.dayOfWeek;
+        if (!acc[day]) {
+          acc[day] = { total: 0, count: 0 };
+        }
+        acc[day].total += parseFloat(sale.totalSales);
+        acc[day].count += 1;
+        return acc;
+      }, {} as Record<string, { total: number; count: number }>);
+      
+      const bestDay = Object.entries(dayTotals).length > 0
+        ? Object.entries(dayTotals)
+            .map(([day, data]) => ({ day, avg: data.total / data.count }))
+            .sort((a, b) => b.avg - a.avg)[0]
+        : null;
+      
+      // Find best month (highest total sales)
+      const monthTotals = allSales.reduce((acc, sale) => {
+        const month = sale.date.substring(0, 7); // YYYY-MM
+        if (!acc[month]) {
+          acc[month] = 0;
+        }
+        acc[month] += parseFloat(sale.totalSales);
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const bestMonth = Object.entries(monthTotals).length > 0
+        ? Object.entries(monthTotals).sort(([, a], [, b]) => b - a)[0]
+        : null;
       
       res.json({
-        todaySales,
-        weekSales,
-        monthSales,
+        ytdSales,
+        bestChannel: bestChannel ? { name: bestChannel[0], total: bestChannel[1] } : null,
+        bestDay: bestDay ? bestDay.day : null,
+        bestMonth: bestMonth ? bestMonth[0] : null,
       });
     } catch (error) {
       console.error("Error fetching sales tracker metrics:", error);
