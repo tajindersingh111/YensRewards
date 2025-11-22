@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 - **Product Management:** CSV bulk import with photo URLs and category mapping, product codes/costs, secure image storage.
 - **Core Features:** Customer loyalty programs (points, tiers), transaction processing, customer management (self-registration, referrals, CSV import/export, duplicate detection), admin analytics (weekly overview, performance tracking), tier-based promotions, product menu, automated birthday messages, sites management (physical locations, mobile vans), Barista App functionalities (Clock In/Out, Work Schedules, Announcements).
 - **Gamification System:** Weekly Special Offers (admin-managed), barista performance tracking (points for sales/signups), real-time leaderboards, personal performance widgets, dedicated admin tab for specials, full bilingual support.
-- **Sales Tracking & Analytics:** Excel import for daily sales, sales overview dashboard with key metrics (revenue, growth, avg transaction), manual data entry, recent sales table, validation, and real-time UI updates.
+- **Sales Tracking & Analytics:** Excel import for daily sales, sales overview dashboard with key metrics (revenue, growth, avg transaction), manual data entry, recent sales table, validation, and real-time UI updates. **Analytics Dashboard (v3.4.0):** Comprehensive 4-tab analytics interface with data visualizations (Monthly Trends, Channels, Day Analysis, Top Performers), Recharts integration, summary metrics (current month revenue, MoM growth, avg transaction), full bilingual support (EN/TH), and Yens yellow branding throughout charts.
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
@@ -46,4 +46,5 @@ Preferred communication style: Simple, everyday language.
 - **Session Management:** `connect-pg-simple`.
 - **Messaging Services:** Twilio, Resend, `otpauth` (for 2FA).
 - **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid`, `bcrypt`.
+- **Data Visualization:** Recharts for analytics charts and graphs.
 - **Internationalization:** `react-i18next`.
