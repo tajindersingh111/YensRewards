@@ -1174,6 +1174,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all customers (no pagination) - for insights/analytics
+  app.get('/api/admin/customers/all', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching all customers:", error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
   // Get duplicate phone numbers (must come before /:id route)
   app.get('/api/admin/customers/duplicates', isAuthenticated, isAdmin, async (req, res) => {
     try {

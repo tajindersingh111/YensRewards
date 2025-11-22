@@ -12,6 +12,7 @@ import CustomerTable from "@/components/CustomerTable";
 import CustomerEditDialog from "@/components/CustomerEditDialog";
 import CustomerMessageDialog from "@/components/CustomerMessageDialog";
 import CustomerCSVImport from "@/components/CustomerCSVImport";
+import CustomerInsights from "@/components/CustomerInsights";
 import ProductManager from "@/components/ProductManager";
 import PromotionCreator from "@/components/PromotionCreator";
 import MessagesPage from "@/components/MessagesPage";
@@ -204,6 +205,11 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold">{t('admin.customers.title')}</h2>
               <CustomerCSVImport showTrigger={true} />
             </div>
+            
+            {/* Customer Insights: Top Spenders & Birthdays */}
+            <CustomerInsights />
+            
+            {/* Customer List Table */}
             <CustomerTable
               onMessage={(customer) => {
                 setMessagingCustomer(customer as Customer);
