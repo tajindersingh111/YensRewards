@@ -258,40 +258,6 @@ export default function SalesTrackerDashboard() {
         </Card>
       </div>
 
-      {/* Import Excel Section */}
-      <div className="px-6 mb-6">
-        <Card className="bg-white rounded-xl">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <FileSpreadsheet className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Import Excel Data</h3>
-                <p className="text-sm text-gray-600">Upload your sales spreadsheet to bulk import data</p>
-              </div>
-            </div>
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadExcelMutation.isPending}
-              className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-lg"
-              data-testid="button-upload-excel"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {uploadExcelMutation.isPending ? 'Uploading...' : 'Upload Excel'}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              className="hidden"
-              data-testid="input-excel-file"
-            />
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Main Content Grid */}
       <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Add New Sale Form */}
@@ -439,6 +405,40 @@ export default function SalesTrackerDashboard() {
                 ))
               )}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Import Excel Section - Moved to bottom */}
+      <div className="px-6 pb-6">
+        <Card className="bg-white rounded-xl">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <FileSpreadsheet className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Import Excel Data</h3>
+                <p className="text-sm text-gray-600">Upload your sales spreadsheet to bulk import data</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadExcelMutation.isPending}
+              className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-lg"
+              data-testid="button-upload-excel"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {uploadExcelMutation.isPending ? 'Uploading...' : 'Upload Excel'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="hidden"
+              data-testid="input-excel-file"
+            />
           </CardContent>
         </Card>
       </div>
