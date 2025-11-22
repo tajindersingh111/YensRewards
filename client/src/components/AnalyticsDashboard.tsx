@@ -418,10 +418,10 @@ export default function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {analytics?.topPerformers.channels[0]?.channel || 'N/A'}
+                  {analytics?.topPerformers?.channels?.[0]?.channel || 'N/A'}
                 </div>
                 <p className="text-sm mt-2">
-                  ฿{(analytics?.topPerformers.channels[0]?.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  ฿{(analytics?.topPerformers?.channels?.[0]?.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
               </CardContent>
             </Card>
@@ -433,7 +433,7 @@ export default function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {analytics?.topPerformers.bestDay || 'N/A'}
+                  {analytics?.topPerformers?.bestDay || 'N/A'}
                 </div>
               </CardContent>
             </Card>
@@ -445,7 +445,7 @@ export default function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {analytics?.topPerformers.bestMonth || 'N/A'}
+                  {analytics?.topPerformers?.bestMonth || 'N/A'}
                 </div>
               </CardContent>
             </Card>
@@ -458,7 +458,7 @@ export default function AnalyticsDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {(analytics?.topPerformers.channels || []).slice(0, 5).map((channel, index) => (
+                {(analytics?.topPerformers?.channels || []).slice(0, 5).map((channel, index) => (
                   <div key={channel.channel} className="flex items-center gap-4" data-testid={`top-channel-${index + 1}`}>
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FCD34D] text-black font-bold">
                       {index + 1}
