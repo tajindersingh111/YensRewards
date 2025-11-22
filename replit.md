@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.8.2** - Customer Insights: Restored original birthday format with circular avatars, cake icons, hover actions (message/edit/view/delete), and full customer data display. Categories: Today, Tomorrow, This Week, This Month with yellow Yens branding.
+**Current Version: v3.8.3** - Customer Insights UI refinement: Fixed Top 10 Spenders truncation with optimized spacing (gap-1, px-4 padding). Unified all sections (Top 10, Current Week, This Month) with consistent proportions (min-w-110px), uniform spacing, and 10 customer limit for visual harmony. Comparison page available at /insights-old.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
