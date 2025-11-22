@@ -35,9 +35,15 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
-  // Parse URL query params to get active tab
+  // Parse URL query params and manage active tab state
   const params = new URLSearchParams(location.split('?')[1] || '');
   const urlTab = params.get('tab') || 'salesTracker';
+  const [activeTab, setActiveTab] = useState(urlTab);
+
+  // Sync activeTab with URL changes
+  useEffect(() => {
+    setActiveTab(urlTab);
+  }, [urlTab]);
 
   // Customer dialog states
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -45,8 +51,9 @@ export default function AdminDashboard() {
   const [messagingCustomer, setMessagingCustomer] = useState<Customer | null>(null);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
 
-  // Handle tab change - update URL (always, no conditional)
+  // Handle tab change - update both state and URL
   const handleTabChange = (value: string) => {
+    setActiveTab(value);
     const newParams = new URLSearchParams();
     if (value !== 'salesTracker') {
       newParams.set('tab', value);
@@ -169,7 +176,7 @@ export default function AdminDashboard() {
 
       {/* Main Content with Tabs */}
       <main className="max-w-7xl mx-auto p-6">
-        <Tabs value={urlTab} onValueChange={handleTabChange} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="salesTracker" data-testid="tab-sales-tracker">{t('admin.tabs.salesTracker')}</TabsTrigger>
             <TabsTrigger value="analytics" data-testid="tab-analytics">{t('admin.tabs.analytics')}</TabsTrigger>
