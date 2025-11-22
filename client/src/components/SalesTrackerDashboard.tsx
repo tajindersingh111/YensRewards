@@ -29,6 +29,7 @@ interface SalesFormData {
   date: string;
   orderChannel: string;
   netSales: string;
+  otherSales: string;
   grabFee: string;
 }
 
@@ -40,6 +41,7 @@ export default function SalesTrackerDashboard() {
     date: new Date().toISOString().split('T')[0],
     orderChannel: "",
     netSales: "",
+    otherSales: "0",
     grabFee: "0",
   });
 
@@ -79,6 +81,7 @@ export default function SalesTrackerDashboard() {
         date: new Date().toISOString().split('T')[0],
         orderChannel: "",
         netSales: "",
+        otherSales: "0",
         grabFee: "0",
       });
     },
@@ -292,7 +295,7 @@ export default function SalesTrackerDashboard() {
                   value={formData.orderChannel}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, orderChannel: value }))}
                 >
-                  <SelectTrigger className="bg-yellow-50/50 border-yellow-200/50 rounded-lg" data-testid="select-sales-channel">
+                  <SelectTrigger className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg" data-testid="select-sales-channel">
                     <SelectValue placeholder="Select channel" />
                   </SelectTrigger>
                   <SelectContent>
@@ -315,8 +318,23 @@ export default function SalesTrackerDashboard() {
                   value={formData.netSales}
                   onChange={(e) => setFormData(prev => ({ ...prev, netSales: e.target.value }))}
                   placeholder="0.00"
-                  className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
+                  className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
                   data-testid="input-net-sales"
+                />
+              </div>
+
+              {/* Other Sales */}
+              <div className="space-y-2">
+                <Label htmlFor="otherSales">Other Sales (฿)</Label>
+                <Input
+                  id="otherSales"
+                  type="number"
+                  step="0.01"
+                  value={formData.otherSales}
+                  onChange={(e) => setFormData(prev => ({ ...prev, otherSales: e.target.value }))}
+                  placeholder="0.00"
+                  className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
+                  data-testid="input-other-sales"
                 />
               </div>
 
