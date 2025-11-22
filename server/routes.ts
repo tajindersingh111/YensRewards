@@ -13,6 +13,44 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
 import * as XLSX from "xlsx";
 
+// Helper function to normalize day of week names to canonical short form
+function normalizeDayOfWeek(day: string): string {
+  const normalized = day.trim().toLowerCase();
+  
+  // Map all variations to canonical short form
+  const dayMap: Record<string, string> = {
+    'monday': 'Mon',
+    'mon': 'Mon',
+    'mon.': 'Mon',
+    'tuesday': 'Tue',
+    'tue': 'Tue',
+    'tue.': 'Tue',
+    'tues': 'Tue',
+    'tues.': 'Tue',
+    'wednesday': 'Wed',
+    'wed': 'Wed',
+    'wed.': 'Wed',
+    'thursday': 'Thu',
+    'thu': 'Thu',
+    'thu.': 'Thu',
+    'thur': 'Thu',
+    'thur.': 'Thu',
+    'thurs': 'Thu',
+    'thurs.': 'Thu',
+    'friday': 'Fri',
+    'fri': 'Fri',
+    'fri.': 'Fri',
+    'saturday': 'Sat',
+    'sat': 'Sat',
+    'sat.': 'Sat',
+    'sunday': 'Sun',
+    'sun': 'Sun',
+    'sun.': 'Sun',
+  };
+  
+  return dayMap[normalized] || day;
+}
+
 // Helper function to replace merge fields in messages
 function replaceMergeFields(text: string, customer: { name: string; points: number; tier: string }): string {
   return text
@@ -1557,12 +1595,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       
       allSales.forEach(sale => {
-        const day = sale.dayOfWeek || '';
-        const existing = dayMap.get(day) || { revenue: 0, transactions: 0 };
-        dayMap.set(day, {
-          revenue: existing.revenue + parseFloat(sale.totalSales),
-          transactions: existing.transactions + 1,
-        });
+        const day = normalizeDayOfWeek(sale.dayOfWeek || '');
+        if (day) {
+          const existing = dayMap.get(day) || { revenue: 0, transactions: 0 };
+          dayMap.set(day, {
+            revenue: existing.revenue + parseFloat(sale.totalSales),
+            transactions: existing.transactions + 1,
+          });
+        }
       });
 
       const dayAnalysis = dayOrder
@@ -1611,7 +1651,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate day of week from date
       const date = new Date(validatedData.date);
-      const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const rawDayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayOfWeek = normalizeDayOfWeek(rawDayOfWeek);
 
       const [newSale] = await db.insert(dailySales).values({
         ...validatedData,
@@ -1701,7 +1742,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Extract and trim data using normalized keys
             // Handle day of week from 'day' column OR the first unnamed column (__empty)
-            const dayOfWeek = (row['day'] || row['__empty'] || row[''] || '').toString().trim();
+            const rawDayOfWeek = (row['day'] || row['__empty'] || row[''] || '').toString().trim();
+            const dayOfWeek = normalizeDayOfWeek(rawDayOfWeek);
             const orderChannel = (row['order_channel'] || '').toString().trim();
             const netSales = parseNumeric(row['net_sales']);
             const grabFee = parseNumeric(row['grab'] || row['grab_fee']);
