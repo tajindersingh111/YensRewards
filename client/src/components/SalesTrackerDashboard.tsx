@@ -266,7 +266,7 @@ export default function SalesTrackerDashboard() {
       {/* KPI Cards */}
       <div className="px-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Today's Sales */}
-        <Card className="bg-white">
+        <Card className="bg-white rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-gray-600">Today's Sales</p>
@@ -281,7 +281,7 @@ export default function SalesTrackerDashboard() {
         </Card>
 
         {/* This Week */}
-        <Card className="bg-blue-600">
+        <Card className="bg-blue-600 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-white/90">This Week</p>
@@ -296,7 +296,7 @@ export default function SalesTrackerDashboard() {
         </Card>
 
         {/* This Month */}
-        <Card className="bg-blue-600">
+        <Card className="bg-blue-600 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-white/90">This Month</p>
@@ -313,7 +313,7 @@ export default function SalesTrackerDashboard() {
 
       {/* Import Excel Section */}
       <div className="px-6 mb-6">
-        <Card className="bg-white">
+        <Card className="bg-white rounded-xl">
           <CardContent className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -327,7 +327,7 @@ export default function SalesTrackerDashboard() {
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadExcelMutation.isPending}
-              className="bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+              className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-lg"
               data-testid="button-upload-excel"
             >
               <Upload className="w-4 h-4 mr-2" />
@@ -348,7 +348,7 @@ export default function SalesTrackerDashboard() {
       {/* Main Content Grid */}
       <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Add New Sale Form */}
-        <Card className="bg-white">
+        <Card className="bg-white rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -366,7 +366,7 @@ export default function SalesTrackerDashboard() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="bg-white"
+                  className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
                   data-testid="input-sale-date"
                 />
               </div>
@@ -378,7 +378,7 @@ export default function SalesTrackerDashboard() {
                   value={formData.orderChannel}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, orderChannel: value }))}
                 >
-                  <SelectTrigger className="bg-white" data-testid="select-sales-channel">
+                  <SelectTrigger className="bg-yellow-50/50 border-yellow-200/50 rounded-lg" data-testid="select-sales-channel">
                     <SelectValue placeholder="Select channel" />
                   </SelectTrigger>
                   <SelectContent>
@@ -402,7 +402,7 @@ export default function SalesTrackerDashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleQuickAmount(amount)}
-                      className="hover-elevate"
+                      className="hover-elevate bg-yellow-50/30 border-yellow-200/50 rounded-lg"
                       data-testid={`button-quick-${amount}`}
                     >
                       {(amount / 1000).toFixed(1)}k
@@ -421,7 +421,7 @@ export default function SalesTrackerDashboard() {
                   value={formData.netSales}
                   onChange={(e) => setFormData(prev => ({ ...prev, netSales: e.target.value }))}
                   placeholder="0.00"
-                  className="bg-white"
+                  className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
                   data-testid="input-net-sales"
                 />
               </div>
@@ -436,7 +436,7 @@ export default function SalesTrackerDashboard() {
                   value={formData.grabFee}
                   onChange={(e) => setFormData(prev => ({ ...prev, grabFee: e.target.value }))}
                   placeholder="0"
-                  className="bg-white"
+                  className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
                   data-testid="input-grab-fee"
                 />
               </div>
@@ -444,7 +444,7 @@ export default function SalesTrackerDashboard() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                 disabled={addSaleMutation.isPending}
                 data-testid="button-add-sale"
               >
@@ -456,7 +456,7 @@ export default function SalesTrackerDashboard() {
         </Card>
 
         {/* Recent Sales */}
-        <Card className="bg-white">
+        <Card className="bg-white rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -465,18 +465,18 @@ export default function SalesTrackerDashboard() {
               <h2 className="text-xl font-bold text-gray-900">Recent Sales</h2>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2">
               {recentSales.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">No sales recorded yet</p>
               ) : (
                 recentSales.map((sale, index) => (
                   <div
                     key={index}
-                    className="bg-gray-50 rounded-lg p-4 hover-elevate"
+                    className="bg-yellow-50/40 rounded-xl p-4 hover-elevate border border-yellow-100/50"
                     data-testid={`sale-${index}`}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <Badge className={`${getChannelColor(sale.orderChannel)} text-white`}>
+                      <Badge className={`${getChannelColor(sale.orderChannel)} text-white rounded-lg`}>
                         {sale.orderChannel}
                       </Badge>
                       <p className="text-xl font-bold text-gray-900">
