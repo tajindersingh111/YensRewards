@@ -300,11 +300,11 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                 {row.map((customer) => (
                   <div 
                     key={customer.id}
-                    className="flex flex-col items-center gap-2 w-24 group relative"
+                    className="flex flex-col items-center gap-2 w-28 group relative"
                     data-testid={`birthday-customer-${customer.id}`}
                   >
-                    <div className="relative w-16 h-16">
-                      <Avatar className="w-16 h-16 border-2 border-yellow-500">
+                    <div className="relative w-20 h-20">
+                      <Avatar className="w-20 h-20 border-2 border-yellow-500">
                         <AvatarImage src={customer.photo || undefined} className="mix-blend-luminosity" />
                         <AvatarFallback className="bg-yellow-100 text-yellow-700 font-semibold">
                           {customer.name.slice(0, 2).toUpperCase()}
