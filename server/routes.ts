@@ -1570,8 +1570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           day,
           revenue: dayMap.get(day)?.revenue || 0,
           transactions: dayMap.get(day)?.transactions || 0,
-        }))
-        .filter(d => d.transactions > 0);
+        }));
 
       // Top Performers
       const bestDay = dayAnalysis.length > 0
