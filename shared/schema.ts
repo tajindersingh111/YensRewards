@@ -240,6 +240,20 @@ export const baristaPerformance = pgTable("barista_performance", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Daily Sales table - tracks sales by site from Excel imports
+export const dailySales = pgTable("daily_sales", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: text("date").notNull(), // YYYY-MM-DD
+  dayOfWeek: text("day_of_week").notNull(), // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+  orderChannel: text("order_channel").notNull(), // Shop, Supalai, Balloon, Box, River, Army, Lamp, etc.
+  netSales: decimal("net_sales", { precision: 10, scale: 2 }).notNull(), // Sales before fees
+  grabFee: decimal("grab_fee", { precision: 10, scale: 2 }).default("0"), // Delivery platform fees
+  totalSales: decimal("total_sales", { precision: 10, scale: 2 }).notNull(), // Total sales
+  importedBy: varchar("imported_by").references(() => users.id), // Admin who imported
+  importedAt: timestamp("imported_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 
 // Insert schemas with validation
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -353,6 +367,12 @@ export const insertBaristaPerformanceSchema = createInsertSchema(baristaPerforma
   updatedAt: true,
 });
 
+export const insertDailySalesSchema = createInsertSchema(dailySales).omit({
+  id: true,
+  importedAt: true,
+  createdAt: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -399,3 +419,6 @@ export type InsertWeeklySpecial = z.infer<typeof insertWeeklySpecialSchema>;
 
 export type BaristaPerformance = typeof baristaPerformance.$inferSelect;
 export type InsertBaristaPerformance = z.infer<typeof insertBaristaPerformanceSchema>;
+
+export type DailySales = typeof dailySales.$inferSelect;
+export type InsertDailySales = z.infer<typeof insertDailySalesSchema>;

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, users } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales } from "@shared/schema";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
@@ -10,6 +10,8 @@ import { sendEmail } from "./resend";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import multer from "multer";
+import * as XLSX from "xlsx";
 
 // Helper function to replace merge fields in messages
 function replaceMergeFields(text: string, customer: { name: string; points: number; tier: string }): string {
@@ -30,6 +32,12 @@ function sanitizeUser(user: any) {
 function sanitizeUsers(users: any[]) {
   return users.map(sanitizeUser);
 }
+
+// Configure multer for file uploads (memory storage for Excel files)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve public product images from object storage
@@ -1343,6 +1351,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing customers:", error);
       res.status(500).json({ message: "Failed to import customers" });
+    }
+  });
+
+  // Import daily sales from Excel file
+  app.post('/api/admin/import-sales-excel', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Parse Excel file
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      let totalImported = 0;
+      let totalSkipped = 0;
+      const errors: string[] = [];
+
+      // Process each sheet (month)
+      for (const sheetName of workbook.SheetNames) {
+        console.log(`Processing sheet: ${sheetName}`);
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+        for (const row of jsonData as any[]) {
+          try {
+            // Skip weekly total rows (they don't have a date in proper format)
+            if (!row['Date'] || typeof row['Date'] !== 'number') {
+              continue;
+            }
+
+            // Convert Excel serial date to JavaScript Date
+            const excelDate = XLSX.SSF.parse_date_code(row['Date']);
+            const date = `${excelDate.y}-${String(excelDate.m).padStart(2, '0')}-${String(excelDate.d).padStart(2, '0')}`;
+            
+            // Extract data from row
+            const dayOfWeek = row['Day'] || '';
+            const orderChannel = row['Order Channel'] || '';
+            const netSales = parseFloat(row['Net Sales'] || 0);
+            const grabFee = parseFloat(row['Grab'] || 0);
+            const totalSales = parseFloat(row['Total Sales'] || 0);
+
+            // Skip invalid rows
+            if (!orderChannel || netSales === 0) {
+              continue;
+            }
+
+            // Insert into database
+            await db.insert(dailySales).values({
+              date,
+              dayOfWeek,
+              orderChannel,
+              netSales: netSales.toString(),
+              grabFee: grabFee.toString(),
+              totalSales: totalSales.toString(),
+              importedBy: req.user!.id,
+            }).onConflictDoNothing(); // Skip duplicates
+
+            totalImported++;
+          } catch (error) {
+            console.error(`Error importing row:`, row, error);
+            totalSkipped++;
+            errors.push(`Failed to import row: ${JSON.stringify(row)}`);
+          }
+        }
+      }
+
+      res.json({
+        imported: totalImported,
+        skipped: totalSkipped,
+        sheetsProcessed: workbook.SheetNames.length,
+        message: `Successfully imported ${totalImported} sales records from ${workbook.SheetNames.length} months`,
+        errors: errors.length > 0 ? errors.slice(0, 10) : undefined // Return first 10 errors
+      });
+    } catch (error) {
+      console.error("Error importing Excel file:", error);
+      res.status(500).json({ message: "Failed to import Excel file", error: String(error) });
     }
   });
 
