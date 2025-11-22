@@ -380,13 +380,29 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
           ));
         };
 
+        // Get all birthday customer IDs for "Send All" button
+        const allBirthdayCustomers = [...currentWeekCustomers, ...thisMonthCustomers];
+
         return (
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Cake className="w-5 h-5 text-yellow-500" />
-                Upcoming Birthdays
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Cake className="w-5 h-5 text-yellow-500" />
+                  Upcoming Birthdays
+                </CardTitle>
+                {onSendBirthdayMessages && allBirthdayCustomers.length > 0 && (
+                  <Button
+                    onClick={() => onSendBirthdayMessages(allBirthdayCustomers)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
+                    size="sm"
+                    data-testid="button-send-all-birthday-messages"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send All Birthday Messages ({allBirthdayCustomers.length})
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Current Week Section - Thicker Border */}
