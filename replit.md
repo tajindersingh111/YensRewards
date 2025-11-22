@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.7.1** - Analytics Day-of-Week Data Normalization Fix
+**Current Version: v3.7.2** - Sales Tracker UI Enhancement (Yellow Borders & Other Sales Field)
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Product Management:** CSV bulk import with photo URLs and category mapping, product codes/costs, secure image storage.
 - **Core Features:** Customer loyalty programs (points, tiers), transaction processing, customer management (self-registration, referrals, CSV import/export, duplicate detection), admin analytics (weekly overview, performance tracking), tier-based promotions, product menu, automated birthday messages, sites management (physical locations, mobile vans), Barista App functionalities (Clock In/Out, Work Schedules, Announcements).
 - **Gamification System:** Weekly Special Offers (admin-managed), barista performance tracking (points for sales/signups), real-time leaderboards, personal performance widgets, dedicated admin tab for specials, full bilingual support.
-- **Sales Tracking & Analytics:** Excel import for daily sales (supports column-less headers via __empty), sales overview dashboard with key metrics (revenue, growth, avg transaction), manual data entry, recent sales table, validation, and real-time UI updates. **Analytics Dashboard (v3.7.1):** Comprehensive 4-tab analytics interface with data visualizations (Monthly Trends, Channels, Day Analysis, Top Performers), Recharts integration, summary metrics (current month revenue, MoM growth, avg transaction), full bilingual support (EN/TH), Yens yellow branding throughout charts, Excel date handling (serial to ISO format conversion), and normalized day-of-week data handling (maps all variations like "Tues"/"Thurs" to canonical "Tue"/"Thu" for accurate aggregation).
+- **Sales Tracking & Analytics:** Excel import for daily sales (supports column-less headers via __empty), sales overview dashboard with key metrics (revenue, growth, avg transaction), manual data entry, recent sales table, validation, and real-time UI updates. **Analytics Dashboard (v3.7.2):** Comprehensive 4-tab analytics interface with data visualizations (Monthly Trends, Channels, Day Analysis, Top Performers), Recharts integration, summary metrics (current month revenue, MoM growth, avg transaction), full bilingual support (EN/TH), Yens yellow branding throughout charts, Excel date handling (serial to ISO format conversion), and normalized day-of-week data handling (maps all variations like "Tues"/"Thurs" to canonical "Tue"/"Thu" for accurate aggregation). Sales Tracker form now features yellow-bordered highlight fields (Sales Channel, Net Sales, Other Sales) for improved visual prominence.
 
 ### System Design Choices
 - **Type Safety:** End-to-end TypeScript with shared Zod schemas.
