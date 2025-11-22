@@ -1470,11 +1470,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
       
-      // Calculate year start (January 1st)
-      const yearStart = `${now.getFullYear()}-01-01`;
+      // Calculate year start (January 1st) using UTC
+      const yearStart = `${now.getUTCFullYear()}-01-01`;
+      
+      // Calculate current month start (first day of current month) using UTC
+      const monthStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const monthStart = monthStartUTC.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      // Calculate current week start (Monday) using UTC to match database dates
+      const currentDayUTC = now.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      let daysToSubtract;
+      if (currentDayUTC === 0) {
+        daysToSubtract = 6; // Sunday: go back 6 days to previous Monday
+      } else {
+        daysToSubtract = currentDayUTC - 1; // Mon-Sat: go back to Monday of this week
+      }
+      const mondayUTC = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() - daysToSubtract,
+        0, 0, 0, 0
+      ));
+      const weekStart = mondayUTC.toISOString().split('T')[0]; // YYYY-MM-DD format
       
       // Fetch all sales for calculations
       const allSales = await db.select().from(dailySales);
+      
+      // Calculate Current Week Revenue (Monday to today)
+      const currentWeekSales = allSales
+        .filter(s => s.date >= weekStart && s.date <= today)
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      
+      // Calculate Current Month Revenue (1st to today)
+      const currentMonthSales = allSales
+        .filter(s => s.date >= monthStart && s.date <= today)
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
       // Calculate YTD (Year to Date) - from Jan 1 to today
       const ytdSales = allSales
@@ -1527,6 +1557,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : null;
       
       res.json({
+        currentWeekSales,
+        currentMonthSales,
         ytdSales,
         bestChannel: bestChannel ? { name: bestChannel[0], total: bestChannel[1] } : null,
         bestDay: bestDay ? bestDay.day : null,
