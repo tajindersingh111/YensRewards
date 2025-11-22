@@ -48,12 +48,12 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
           {topSpenders.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No spenders yet</p>
           ) : (
-            <div className="overflow-x-auto px-6">
-              <div className="flex gap-2 pb-2 pe-8">
+            <div className="overflow-x-auto px-4">
+              <div className="flex gap-1 pb-2">
                 {topSpenders.map((customer, index) => (
                   <div
                     key={customer.id}
-                    className="flex flex-col items-center gap-2 min-w-[115px] group"
+                    className="flex flex-col items-center gap-2 min-w-[110px] group"
                     data-testid={`top-spender-${index + 1}`}
                   >
                     <div className="relative">
@@ -277,30 +277,25 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
           );
         }
 
-        // Flatten Current Week customers
+        // Flatten Current Week customers - limit to 10
         const currentWeekCustomers = currentWeekGroups.flatMap(({ label, customers }) =>
           customers.map(customer => ({ ...customer, timePeriod: label }))
-        );
+        ).slice(0, 10);
 
-        // Prepare This Month customers
+        // Prepare This Month customers - limit to 10
         const thisMonthCustomers = thisMonthGroup 
-          ? thisMonthGroup.customers.map(customer => ({ ...customer, timePeriod: thisMonthGroup.label }))
+          ? thisMonthGroup.customers.map(customer => ({ ...customer, timePeriod: thisMonthGroup.label })).slice(0, 10)
           : [];
 
         // Helper function to render customer avatars
         const renderCustomerAvatars = (customers: Array<typeof currentWeekCustomers[0]>) => {
-          const rows: Array<Array<typeof customers[0]>> = [];
-          for (let i = 0; i < customers.length; i += 10) {
-            rows.push(customers.slice(i, i + 10));
-          }
-
-          return rows.map((row, rowIndex) => (
-            <div key={rowIndex} className="overflow-x-auto pb-2">
-              <div className="flex gap-4 min-w-max">
-                {row.map((customer) => (
+          return (
+            <div className="overflow-x-auto px-4">
+              <div className="flex gap-1 pb-2">
+                {customers.map((customer) => (
                   <div 
                     key={customer.id}
-                    className="flex flex-col items-center gap-2 w-28 group relative"
+                    className="flex flex-col items-center gap-2 min-w-[110px] group relative"
                     data-testid={`birthday-customer-${customer.id}`}
                   >
                     <div className="relative w-20 h-20">
@@ -377,7 +372,7 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                 ))}
               </div>
             </div>
-          ));
+          );
         };
 
         // Get all birthday customer IDs for "Send All" button
@@ -427,9 +422,7 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                     )}
                   </div>
                   
-                  <div className="space-y-6">
-                    {renderCustomerAvatars(currentWeekCustomers)}
-                  </div>
+                  {renderCustomerAvatars(currentWeekCustomers)}
                 </div>
               )}
 
@@ -455,9 +448,7 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                     )}
                   </div>
                   
-                  <div className="space-y-6">
-                    {renderCustomerAvatars(thisMonthCustomers)}
-                  </div>
+                  {renderCustomerAvatars(thisMonthCustomers)}
                 </div>
               )}
             </CardContent>
