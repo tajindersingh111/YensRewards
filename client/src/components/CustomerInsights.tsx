@@ -25,8 +25,18 @@ function isBirthdayThisWeek(birthday: string | null): boolean {
   if (!birthday) return false;
   
   const today = new Date();
-  const weekFromNow = new Date();
-  weekFromNow.setDate(today.getDate() + 7);
+  
+  // Get start of week (Monday)
+  const currentDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1; // Adjust for Monday start
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - daysFromMonday);
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  // Get end of week (Sunday)
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
   
   // Parse birthday (assuming format YYYY-MM-DD or MM-DD)
   const birthdayParts = birthday.includes('-') ? birthday.split('-') : null;
@@ -39,7 +49,7 @@ function isBirthdayThisWeek(birthday: string | null): boolean {
   const currentYear = today.getFullYear();
   const birthdayThisYear = new Date(currentYear, month - 1, day);
   
-  return birthdayThisYear >= today && birthdayThisYear <= weekFromNow;
+  return birthdayThisYear >= startOfWeek && birthdayThisYear <= endOfWeek;
 }
 
 function isBirthdayThisMonth(birthday: string | null): boolean {
