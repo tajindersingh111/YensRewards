@@ -222,76 +222,72 @@ export default function SalesTrackerDashboard() {
         </Button>
       </div>
 
-      {/* KPI Cards - 6 Boxes in Two Rows */}
-      <div className="px-6 space-y-3 mb-6">
-        {/* Row 1: Sales Revenue Boxes (75% size) */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* Current Week Total */}
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-            <CardContent className="p-3">
-              <p className="text-xs font-medium text-white/90 mb-1">Current Week</p>
-              <p className="text-xl font-bold text-white" data-testid="text-current-week-sales">
+      {/* KPI Cards - 6 Boxes in Single Row */}
+      <div className="px-6 mb-6">
+        <div className="grid grid-cols-9 gap-2">
+          {/* Current Week Total - Larger (2/9) */}
+          <Card className="col-span-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+            <CardContent className="p-2">
+              <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Week</p>
+              <p className="text-base font-bold text-white" data-testid="text-current-week-sales">
                 ฿{(metrics?.currentWeekSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
-              <p className="text-xs text-white/80 mt-0.5">Mon - Today</p>
+              <p className="text-[9px] text-white/80 mt-0.5">Mon - Today</p>
             </CardContent>
           </Card>
 
-          {/* Current Month Total */}
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl">
-            <CardContent className="p-3">
-              <p className="text-xs font-medium text-white/90 mb-1">Current Month</p>
-              <p className="text-xl font-bold text-white" data-testid="text-current-month-sales">
+          {/* Current Month Total - Larger (2/9) */}
+          <Card className="col-span-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+            <CardContent className="p-2">
+              <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Month</p>
+              <p className="text-base font-bold text-white" data-testid="text-current-month-sales">
                 ฿{(metrics?.currentMonthSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
-              <p className="text-xs text-white/80 mt-0.5">{new Date().toLocaleDateString('en-US', { month: 'short' })}</p>
+              <p className="text-[9px] text-white/80 mt-0.5">{new Date().toLocaleDateString('en-US', { month: 'short' })}</p>
             </CardContent>
           </Card>
 
-          {/* YTD (Year to Date) */}
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
-            <CardContent className="p-3">
-              <p className="text-xs font-medium text-white/90 mb-1">YTD Sales</p>
-              <p className="text-xl font-bold text-white" data-testid="text-ytd-sales">
+          {/* YTD (Year to Date) - Larger (2/9) */}
+          <Card className="col-span-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
+            <CardContent className="p-2">
+              <p className="text-[10px] font-medium text-white/90 mb-0.5">YTD Sales</p>
+              <p className="text-base font-bold text-white" data-testid="text-ytd-sales">
                 ฿{(metrics?.ytdSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
-              <p className="text-xs text-white/80 mt-0.5">Since Jan 1</p>
+              <p className="text-[9px] text-white/80 mt-0.5">Since Jan 1</p>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Row 2: Performance Info Boxes (50% size) */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* Best Channel */}
-          <Card className="bg-yellow-400 rounded-xl">
-            <CardContent className="p-2">
-              <p className="text-xs font-medium text-gray-800 mb-0.5">Best Channel</p>
-              <p className="text-lg font-bold text-gray-900" data-testid="text-best-channel">
+          {/* Best Channel - Smaller (1/9) */}
+          <Card className="col-span-1 bg-yellow-400 rounded-lg">
+            <CardContent className="p-1.5">
+              <p className="text-[9px] font-medium text-gray-800 mb-0.5">Best Channel</p>
+              <p className="text-sm font-bold text-gray-900 leading-tight" data-testid="text-best-channel">
                 {metrics?.bestChannel?.name || 'N/A'}
               </p>
               {metrics?.bestChannel && (
-                <p className="text-xs text-gray-700 mt-0.5">
-                  ฿{metrics.bestChannel.total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                <p className="text-[8px] text-gray-700 mt-0.5">
+                  ฿{(metrics.bestChannel.total / 1000).toFixed(0)}k
                 </p>
               )}
             </CardContent>
           </Card>
 
-          {/* Best Day */}
-          <Card className="bg-blue-400 rounded-xl">
-            <CardContent className="p-2">
-              <p className="text-xs font-medium text-white/90 mb-0.5">Best Day</p>
-              <p className="text-lg font-bold text-white" data-testid="text-best-day">
+          {/* Best Day - Smaller (1/9) */}
+          <Card className="col-span-1 bg-blue-400 rounded-lg">
+            <CardContent className="p-1.5">
+              <p className="text-[9px] font-medium text-white/90 mb-0.5">Best Day</p>
+              <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-day">
                 {metrics?.bestDay || 'N/A'}
               </p>
             </CardContent>
           </Card>
 
-          {/* Best Month */}
-          <Card className="bg-green-400 rounded-xl">
-            <CardContent className="p-2">
-              <p className="text-xs font-medium text-white/90 mb-0.5">Best Month</p>
-              <p className="text-lg font-bold text-white" data-testid="text-best-month">
+          {/* Best Month - Smaller (1/9) */}
+          <Card className="col-span-1 bg-green-400 rounded-lg">
+            <CardContent className="p-1.5">
+              <p className="text-[9px] font-medium text-white/90 mb-0.5">Best Month</p>
+              <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-month">
                 {metrics?.bestMonth ? new Date(metrics.bestMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
               </p>
             </CardContent>
