@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Cake, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Cake, Calendar, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Customer } from "@shared/schema";
 import { useTranslation } from "react-i18next";
@@ -80,7 +81,11 @@ function getBirthdayDate(birthday: string | null): string {
   return `${monthNames[month - 1]} ${day}`;
 }
 
-export default function CustomerInsights() {
+interface CustomerInsightsProps {
+  onMessage?: (customer: Customer) => void;
+}
+
+export default function CustomerInsights({ onMessage }: CustomerInsightsProps) {
   const { t } = useTranslation();
 
   // Fetch all customers for insights
@@ -193,10 +198,23 @@ export default function CustomerInsights() {
                   <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
                     {customer.tier}
                   </Badge>
-                  <div className="text-right">
-                    <p className="font-semibold text-pink-600">{getBirthdayDate(customer.birthday)}</p>
-                    <p className="text-sm text-foreground">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-                    <p className="text-xs text-muted-foreground">{customer.points} pts</p>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="font-semibold text-pink-600">{getBirthdayDate(customer.birthday)}</p>
+                      <p className="text-sm text-foreground">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                      <p className="text-xs text-muted-foreground">{customer.points} pts</p>
+                    </div>
+                    {onMessage && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => onMessage(customer)}
+                        data-testid={`button-message-birthday-week-${customer.id}`}
+                        className="shrink-0"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -235,10 +253,23 @@ export default function CustomerInsights() {
                   <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
                     {customer.tier}
                   </Badge>
-                  <div className="text-right">
-                    <p className="font-semibold text-blue-600">{getBirthdayDate(customer.birthday)}</p>
-                    <p className="text-sm text-foreground">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-                    <p className="text-xs text-muted-foreground">{customer.points} pts</p>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="font-semibold text-blue-600">{getBirthdayDate(customer.birthday)}</p>
+                      <p className="text-sm text-foreground">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                      <p className="text-xs text-muted-foreground">{customer.points} pts</p>
+                    </div>
+                    {onMessage && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => onMessage(customer)}
+                        data-testid={`button-message-birthday-month-${customer.id}`}
+                        className="shrink-0"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

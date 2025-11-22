@@ -207,7 +207,12 @@ export default function AdminDashboard() {
             </div>
             
             {/* Customer Insights: Top Spenders & Birthdays */}
-            <CustomerInsights />
+            <CustomerInsights 
+              onMessage={(customer) => {
+                setMessagingCustomer(customer as Customer);
+                setIsMessageDialogOpen(true);
+              }}
+            />
             
             {/* Customer List Table */}
             <CustomerTable
