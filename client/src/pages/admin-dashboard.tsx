@@ -212,6 +212,10 @@ export default function AdminDashboard() {
                 setMessagingCustomer(customer as Customer);
                 setIsMessageDialogOpen(true);
               }}
+              onEdit={(customer) => {
+                setEditingCustomer(customer as Customer);
+                setIsEditDialogOpen(true);
+              }}
             />
             
             {/* Customer List Table */}
