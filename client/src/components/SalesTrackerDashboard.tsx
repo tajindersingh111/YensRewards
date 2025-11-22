@@ -25,8 +25,6 @@ const CHANNELS = [
   "CNY", "UNIVERSITY", "GRAB", "FOODPANDA", "LINEMAN", "SHOPEE", "SHOPZY", "G2"
 ];
 
-const QUICK_AMOUNTS = [1500, 2500, 3000, 5000, 7500];
-
 interface SalesFormData {
   date: string;
   orderChannel: string;
@@ -143,10 +141,6 @@ export default function SalesTrackerDashboard() {
     if (file) {
       uploadExcelMutation.mutate(file);
     }
-  };
-
-  const handleQuickAmount = (amount: number) => {
-    setFormData(prev => ({ ...prev, netSales: amount.toString() }));
   };
 
   const handleAddSale = (e: React.FormEvent) => {
@@ -309,26 +303,6 @@ export default function SalesTrackerDashboard() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* Quick Amount Buttons */}
-              <div className="space-y-2">
-                <Label>Quick Amount</Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {QUICK_AMOUNTS.map((amount) => (
-                    <Button
-                      key={amount}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickAmount(amount)}
-                      className="hover-elevate bg-yellow-50/30 border-yellow-200/50 rounded-lg"
-                      data-testid={`button-quick-${amount}`}
-                    >
-                      {(amount / 1000).toFixed(1)}k
-                    </Button>
-                  ))}
-                </div>
               </div>
 
               {/* Net Sales */}
