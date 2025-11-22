@@ -372,6 +372,8 @@ export const insertBaristaPerformanceSchema = createInsertSchema(baristaPerforma
 
 export const insertDailySalesSchema = createInsertSchema(dailySales).omit({
   id: true,
+  dayOfWeek: true,
+  importedBy: true,
   importedAt: true,
   createdAt: true,
 });
