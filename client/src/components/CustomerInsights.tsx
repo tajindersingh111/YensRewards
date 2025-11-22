@@ -48,7 +48,7 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
           {topSpenders.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No spenders yet</p>
           ) : (
-            <div className="overflow-x-auto px-2">
+            <div className="overflow-x-auto px-4">
               <div className="flex gap-2 pb-2">
                 {topSpenders.map((customer, index) => (
                   <div
