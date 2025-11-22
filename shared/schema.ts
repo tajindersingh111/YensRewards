@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -252,7 +252,10 @@ export const dailySales = pgTable("daily_sales", {
   importedBy: varchar("imported_by").references(() => users.id), // Admin who imported
   importedAt: timestamp("imported_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  // Unique constraint: one entry per date + orderChannel
+  uniqueIndex("daily_sales_date_channel_idx").on(table.date, table.orderChannel),
+]);
 
 
 // Insert schemas with validation

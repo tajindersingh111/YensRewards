@@ -8,7 +8,7 @@ import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
 import * as XLSX from "xlsx";
@@ -1361,7 +1361,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Parse Excel file
+      // Get admin user ID for tracking imports
+      const userId = (req.user as any).claims.sub;
+
+      // Helper function to normalize column names (handle casing/whitespace)
+      const normalizeColumnName = (name: string): string => {
+        return name.toLowerCase().trim().replace(/\s+/g, '_');
+      };
+
+      // Helper function to safely parse numeric value
+      const parseNumeric = (value: any): number => {
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') {
+          // Remove commas and parse
+          const cleaned = value.replace(/,/g, '');
+          const num = Number(cleaned);
+          return isNaN(num) ? 0 : num;
+        }
+        return 0;
+      };
+
+      // Parse Excel file  
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       let totalImported = 0;
       let totalSkipped = 0;
@@ -1371,47 +1391,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const sheetName of workbook.SheetNames) {
         console.log(`Processing sheet: ${sheetName}`);
         const worksheet = workbook.Sheets[sheetName];
+        // Keep raw: true (default) to preserve Excel serial dates as numbers
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-        for (const row of jsonData as any[]) {
+        for (const rawRow of jsonData as any[]) {
           try {
+            // Normalize row keys
+            const row: any = {};
+            for (const [key, value] of Object.entries(rawRow)) {
+              row[normalizeColumnName(key)] = value;
+            }
+
+            // Get date from normalized key
+            const dateValue = row['date'];
+            
             // Skip weekly total rows (they don't have a date in proper format)
-            if (!row['Date'] || typeof row['Date'] !== 'number') {
+            if (!dateValue || typeof dateValue !== 'number') {
               continue;
             }
 
-            // Convert Excel serial date to JavaScript Date
-            const excelDate = XLSX.SSF.parse_date_code(row['Date']);
+            // Convert Excel serial date to YYYY-MM-DD
+            const excelDate = XLSX.SSF.parse_date_code(dateValue);
             const date = `${excelDate.y}-${String(excelDate.m).padStart(2, '0')}-${String(excelDate.d).padStart(2, '0')}`;
             
-            // Extract data from row
-            const dayOfWeek = row['Day'] || '';
-            const orderChannel = row['Order Channel'] || '';
-            const netSales = parseFloat(row['Net Sales'] || 0);
-            const grabFee = parseFloat(row['Grab'] || 0);
-            const totalSales = parseFloat(row['Total Sales'] || 0);
+            // Extract and trim data using normalized keys
+            const dayOfWeek = (row['day'] || '').toString().trim();
+            const orderChannel = (row['order_channel'] || '').toString().trim();
+            const netSales = parseNumeric(row['net_sales']);
+            const grabFee = parseNumeric(row['grab'] || row['grab_fee']);
+            const totalSales = parseNumeric(row['total_sales']);
 
             // Skip invalid rows
-            if (!orderChannel || netSales === 0) {
+            if (!orderChannel || orderChannel === '' || totalSales === 0) {
               continue;
             }
 
-            // Insert into database
+            // Insert into database with unique constraint handling
             await db.insert(dailySales).values({
               date,
               dayOfWeek,
               orderChannel,
-              netSales: netSales.toString(),
-              grabFee: grabFee.toString(),
-              totalSales: totalSales.toString(),
-              importedBy: req.user!.id,
-            }).onConflictDoNothing(); // Skip duplicates
+              netSales: netSales.toFixed(2),
+              grabFee: grabFee.toFixed(2),
+              totalSales: totalSales.toFixed(2),
+              importedBy: userId,
+            }).onConflictDoUpdate({
+              target: [dailySales.date, dailySales.orderChannel],
+              set: {
+                netSales: netSales.toFixed(2),
+                grabFee: grabFee.toFixed(2),
+                totalSales: totalSales.toFixed(2),
+                importedAt: sql`CURRENT_TIMESTAMP`,
+              }
+            }); // Update on conflict to refresh data
 
             totalImported++;
           } catch (error) {
-            console.error(`Error importing row:`, row, error);
+            console.error(`Error importing row:`, rawRow, error);
             totalSkipped++;
-            errors.push(`Failed to import row: ${JSON.stringify(row)}`);
+            if (errors.length < 10) {
+              errors.push(`Sheet ${sheetName}: ${error instanceof Error ? error.message : String(error)}`);
+            }
           }
         }
       }
@@ -1421,7 +1461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         skipped: totalSkipped,
         sheetsProcessed: workbook.SheetNames.length,
         message: `Successfully imported ${totalImported} sales records from ${workbook.SheetNames.length} months`,
-        errors: errors.length > 0 ? errors.slice(0, 10) : undefined // Return first 10 errors
+        errors: errors.length > 0 ? errors : undefined
       });
     } catch (error) {
       console.error("Error importing Excel file:", error);
