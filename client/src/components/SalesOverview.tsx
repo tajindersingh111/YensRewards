@@ -313,6 +313,7 @@ export default function SalesOverview() {
         <input
           ref={fileInputRef}
           type="file"
+          name="file"
           accept=".xlsx,.xls"
           onChange={handleFileChange}
           className="hidden"
