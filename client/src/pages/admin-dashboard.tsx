@@ -16,6 +16,7 @@ import CustomerInsights from "@/components/CustomerInsights";
 import ProductManager from "@/components/ProductManager";
 import PromotionCreator from "@/components/PromotionCreator";
 import MessagesPage from "@/components/MessagesPage";
+import BulkMessageComposer from "@/components/BulkMessageComposer";
 import UsersPage from "@/pages/admin/UsersPage";
 import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
@@ -25,6 +26,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, LogOut } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { Customer } from "@shared/schema";
@@ -51,6 +53,8 @@ export default function AdminDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [messagingCustomer, setMessagingCustomer] = useState<Customer | null>(null);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [birthdayCustomers, setBirthdayCustomers] = useState<Customer[]>([]);
+  const [isBirthdayMessageDialogOpen, setIsBirthdayMessageDialogOpen] = useState(false);
 
   // Handle tab change - update both state and URL
   const handleTabChange = (value: string) => {
@@ -216,6 +220,10 @@ export default function AdminDashboard() {
                 setEditingCustomer(customer as Customer);
                 setIsEditDialogOpen(true);
               }}
+              onSendBirthdayMessages={(customers) => {
+                setBirthdayCustomers(customers);
+                setIsBirthdayMessageDialogOpen(true);
+              }}
             />
             
             {/* Customer List Table */}
@@ -284,6 +292,25 @@ export default function AdminDashboard() {
           onOpenChange={setIsMessageDialogOpen}
         />
       )}
+
+      {/* Birthday Message Dialog */}
+      <Dialog open={isBirthdayMessageDialogOpen} onOpenChange={setIsBirthdayMessageDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Send Birthday Messages</DialogTitle>
+            <DialogDescription>
+              Send birthday wishes to {birthdayCustomers.length} customer{birthdayCustomers.length !== 1 ? 's' : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <BulkMessageComposer 
+            selectedCustomers={birthdayCustomers}
+            onSuccess={() => {
+              setIsBirthdayMessageDialogOpen(false);
+              setBirthdayCustomers([]);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -18,9 +18,10 @@ interface CustomerInsightsProps {
   onEdit?: (customer: Customer) => void;
   onDelete?: (customer: Customer) => void;
   onViewDetails?: (customer: Customer) => void;
+  onSendBirthdayMessages?: (customers: Customer[]) => void;
 }
 
-export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDetails }: CustomerInsightsProps) {
+export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDetails, onSendBirthdayMessages }: CustomerInsightsProps) {
   const { t } = useTranslation();
 
   // Fetch all customers
@@ -397,6 +398,17 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                       <h3 className="font-semibold text-lg">{t('admin.overview.currentWeek')}</h3>
                       <Badge variant="secondary">{currentWeekCustomers.length}</Badge>
                     </div>
+                    {onSendBirthdayMessages && currentWeekCustomers.length > 0 && (
+                      <Button
+                        onClick={() => onSendBirthdayMessages(currentWeekCustomers)}
+                        className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
+                        size="sm"
+                        data-testid="button-send-birthday-messages-week"
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        Send Birthday Messages ({currentWeekCustomers.length})
+                      </Button>
+                    )}
                   </div>
                   
                   <div className="space-y-6">
@@ -414,6 +426,17 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                       <h3 className="font-semibold text-lg">{t('admin.overview.thisMonth')}</h3>
                       <Badge variant="secondary">{thisMonthCustomers.length}</Badge>
                     </div>
+                    {onSendBirthdayMessages && thisMonthCustomers.length > 0 && (
+                      <Button
+                        onClick={() => onSendBirthdayMessages(thisMonthCustomers)}
+                        className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
+                        size="sm"
+                        data-testid="button-send-birthday-messages-month"
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        Send Birthday Messages ({thisMonthCustomers.length})
+                      </Button>
+                    )}
                   </div>
                   
                   <div className="space-y-6">
