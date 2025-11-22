@@ -1440,16 +1440,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Calculate current and last month metrics for summary
+      // Calculate current and last month metrics for summary using string comparison
       const now = new Date();
-      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1; // 1-12
+      const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-      const currentMonthSales = allSales.filter(s => new Date(s.date) >= currentMonthStart);
-      const lastMonthSales = allSales.filter(s => 
-        new Date(s.date) >= lastMonthStart && new Date(s.date) <= lastMonthEnd
-      );
+      // Format dates as YYYY-MM-DD for string comparison
+      const currentMonthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+      const lastMonthStart = `${lastMonthYear}-${String(lastMonth).padStart(2, '0')}-01`;
+      const nextMonthStart = currentMonth === 12 
+        ? `${currentYear + 1}-01-01` 
+        : `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+
+      console.log('🔍 Date filters:', { currentMonthStart, lastMonthStart, nextMonthStart });
+
+      const currentMonthSales = allSales.filter(s => s.date >= currentMonthStart && s.date < nextMonthStart);
+      const lastMonthSales = allSales.filter(s => s.date >= lastMonthStart && s.date < currentMonthStart);
 
       const currentMonthRevenue = currentMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const lastMonthRevenue = lastMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
@@ -1457,7 +1465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const avgTransaction = currentMonthSales.length > 0 ? currentMonthRevenue / currentMonthSales.length : 0;
 
       console.log('📊 Analytics Summary:', {
-        currentMonth: `${now.getFullYear()}-${now.getMonth() + 1}`,
+        currentMonth: `${currentYear}-${currentMonth}`,
         currentMonthSales: currentMonthSales.length,
         currentMonthRevenue,
         lastMonthRevenue,
