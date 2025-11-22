@@ -1456,6 +1456,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const momGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
       const avgTransaction = currentMonthSales.length > 0 ? currentMonthRevenue / currentMonthSales.length : 0;
 
+      console.log('📊 Analytics Summary:', {
+        currentMonth: `${now.getFullYear()}-${now.getMonth() + 1}`,
+        currentMonthSales: currentMonthSales.length,
+        currentMonthRevenue,
+        lastMonthRevenue,
+        momGrowth,
+        avgTransaction
+      });
+
       // Monthly Trends (last 12 months)
       const monthlyTrendsMap = new Map<string, { totalSales: number; netSales: number }>();
       allSales.forEach(sale => {
@@ -1635,11 +1644,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             // Convert Excel serial date to YYYY-MM-DD
-            const excelDate = XLSX.SSF.parse_date_code(dateValue);
-            const date = `${excelDate.y}-${String(excelDate.m).padStart(2, '0')}-${String(excelDate.d).padStart(2, '0')}`;
+            // Excel dates are stored as days since 1900-01-01 (with a leap year bug at 1900)
+            const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+            const jsDate = new Date(excelEpoch.getTime() + (dateValue * 86400000));
+            const date = jsDate.toISOString().split('T')[0];
             
             // Extract and trim data using normalized keys
-            const dayOfWeek = (row['day'] || '').toString().trim();
+            // Handle day of week from 'day' column OR the first unnamed column (__empty)
+            const dayOfWeek = (row['day'] || row['__empty'] || row[''] || '').toString().trim();
             const orderChannel = (row['order_channel'] || '').toString().trim();
             const netSales = parseNumeric(row['net_sales']);
             const grabFee = parseNumeric(row['grab'] || row['grab_fee']);
@@ -1650,7 +1662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               continue;
             }
 
-            // Insert into database with unique constraint handling
+            // Insert into database with unique constraint handling (importedBy is optional)
             await db.insert(dailySales).values({
               date,
               dayOfWeek,
@@ -1658,7 +1670,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               netSales: netSales.toFixed(2),
               grabFee: grabFee.toFixed(2),
               totalSales: totalSales.toFixed(2),
-              importedBy: userId,
             }).onConflictDoUpdate({
               target: [dailySales.date, dailySales.orderChannel],
               set: {
