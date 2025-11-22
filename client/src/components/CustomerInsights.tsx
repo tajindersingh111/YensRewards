@@ -35,41 +35,39 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      {/* Top 10 Spenders */}
+      {/* Top 10 Spenders - Condensed */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Trophy className="w-4 h-4 text-yellow-500" />
             Top 10 Spenders
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {topSpenders.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No spenders yet</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {topSpenders.map((customer, index) => (
                 <div
                   key={customer.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover-elevate"
+                  className="flex items-center gap-2 p-2 rounded hover-elevate"
                   data-testid={`top-spender-${index + 1}`}
                 >
-                  <Badge className="w-8 h-8 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-700 text-sm font-bold shrink-0">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-700 text-xs font-bold shrink-0">
                     {index + 1}
-                  </Badge>
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={customer.photo || undefined} />
-                    <AvatarFallback>{customer.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{customer.name}</p>
-                    <p className="text-sm text-muted-foreground">{customer.phone}</p>
                   </div>
-                  <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
-                    {customer.tier}
-                  </Badge>
-                  <div className="text-right">
-                    <p className="font-semibold">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm truncate">{customer.name}</p>
+                      <Badge variant="outline" className={`text-xs px-1.5 py-0 ${tierColors[customer.tier as keyof typeof tierColors]}`}>
+                        {customer.tier}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{customer.phone}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-semibold text-sm">฿{parseFloat(customer.totalSpent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                     <p className="text-xs text-muted-foreground">{customer.points} pts</p>
                   </div>
                 </div>
