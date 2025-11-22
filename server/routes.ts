@@ -1415,6 +1415,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get sales tracker metrics (today, week, month)
+  app.get('/api/admin/sales-tracker-metrics', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // Calculate week start (Monday)
+      const dayOfWeek = now.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - daysToMonday);
+      const weekStartStr = weekStart.toISOString().split('T')[0];
+      
+      // Calculate month start
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      
+      // Fetch all sales for calculations
+      const allSales = await db.select().from(dailySales);
+      
+      // Calculate metrics using string comparison
+      const todaySales = allSales
+        .filter(s => s.date === today)
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      
+      const weekSales = allSales
+        .filter(s => s.date >= weekStartStr && s.date <= today)
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      
+      const monthSales = allSales
+        .filter(s => s.date >= monthStart && s.date <= today)
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      
+      res.json({
+        todaySales,
+        weekSales,
+        monthSales,
+      });
+    } catch (error) {
+      console.error("Error fetching sales tracker metrics:", error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
   // Get analytics dashboard data
   app.get('/api/admin/analytics', isAuthenticated, isAdmin, async (req, res) => {
     try {
