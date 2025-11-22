@@ -17,7 +17,7 @@ import UsersPage from "@/pages/admin/UsersPage";
 import WeeklySpecialsManager from "@/pages/admin/WeeklySpecialsManager";
 import SalesOverview from "@/components/SalesOverview";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
-import YensOverview from "@/components/YensOverview";
+import SalesTrackerDashboard from "@/components/SalesTrackerDashboard";
 import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
 import { BaristaHubManager } from "@/components/BaristaHubManager";
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
   useAutoUpdate();
   const { t } = useTranslation();
   const [, setLocationPath] = useLocation();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("salesTracker");
   const [searchQuery, setSearchQuery] = useState("");
   const [memberStatus, setMemberStatus] = useState<"active" | "inactive">("active");
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -379,7 +379,7 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="overview" data-testid="tab-overview">{t('admin.tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="salesTracker" data-testid="tab-sales-tracker">{t('admin.tabs.salesTracker')}</TabsTrigger>
             <TabsTrigger value="dashboard" data-testid="tab-dashboard">{t('admin.tabs.dashboard')}</TabsTrigger>
             <TabsTrigger value="sales" data-testid="tab-sales">{t('admin.tabs.sales')}</TabsTrigger>
             <TabsTrigger value="analytics" data-testid="tab-analytics">{t('admin.tabs.analytics')}</TabsTrigger>
@@ -395,8 +395,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="settings" data-testid="tab-settings">{t('admin.tabs.settings')}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <YensOverview />
+          <TabsContent value="salesTracker" className="space-y-6">
+            <SalesTrackerDashboard />
           </TabsContent>
 
           <TabsContent value="sales" className="space-y-6">

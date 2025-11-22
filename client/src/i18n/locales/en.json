@@ -273,9 +273,9 @@
       "settings": "Settings"
     },
     "tabs": {
-      "overview": "Overview",
+      "salesTracker": "Yen's Sales Tracker",
       "dashboard": "Customer Dashboard",
-      "sales": "Sales Tracker",
+      "sales": "Sales Overview",
       "customers": "Customers",
       "products": "Products",
       "promotions": "Promotions",

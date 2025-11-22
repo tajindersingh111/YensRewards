@@ -273,9 +273,9 @@
       "settings": "ตั้งค่า"
     },
     "tabs": {
-      "overview": "ภาพรวม",
+      "salesTracker": "ติดตามยอดขายเย็นส์",
       "dashboard": "แดชบอร์ดลูกค้า",
-      "sales": "ติดตามยอดขาย",
+      "sales": "ภาพรวมยอดขาย",
       "customers": "ลูกค้า",
       "products": "สินค้า",
       "promotions": "โปรโมชั่น",
