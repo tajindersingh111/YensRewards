@@ -204,9 +204,20 @@ export default function SalesTrackerDashboard() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FCD34D' }}>
       {/* Header - Simplified without navigation */}
-      <div className="px-6 py-4 flex items-center gap-3">
-        <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
-        <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
+      <div className="px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
+          <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => window.open('/overview-old', '_blank')}
+          data-testid="button-view-old-overview"
+          className="bg-white"
+        >
+          View Original Overview
+        </Button>
       </div>
 
       {/* KPI Cards - 4 Smaller Boxes */}

@@ -14,8 +14,8 @@ export default function CustomersComparison() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Original Dashboard (Old Version)</h1>
-            <p className="text-sm text-muted-foreground">Smaller circles (40px) - Original design</p>
+            <h1 className="text-2xl font-bold">Original Customer Insights (Old Version)</h1>
+            <p className="text-sm text-muted-foreground">Smaller circles (40px) - Original vertical layout design</p>
           </div>
         </div>
       </header>
