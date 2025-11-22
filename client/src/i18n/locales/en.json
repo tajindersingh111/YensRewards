@@ -285,6 +285,7 @@
       "sites": "Sites",
       "schedules": "Schedules",
       "barista": "Barista Hub",
+      "analytics": "Analytics",
       "settings": "Settings"
     },
     "settings": {
@@ -981,5 +982,50 @@
     "addSale": "Add Sale",
     "addSaleFailed": "Failed to add sale record",
     "cancel": "Cancel"
+  },
+  "analytics": {
+    "title": "Analytics Dashboard",
+    "subtitle": "Comprehensive sales insights",
+    "totalSales": "Total Sales",
+    "currentRevenue": "Current Month Revenue",
+    "momGrowth": "Month-over-Month Growth",
+    "avgTransaction": "Avg Transaction",
+    "transactionsMonth": "Transactions This Month",
+    "tabs": {
+      "monthlyTrends": "Monthly Trends",
+      "channels": "Channels",
+      "dayAnalysis": "Day Analysis",
+      "topPerformers": "Top Performers"
+    },
+    "monthlyTrends": {
+      "title": "Monthly Sales Trends",
+      "totalSales": "Total Sales",
+      "netSales": "Net Sales"
+    },
+    "channels": {
+      "revenueByChannel": "Revenue by Channel",
+      "distribution": "Channel Distribution",
+      "details": "Channel Performance Details",
+      "channel": "Channel",
+      "revenue": "Revenue",
+      "transactions": "Transactions",
+      "avgTransaction": "Avg Transaction"
+    },
+    "dayAnalysis": {
+      "title": "Sales by Day of Week",
+      "details": "Daily Performance Details",
+      "dayOfWeek": "Day of Week",
+      "revenue": "Revenue",
+      "transactions": "Transactions",
+      "avgPerTransaction": "Avg per Transaction"
+    },
+    "topPerformers": {
+      "bestChannel": "Best Channel",
+      "bestDay": "Best Day",
+      "bestMonth": "Best Month",
+      "topChannels": "Top 5 Channels",
+      "transactions": "transactions",
+      "avg": "avg"
+    }
   }
 }

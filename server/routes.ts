@@ -1415,6 +1415,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get analytics dashboard data
+  app.get('/api/admin/analytics', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      // Fetch all sales data (will be used for all calculations)
+      const allSales = await db.select().from(dailySales);
+
+      if (allSales.length === 0) {
+        return res.json({
+          summary: {
+            totalRevenue: 0,
+            momGrowth: 0,
+            avgTransaction: 0,
+            totalTransactions: 0,
+          },
+          monthlyTrends: [],
+          channelPerformance: [],
+          dayAnalysis: [],
+          topPerformers: {
+            channels: [],
+            bestDay: 'N/A',
+            bestMonth: 'N/A',
+          },
+        });
+      }
+
+      // Calculate current and last month metrics for summary
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+      const currentMonthSales = allSales.filter(s => new Date(s.date) >= currentMonthStart);
+      const lastMonthSales = allSales.filter(s => 
+        new Date(s.date) >= lastMonthStart && new Date(s.date) <= lastMonthEnd
+      );
+
+      const currentMonthRevenue = currentMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      const lastMonthRevenue = lastMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      const momGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+      const avgTransaction = currentMonthSales.length > 0 ? currentMonthRevenue / currentMonthSales.length : 0;
+
+      // Monthly Trends (last 12 months)
+      const monthlyTrendsMap = new Map<string, { totalSales: number; netSales: number }>();
+      allSales.forEach(sale => {
+        const date = new Date(sale.date);
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const existing = monthlyTrendsMap.get(monthKey) || { totalSales: 0, netSales: 0 };
+        monthlyTrendsMap.set(monthKey, {
+          totalSales: existing.totalSales + parseFloat(sale.totalSales),
+          netSales: existing.netSales + parseFloat(sale.netSales),
+        });
+      });
+
+      const monthlyTrends = Array.from(monthlyTrendsMap.entries())
+        .map(([month, data]) => ({ month, ...data }))
+        .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
+        .slice(-12);
+
+      // Channel Performance
+      const channelMap = new Map<string, { revenue: number; transactions: number }>();
+      allSales.forEach(sale => {
+        const existing = channelMap.get(sale.orderChannel) || { revenue: 0, transactions: 0 };
+        channelMap.set(sale.orderChannel, {
+          revenue: existing.revenue + parseFloat(sale.totalSales),
+          transactions: existing.transactions + 1,
+        });
+      });
+
+      const channelPerformance = Array.from(channelMap.entries())
+        .map(([channel, data]) => ({
+          channel,
+          revenue: data.revenue,
+          transactions: data.transactions,
+          avgTransaction: data.revenue / data.transactions,
+        }))
+        .sort((a, b) => b.revenue - a.revenue);
+
+      // Day of Week Analysis
+      const dayMap = new Map<string, { revenue: number; transactions: number }>();
+      const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      
+      allSales.forEach(sale => {
+        const day = sale.dayOfWeek || '';
+        const existing = dayMap.get(day) || { revenue: 0, transactions: 0 };
+        dayMap.set(day, {
+          revenue: existing.revenue + parseFloat(sale.totalSales),
+          transactions: existing.transactions + 1,
+        });
+      });
+
+      const dayAnalysis = dayOrder
+        .map(day => ({
+          day,
+          revenue: dayMap.get(day)?.revenue || 0,
+          transactions: dayMap.get(day)?.transactions || 0,
+        }))
+        .filter(d => d.transactions > 0);
+
+      // Top Performers
+      const bestDay = dayAnalysis.length > 0
+        ? dayAnalysis.reduce((max, d) => d.revenue > max.revenue ? d : max).day
+        : 'N/A';
+
+      const bestMonth = monthlyTrends.length > 0
+        ? monthlyTrends.reduce((max, m) => m.totalSales > max.totalSales ? m : max).month
+        : 'N/A';
+
+      res.json({
+        summary: {
+          totalRevenue: currentMonthRevenue,
+          momGrowth,
+          avgTransaction,
+          totalTransactions: currentMonthSales.length,
+        },
+        monthlyTrends,
+        channelPerformance,
+        dayAnalysis,
+        topPerformers: {
+          channels: channelPerformance,
+          bestDay,
+          bestMonth,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching analytics data:", error);
+      res.status(500).json({ message: "Failed to fetch analytics data" });
+    }
+  });
+
   // Add a new daily sale manually
   app.post('/api/admin/sales', isAuthenticated, isAdmin, async (req, res) => {
     try {

@@ -285,6 +285,7 @@
       "sites": "สาขา",
       "schedules": "ตารางงาน",
       "barista": "บาริสต้า",
+      "analytics": "วิเคราะห์ข้อมูล",
       "settings": "ตั้งค่า"
     },
     "settings": {
@@ -981,5 +982,50 @@
     "addSale": "เพิ่มยอดขาย",
     "addSaleFailed": "ไม่สามารถเพิ่มบันทึกยอดขายได้",
     "cancel": "ยกเลิก"
+  },
+  "analytics": {
+    "title": "แดชบอร์ดวิเคราะห์ข้อมูล",
+    "subtitle": "ข้อมูลเชิงลึกยอดขายอย่างครอบคลุม",
+    "totalSales": "ยอดขายทั้งหมด",
+    "currentRevenue": "รายได้เดือนปัจจุบัน",
+    "momGrowth": "การเติบโตเทียบเดือนที่แล้ว",
+    "avgTransaction": "ยอดขายเฉลี่ย",
+    "transactionsMonth": "ธุรกรรมเดือนนี้",
+    "tabs": {
+      "monthlyTrends": "แนวโน้มรายเดือน",
+      "channels": "ช่องทาง",
+      "dayAnalysis": "วิเคราะห์รายวัน",
+      "topPerformers": "ผลงานสูงสุด"
+    },
+    "monthlyTrends": {
+      "title": "แนวโน้มยอดขายรายเดือน",
+      "totalSales": "ยอดขายรวม",
+      "netSales": "ยอดขายสุทธิ"
+    },
+    "channels": {
+      "revenueByChannel": "รายได้แยกตามช่องทาง",
+      "distribution": "การกระจายช่องทาง",
+      "details": "รายละเอียดผลงานช่องทาง",
+      "channel": "ช่องทาง",
+      "revenue": "รายได้",
+      "transactions": "ธุรกรรม",
+      "avgTransaction": "ยอดขายเฉลี่ย"
+    },
+    "dayAnalysis": {
+      "title": "ยอดขายแยกตามวัน",
+      "details": "รายละเอียดผลงานรายวัน",
+      "dayOfWeek": "วันในสัปดาห์",
+      "revenue": "รายได้",
+      "transactions": "ธุรกรรม",
+      "avgPerTransaction": "เฉลี่ยต่อธุรกรรม"
+    },
+    "topPerformers": {
+      "bestChannel": "ช่องทางที่ดีที่สุด",
+      "bestDay": "วันที่ดีที่สุด",
+      "bestMonth": "เดือนที่ดีที่สุด",
+      "topChannels": "ช่องทาง 5 อันดับแรก",
+      "transactions": "ธุรกรรม",
+      "avg": "เฉลี่ย"
+    }
   }
 }
