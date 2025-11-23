@@ -322,7 +322,7 @@ export class DbStorage implements IStorage {
       // Find any user with the same email (case-insensitive)
       const allUsers = await db.select().from(users);
       const existingUser = allUsers.find(
-        u => u.email.toLowerCase() === normalizedEmail && u.id !== id
+        u => u.email && u.email.toLowerCase() === normalizedEmail && u.id !== id
       );
       
       if (existingUser) {
@@ -749,30 +749,32 @@ export class DbStorage implements IStorage {
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const result = await db
-      .insert(transactions)
-      .values(insertTransaction)
-      .returning();
-    
-    // Update customer points and total spent
-    const customer = await this.getCustomer(insertTransaction.customerId);
-    if (customer) {
-      const newPoints = customer.points + insertTransaction.points;
-      const newTotalSpent = parseFloat(customer.totalSpent) + parseFloat(insertTransaction.amount.toString());
+    // Use database transaction to prevent race conditions on customer points/spent updates
+    return await db.transaction(async (tx) => {
+      // 1. Insert the transaction
+      const [newTransaction] = await tx
+        .insert(transactions)
+        .values(insertTransaction)
+        .returning();
       
-      // Determine tier based on points
-      let tier = "bronze";
-      if (newPoints >= 1000) tier = "gold";
-      else if (newPoints >= 500) tier = "silver";
+      // 2. Update customer points and total spent atomically
+      // Use a single UPDATE with calculations to prevent race conditions
+      const [updatedCustomer] = await tx
+        .update(customers)
+        .set({
+          points: sql`${customers.points} + ${insertTransaction.points}`,
+          totalSpent: sql`${customers.totalSpent} + ${insertTransaction.amount}`,
+          tier: sql`CASE 
+            WHEN ${customers.points} + ${insertTransaction.points} >= 1000 THEN 'gold'
+            WHEN ${customers.points} + ${insertTransaction.points} >= 500 THEN 'silver'
+            ELSE 'bronze'
+          END`,
+        })
+        .where(eq(customers.id, insertTransaction.customerId))
+        .returning();
       
-      await this.updateCustomer(insertTransaction.customerId, {
-        points: newPoints,
-        totalSpent: newTotalSpent.toString(),
-        tier,
-      });
-    }
-    
-    return result[0];
+      return newTransaction;
+    });
   }
 
   // Promotion methods
@@ -1678,29 +1680,25 @@ export class DbStorage implements IStorage {
   }
 
   async updateBaristaPerformance(performance: InsertBaristaPerformance): Promise<BaristaPerformance> {
-    const existing = await this.getBaristaPerformance(performance.userId, performance.weekStart);
-    
-    if (existing) {
-      const result = await db
-        .update(baristaPerformance)
-        .set({
+    // Use PostgreSQL's ON CONFLICT DO UPDATE (upsert) to prevent race conditions
+    // This is atomic - no "get then set" race condition possible
+    const result = await db
+      .insert(baristaPerformance)
+      .values(performance)
+      .onConflictDoUpdate({
+        target: [baristaPerformance.userId, baristaPerformance.weekStart],
+        set: {
           transactionCount: performance.transactionCount,
           specialOffersSold: performance.specialOffersSold,
           newCustomerSignups: performance.newCustomerSignups,
           totalPoints: performance.totalPoints,
           weeklyRank: performance.weeklyRank,
           updatedAt: new Date()
-        })
-        .where(eq(baristaPerformance.id, existing.id))
-        .returning();
-      return result[0];
-    } else {
-      const result = await db
-        .insert(baristaPerformance)
-        .values(performance)
-        .returning();
-      return result[0];
-    }
+        }
+      })
+      .returning();
+    
+    return result[0];
   }
 
   async getUserPerformanceHistory(userId: string, limit: number = 10): Promise<BaristaPerformance[]> {

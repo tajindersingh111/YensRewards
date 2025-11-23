@@ -239,7 +239,10 @@ export const baristaPerformance = pgTable("barista_performance", {
   weeklyRank: integer("weekly_rank"), // Ranking among all baristas (1 = first place)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  // Unique constraint for atomic upserts - prevents race conditions
+  userWeekUnique: uniqueIndex("barista_performance_user_week_unique").on(table.userId, table.weekStart),
+}));
 
 // Daily Sales table - tracks sales by site from Excel imports
 export const dailySales = pgTable("daily_sales", {
