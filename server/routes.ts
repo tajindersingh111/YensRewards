@@ -1493,6 +1493,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ));
       const weekStart = mondayUTC.toISOString().split('T')[0]; // YYYY-MM-DD format
       
+      // Calculate last week start (previous Monday) and end (previous Sunday)
+      const lastMondayUTC = new Date(Date.UTC(
+        mondayUTC.getUTCFullYear(),
+        mondayUTC.getUTCMonth(),
+        mondayUTC.getUTCDate() - 7,
+        0, 0, 0, 0
+      ));
+      const lastSundayUTC = new Date(Date.UTC(
+        mondayUTC.getUTCFullYear(),
+        mondayUTC.getUTCMonth(),
+        mondayUTC.getUTCDate() - 1,
+        0, 0, 0, 0
+      ));
+      const lastWeekStart = lastMondayUTC.toISOString().split('T')[0];
+      const lastWeekEnd = lastSundayUTC.toISOString().split('T')[0];
+      
+      // Calculate last month start and end
+      const lastMonthStartUTC = new Date(Date.UTC(
+        now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear(),
+        now.getUTCMonth() === 0 ? 11 : now.getUTCMonth() - 1,
+        1
+      ));
+      const lastMonthEndUTC = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        0  // Last day of previous month
+      ));
+      const lastMonthStart = lastMonthStartUTC.toISOString().split('T')[0];
+      const lastMonthEnd = lastMonthEndUTC.toISOString().split('T')[0];
+      
       // Fetch all sales for calculations
       const allSales = await db.select().from(dailySales);
       
@@ -1501,9 +1531,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(s => s.date >= weekStart && s.date <= today)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
+      // Calculate Last Week Revenue (previous Monday to Sunday)
+      const lastWeekSales = allSales
+        .filter(s => s.date >= lastWeekStart && s.date <= lastWeekEnd)
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      
       // Calculate Current Month Revenue (1st to today)
       const currentMonthSales = allSales
         .filter(s => s.date >= monthStart && s.date <= today)
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      
+      // Calculate Last Month Revenue (full month)
+      const lastMonthSales = allSales
+        .filter(s => s.date >= lastMonthStart && s.date <= lastMonthEnd)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
       // Calculate YTD (Year to Date) - from Jan 1 to today
@@ -1558,7 +1598,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         currentWeekSales,
+        lastWeekSales,
         currentMonthSales,
+        lastMonthSales,
         ytdSales,
         bestChannel: bestChannel ? { name: bestChannel[0], total: bestChannel[1] } : null,
         bestDay: bestDay ? bestDay.day : null,
