@@ -418,7 +418,7 @@ export default function SitesManager() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sites.map((site) => (
-            <Card key={site.id} className="overflow-hidden" data-testid={`site-card-${site.id}`}>
+            <Card key={site.id} className="overflow-hidden border-2 border-yellow-400" data-testid={`site-card-${site.id}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
