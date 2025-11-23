@@ -35,12 +35,7 @@ import {
 import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logoUrl from "@assets/yens logo_1760702216221.png";
-import type { DailySales } from "@shared/schema";
-
-const CHANNELS = [
-  "SHOP", "SUPALAI", "BALLOON", "BOX", "RIVER", "ARMY", "LAMP", 
-  "CNY", "UNIVERSITY", "GRAB", "FOODPANDA", "LINEMAN", "SHOPEE", "SHOPZY", "G2"
-];
+import type { DailySales, Site } from "@shared/schema";
 
 interface SalesFormData {
   date: string;
@@ -91,6 +86,19 @@ export default function SalesTrackerDashboard() {
   const { data: allSales = [] } = useQuery<DailySales[]>({
     queryKey: ['/api/admin/sales-overview'],
   });
+
+  // Fetch active sites for channel dropdown
+  const { data: sites = [] } = useQuery<Site[]>({
+    queryKey: ['/api/admin/sites'],
+  });
+
+  // Extract channel names from active sites, sorted alphabetically
+  const channels = useMemo(() => {
+    return sites
+      .filter(site => site.isActive)
+      .map(site => site.channelName)
+      .sort();
+  }, [sites]);
 
   // Filter to current week only using useMemo
   const recentSales = useMemo(() => {
@@ -442,7 +450,7 @@ export default function SalesTrackerDashboard() {
                     <SelectValue placeholder="Select channel" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CHANNELS.map((channel) => (
+                    {channels.map((channel) => (
                       <SelectItem key={channel} value={channel}>
                         {channel}
                       </SelectItem>
@@ -642,7 +650,7 @@ export default function SalesTrackerDashboard() {
                   <SelectValue placeholder="Select channel" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CHANNELS.map((channel) => (
+                  {channels.map((channel) => (
                     <SelectItem key={channel} value={channel}>
                       {channel}
                     </SelectItem>
