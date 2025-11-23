@@ -348,22 +348,62 @@ export default function SalesTrackerDashboard() {
           {/* Current Week Total - Larger (2/9) */}
           <Card className="col-span-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
             <CardContent className="p-2">
-              <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Week</p>
-              <p className="text-base font-bold text-white" data-testid="text-current-week-sales">
-                ฿{(metrics?.currentWeekSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </p>
-              <p className="text-[9px] text-white/80 mt-0.5">Mon - Today</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Week</p>
+                  <p className="text-base font-bold text-white" data-testid="text-current-week-sales">
+                    ฿{(metrics?.currentWeekSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </p>
+                  <p className="text-[9px] text-white/80 mt-0.5">Mon - Today</p>
+                </div>
+                {metrics && metrics.lastWeekSales > 0 && (
+                  <div className="text-right">
+                    <p className="text-[8px] text-white/70">Last Week</p>
+                    <p className="text-[9px] font-semibold text-white/90">
+                      ฿{metrics.lastWeekSales.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </p>
+                    <p className={`text-[8px] font-medium ${
+                      metrics.currentWeekSales >= metrics.lastWeekSales 
+                        ? 'text-green-200' 
+                        : 'text-red-200'
+                    }`}>
+                      {metrics.currentWeekSales >= metrics.lastWeekSales ? '↑' : '↓'}
+                      {Math.abs(((metrics.currentWeekSales - metrics.lastWeekSales) / metrics.lastWeekSales) * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
           {/* Current Month Total - Larger (2/9) */}
           <Card className="col-span-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
             <CardContent className="p-2">
-              <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Month</p>
-              <p className="text-base font-bold text-white" data-testid="text-current-month-sales">
-                ฿{(metrics?.currentMonthSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </p>
-              <p className="text-[9px] text-white/80 mt-0.5">{new Date().toLocaleDateString('en-US', { month: 'short' })}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Month</p>
+                  <p className="text-base font-bold text-white" data-testid="text-current-month-sales">
+                    ฿{(metrics?.currentMonthSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </p>
+                  <p className="text-[9px] text-white/80 mt-0.5">{new Date().toLocaleDateString('en-US', { month: 'short' })}</p>
+                </div>
+                {metrics && metrics.lastMonthSales > 0 && (
+                  <div className="text-right">
+                    <p className="text-[8px] text-white/70">Last Month</p>
+                    <p className="text-[9px] font-semibold text-white/90">
+                      ฿{metrics.lastMonthSales.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </p>
+                    <p className={`text-[8px] font-medium ${
+                      metrics.currentMonthSales >= metrics.lastMonthSales 
+                        ? 'text-green-200' 
+                        : 'text-red-200'
+                    }`}>
+                      {metrics.currentMonthSales >= metrics.lastMonthSales ? '↑' : '↓'}
+                      {Math.abs(((metrics.currentMonthSales - metrics.lastMonthSales) / metrics.lastMonthSales) * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
