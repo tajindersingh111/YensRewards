@@ -594,6 +594,8 @@
       "deleteSite": "ลบสาขา",
       "siteName": "ชื่อสาขา",
       "siteNamePlaceholder": "เช่น ร้านเซ็นทรัลพลาซ่า",
+      "channelName": "ชื่อช่องทางขาย",
+      "channelNamePlaceholder": "เช่น SHOP, GRAB, FOODPANDA",
       "siteType": "ประเภทสาขา",
       "typeStall": "ร้านตั้งประจำ",
       "typeMobileVan": "รถเคลื่อนที่",

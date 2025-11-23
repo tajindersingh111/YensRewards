@@ -594,6 +594,8 @@
       "deleteSite": "Delete Site",
       "siteName": "Site Name",
       "siteNamePlaceholder": "e.g., Central Plaza Stall",
+      "channelName": "Sales Channel Name",
+      "channelNamePlaceholder": "e.g., SHOP, GRAB, FOODPANDA",
       "siteType": "Site Type",
       "typeStall": "Fixed Stall",
       "typeMobileVan": "Mobile Van",
