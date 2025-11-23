@@ -174,6 +174,7 @@ export interface IStorage {
   getAllSites(): Promise<Site[]>;
   getSite(id: string): Promise<Site | undefined>;
   createSite(site: InsertSite): Promise<Site>;
+  bulkCreateSites(sitesData: InsertSite[]): Promise<Site[]>;
   updateSite(id: string, site: Partial<Site>): Promise<Site | undefined>;
   deleteSite(id: string): Promise<void>;
   
@@ -1269,6 +1270,18 @@ export class DbStorage implements IStorage {
       .values(insertSite)
       .returning();
     return result[0];
+  }
+
+  async bulkCreateSites(sitesData: InsertSite[]): Promise<Site[]> {
+    // Use transaction to ensure all sites are created atomically
+    return await db.transaction(async (tx) => {
+      const results: Site[] = [];
+      for (const siteData of sitesData) {
+        const [site] = await tx.insert(sites).values(siteData).returning();
+        results.push(site);
+      }
+      return results;
+    });
   }
 
   async updateSite(id: string, site: Partial<Site>): Promise<Site | undefined> {

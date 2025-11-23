@@ -621,6 +621,10 @@
       "deleteFailed": "Failed to delete site",
       "success": "Success",
       "error": "Error",
+      "seedDefaults": "Add Default Sites",
+      "seedConfirm": "This will add all 15 default sales channels (SHOP, GRAB, FOODPANDA, etc.). Continue?",
+      "seedSuccess": "Successfully added all 15 default sales channels!",
+      "seedFailed": "Failed to seed default sites",
       "days": {
         "monday": "Mon",
         "tuesday": "Tue",

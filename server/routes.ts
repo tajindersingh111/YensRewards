@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites } from "@shared/schema";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Version endpoint for auto-update checking
   app.get('/api/version', (req, res) => {
-    res.json({ version: 'v94' });
+    res.json({ version: 'v3.11.2' });
   });
 
   // Test Resend connection (admin only)
@@ -3058,11 +3058,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { name: 'G2 Location', channelName: 'G2', type: 'stall' as const, isActive: true, location: 'G2 Area', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
       ];
 
-      const createdSites = [];
-      for (const siteData of defaultSites) {
-        const site = await storage.createSite(siteData);
-        createdSites.push(site);
-      }
+      // Validate all data before inserting to ensure data integrity
+      const validatedSites = defaultSites.map(siteData => insertSiteSchema.parse(siteData));
+      
+      // Use storage layer's bulk create method for atomic transaction
+      const createdSites = await storage.bulkCreateSites(validatedSites);
 
       res.status(201).json({ 
         message: `Successfully created ${createdSites.length} default sites`, 

@@ -125,14 +125,14 @@ export default function SitesManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sites'] });
       toast({ 
-        title: t('common.success'), 
-        description: 'Successfully added all 15 default sales channels!' 
+        title: t('sites.success'), 
+        description: t('sites.seedSuccess')
       });
     },
     onError: (error: any) => {
       toast({ 
-        title: t('common.error'), 
-        description: error.message || 'Failed to seed default sites',
+        title: t('sites.error'), 
+        description: error.message || t('sites.seedFailed'),
         variant: "destructive" 
       });
     },
@@ -214,7 +214,7 @@ export default function SitesManager() {
           {sites.length < 5 && (
             <Button
               onClick={() => {
-                if (confirm('This will add all 15 default sales channels (SHOP, GRAB, FOODPANDA, etc.). Continue?')) {
+                if (confirm(t('sites.seedConfirm'))) {
                   seedDefaultsMutation.mutate();
                 }
               }}
@@ -223,7 +223,7 @@ export default function SitesManager() {
               disabled={seedDefaultsMutation.isPending}
               data-testid="button-seed-defaults"
             >
-              {seedDefaultsMutation.isPending ? t('common.loading') : 'Add Default Sites'}
+              {seedDefaultsMutation.isPending ? t('common.loading') : t('sites.seedDefaults')}
             </Button>
           )}
           <Button
