@@ -33,7 +33,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
-import * as XLSX from 'xlsx';
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 
@@ -221,27 +220,16 @@ export default function SalesTrackerDashboard() {
   // Excel upload mutation
   const uploadExcelMutation = useMutation({
     mutationFn: async (file: File) => {
-      const reader = new FileReader();
-      return new Promise((resolve, reject) => {
-        reader.onload = async (e) => {
-          try {
-            const data = new Uint8Array(e.target?.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: "" });
+      const formData = new FormData();
+      formData.append('file', file);
 
-            const result = await apiRequest('POST', '/api/admin/sales/bulk-import', {
-              sales: jsonData,
-            });
-            resolve(result);
-          } catch (error) {
-            reject(error);
-          }
-        };
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsArrayBuffer(file);
-      });
+      const response = await apiRequest('POST', '/api/admin/import-sales-excel', formData);
+      
+      try {
+        return await response.json();
+      } catch (e) {
+        throw new Error('Invalid response from server');
+      }
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
