@@ -3028,6 +3028,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed default sites (for production setup)
+  app.post('/api/admin/sites/seed-defaults', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const existingSites = await storage.getAllSites();
+      
+      // Only seed if there are fewer than 5 sites (to avoid duplicates)
+      if (existingSites.length >= 5) {
+        return res.status(400).json({ 
+          message: "Sites already exist. Delete existing sites first if you want to reseed." 
+        });
+      }
+
+      const defaultSites = [
+        { name: 'Yens Head Office', channelName: 'SHOP', type: 'stall' as const, isActive: true, location: 'Head Office Location', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '09:00', closeTime: '21:00' },
+        { name: 'Supalai Location', channelName: 'SUPALAI', type: 'stall' as const, isActive: true, location: 'Supalai', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Balloon Event', channelName: 'BALLOON', type: 'mobile_van' as const, isActive: true, location: 'Various', operatingDays: ['saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Box Location', channelName: 'BOX', type: 'stall' as const, isActive: true, location: 'Box Area', operatingDays: ['monday','tuesday','wednesday','thursday','friday'], openTime: '09:00', closeTime: '18:00' },
+        { name: 'River Market', channelName: 'RIVER', type: 'mobile_van' as const, isActive: true, location: 'River', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Army Base', channelName: 'ARMY', type: 'stall' as const, isActive: true, location: 'Army Location', operatingDays: ['monday','tuesday','wednesday','thursday','friday'], openTime: '08:00', closeTime: '17:00' },
+        { name: 'Lamp Area', channelName: 'LAMP', type: 'stall' as const, isActive: true, location: 'Lamp', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '22:00' },
+        { name: 'CNY Events', channelName: 'CNY', type: 'mobile_van' as const, isActive: true, location: 'Various CNY Locations', operatingDays: ['saturday','sunday'], openTime: '09:00', closeTime: '21:00' },
+        { name: 'University Campus', channelName: 'UNIVERSITY', type: 'stall' as const, isActive: true, location: 'University', operatingDays: ['monday','tuesday','wednesday','thursday','friday'], openTime: '08:00', closeTime: '18:00' },
+        { name: 'Grab Delivery', channelName: 'GRAB', type: 'stall' as const, isActive: true, location: 'Online - Grab Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'FoodPanda Delivery', channelName: 'FOODPANDA', type: 'stall' as const, isActive: true, location: 'Online - FoodPanda Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'LINE MAN Delivery', channelName: 'LINEMAN', type: 'stall' as const, isActive: true, location: 'Online - LINE MAN Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'Shopee Food', channelName: 'SHOPEE', type: 'stall' as const, isActive: true, location: 'Online - Shopee Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'Shopzy Platform', channelName: 'SHOPZY', type: 'stall' as const, isActive: true, location: 'Online - Shopzy', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'G2 Location', channelName: 'G2', type: 'stall' as const, isActive: true, location: 'G2 Area', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
+      ];
+
+      const createdSites = [];
+      for (const siteData of defaultSites) {
+        const site = await storage.createSite(siteData);
+        createdSites.push(site);
+      }
+
+      res.status(201).json({ 
+        message: `Successfully created ${createdSites.length} default sites`, 
+        sites: createdSites 
+      });
+    } catch (error) {
+      console.error("Error seeding default sites:", error);
+      res.status(500).json({ message: "Failed to seed default sites" });
+    }
+  });
+
   // Update site
   app.patch('/api/admin/sites/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {

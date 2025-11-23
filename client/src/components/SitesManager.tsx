@@ -118,6 +118,26 @@ export default function SitesManager() {
     },
   });
 
+  const seedDefaultsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/admin/sites/seed-defaults');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sites'] });
+      toast({ 
+        title: t('common.success'), 
+        description: 'Successfully added all 15 default sales channels!' 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: t('common.error'), 
+        description: error.message || 'Failed to seed default sites',
+        variant: "destructive" 
+      });
+    },
+  });
+
   const resetForm = () => {
     setEditingSite(null);
     setSelectedLocation("Yens Head Office");
@@ -190,17 +210,34 @@ export default function SitesManager() {
           <h2 className="text-2xl font-bold text-foreground">{t('sites.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('sites.subtitle')}</p>
         </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsDialogOpen(true);
-          }}
-          className="gap-2"
-          data-testid="button-add-site"
-        >
-          <Plus className="w-4 h-4" />
-          {t('sites.addSite')}
-        </Button>
+        <div className="flex gap-2">
+          {sites.length < 5 && (
+            <Button
+              onClick={() => {
+                if (confirm('This will add all 15 default sales channels (SHOP, GRAB, FOODPANDA, etc.). Continue?')) {
+                  seedDefaultsMutation.mutate();
+                }
+              }}
+              variant="outline"
+              className="gap-2"
+              disabled={seedDefaultsMutation.isPending}
+              data-testid="button-seed-defaults"
+            >
+              {seedDefaultsMutation.isPending ? t('common.loading') : 'Add Default Sites'}
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsDialogOpen(true);
+            }}
+            className="gap-2"
+            data-testid="button-add-site"
+          >
+            <Plus className="w-4 h-4" />
+            {t('sites.addSite')}
+          </Button>
+        </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
