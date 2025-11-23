@@ -1914,18 +1914,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const rawRow of jsonData as any[]) {
           try {
-            // Normalize row keys
-            const row: any = {};
-            for (const [key, value] of Object.entries(rawRow)) {
-              row[normalizeColumnName(key)] = value;
+            // Check if this is a header row (contains text "Date" or "Order Channel")
+            const firstCell = rawRow['__EMPTY'] || rawRow['__EMPTY_1'] || '';
+            if (typeof firstCell === 'string' && (firstCell === 'Date' || firstCell === 'Order Channel')) {
+              console.log(`⏭️  Skipping header row`);
+              continue;
             }
 
-            // Get date from normalized key
-            const dateValue = row['date'];
+            // Handle both named columns and __EMPTY columns (for files without headers)
+            // Map __EMPTY columns to their actual meaning based on position
+            const dateValue = rawRow['Date'] || rawRow['date'] || rawRow['__EMPTY_1'];
+            const orderChannel = (rawRow['Order Channel'] || rawRow['order_channel'] || rawRow['__EMPTY_2'] || '').toString().trim();
+            const rawDayOfWeek = (rawRow['Day'] || rawRow['day'] || rawRow['__EMPTY'] || rawRow[''] || '').toString().trim();
             
             // Skip weekly total rows (they don't have a date in proper format)
             if (!dateValue || typeof dateValue !== 'number') {
-              console.log(`⏭️  Skipping row - invalid date:`, { dateValue, row: rawRow });
+              console.log(`⏭️  Skipping row - invalid date:`, { dateValue, orderChannel });
               continue;
             }
 
@@ -1935,14 +1939,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const jsDate = new Date(excelEpoch.getTime() + (dateValue * 86400000));
             const date = jsDate.toISOString().split('T')[0];
             
-            // Extract and trim data using normalized keys
-            // Handle day of week from 'day' column OR the first unnamed column (__empty)
-            const rawDayOfWeek = (row['day'] || row['__empty'] || row[''] || '').toString().trim();
+            // Extract data - handle both __EMPTY columns and named columns
             const dayOfWeek = normalizeDayOfWeek(rawDayOfWeek);
-            const orderChannel = (row['order_channel'] || '').toString().trim();
-            const netSales = parseNumeric(row['net_sales']);
-            const grabFee = parseNumeric(row['grab'] || row['grab_fee']);
-            const totalSales = parseNumeric(row['total_sales']);
+            
+            // Net Sales can be in __EMPTY_3 or __EMPTY_4 (there are duplicate columns)
+            const netSalesRaw = rawRow['Net Sales'] || rawRow['net_sales'] || rawRow['__EMPTY_3'] || rawRow['__EMPTY_4'] || 0;
+            const netSales = parseNumeric(netSalesRaw);
+            
+            // Total Sales is in __EMPTY_5
+            const totalSalesRaw = rawRow['Total Sales'] || rawRow['total_sales'] || rawRow['__EMPTY_5'] || 0;
+            const totalSales = parseNumeric(totalSalesRaw);
+            
+            // Grab Fee if available
+            const grabFee = parseNumeric(rawRow['Grab Fee'] || rawRow['grab_fee'] || rawRow['grab'] || 0);
 
             // Skip invalid rows (only skip if no order channel - allow zero sales)
             if (!orderChannel || orderChannel === '') {
