@@ -141,6 +141,7 @@ export const messageLog = pgTable("message_log", {
 export const sites = pgTable("sites", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(), // Site name (e.g., "Central Plaza Stall", "Mobile Van #1")
+  channelName: text("channel_name").notNull(), // Sales channel identifier (e.g., "SHOP", "RIVER", "GRAB")
   type: text("type").notNull(), // "stall" or "mobile_van"
   location: text("location").notNull(), // Address or area description
   operatingDays: text("operating_days").array(), // ["monday", "tuesday", etc.]
@@ -247,6 +248,7 @@ export const dailySales = pgTable("daily_sales", {
   dayOfWeek: text("day_of_week").notNull(), // Sun, Mon, Tue, Wed, Thu, Fri, Sat
   orderChannel: text("order_channel").notNull(), // Shop, Supalai, Balloon, Box, River, Army, Lamp, etc.
   netSales: decimal("net_sales", { precision: 10, scale: 2 }).notNull(), // Sales before fees
+  otherSales: decimal("other_sales", { precision: 10, scale: 2 }).default("0"), // Other revenue (e.g., tips, delivery)
   grabFee: decimal("grab_fee", { precision: 10, scale: 2 }).default("0"), // Delivery platform fees
   totalSales: decimal("total_sales", { precision: 10, scale: 2 }).notNull(), // Total sales
   importedBy: varchar("imported_by").references(() => users.id), // Admin who imported
