@@ -88,7 +88,7 @@ export default function SalesTrackerDashboard() {
   });
 
   // Fetch active sites for channel dropdown
-  const { data: sites = [] } = useQuery<Site[]>({
+  const { data: sites = [], isLoading: sitesLoading, error: sitesError } = useQuery<Site[]>({
     queryKey: ['/api/admin/sites'],
   });
 
@@ -442,21 +442,36 @@ export default function SalesTrackerDashboard() {
               {/* Sales Channel */}
               <div className="space-y-2">
                 <Label htmlFor="channel">Sales Channel *</Label>
-                <Select
-                  value={formData.orderChannel}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, orderChannel: value }))}
-                >
-                  <SelectTrigger className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg" data-testid="select-sales-channel">
-                    <SelectValue placeholder="Select channel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {channels.map((channel) => (
-                      <SelectItem key={channel} value={channel}>
-                        {channel}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {sitesError ? (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    ⚠️ Failed to load sales channels. Please refresh the page or check your permissions.
+                  </div>
+                ) : sitesLoading ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-600">
+                    Loading channels...
+                  </div>
+                ) : channels.length === 0 ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-600">
+                    No active sites found. Please add sites in the Sites tab.
+                  </div>
+                ) : (
+                  <Select
+                    value={formData.orderChannel}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, orderChannel: value }))}
+                    disabled={sitesLoading}
+                  >
+                    <SelectTrigger className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg" data-testid="select-sales-channel">
+                      <SelectValue placeholder="Select channel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {channels.map((channel) => (
+                        <SelectItem key={channel} value={channel}>
+                          {channel}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {/* Net Sales */}
