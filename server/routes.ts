@@ -1868,13 +1868,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Import daily sales from Excel file
   app.post('/api/admin/import-sales-excel', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
+    console.log('📊 Excel import request received');
+    console.log('📁 File info:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'No file');
+    
     try {
       if (!req.file) {
+        console.error('❌ No file uploaded');
         return res.status(400).json({ message: "No file uploaded" });
       }
 
       // Get admin user ID for tracking imports
       const userId = (req.user as any).claims.sub;
+      console.log('👤 Importing as user:', userId);
 
       // Helper function to normalize column names (handle casing/whitespace)
       const normalizeColumnName = (name: string): string => {
