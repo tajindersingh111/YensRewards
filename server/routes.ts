@@ -1906,10 +1906,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Process each sheet (month)
       for (const sheetName of workbook.SheetNames) {
-        console.log(`Processing sheet: ${sheetName}`);
+        console.log(`📄 Processing sheet: ${sheetName}`);
         const worksheet = workbook.Sheets[sheetName];
         // Keep raw: true (default) to preserve Excel serial dates as numbers
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        console.log(`📊 Found ${jsonData.length} rows in sheet ${sheetName}`);
 
         for (const rawRow of jsonData as any[]) {
           try {
@@ -1924,6 +1925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Skip weekly total rows (they don't have a date in proper format)
             if (!dateValue || typeof dateValue !== 'number') {
+              console.log(`⏭️  Skipping row - invalid date:`, { dateValue, row: rawRow });
               continue;
             }
 
@@ -1942,8 +1944,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const grabFee = parseNumeric(row['grab'] || row['grab_fee']);
             const totalSales = parseNumeric(row['total_sales']);
 
-            // Skip invalid rows
-            if (!orderChannel || orderChannel === '' || totalSales === 0) {
+            // Skip invalid rows (only skip if no order channel - allow zero sales)
+            if (!orderChannel || orderChannel === '') {
+              console.log(`⏭️  Skipping row - no order channel:`, { date, orderChannel, netSales, totalSales });
               continue;
             }
 
