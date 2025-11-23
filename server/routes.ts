@@ -1752,6 +1752,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update an existing daily sale
+  app.patch('/api/admin/sales/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertDailySalesSchema.parse(req.body);
+
+      // Parse numeric fields and recalculate totalSales
+      const netSales = parseFloat(validatedData.netSales);
+      const otherSales = validatedData.otherSales ? parseFloat(validatedData.otherSales) : 0;
+      const grabFee = validatedData.grabFee ? parseFloat(validatedData.grabFee) : 0;
+      const totalSales = netSales + otherSales;
+
+      // Calculate day of week from date if date is being updated
+      const date = new Date(validatedData.date);
+      const rawDayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayOfWeek = normalizeDayOfWeek(rawDayOfWeek);
+
+      const [updatedSale] = await db.update(dailySales)
+        .set({
+          date: validatedData.date,
+          orderChannel: validatedData.orderChannel,
+          netSales: netSales.toFixed(2),
+          otherSales: otherSales.toFixed(2),
+          grabFee: grabFee.toFixed(2),
+          totalSales: totalSales.toFixed(2),
+          dayOfWeek,
+          importedAt: sql`CURRENT_TIMESTAMP`,
+        })
+        .where(eq(dailySales.id, id))
+        .returning();
+
+      if (!updatedSale) {
+        return res.status(404).json({ message: "Sale record not found" });
+      }
+
+      res.json(updatedSale);
+    } catch (error) {
+      console.error("Error updating sale:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: fromError(error).toString() });
+      }
+      res.status(500).json({ message: "Failed to update sale record" });
+    }
+  });
+
+  // Delete a daily sale
+  app.delete('/api/admin/sales/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const [deletedSale] = await db.delete(dailySales)
+        .where(eq(dailySales.id, id))
+        .returning();
+
+      if (!deletedSale) {
+        return res.status(404).json({ message: "Sale record not found" });
+      }
+
+      res.json({ message: "Sale deleted successfully", sale: deletedSale });
+    } catch (error) {
+      console.error("Error deleting sale:", error);
+      res.status(500).json({ message: "Failed to delete sale record" });
+    }
+  });
+
   // Import daily sales from Excel file
   app.post('/api/admin/import-sales-excel', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
     try {

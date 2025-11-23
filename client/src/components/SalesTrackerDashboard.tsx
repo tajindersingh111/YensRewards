@@ -15,7 +15,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales } from "@shared/schema";
@@ -39,6 +56,19 @@ export default function SalesTrackerDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<SalesFormData>({
     date: new Date().toISOString().split('T')[0],
+    orderChannel: "",
+    netSales: "",
+    otherSales: "0",
+    grabFee: "0",
+  });
+  
+  // Edit/Delete state
+  const [editingSale, setEditingSale] = useState<DailySales | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<SalesFormData>({
+    date: "",
     orderChannel: "",
     netSales: "",
     otherSales: "0",
@@ -125,6 +155,59 @@ export default function SalesTrackerDashboard() {
     },
   });
 
+  // Update sale mutation
+  const updateSaleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: SalesFormData }) => {
+      return await apiRequest('PATCH', `/api/admin/sales/${id}`, {
+        ...data,
+        netSales: parseFloat(data.netSales).toFixed(2),
+        grabFee: parseFloat(data.grabFee || "0").toFixed(2),
+        totalSales: parseFloat(data.netSales).toFixed(2),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
+      toast({
+        title: "Sale Updated",
+        description: "The sale record has been updated successfully.",
+      });
+      setIsEditDialogOpen(false);
+      setEditingSale(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete sale mutation
+  const deleteSaleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest('DELETE', `/api/admin/sales/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
+      toast({
+        title: "Sale Deleted",
+        description: "The sale record has been deleted successfully.",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingSaleId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Excel upload mutation
   const uploadExcelMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -190,6 +273,42 @@ export default function SalesTrackerDashboard() {
     addSaleMutation.mutate(formData);
   };
 
+  const handleEditSale = (sale: DailySales) => {
+    setEditingSale(sale);
+    setEditFormData({
+      date: sale.date,
+      orderChannel: sale.orderChannel,
+      netSales: sale.netSales,
+      otherSales: sale.otherSales || "0",
+      grabFee: sale.grabFee || "0",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateSale = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSale || !editFormData.orderChannel || !editFormData.netSales) {
+      toast({
+        title: t('common.error'),
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateSaleMutation.mutate({ id: editingSale.id, data: editFormData });
+  };
+
+  const handleDeleteSale = (saleId: string) => {
+    setDeletingSaleId(saleId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingSaleId) {
+      deleteSaleMutation.mutate(deletingSaleId);
+    }
+  };
+
   const getChannelColor = (channel: string) => {
     const colors: Record<string, string> = {
       RIVER: "bg-blue-500",
@@ -205,21 +324,12 @@ export default function SalesTrackerDashboard() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FCD34D' }}>
-      {/* Header - Simplified without navigation */}
-      <div className="px-6 py-4 flex items-center justify-between">
+      {/* Header */}
+      <div className="px-6 py-4">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
           <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => window.open('/overview-old', '_blank')}
-          data-testid="button-view-old-overview"
-          className="bg-white"
-        >
-          View Original Overview
-        </Button>
       </div>
 
       {/* KPI Cards - 6 Boxes in Single Row */}
@@ -424,9 +534,29 @@ export default function SalesTrackerDashboard() {
                       <Badge className={`${getChannelColor(sale.orderChannel)} text-white rounded-lg`}>
                         {sale.orderChannel}
                       </Badge>
-                      <p className="text-xl font-bold text-gray-900">
-                        ฿{parseFloat(sale.netSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xl font-bold text-gray-900">
+                          ฿{parseFloat(sale.netSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleEditSale(sale)}
+                          data-testid={`button-edit-sale-${index}`}
+                        >
+                          <Pencil className="h-4 w-4 text-blue-600" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleDeleteSale(sale.id)}
+                          data-testid={`button-delete-sale-${index}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600">
                       {new Date(sale.date).toLocaleDateString('en-US', { 
@@ -479,6 +609,119 @@ export default function SalesTrackerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Sale Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Sale</DialogTitle>
+            <DialogDescription>
+              Update the sale details below.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateSale} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">Date</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={editFormData.date}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
+                className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
+                data-testid="input-edit-date"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-channel">Sales Channel *</Label>
+              <Select
+                value={editFormData.orderChannel}
+                onValueChange={(value) => setEditFormData(prev => ({ ...prev, orderChannel: value }))}
+              >
+                <SelectTrigger className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg" data-testid="select-edit-channel">
+                  <SelectValue placeholder="Select channel" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHANNELS.map((channel) => (
+                    <SelectItem key={channel} value={channel}>
+                      {channel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-netSales">Net Sales (฿) *</Label>
+              <Input
+                id="edit-netSales"
+                type="number"
+                step="0.01"
+                value={editFormData.netSales}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, netSales: e.target.value }))}
+                placeholder="0.00"
+                className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
+                data-testid="input-edit-net-sales"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-grabFee">Grab Fee (฿)</Label>
+              <Input
+                id="edit-grabFee"
+                type="number"
+                step="0.01"
+                value={editFormData.grabFee}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, grabFee: e.target.value }))}
+                placeholder="0"
+                className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
+                data-testid="input-edit-grab-fee"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                data-testid="button-cancel-edit"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={updateSaleMutation.isPending}
+                data-testid="button-save-edit"
+              >
+                {updateSaleMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this sale record. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirm-delete"
+            >
+              {deleteSaleMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

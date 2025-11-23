@@ -182,19 +182,85 @@ export default function AdminDashboard() {
       {/* Main Content with Tabs */}
       <main className="max-w-7xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="salesTracker" data-testid="tab-sales-tracker">{t('admin.tabs.salesTracker')}</TabsTrigger>
-            <TabsTrigger value="analytics" data-testid="tab-analytics">{t('admin.tabs.analytics')}</TabsTrigger>
-            <TabsTrigger value="customers" data-testid="tab-customers">{t('admin.tabs.customers')}</TabsTrigger>
-            <TabsTrigger value="products" data-testid="tab-products">{t('admin.tabs.products')}</TabsTrigger>
-            <TabsTrigger value="promotions" data-testid="tab-promotions">{t('admin.tabs.promotions')}</TabsTrigger>
-            <TabsTrigger value="specials" data-testid="tab-specials">{t('admin.tabs.specials')}</TabsTrigger>
-            <TabsTrigger value="messages" data-testid="tab-messages">{t('admin.tabs.messages')}</TabsTrigger>
-            <TabsTrigger value="users" data-testid="tab-users">{t('admin.tabs.users')}</TabsTrigger>
-            <TabsTrigger value="sites" data-testid="tab-sites">{t('admin.tabs.sites')}</TabsTrigger>
-            <TabsTrigger value="schedules" data-testid="tab-schedules">{t('admin.tabs.schedules')}</TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">{t('admin.tabs.settings')}</TabsTrigger>
-          </TabsList>
+          <div className="flex flex-wrap gap-2 mb-6">
+            <TabsTrigger 
+              value="salesTracker" 
+              data-testid="tab-sales-tracker"
+              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.salesTracker')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              data-testid="tab-analytics"
+              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.analytics')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="customers" 
+              data-testid="tab-customers"
+              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.customers')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="products" 
+              data-testid="tab-products"
+              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.products')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="promotions" 
+              data-testid="tab-promotions"
+              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.promotions')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="specials" 
+              data-testid="tab-specials"
+              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.specials')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="messages" 
+              data-testid="tab-messages"
+              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.messages')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="users" 
+              data-testid="tab-users"
+              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.users')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sites" 
+              data-testid="tab-sites"
+              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.sites')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="schedules" 
+              data-testid="tab-schedules"
+              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.schedules')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              data-testid="tab-settings"
+              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
+              {t('admin.tabs.settings')}
+            </TabsTrigger>
+          </div>
 
           <TabsContent value="salesTracker" className="mt-0">
             <SalesTrackerDashboard />
