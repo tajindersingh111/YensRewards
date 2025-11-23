@@ -28,6 +28,7 @@ import type { Site } from "@shared/schema";
 
 interface SiteFormData {
   name: string;
+  channelName: string;
   type: "stall" | "mobile_van";
   location: string;
   operatingDays: string[];
@@ -61,6 +62,7 @@ export default function SitesManager() {
   const [selectedLocation, setSelectedLocation] = useState<string>("Yens Head Office");
   const [formData, setFormData] = useState<SiteFormData>({
     name: "",
+    channelName: "",
     type: "stall",
     location: "",
     operatingDays: [],
@@ -121,6 +123,7 @@ export default function SitesManager() {
     setSelectedLocation("Yens Head Office");
     setFormData({
       name: "",
+      channelName: "",
       type: "stall",
       location: "",
       operatingDays: [],
@@ -137,6 +140,7 @@ export default function SitesManager() {
     setSelectedLocation(isPredefined ? site.location : "custom");
     setFormData({
       name: site.name,
+      channelName: site.channelName,
       type: site.type as "stall" | "mobile_van",
       location: site.location,
       operatingDays: site.operatingDays || [],
@@ -218,6 +222,21 @@ export default function SitesManager() {
                 />
               </div>
               <div>
+                <Label htmlFor="channelName">{t('sites.channelName')} *</Label>
+                <Input
+                  id="channelName"
+                  value={formData.channelName}
+                  onChange={(e) => setFormData({ ...formData, channelName: e.target.value.toUpperCase() })}
+                  required
+                  placeholder={t('sites.channelNamePlaceholder')}
+                  data-testid="input-channel-name"
+                  maxLength={20}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label htmlFor="type">{t('sites.siteType')} *</Label>
                 <Select
                   value={formData.type}
@@ -234,6 +253,7 @@ export default function SitesManager() {
                   </SelectContent>
                 </Select>
               </div>
+              <div></div>
             </div>
 
             <div>
@@ -368,6 +388,9 @@ export default function SitesManager() {
                     <CardTitle className="text-lg" data-testid={`text-site-name-${site.id}`}>
                       {site.name}
                     </CardTitle>
+                    <Badge variant="outline" className="mt-1 bg-yellow-100 text-yellow-800 border-yellow-300">
+                      {site.channelName}
+                    </Badge>
                   </div>
                   <div className="flex gap-1">
                     <Badge
