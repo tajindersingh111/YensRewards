@@ -73,7 +73,9 @@ export default function SalesTrackerDashboard() {
   // Fetch sales metrics
   const { data: metrics } = useQuery<{
     currentWeekSales: number;
+    lastWeekSales: number;
     currentMonthSales: number;
+    lastMonthSales: number;
     ytdSales: number;
     bestChannel: { name: string; total: number } | null;
     bestDay: string | null;
