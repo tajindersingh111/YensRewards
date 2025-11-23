@@ -3031,12 +3031,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update site
   app.patch('/api/admin/sites/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const site = await storage.updateSite(req.params.id, req.body);
+      // Validate update data using partial of insertSiteSchema to preserve channelName validation
+      const updateSiteSchema = insertSiteSchema.partial();
+      const validatedData = updateSiteSchema.parse(req.body);
+      
+      const site = await storage.updateSite(req.params.id, validatedData);
       if (!site) {
         return res.status(404).json({ message: "Site not found" });
       }
       res.json(site);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: fromError(error).toString() });
+      }
       console.error("Error updating site:", error);
       res.status(500).json({ message: "Failed to update site" });
     }

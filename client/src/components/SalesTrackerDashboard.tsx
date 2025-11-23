@@ -92,10 +92,10 @@ export default function SalesTrackerDashboard() {
     queryKey: ['/api/admin/sites'],
   });
 
-  // Extract channel names from active sites, sorted alphabetically
+  // Extract channel names from active sites with valid channel names, sorted alphabetically
   const channels = useMemo(() => {
     return sites
-      .filter(site => site.isActive)
+      .filter(site => site.isActive && site.channelName && site.channelName.trim().length > 0)
       .map(site => site.channelName)
       .sort();
   }, [sites]);
