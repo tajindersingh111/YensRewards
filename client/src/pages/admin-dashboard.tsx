@@ -182,7 +182,7 @@ export default function AdminDashboard() {
       {/* Main Content with Tabs */}
       <main className="max-w-7xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <div className="flex flex-wrap gap-2 mb-6">
+          <TabsList className="flex flex-wrap gap-2 mb-6 bg-transparent h-auto p-0">
             <TabsTrigger 
               value="salesTracker" 
               data-testid="tab-sales-tracker"
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
             >
               {t('admin.tabs.settings')}
             </TabsTrigger>
-          </div>
+          </TabsList>
 
           <TabsContent value="salesTracker" className="mt-0">
             <SalesTrackerDashboard />
