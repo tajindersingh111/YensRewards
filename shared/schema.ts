@@ -335,7 +335,7 @@ export const insertSiteSchema = createInsertSchema(sites).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  channelName: z.string().min(1, "Channel name is required").max(20, "Channel name must be 20 characters or less").regex(/^[A-Z0-9_-]+$/, "Channel name must contain only uppercase letters, numbers, hyphens, and underscores"),
+  channelName: z.string().min(1, "Channel name is required").max(20, "Channel name must be 20 characters or less").regex(/^[A-Z0-9 _-]+$/, "Channel name must contain only uppercase letters, numbers, spaces, hyphens, and underscores"),
 });
 
 export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
