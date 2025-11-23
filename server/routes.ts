@@ -157,9 +157,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('🔑 Auth check - User ID:', userId, 'Email:', email, 'is_admin claim:', isAdminClaim, 'isTestMode:', isTestMode);
       let user = await storage.getUser(userId);
-      console.log('👤 User from DB (initial):', JSON.stringify(user, null, 2));
+      console.log('👤 User from DB by ID:', JSON.stringify(user, null, 2));
       
-      // If user doesn't exist, create them (can happen in OIDC test mode)
+      // If user not found by ID, try by email (handles case where user was created with different ID)
+      if (!user && email) {
+        console.log('🔍 User not found by ID, trying by email...');
+        user = await storage.getUserByEmail(email);
+        console.log('👤 User from DB by email:', JSON.stringify(user, null, 2));
+      }
+      
+      // If user still doesn't exist, create them (can happen in OIDC test mode)
       if (!user) {
         console.log('⚠️  User not found, creating user from claims...');
         // Determine role: ONLY for NEW users in test mode, honor is_admin claim
@@ -211,22 +218,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImageUrl: req.user.claims.profile_image_url || null,
       });
       
-      console.log(`📊 User after upsert - role: ${user.role}`);
+      console.log(`📊 User after upsert - ID: ${user.id}, role: ${user.role}`);
       
-      // Now update the user's role to admin
+      // Now update the user's role to admin (use user.id from upsert, not userId from claims)
       const result = await db.update(users)
         .set({ role: 'admin' })
-        .where(eq(users.id, userId))
+        .where(eq(users.id, user.id))
         .returning();
       
       if (!result || result.length === 0) {
-        console.error(`❌ Failed to update role for ${email} (${userId})`);
+        console.error(`❌ Failed to update role for ${email} (${user.id})`);
         return res.status(500).json({ message: "Failed to update user role" });
       }
       
-      console.log(`✅ Successfully promoted ${email} (${userId}) to admin - final role: ${result[0].role}`);
+      console.log(`✅ Successfully promoted ${email} (${user.id}) to admin - final role: ${result[0].role}`);
       
-      res.json({ message: "Successfully promoted to admin", email, userId });
+      res.json({ message: "Successfully promoted to admin", email, userId: user.id });
     } catch (error) {
       console.error("Error promoting to admin:", error);
       res.status(500).json({ message: "Failed to promote to admin" });
