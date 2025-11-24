@@ -1,0 +1,23 @@
+✅ YOUR FAILED CUSTOMERS CSV FILE IS READY!
+
+File Location: FAILED_CUSTOMERS_EXPORT.csv (in root directory)
+File Size: 21 KB
+Total Records: 133 customers
+
+If you can't see the file in the file tree:
+
+OPTION 1: Refresh Your Browser
+- Press Cmd+Shift+R (Mac) or Ctrl+Shift+F5 (Windows)
+- This will reload the page and show the file
+
+OPTION 2: Use Search
+- Press Cmd+K (Mac) or Ctrl+K (Windows)
+- Type: FAILED_CUSTOMERS_EXPORT.csv
+- Click to open and download
+
+OPTION 3: Alternative File Available
+- Look for: failed_records_to_fix.csv
+- Same content, different name
+- Located in root directory or attached_assets folder
+
+Need the data? See below for the complete CSV content!
