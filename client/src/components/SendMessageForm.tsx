@@ -284,20 +284,36 @@ export default function SendMessageForm() {
       </CardHeader>
       <CardContent>
         <Tabs value={channel} onValueChange={(val: any) => setChannel(val)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="app" data-testid="tab-channel-app" className="flex items-center gap-1.5">
+          <TabsList className="grid w-full grid-cols-4 gap-2 bg-transparent p-0">
+            <TabsTrigger 
+              value="app" 
+              data-testid="tab-channel-app" 
+              className="flex items-center gap-1.5 bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
               <MessageSquare className="w-4 h-4" />
               <span>{t('messages.app')}</span>
             </TabsTrigger>
-            <TabsTrigger value="line" data-testid="tab-channel-line" className="flex items-center gap-1.5">
+            <TabsTrigger 
+              value="line" 
+              data-testid="tab-channel-line" 
+              className="flex items-center gap-1.5 bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
               <MessageCircle className="w-4 h-4" />
               <span>LINE</span>
             </TabsTrigger>
-            <TabsTrigger value="sms" data-testid="tab-channel-sms" className="flex items-center gap-1.5">
+            <TabsTrigger 
+              value="sms" 
+              data-testid="tab-channel-sms" 
+              className="flex items-center gap-1.5 bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
               <MessageSquare className="w-4 h-4" />
               <span>{t('messages.sms')}</span>
             </TabsTrigger>
-            <TabsTrigger value="email" data-testid="tab-channel-email" className="flex items-center gap-1.5">
+            <TabsTrigger 
+              value="email" 
+              data-testid="tab-channel-email" 
+              className="flex items-center gap-1.5 bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
+            >
               <Mail className="w-4 h-4" />
               <span>{t('messages.email')}</span>
             </TabsTrigger>
