@@ -502,8 +502,13 @@ export class DbStorage implements IStorage {
       // Update existing customer (only fields that are explicitly provided)
       const updateData: Partial<Customer> = {};
       
-      // Only update fields that are explicitly provided in the customer object
-      if (customer.name !== undefined) updateData.name = customer.name;
+      // CRITICAL: Preserve existing customer names during CSV imports
+      // Only update name if existing customer has no name (prevents overwriting real names)
+      if (customer.name !== undefined && (!existing.name || existing.name.trim() === '')) {
+        updateData.name = customer.name;
+      }
+      
+      // Always update these fields if provided (safe to overwrite)
       if (customer.email !== undefined) updateData.email = customer.email;
       if (customer.photo !== undefined) updateData.photo = customer.photo;
       if (customer.gender !== undefined) updateData.gender = customer.gender;
