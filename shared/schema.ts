@@ -107,13 +107,13 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Message Templates table - for birthday and promotional SMS/email messages
+// Message Templates table - for birthday and promotional SMS/email/LINE messages
 export const messageTemplates = pgTable("message_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   type: text("type").notNull(), // birthday, promotion, reminder
-  channel: text("channel").notNull(), // sms, email, both
-  subject: text("subject"), // Email subject (null for SMS)
+  channel: text("channel").notNull(), // sms, email, line, both
+  subject: text("subject"), // Email subject (null for SMS/LINE)
   message: text("message").notNull(), // Template with placeholders: {name}, {points}, {tier}
   isDefault: boolean("is_default").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -125,12 +125,12 @@ export const messageLog = pgTable("message_log", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerId: varchar("customer_id").notNull().references(() => customers.id),
   templateId: varchar("template_id").references(() => messageTemplates.id),
-  channel: text("channel").notNull(), // sms, email
-  recipient: text("recipient").notNull(), // phone or email
-  subject: text("subject"), // Email subject
+  channel: text("channel").notNull(), // sms, email, line, app
+  recipient: text("recipient").notNull(), // phone, email, or LINE UID
+  subject: text("subject"), // Email subject (null for SMS/LINE)
   message: text("message").notNull(),
   status: text("status").notNull().default("pending"), // pending, sent, failed, delivered
-  externalId: text("external_id"), // Twilio SID or email provider ID
+  externalId: text("external_id"), // Twilio SID, email provider ID, or LINE message ID
   errorMessage: text("error_message"),
   sentAt: timestamp("sent_at"),
   deliveredAt: timestamp("delivered_at"),

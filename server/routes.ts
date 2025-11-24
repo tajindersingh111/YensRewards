@@ -7,6 +7,7 @@ import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
+import { sendLineMessage } from "./line";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -2816,6 +2817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pending: logs.filter(l => l.status === 'pending').length,
         smsCount: logs.filter(l => l.channel === 'sms').length,
         emailCount: logs.filter(l => l.channel === 'email').length,
+        lineCount: logs.filter(l => l.channel === 'line').length,
       };
 
       res.json(stats);
@@ -3034,6 +3036,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error retrying message:", error);
       res.status(500).json({ message: "Failed to retry message" });
+    }
+  });
+
+  // Send LINE messages (admin only)
+  app.post('/api/admin/messages/send-line', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { recipientType, tier, customerIds, message } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      // Get target customers based on recipient type
+      let targetCustomers = [];
+      
+      if (recipientType === 'all') {
+        targetCustomers = await storage.getAllCustomers();
+      } else if (recipientType === 'tier' && tier) {
+        const allCustomers = await storage.getAllCustomers();
+        targetCustomers = allCustomers.filter(c => c.tier === tier);
+      } else if (recipientType === 'individual' && customerIds && Array.isArray(customerIds)) {
+        targetCustomers = await Promise.all(
+          customerIds.map(id => storage.getCustomer(id))
+        );
+        targetCustomers = targetCustomers.filter(c => c !== undefined);
+      } else {
+        return res.status(400).json({ message: "Invalid recipient configuration" });
+      }
+
+      // Filter to only customers with LINE UIDs
+      const customersWithLine = targetCustomers.filter(c => c && c.lineUid);
+
+      if (customersWithLine.length === 0) {
+        return res.status(400).json({ message: "No customers found with LINE accounts" });
+      }
+
+      // Send LINE messages to all target customers
+      const results = await Promise.all(
+        customersWithLine.map(async (customer) => {
+          if (!customer || !customer.lineUid) return null;
+
+          const lineResult = await sendLineMessage(customer.lineUid, message);
+          
+          await storage.createMessageLog({
+            customerId: customer.id,
+            templateId: null,
+            channel: 'line',
+            recipient: customer.lineUid,
+            subject: null,
+            message: message,
+            status: lineResult.success ? 'sent' : 'failed',
+            externalId: lineResult.messageId || null,
+            errorMessage: lineResult.error || null,
+          });
+
+          return { success: lineResult.success, channel: 'line', customer: customer.name };
+        })
+      );
+
+      const successful = results.filter(r => r && r.success).length;
+      const failed = results.filter(r => r && !r.success).length;
+
+      res.json({
+        success: true,
+        sent: successful,
+        failed: failed,
+        total: customersWithLine.length,
+      });
+    } catch (error) {
+      console.error("Error sending LINE messages:", error);
+      res.status(500).json({ message: "Failed to send LINE messages" });
     }
   });
 
