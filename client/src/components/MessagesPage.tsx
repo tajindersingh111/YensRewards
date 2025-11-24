@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import SendMessageForm from "./SendMessageForm";
 import MessageHistory from "./MessageHistory";
 import MessageTemplates from "./MessageTemplates";
-import { Send, History, FileText } from "lucide-react";
+import LineMessaging from "./LineMessaging";
+import { Send, History, FileText, MessageCircle } from "lucide-react";
 
 export default function MessagesPage() {
   const { t } = useTranslation();
@@ -13,21 +14,26 @@ export default function MessagesPage() {
   return (
     <div className="space-y-4">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="send" data-testid="subtab-send" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="send" data-testid="subtab-send" className="flex items-center gap-1.5 text-sm">
             <Send className="w-4 h-4" />
             <span className="hidden sm:inline">{t('messages.send')}</span>
             <span className="sm:hidden">{t('messages.send')}</span>
           </TabsTrigger>
-          <TabsTrigger value="history" data-testid="subtab-history" className="flex items-center gap-2">
+          <TabsTrigger value="history" data-testid="subtab-history" className="flex items-center gap-1.5 text-sm">
             <History className="w-4 h-4" />
             <span className="hidden sm:inline">{t('messages.history')}</span>
             <span className="sm:hidden">{t('messages.history')}</span>
           </TabsTrigger>
-          <TabsTrigger value="templates" data-testid="subtab-templates" className="flex items-center gap-2">
+          <TabsTrigger value="templates" data-testid="subtab-templates" className="flex items-center gap-1.5 text-sm">
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">{t('messages.templates')}</span>
             <span className="sm:hidden">{t('messages.templates')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="line" data-testid="subtab-line" className="flex items-center gap-1.5 text-sm">
+            <MessageCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">LINE</span>
+            <span className="sm:hidden">LINE</span>
           </TabsTrigger>
         </TabsList>
 
@@ -41,6 +47,10 @@ export default function MessagesPage() {
 
         <TabsContent value="templates" className="mt-4">
           <MessageTemplates />
+        </TabsContent>
+
+        <TabsContent value="line" className="mt-4">
+          <LineMessaging />
         </TabsContent>
       </Tabs>
     </div>
