@@ -2438,7 +2438,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Fractional points detected - reject row
               throw new Error(`Points must be a whole number, got: "${validData.points}"`);
             } else {
-              throw new Error(`Invalid points value: "${validData.points}"`);
+              // Detect if value looks like a date (contains slashes or looks like date/time)
+              const looksLikeDate = validData.points.includes('/') || validData.points.includes(':');
+              if (looksLikeDate) {
+                throw new Error(`Invalid points value: "${validData.points}" - This looks like a date/time value. Points must be a whole number (e.g., 0, 50, 100). Please check your CSV column mapping.`);
+              } else {
+                throw new Error(`Invalid points value: "${validData.points}" - Points must be a whole number (e.g., 0, 50, 100). Please check your CSV column mapping.`);
+              }
             }
           }
 
