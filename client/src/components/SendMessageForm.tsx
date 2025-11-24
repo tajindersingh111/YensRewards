@@ -10,15 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Customer = {
   id: string;
   name: string;
   phone: string;
   email: string | null;
+  lineUid: string | null;
   tier: string;
 };
 
@@ -34,10 +36,22 @@ export default function SendMessageForm() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
+  // LINE-specific state
+  const [lineRecipientType, setLineRecipientType] = useState<"all" | "tier" | "individual">("all");
+  const [lineSelectedTier, setLineSelectedTier] = useState<string>("");
+  const [lineMessage, setLineMessage] = useState("");
+  const [lineSelectedCustomers, setLineSelectedCustomers] = useState<string[]>([]);
+
   // Fetch customers for individual selection
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers'],
     enabled: recipientType === "individual",
+  });
+
+  // Fetch all customers for LINE (need lineUid)
+  const { data: allCustomers = [], isLoading: loadingAllCustomers } = useQuery<Customer[]>({
+    queryKey: ['/api/admin/customers/all'],
+    enabled: channel === "line",
   });
 
   // Send message mutation
@@ -61,6 +75,29 @@ export default function SendMessageForm() {
       toast({
         title: t('messages.sendFailed'),
         description: error.message || t('messages.sendFailedDesc'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Send LINE message mutation
+  const sendLineMessage = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest('POST', '/api/admin/messages/send-line', data);
+    },
+    onSuccess: (result: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
+      toast({
+        title: "LINE Messages Sent! 📱",
+        description: `Successfully sent ${result.sent || 0} messages. Failed: ${result.failed || 0}`,
+      });
+      setLineMessage("");
+      setLineSelectedCustomers([]);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send LINE Messages",
+        description: error.message || "An error occurred",
         variant: "destructive",
       });
     },
@@ -273,6 +310,199 @@ export default function SendMessageForm() {
     </div>
   );
 
+  const customersWithLine = allCustomers.filter(c => c.lineUid);
+  const availableTiers = Array.from(new Set(customersWithLine.map(c => c.tier))).sort();
+
+  const handleLineSend = () => {
+    if (!lineMessage.trim()) {
+      toast({
+        title: "Message Required",
+        description: "Please enter a message to send",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (lineRecipientType === "individual" && lineSelectedCustomers.length === 0) {
+      toast({
+        title: "No Customers Selected",
+        description: "Please select at least one customer",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data: any = {
+      recipientType: lineRecipientType,
+      message: lineMessage.trim(),
+    };
+
+    if (lineRecipientType === "tier" && lineSelectedTier) {
+      data.tier = lineSelectedTier;
+    } else if (lineRecipientType === "individual") {
+      data.customerIds = lineSelectedCustomers;
+    }
+
+    sendLineMessage.mutate(data);
+  };
+
+  const filteredLineCustomers = allCustomers.filter(c => {
+    if (!c.lineUid) return false;
+    if (lineRecipientType === "tier" && lineSelectedTier) {
+      return c.tier === lineSelectedTier;
+    }
+    return true;
+  });
+
+  const renderLineForm = () => (
+    <div className="space-y-4">
+      {customersWithLine.length === 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>No customers with LINE accounts.</strong> Customers need to follow your LINE Official Account first.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {customersWithLine.length > 0 && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-900">
+            <strong>{customersWithLine.length} customers</strong> have connected their LINE accounts
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="space-y-2">
+        <Label>Recipients</Label>
+        <Select value={lineRecipientType} onValueChange={(v: any) => setLineRecipientType(v)}>
+          <SelectTrigger data-testid="select-line-recipient-type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                All Customers ({customersWithLine.length} with LINE)
+              </div>
+            </SelectItem>
+            <SelectItem value="tier">By Tier</SelectItem>
+            <SelectItem value="individual">Select Individuals</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {lineRecipientType === "tier" && (
+        <div className="space-y-2">
+          <Label>Select Tier</Label>
+          <Select value={lineSelectedTier} onValueChange={setLineSelectedTier}>
+            <SelectTrigger data-testid="select-line-tier">
+              <SelectValue placeholder="Choose tier..." />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTiers.map((tier) => (
+                <SelectItem key={tier} value={tier}>
+                  <Badge variant="outline" className="capitalize">{tier}</Badge> ({customersWithLine.filter(c => c.tier === tier).length})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {lineRecipientType === "individual" && (
+        <div className="space-y-2">
+          <Label>Select Customers</Label>
+          <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+            {loadingAllCustomers ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            ) : filteredLineCustomers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No customers with LINE accounts found
+              </p>
+            ) : (
+              filteredLineCustomers.map((customer) => (
+                <label
+                  key={customer.id}
+                  className="flex items-center gap-2 p-2 hover-elevate rounded cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={lineSelectedCustomers.includes(customer.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setLineSelectedCustomers([...lineSelectedCustomers, customer.id]);
+                      } else {
+                        setLineSelectedCustomers(lineSelectedCustomers.filter(id => id !== customer.id));
+                      }
+                    }}
+                    className="rounded"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{customer.name}</p>
+                    <p className="text-xs text-muted-foreground">{customer.phone}</p>
+                  </div>
+                  <Badge variant="outline">{customer.tier}</Badge>
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label>Message (Max 5,000 characters)</Label>
+        <Textarea
+          placeholder="Type your LINE message here... Much longer than SMS! 🎉"
+          value={lineMessage}
+          onChange={(e) => setLineMessage(e.target.value)}
+          rows={6}
+          maxLength={5000}
+          data-testid="textarea-line-message"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>
+            {lineMessage.length}/5,000 characters
+          </span>
+          <span className="text-green-600 font-medium">FREE - No cost per message!</span>
+        </div>
+      </div>
+
+      <Button
+        onClick={handleLineSend}
+        disabled={sendLineMessage.isPending || !lineMessage.trim()}
+        className="w-full"
+        size="lg"
+        data-testid="button-send-line"
+      >
+        {sendLineMessage.isPending ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Sending LINE Messages...
+          </>
+        ) : (
+          <>
+            <Send className="mr-2 h-4 w-4" />
+            Send LINE Messages (FREE)
+          </>
+        )}
+      </Button>
+
+      <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
+        <p className="font-medium">💡 LINE Messaging Benefits:</p>
+        <ul className="space-y-1 ml-4 list-disc">
+          <li>✅ <strong>Completely FREE</strong> - No cost per message (vs ฿0.30+ for SMS)</li>
+          <li>✅ <strong>5,000 characters</strong> - Much longer than SMS (160 chars)</li>
+          <li>✅ <strong>Rich messages</strong> - Send images, stickers, buttons, and more</li>
+          <li>✅ <strong>90%+ of Thais use LINE</strong> - Best way to reach Thai customers</li>
+        </ul>
+      </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -324,7 +554,7 @@ export default function SendMessageForm() {
           </TabsContent>
 
           <TabsContent value="line" className="mt-6">
-            {renderMessageForm()}
+            {renderLineForm()}
           </TabsContent>
 
           <TabsContent value="sms" className="mt-6">
