@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.11.5** - **Sites UI Enhancement**: Added prominent yellow borders (`border-2 border-yellow-400`) to all site cards in Sites Manager for improved visual presentation and brand consistency. Site cards now have uniform, professional appearance matching Yens yellow brand color scheme. Previous version (v3.11.4): Fixed Excel upload bug where frontend was calling non-existent endpoint, extended `apiRequest` helper to support FormData uploads, Excel data imports now function correctly.
+**Current Version: v3.11.6** - **Authentication & Logout Enhancement**: Added logout button to homepage (top-right corner) enabling users to logout from Replit OIDC sessions. Created password-based admin account setup (`admin@yens.com`) allowing administrators to authenticate without Replit login dependency. Users can now switch between OIDC and password-based authentication methods. Previous version (v3.11.5): Added prominent yellow borders to all site cards in Sites Manager for improved visual presentation and brand consistency.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
