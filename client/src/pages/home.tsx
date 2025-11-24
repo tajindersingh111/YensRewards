@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2, QrCode } from "lucide-react";
+import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2, QrCode, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,10 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 export default function Home() {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
+
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
 
   const apps = [
     {
@@ -40,8 +44,17 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-chart-1/5 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full space-y-8">
-        {/* Language Switcher - Top Right */}
-        <div className="flex justify-end">
+        {/* Language Switcher & Logout - Top Right */}
+        <div className="flex justify-end gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleLogout}
+            data-testid="button-logout"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
           <LanguageSwitcher />
         </div>
         
