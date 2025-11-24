@@ -2665,6 +2665,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed default birthday templates
+  app.post('/api/admin/message-templates/seed-defaults', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const existingTemplates = await storage.getAllMessageTemplates();
+      const hasBirthdayTemplates = existingTemplates.some(t => t.type === 'birthday');
+
+      if (hasBirthdayTemplates) {
+        return res.json({ 
+          message: "Default templates already exist", 
+          created: 0 
+        });
+      }
+
+      // Create default birthday templates
+      const templates = [
+        {
+          name: "Birthday Greeting (Thai - SMS)",
+          type: "birthday",
+          channel: "sms",
+          subject: null,
+          message: "สุขสันต์วันเกิด {name}! 🎂\nรับส่วนลด 20% วันนี้เท่านั้น\nคุณมี {points} แต้มสะสม!",
+          isDefault: true,
+        },
+        {
+          name: "Birthday Greeting (Thai - LINE)",
+          type: "birthday",
+          channel: "line",
+          subject: null,
+          message: "🎉 สุขสันต์วันเกิด {name}! 🎂\n\nขอให้มีความสุขมากๆในวันพิเศษของคุณ!\n\n🎁 รับของขวัญพิเศษ: ส่วนลด 20% วันนี้เท่านั้น!\n⭐ คุณมี {points} แต้มสะสมแล้ว\n👑 สมาชิกระดับ {tier}\n\nมาเฉลิมฉลองกับเรา Yens Thai Ice Cream! 🍦",
+          isDefault: false,
+        },
+        {
+          name: "Birthday Greeting (English - SMS)",
+          type: "birthday",
+          channel: "sms",
+          subject: null,
+          message: "Happy Birthday {name}! 🎉\nEnjoy 20% OFF today!\nYou have {points} points!",
+          isDefault: false,
+        },
+        {
+          name: "Birthday Greeting (English - LINE)",
+          type: "birthday",
+          channel: "line",
+          subject: null,
+          message: "🎉 Happy Birthday {name}! 🎂\n\nWishing you a wonderful day filled with joy!\n\n🎁 Special Gift: 20% OFF today only!\n⭐ You have {points} loyalty points\n👑 {tier} member\n\nCelebrate with Yens Thai Ice Cream! 🍦",
+          isDefault: false,
+        },
+        {
+          name: "Birthday Greeting (English - Email)",
+          type: "birthday",
+          channel: "email",
+          subject: "🎂 Happy Birthday from Yens Thai Ice Cream!",
+          message: "Dear {name},\n\nHappy Birthday! 🎉\n\nWe're thrilled to celebrate your special day with you!\n\nAs our valued {tier} member with {points} loyalty points, we'd like to offer you a special birthday gift:\n\n🎁 20% OFF your entire purchase today!\n\nVisit any Yens location and mention this birthday offer. Valid for today only.\n\nThank you for being part of the Yens family!\n\nBest wishes,\nYens Thai Ice Cream Team 🍦",
+          isDefault: false,
+        },
+      ];
+
+      const created = await Promise.all(
+        templates.map(template => storage.createMessageTemplate(template))
+      );
+
+      res.json({ 
+        message: "Default birthday templates created successfully", 
+        created: created.length,
+        templates: created
+      });
+    } catch (error) {
+      console.error("Error seeding default templates:", error);
+      res.status(500).json({ message: "Failed to seed default templates" });
+    }
+  });
+
   // ============ Birthday Message Sending Endpoints (Admin Only) ============
   
   // Send birthday messages to specific customers

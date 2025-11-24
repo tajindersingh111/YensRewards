@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Users, Mail, MessageSquare, Sparkles, Info } from "lucide-react";
+import { Send, Users, Mail, MessageSquare, Sparkles, Info, FileText, MessageCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { MessageTemplate } from "@shared/schema";
 
-type MessageChannel = "sms" | "email" | "both";
+type MessageChannel = "sms" | "email" | "line" | "both";
 
 interface Customer {
   id: string;
@@ -34,6 +35,12 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
   const [channel, setChannel] = useState<MessageChannel>("sms");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+
+  // Fetch birthday templates
+  const { data: templates = [] } = useQuery<MessageTemplate[]>({
+    queryKey: ['/api/admin/message-templates/type/birthday'],
+  });
 
   const sendBulkMessage = useMutation({
     mutationFn: async (data: { customerIds: string[]; channel: MessageChannel; subject: string; message: string }) => {
@@ -101,8 +108,29 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
     setMessage(prev => prev + `{${placeholder}}`);
   };
 
+  const loadTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      setMessage(template.message);
+      if (template.subject) {
+        setSubject(template.subject);
+      }
+      // Set channel based on template
+      if (template.channel === "sms" || template.channel === "email" || template.channel === "line" || template.channel === "both") {
+        setChannel(template.channel as MessageChannel);
+      }
+      setSelectedTemplateId(templateId);
+      
+      toast({
+        title: "Template Loaded",
+        description: `Loaded "${template.name}" template`,
+      });
+    }
+  };
+
   const customersWithSMS = selectedCustomers.filter(c => c.phone).length;
   const customersWithEmail = selectedCustomers.filter(c => c.email).length;
+  const customersWithLINE = selectedCustomers.filter(c => (c as any).lineUid).length;
 
   return (
     <Card>
@@ -124,8 +152,46 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Template Selector */}
+        {templates.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="template">Quick Load Template</Label>
+            <div className="flex gap-2">
+              <Select value={selectedTemplateId} onValueChange={loadTemplate}>
+                <SelectTrigger id="template" data-testid="select-template">
+                  <SelectValue placeholder="Choose a saved birthday template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        {template.name}
+                        {template.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedTemplateId && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedTemplateId("");
+                    setMessage("");
+                    setSubject("");
+                  }}
+                  data-testid="button-clear-template"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Channel Stats */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="flex items-center gap-2 text-sm">
             <MessageSquare className="w-4 h-4 text-blue-600" />
             <span className="text-muted-foreground">With Phone:</span>
@@ -135,6 +201,11 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
             <Mail className="w-4 h-4 text-purple-600" />
             <span className="text-muted-foreground">With Email:</span>
             <Badge variant="outline" data-testid="stat-email-count">{customersWithEmail}</Badge>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <MessageCircle className="w-4 h-4 text-green-600" />
+            <span className="text-muted-foreground">With LINE:</span>
+            <Badge variant="outline" data-testid="stat-line-count">{customersWithLINE}</Badge>
           </div>
         </div>
 
@@ -149,13 +220,19 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
               <SelectItem value="sms">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  SMS Only
+                  SMS Only (฿0.30+ each)
                 </div>
               </SelectItem>
               <SelectItem value="email">
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
                   Email Only
+                </div>
+              </SelectItem>
+              <SelectItem value="line">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-green-600" />
+                  LINE Only (FREE! 🎉)
                 </div>
               </SelectItem>
               <SelectItem value="both">

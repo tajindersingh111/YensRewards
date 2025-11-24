@@ -13,7 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Plus, Edit2, Trash2, Eye, Star } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, Star, Sparkles } from "lucide-react";
 import { insertMessageTemplateSchema, type MessageTemplate, type InsertMessageTemplate } from "@shared/schema";
 
 export default function MessageTemplates() {
@@ -105,6 +105,26 @@ export default function MessageTemplates() {
     },
   });
 
+  const seedDefaultsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/admin/message-templates/seed-defaults', {});
+    },
+    onSuccess: (result: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
+      toast({
+        title: "Default Templates Created!",
+        description: `Created ${result.created} birthday message templates (Thai & English)`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('messages.error'),
+        description: error.message || "Failed to create default templates",
+        variant: "destructive",
+      });
+    },
+  });
+
   const resetForm = () => {
     form.reset({
       name: "",
@@ -164,12 +184,26 @@ export default function MessageTemplates() {
           <h2 className="text-2xl font-bold">{t('messages.templates')}</h2>
           <p className="text-muted-foreground">{t('messages.manageTemplates')}</p>
         </div>
-        {!isCreating && (
-          <Button onClick={() => setIsCreating(true)} data-testid="button-create-template">
-            <Plus className="w-4 h-4 mr-2" />
-            {t('messages.addTemplate')}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {templates.length === 0 && !isCreating && (
+            <Button 
+              onClick={() => seedDefaultsMutation.mutate()}
+              variant="outline"
+              disabled={seedDefaultsMutation.isPending}
+              data-testid="button-seed-defaults"
+              className="bg-yellow-50 border-yellow-400 hover:bg-yellow-100"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {seedDefaultsMutation.isPending ? "Creating..." : "Create Default Templates"}
+            </Button>
+          )}
+          {!isCreating && (
+            <Button onClick={() => setIsCreating(true)} data-testid="button-create-template">
+              <Plus className="w-4 h-4 mr-2" />
+              {t('messages.addTemplate')}
+            </Button>
+          )}
+        </div>
       </div>
 
       {isCreating && (
@@ -238,6 +272,7 @@ export default function MessageTemplates() {
                           <SelectContent>
                             <SelectItem value="sms">{t('messages.sms')}</SelectItem>
                             <SelectItem value="email">{t('messages.email')}</SelectItem>
+                            <SelectItem value="line">LINE</SelectItem>
                             <SelectItem value="both">{t('messages.sms')} + {t('messages.email')}</SelectItem>
                           </SelectContent>
                         </Select>
