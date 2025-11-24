@@ -29,15 +29,15 @@ export default function LineMessaging() {
   const [message, setMessage] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
 
-  // Check if LINE is configured
-  const hasLineToken = !!import.meta.env.LINE_CHANNEL_ACCESS_TOKEN;
-
-  // Fetch customers with LINE UIDs
+  // Fetch all customers with LINE UIDs
   const { data: customers = [], isLoading: loadingCustomers } = useQuery<Customer[]>({
-    queryKey: ['/api/admin/customers'],
+    queryKey: ['/api/admin/customers/all'],
   });
 
   const customersWithLine = customers.filter(c => c.lineUid);
+  
+  // Get unique tiers from customers with LINE
+  const availableTiers = Array.from(new Set(customersWithLine.map(c => c.tier))).sort();
 
   // Send LINE message mutation
   const sendLineMessage = useMutation({
@@ -67,15 +67,6 @@ export default function LineMessaging() {
       toast({
         title: "Message Required",
         description: "Please enter a message to send",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!hasLineToken) {
-      toast({
-        title: "LINE Not Configured",
-        description: "Please add LINE_CHANNEL_ACCESS_TOKEN to environment variables",
         variant: "destructive",
       });
       return;
@@ -125,16 +116,7 @@ export default function LineMessaging() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!hasLineToken && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>LINE not configured.</strong> Add <code className="bg-muted px-1 rounded">LINE_CHANNEL_ACCESS_TOKEN</code> to environment variables.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {hasLineToken && customersWithLine.length === 0 && (
+          {customersWithLine.length === 0 && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -179,18 +161,11 @@ export default function LineMessaging() {
                   <SelectValue placeholder="Choose tier..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bronze">
-                    <Badge variant="outline">Bronze</Badge> ({customersWithLine.filter(c => c.tier === 'bronze').length})
-                  </SelectItem>
-                  <SelectItem value="silver">
-                    <Badge variant="outline">Silver</Badge> ({customersWithLine.filter(c => c.tier === 'silver').length})
-                  </SelectItem>
-                  <SelectItem value="gold">
-                    <Badge variant="outline">Gold</Badge> ({customersWithLine.filter(c => c.tier === 'gold').length})
-                  </SelectItem>
-                  <SelectItem value="platinum">
-                    <Badge variant="outline">Platinum</Badge> ({customersWithLine.filter(c => c.tier === 'platinum').length})
-                  </SelectItem>
+                  {availableTiers.map((tier) => (
+                    <SelectItem key={tier} value={tier}>
+                      <Badge variant="outline" className="capitalize">{tier}</Badge> ({customersWithLine.filter(c => c.tier === tier).length})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -258,7 +233,7 @@ export default function LineMessaging() {
 
           <Button
             onClick={handleSend}
-            disabled={sendLineMessage.isPending || !message.trim() || !hasLineToken}
+            disabled={sendLineMessage.isPending || !message.trim()}
             className="w-full"
             size="lg"
             data-testid="button-send-line"

@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.11.6** - **Authentication & Logout Enhancement**: Added logout button to homepage (top-right corner) enabling users to logout from Replit OIDC sessions. Created password-based admin account setup (`admin@yens.com`) allowing administrators to authenticate without Replit login dependency. Users can now switch between OIDC and password-based authentication methods. Previous version (v3.11.5): Added prominent yellow borders to all site cards in Sites Manager for improved visual presentation and brand consistency.
+**Current Version: v3.12.0** - **LINE Messaging Integration**: Added LINE Official Account integration as a 4th messaging channel (alongside SMS, Email, App) for free unlimited customer communication in Thailand. Features dedicated LINE tab in Messages interface, supports broadcasting to all customers or tier-based targeting, 5,000 character limit (vs 160 for SMS), completely free messaging (vs ฿0.30+ per SMS). Implemented server/line.ts module with @line/bot-sdk, added /api/admin/messages/send-line endpoint, updated message logs to track LINE messages. Customers table already had lineUid field ready for integration. LINE is Thailand's #1 messaging app with 90%+ usage making it the ideal channel for Thai customer engagement. Previous version (v3.11.6): Added logout button and password-based admin authentication.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -27,7 +27,7 @@ Preferred communication style: Simple, everyday language.
 - **Database Schema:** Tables include `customers`, `transactions`, `promotions`, `products`, `users`, `sites`, `work_schedules`, `weekly_specials`, and `barista_performance`, managed with Drizzle ORM.
 - **Object Storage:** Replit App Storage (Google Cloud Storage backend) for product images. Secure upload via presigned URLs and ACL-based access control.
 - **User Management:** Admin-only CRUD for user accounts, role assignment, enable/disable functionality, and 2FA management.
-- **Messaging System:** Twilio for SMS, Resend for email (with planned SendGrid migration), multi-channel support, admin-managed templates, logging, and automated messages (e.g., birthday).
+- **Messaging System:** Multi-channel messaging with LINE (free, Thailand-focused), Twilio for SMS, Resend for email (with planned SendGrid migration). LINE Official Account integration via @line/bot-sdk enables free unlimited messages (5,000 chars) to Thai customers. Supports admin-managed templates, comprehensive message logging, broadcast/targeted messaging (all/tier/individual), and automated messages (e.g., birthday). Message logs track all channels (sms, email, line, app) with delivery status.
 - **Internationalization (i18n):** Full bilingual support (Thai/English) using `react-i18next`, with Thai as default and language persistence.
 - **Product Management:** CSV bulk import with photo URLs and category mapping, product codes/costs, secure image storage.
 - **Core Features:** Customer loyalty programs (points, tiers), transaction processing, customer management (self-registration, referrals, CSV import/export, duplicate detection), admin analytics (weekly overview, performance tracking), tier-based promotions, product menu, automated birthday messages, sites management (physical locations, mobile vans), Barista App functionalities (Clock In/Out, Work Schedules, Announcements).
@@ -46,7 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Development Tools:** Vite, TypeScript, PostCSS (Tailwind, Autoprefixer).
 - **Form & Validation:** React Hook Form, `@hookform/resolvers`, Zod.
 - **Session Management:** `connect-pg-simple`.
-- **Messaging Services:** Twilio, Resend, `otpauth` (for 2FA).
+- **Messaging Services:** LINE Official Account (@line/bot-sdk), Twilio, Resend, `otpauth` (for 2FA).
 - **Utilities:** `clsx`, `tailwind-merge`, `class-variance-authority`, `nanoid`, `bcrypt`.
 - **Data Visualization:** Recharts for analytics charts and graphs.
 - **Internationalization:** `react-i18next`.

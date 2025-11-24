@@ -3048,6 +3048,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message is required" });
       }
 
+      // Validate message length (LINE limit is 5,000 characters)
+      if (message.length > 5000) {
+        return res.status(400).json({ message: "Message exceeds LINE's 5,000 character limit" });
+      }
+
       // Get target customers based on recipient type
       let targetCustomers = [];
       
@@ -3072,11 +3077,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No customers found with LINE accounts" });
       }
 
-      // Send LINE messages to all target customers
-      const results = await Promise.all(
-        customersWithLine.map(async (customer) => {
-          if (!customer || !customer.lineUid) return null;
+      // Send LINE messages to all target customers with LINE UIDs
+      const results = [];
+      let skipped = 0;
 
+      for (const customer of customersWithLine) {
+        // Double-check customer has lineUid (defense in depth)
+        if (!customer || !customer.lineUid) {
+          console.warn(`Skipping customer ${customer?.id} - missing LINE UID`);
+          skipped++;
+          continue;
+        }
+
+        try {
           const lineResult = await sendLineMessage(customer.lineUid, message);
           
           await storage.createMessageLog({
@@ -3091,17 +3104,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
             errorMessage: lineResult.error || null,
           });
 
-          return { success: lineResult.success, channel: 'line', customer: customer.name };
-        })
-      );
+          results.push({ 
+            success: lineResult.success, 
+            channel: 'line', 
+            customer: customer.name 
+          });
+        } catch (error) {
+          console.error(`Error sending LINE message to ${customer.name}:`, error);
+          results.push({ 
+            success: false, 
+            channel: 'line', 
+            customer: customer.name 
+          });
+        }
+      }
 
-      const successful = results.filter(r => r && r.success).length;
-      const failed = results.filter(r => r && !r.success).length;
+      const successful = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
 
       res.json({
         success: true,
         sent: successful,
         failed: failed,
+        skipped: skipped,
         total: customersWithLine.length,
       });
     } catch (error) {
