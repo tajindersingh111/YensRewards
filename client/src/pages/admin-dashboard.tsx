@@ -273,17 +273,7 @@ export default function AdminDashboard() {
           <TabsContent value="customers" className="space-y-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold">{t('admin.customers.title')}</h2>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.open('/insights-old', '_blank')}
-                  data-testid="button-view-old-dashboard"
-                >
-                  View This Morning's Version
-                </Button>
-                <CustomerCSVImport showTrigger={true} />
-              </div>
+              <CustomerCSVImport showTrigger={true} />
             </div>
             
             {/* Customer Insights: Top Spenders & Birthdays */}
