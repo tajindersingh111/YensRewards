@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertCircle, Key, Shield } from "lucide-react";
+import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText } from "lucide-react";
 
 export default function AccountSettings() {
   const { t } = useTranslation();
@@ -150,12 +150,61 @@ export default function AccountSettings() {
     verify2FAMutation.mutate(twoFactorCode);
   };
 
+  const handleDownloadFile = (filename: string) => {
+    window.location.href = `/api/admin/downloads/${filename}`;
+    toast({
+      title: "Download Started",
+      description: "Your file download has started.",
+    });
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div>
         <h2 className="text-2xl font-bold">{t('admin.settings.account')}</h2>
         <p className="text-muted-foreground">{t('admin.settings.accountSubtitle')}</p>
       </div>
+
+      {/* Data Downloads Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="h-5 w-5" />
+            Data Downloads
+          </CardTitle>
+          <CardDescription>
+            Export and download customer data files for analysis or backup
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg hover-elevate">
+            <div className="flex items-center gap-3">
+              <FileText className="h-8 w-8 text-yellow-500" />
+              <div>
+                <p className="font-medium">Failed Customer Records</p>
+                <p className="text-sm text-muted-foreground">
+                  133 customer records that failed to import
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => handleDownloadFile('failed_customers_export.csv')}
+              size="sm"
+              data-testid="button-download-failed-customers"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download CSV
+            </Button>
+          </div>
+          
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Download the CSV file, fix any errors (phone numbers, email typos, etc.), and re-upload via the Customers tab → CSV Import feature.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
 
       {/* Password Section */}
       <Card>

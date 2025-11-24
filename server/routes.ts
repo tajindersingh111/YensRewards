@@ -3828,6 +3828,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === DATA DOWNLOADS ROUTE ===
+  
+  // Download export files (admin only)
+  app.get('/api/admin/downloads/:filename', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Security: only allow specific filenames
+      const allowedFiles = ['failed_customers_export.csv'];
+      if (!allowedFiles.includes(filename)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      const filePath = path.join(process.cwd(), 'public', 'downloads', filename);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      // Set headers for file download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
+      // Stream the file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      res.status(500).json({ message: "Failed to download file" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
