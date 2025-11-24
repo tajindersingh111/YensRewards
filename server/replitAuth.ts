@@ -210,14 +210,15 @@ export const isAdmin: RequestHandler = async (req, res, next) => {
   }
 
   try {
-    // In test mode only, trust the is_admin OIDC claim to avoid race conditions
-    // In deployments (staging/production), always check the database
+    // Always check the database for admin status to ensure consistency
+    // Trust the claim in test mode ONLY if it's true (optimization)
     let isUserAdmin: boolean;
     
     if (isTestMode && isAdminClaim) {
       console.log('✅ isAdmin - Access granted via is_admin claim (test mode)');
       isUserAdmin = true;
     } else {
+      // Check database (works for both OIDC and password-based auth)
       isUserAdmin = await storage.isUserAdmin(userId);
       console.log('🔒 isAdmin check result from DB for', userId, ':', isUserAdmin);
     }
