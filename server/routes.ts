@@ -2457,9 +2457,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          // Normalize tier (case insensitive)
+          // Normalize tier (case insensitive) with validation and mapping
           if (validData.tier?.trim()) {
-            normalized.tier = validData.tier.toLowerCase().trim();
+            const tierValue = validData.tier.toLowerCase().trim();
+            
+            // Valid tier values
+            const validTiers = ['bronze', 'silver', 'gold', 'platinum'];
+            
+            // Map common CSV tier names to valid tiers
+            const tierMappings: Record<string, string> = {
+              'member': 'bronze',
+              'new': 'bronze',
+              'regular': 'bronze',
+              'basic': 'bronze',
+              'standard': 'bronze',
+              'vip': 'gold',
+              'premium': 'platinum',
+            };
+            
+            if (validTiers.includes(tierValue)) {
+              normalized.tier = tierValue;
+            } else if (tierMappings[tierValue]) {
+              normalized.tier = tierMappings[tierValue];
+            } else if (/^0[0-9]{9,}$/.test(tierValue)) {
+              // This looks like a phone number - data corruption, use default
+              console.warn(`Tier value looks like phone number, defaulting to bronze: ${tierValue}`);
+              normalized.tier = 'bronze';
+            } else {
+              // Unknown tier value - default to bronze
+              console.warn(`Unknown tier value "${tierValue}", defaulting to bronze`);
+              normalized.tier = 'bronze';
+            }
           }
 
           // Parse dates (DD/MM/YYYY format to UTC Date)

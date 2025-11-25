@@ -19,6 +19,39 @@ import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@shared/schema";
 import { insertCustomerSchema } from "@shared/schema";
 
+function safeDateToInput(dateValue: string | Date | null | undefined): string {
+  if (!dateValue) return "";
+  
+  try {
+    let date: Date;
+    
+    if (dateValue instanceof Date) {
+      date = dateValue;
+    } else if (typeof dateValue === 'string') {
+      if (dateValue.includes('/')) {
+        const parts = dateValue.split(/[\/\s]/);
+        if (parts.length >= 3) {
+          const day = parseInt(parts[0]);
+          const month = parseInt(parts[1]);
+          const year = parseInt(parts[2]);
+          date = new Date(Date.UTC(year, month - 1, day));
+        } else {
+          return "";
+        }
+      } else {
+        date = new Date(dateValue);
+      }
+    } else {
+      return "";
+    }
+    
+    if (isNaN(date.getTime())) return "";
+    return date.toISOString().split('T')[0];
+  } catch {
+    return "";
+  }
+}
+
 interface CustomerEditDialogProps {
   customer: Customer | null;
   open: boolean;
@@ -55,18 +88,22 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
   // Populate form when customer changes or reset for create
   useEffect(() => {
     if (customer) {
+      const validTiers = ['bronze', 'silver', 'gold', 'platinum'];
+      const customerTier = customer.tier?.toLowerCase() || 'bronze';
+      const normalizedTier = validTiers.includes(customerTier) ? customerTier : 'bronze';
+      
       setFormData({
         name: customer.name || "",
         phone: customer.phone || "",
         email: customer.email || "",
         birthday: customer.birthday || "",
-        tier: (customer.tier || "bronze") as "bronze" | "silver" | "gold" | "platinum",
+        tier: normalizedTier as "bronze" | "silver" | "gold" | "platinum",
         points: customer.points || 0,
         totalSpent: customer.totalSpent || "0",
         gender: customer.gender || "",
         registerBranch: customer.registerBranch || "",
-        registerDate: customer.registerDate ? new Date(customer.registerDate).toISOString().split('T')[0] : "",
-        lastUse: customer.lastUse ? new Date(customer.lastUse).toISOString().split('T')[0] : "",
+        registerDate: safeDateToInput(customer.registerDate),
+        lastUse: safeDateToInput(customer.lastUse),
         tag: customer.tag || "",
         lineUid: customer.lineUid || "",
       });
@@ -171,8 +208,8 @@ export default function CustomerEditDialog({ customer, open, onOpenChange }: Cus
               </Avatar>
               <div>
                 <h3 className="text-xl font-bold text-foreground">{customer.name}</h3>
-                <Badge className={tierColors[customer.tier as keyof typeof tierColors]}>
-                  {customer.tier.charAt(0).toUpperCase() + customer.tier.slice(1)}
+                <Badge className={tierColors[formData.tier] || tierColors.bronze}>
+                  {formData.tier.charAt(0).toUpperCase() + formData.tier.slice(1)}
                 </Badge>
               </div>
             </div>

@@ -346,7 +346,10 @@ export default function AdminDashboard() {
         <CustomerEditDialog
           customer={editingCustomer}
           open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
+          onOpenChange={(open) => {
+            setIsEditDialogOpen(open);
+            if (!open) setEditingCustomer(null);
+          }}
         />
       )}
 
@@ -355,7 +358,10 @@ export default function AdminDashboard() {
         <CustomerMessageDialog
           customer={messagingCustomer}
           open={isMessageDialogOpen}
-          onOpenChange={setIsMessageDialogOpen}
+          onOpenChange={(open) => {
+            setIsMessageDialogOpen(open);
+            if (!open) setMessagingCustomer(null);
+          }}
         />
       )}
 
