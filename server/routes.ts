@@ -3248,6 +3248,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LINE Webhook endpoint (public - called by LINE Platform)
   app.post('/api/line/webhook', async (req, res) => {
     try {
+      console.log('📥 LINE webhook received');
+      
       // Get signature from header
       const signature = req.headers['x-line-signature'] as string;
       
@@ -3256,18 +3258,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Missing signature' });
       }
 
-      // Verify signature using raw body
-      const rawBody = (req as any).rawBody;
+      // Get raw body - try multiple sources
+      let rawBody = (req as any).rawBody;
+      
+      // Fallback: if rawBody not captured, use stringified body
+      if (!rawBody && req.body) {
+        rawBody = JSON.stringify(req.body);
+        console.log('📝 Using stringified body as fallback');
+      }
+      
       if (!rawBody) {
         console.error('❌ LINE webhook: Raw body not captured');
         return res.status(500).json({ message: 'Raw body not available' });
       }
 
+      console.log(`📝 Raw body length: ${rawBody.length}, Signature: ${signature.substring(0, 20)}...`);
+
       if (!verifyLineSignature(rawBody, signature)) {
         console.warn('⚠️ LINE webhook: Invalid signature');
+        console.log('📝 Body preview:', rawBody.substring(0, 100));
         return res.status(401).json({ message: 'Invalid signature' });
       }
 
+      console.log('✅ LINE signature verified');
       const body = req.body as LineWebhookBody;
       
       // Handle verification request (empty events array)

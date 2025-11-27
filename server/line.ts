@@ -102,7 +102,16 @@ export function verifyLineSignature(body: string, signature: string): boolean {
     return false;
   }
   
-  return validateSignature(body, channelSecret, signature);
+  console.log(`🔐 Verifying signature with secret length: ${channelSecret.length}`);
+  
+  try {
+    const isValid = validateSignature(body, channelSecret, signature);
+    console.log(`🔐 Signature verification result: ${isValid}`);
+    return isValid;
+  } catch (error) {
+    console.error('❌ Signature verification error:', error);
+    return false;
+  }
 }
 
 // Send reply message (uses replyToken from webhook event)
