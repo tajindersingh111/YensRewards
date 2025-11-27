@@ -2659,6 +2659,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get templates by channel (email or line)
+  app.get('/api/admin/message-templates/channel/:channel', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getMessageTemplatesByChannel(req.params.channel);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates by channel:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  // Get template by key
+  app.get('/api/admin/message-templates/key/:key', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const template = await storage.getMessageTemplateByKey(req.params.key);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching template by key:", error);
+      res.status(500).json({ message: "Failed to fetch template" });
+    }
+  });
+
   // Create message template
   app.post('/api/admin/message-templates', isAuthenticated, isAdmin, async (req, res) => {
     try {
