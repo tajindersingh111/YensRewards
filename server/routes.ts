@@ -79,6 +79,12 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint - responds immediately without database check
+  // This is used by deployment health checks
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Serve public product images from object storage
   app.get("/products/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;

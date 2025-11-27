@@ -24,25 +24,47 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  
+  // Validate required environment variables
+  if (!process.env.DATABASE_URL) {
+    console.error('❌ DATABASE_URL is not set - session store will fail');
+    throw new Error('DATABASE_URL is required for session store');
+  }
+  
+  if (!process.env.SESSION_SECRET) {
+    console.error('❌ SESSION_SECRET is not set - session will fail');
+    throw new Error('SESSION_SECRET is required for session management');
+  }
+  
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
+    errorLog: (err) => {
+      console.error('❌ Session store error:', err);
+    },
   });
   
-  console.log('🍪 Session config - Using sameSite: none (required for cross-site OIDC redirect)');
+  // Handle session store connection errors
+  sessionStore.on('error', (err) => {
+    console.error('❌ Session store connection error:', err);
+  });
+  
+  // Determine if we're in production (Replit deployments always use HTTPS)
+  const isProduction = process.env.REPLIT_DEPLOYMENT !== undefined;
+  console.log(`🍪 Session config - isProduction: ${isProduction}, Using sameSite: ${isProduction ? 'none' : 'lax'}`);
   
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true, // Required for sameSite: none
-      sameSite: 'none', // Required for cross-site OIDC callback redirect
+      secure: isProduction, // Only require secure in production
+      sameSite: isProduction ? 'none' : 'lax', // Use 'none' only in production for OIDC
       maxAge: sessionTtl,
     },
   });
