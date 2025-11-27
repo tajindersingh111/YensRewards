@@ -22,6 +22,7 @@ import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
 import WeeklySpecialsManager from "@/pages/admin/WeeklySpecialsManager";
 import AccountSettings from "@/components/AccountSettings";
+import MessageTemplates from "@/components/MessageTemplates";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -337,6 +338,7 @@ export default function AdminDashboard() {
 
           <TabsContent value="settings" className="space-y-6">
             <AccountSettings />
+            <MessageTemplates />
           </TabsContent>
         </Tabs>
       </main>
