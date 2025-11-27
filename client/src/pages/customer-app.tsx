@@ -19,7 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare } from "lucide-react";
+import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink } from "lucide-react";
+import { SiLine } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
@@ -558,6 +559,37 @@ export default function CustomerApp() {
                 )}
               </div>
             </div>
+            
+            {/* Connect LINE Card */}
+            <Card className="p-4 border-2 border-[#06C755]/30 bg-[#06C755]/5" data-testid="card-connect-line">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-[#06C755] flex items-center justify-center">
+                  <SiLine className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">{t('customer.connectLine')}</h3>
+                  <p className="text-xs text-muted-foreground">{t('customer.connectLineDesc')}</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Button
+                  className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
+                  onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
+                  data-testid="button-add-line"
+                >
+                  <SiLine className="w-5 h-5 mr-2" />
+                  {t('customer.addLineFriend')}
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-2">{t('customer.lineInstructions')}</p>
+                  <div className="inline-block px-3 py-1 bg-card border rounded-md">
+                    <span className="text-sm font-mono font-medium text-foreground">@752afsdq</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+            
             {transactionsLoading ? (
               <Card className="p-6 text-center">
                 <p className="text-muted-foreground">{t('common.loading')}</p>
