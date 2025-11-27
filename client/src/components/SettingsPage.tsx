@@ -152,31 +152,31 @@ export default function SettingsPage() {
   const handleDownloadFile = (filename: string) => {
     window.location.href = `/api/admin/downloads/${filename}`;
     toast({
-      title: "Download Started",
-      description: "Your file download has started.",
+      title: t('admin.settings.downloadStarted'),
+      description: t('admin.settings.downloadStartedDesc'),
     });
   };
 
   return (
     <div className="space-y-6 p-4">
       <div>
-        <h2 className="text-2xl font-bold">{t('admin.settings.title') || 'Settings'}</h2>
-        <p className="text-muted-foreground">Manage templates, security, and data exports</p>
+        <h2 className="text-2xl font-bold">{t('admin.settings.title')}</h2>
+        <p className="text-muted-foreground">{t('admin.settings.pageDescription')}</p>
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="templates" className="flex items-center gap-2" data-testid="tab-templates">
             <MessageSquare className="h-4 w-4" />
-            Templates
+            {t('admin.settings.tabTemplates')}
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2" data-testid="tab-security">
             <Shield className="h-4 w-4" />
-            Security
+            {t('admin.settings.tabSecurity')}
           </TabsTrigger>
           <TabsTrigger value="data" className="flex items-center gap-2" data-testid="tab-data">
             <Download className="h-4 w-4" />
-            Data
+            {t('admin.settings.tabData')}
           </TabsTrigger>
         </TabsList>
 
@@ -348,10 +348,10 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Download className="h-5 w-5" />
-                Data Downloads
+                {t('admin.settings.dataDownloads')}
               </CardTitle>
               <CardDescription>
-                Export and download customer data files for analysis or backup
+                {t('admin.settings.dataDownloadsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -359,9 +359,9 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3">
                   <FileText className="h-8 w-8 text-yellow-500" />
                   <div>
-                    <p className="font-medium">Failed Customer Records</p>
+                    <p className="font-medium">{t('admin.settings.failedRecords')}</p>
                     <p className="text-sm text-muted-foreground">
-                      Customer records that failed to import
+                      {t('admin.settings.failedRecordsDesc')}
                     </p>
                   </div>
                 </div>
@@ -371,14 +371,14 @@ export default function SettingsPage() {
                   data-testid="button-download-failed-customers"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Download CSV
+                  {t('admin.settings.downloadCSV')}
                 </Button>
               </div>
               
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Download the CSV file, fix any errors (phone numbers, email typos, etc.), and re-upload via the Customers tab.
+                  {t('admin.settings.downloadTip')}
                 </AlertDescription>
               </Alert>
             </CardContent>

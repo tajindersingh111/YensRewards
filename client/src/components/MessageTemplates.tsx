@@ -50,15 +50,15 @@ export default function MessageTemplates() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
       toast({
-        title: t('messages.success'),
-        description: t('messages.templateCreated'),
+        title: t('admin.messages.success'),
+        description: t('admin.messages.templateCreated'),
       });
       resetForm();
     },
     onError: (error: any) => {
       toast({
-        title: t('messages.error'),
-        description: error.message || t('messages.createFailed'),
+        title: t('admin.messages.error'),
+        description: error.message || t('admin.messages.createFailed'),
         variant: "destructive",
       });
     },
@@ -71,15 +71,15 @@ export default function MessageTemplates() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
       toast({
-        title: t('messages.success'),
-        description: t('messages.templateUpdated'),
+        title: t('admin.messages.success'),
+        description: t('admin.messages.templateUpdated'),
       });
       resetForm();
     },
     onError: (error: any) => {
       toast({
-        title: t('messages.error'),
-        description: error.message || t('messages.updateFailed'),
+        title: t('admin.messages.error'),
+        description: error.message || t('admin.messages.updateFailed'),
         variant: "destructive",
       });
     },
@@ -92,14 +92,14 @@ export default function MessageTemplates() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
       toast({
-        title: t('messages.success'),
-        description: t('messages.templateDeleted'),
+        title: t('admin.messages.success'),
+        description: t('admin.messages.templateDeleted'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: t('messages.error'),
-        description: error.message || t('messages.deleteFailed'),
+        title: t('admin.messages.error'),
+        description: error.message || t('admin.messages.deleteFailed'),
         variant: "destructive",
       });
     },
@@ -118,7 +118,7 @@ export default function MessageTemplates() {
     },
     onError: (error: any) => {
       toast({
-        title: t('messages.error'),
+        title: t('admin.messages.error'),
         description: error.message || "Failed to create default templates",
         variant: "destructive",
       });
@@ -160,7 +160,7 @@ export default function MessageTemplates() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(t('messages.deleteConfirm'))) {
+    if (confirm(t('admin.messages.deleteConfirm'))) {
       deleteTemplateMutation.mutate(id);
     }
   };
@@ -181,8 +181,8 @@ export default function MessageTemplates() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">{t('messages.templates')}</h2>
-          <p className="text-muted-foreground">{t('messages.manageTemplates')}</p>
+          <h2 className="text-2xl font-bold">{t('admin.messages.templates')}</h2>
+          <p className="text-muted-foreground">{t('admin.messages.manageTemplates')}</p>
         </div>
         <div className="flex gap-2">
           {templates.length === 0 && !isCreating && (
@@ -200,7 +200,7 @@ export default function MessageTemplates() {
           {!isCreating && (
             <Button onClick={() => setIsCreating(true)} data-testid="button-create-template">
               <Plus className="w-4 h-4 mr-2" />
-              {t('messages.addTemplate')}
+              {t('admin.messages.addTemplate')}
             </Button>
           )}
         </div>
@@ -209,9 +209,9 @@ export default function MessageTemplates() {
       {isCreating && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingTemplate ? t('messages.editTemplate') : t('messages.addNewTemplate')}</CardTitle>
+            <CardTitle>{editingTemplate ? t('admin.messages.editTemplate') : t('admin.messages.addNewTemplate')}</CardTitle>
             <CardDescription>
-              {t('messages.placeholdersDesc')}
+              {t('admin.messages.placeholdersDesc')}
             </CardDescription>
           </CardHeader>
           <Form {...form}>
@@ -223,10 +223,10 @@ export default function MessageTemplates() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('messages.templateName')}</FormLabel>
+                        <FormLabel>{t('admin.messages.templateName')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={t('messages.templateName')}
+                            placeholder={t('admin.messages.templateName')}
                             data-testid="input-template-name"
                             {...field}
                           />
@@ -240,7 +240,7 @@ export default function MessageTemplates() {
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('messages.templateType')}</FormLabel>
+                        <FormLabel>{t('admin.messages.templateType')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-template-type">
@@ -248,9 +248,9 @@ export default function MessageTemplates() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="birthday">{t('messages.birthday')}</SelectItem>
-                            <SelectItem value="promotion">{t('messages.promotion')}</SelectItem>
-                            <SelectItem value="reminder">{t('messages.reminder')}</SelectItem>
+                            <SelectItem value="birthday">{t('admin.messages.birthday')}</SelectItem>
+                            <SelectItem value="promotion">{t('admin.messages.promotion')}</SelectItem>
+                            <SelectItem value="reminder">{t('admin.messages.reminder')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -262,7 +262,7 @@ export default function MessageTemplates() {
                     name="channel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('messages.channel')}</FormLabel>
+                        <FormLabel>{t('admin.messages.channel')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-template-channel">
@@ -270,10 +270,10 @@ export default function MessageTemplates() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="sms">{t('messages.sms')}</SelectItem>
-                            <SelectItem value="email">{t('messages.email')}</SelectItem>
+                            <SelectItem value="sms">{t('admin.messages.sms')}</SelectItem>
+                            <SelectItem value="email">{t('admin.messages.email')}</SelectItem>
                             <SelectItem value="line">LINE</SelectItem>
-                            <SelectItem value="both">{t('messages.sms')} + {t('messages.email')}</SelectItem>
+                            <SelectItem value="both">{t('admin.messages.sms')} + {t('admin.messages.email')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -288,10 +288,10 @@ export default function MessageTemplates() {
                     name="subject"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('messages.templateSubject')}</FormLabel>
+                        <FormLabel>{t('admin.messages.templateSubject')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={t('messages.templateSubject')}
+                            placeholder={t('admin.messages.templateSubject')}
                             data-testid="input-template-subject"
                             {...field}
                             value={field.value || ""}
@@ -308,10 +308,10 @@ export default function MessageTemplates() {
                   name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('messages.templateMessage')}</FormLabel>
+                      <FormLabel>{t('admin.messages.templateMessage')}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder={t('messages.placeholdersDesc')}
+                          placeholder={t('admin.messages.placeholdersDesc')}
                           rows={4}
                           data-testid="input-template-message"
                           {...field}
@@ -336,7 +336,7 @@ export default function MessageTemplates() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>
-                          {t('messages.setDefault')}
+                          {t('admin.messages.setDefault')}
                         </FormLabel>
                       </div>
                     </FormItem>
@@ -346,14 +346,14 @@ export default function MessageTemplates() {
                 <div className="border-t pt-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4" />
-                    <h4 className="font-semibold">{t('csv.preview')}</h4>
+                    <h4 className="font-semibold">{t('admin.csv.preview')}</h4>
                   </div>
                   <div className="bg-muted p-4 rounded-lg">
                     <p className="text-sm whitespace-pre-wrap">{getPreviewMessage()}</p>
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <Input
-                      placeholder={t('messages.customerName')}
+                      placeholder={t('admin.messages.customerName')}
                       value={previewData.name}
                       onChange={(e) => setPreviewData({ ...previewData, name: e.target.value })}
                       className="text-xs"
@@ -373,7 +373,7 @@ export default function MessageTemplates() {
                       </SelectContent>
                     </Select>
                     <Input
-                      placeholder={t('messages.customerPoints')}
+                      placeholder={t('admin.messages.customerPoints')}
                       value={previewData.points}
                       onChange={(e) => setPreviewData({ ...previewData, points: e.target.value })}
                       className="text-xs"
@@ -388,7 +388,7 @@ export default function MessageTemplates() {
                   disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending}
                   data-testid="button-save-template"
                 >
-                  {editingTemplate ? t('messages.update') : t('messages.create')}
+                  {editingTemplate ? t('admin.messages.update') : t('admin.messages.create')}
                 </Button>
                 <Button
                   type="button"
@@ -396,7 +396,7 @@ export default function MessageTemplates() {
                   onClick={resetForm}
                   data-testid="button-cancel-template"
                 >
-                  {t('messages.cancel')}
+                  {t('admin.messages.cancel')}
                 </Button>
               </CardFooter>
             </form>
@@ -415,7 +415,7 @@ export default function MessageTemplates() {
                     {template.isDefault && (
                       <Badge variant="default" className="bg-[#FCD34D] text-gray-900">
                         <Star className="w-3 h-3 mr-1" />
-                        {t('messages.defaultTemplate')}
+                        {t('admin.messages.defaultTemplate')}
                       </Badge>
                     )}
                   </CardTitle>
@@ -449,12 +449,12 @@ export default function MessageTemplates() {
             <CardContent className="space-y-2">
               {template.subject && (
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">{t('messages.templateSubject')}:</p>
+                  <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateSubject')}:</p>
                   <p className="text-sm">{template.subject}</p>
                 </div>
               )}
               <div>
-                {template.subject && <p className="text-xs font-semibold text-muted-foreground">{t('messages.templateMessage')}:</p>}
+                {template.subject && <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateMessage')}:</p>}
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {template.message}
                 </p>
@@ -467,10 +467,10 @@ export default function MessageTemplates() {
       {templates.length === 0 && !isCreating && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">{t('messages.noTemplates')}</p>
+            <p className="text-muted-foreground mb-4">{t('admin.messages.noTemplates')}</p>
             <Button onClick={() => setIsCreating(true)} data-testid="button-create-first-template">
               <Plus className="w-4 h-4 mr-2" />
-              {t('messages.addTemplate')}
+              {t('admin.messages.addTemplate')}
             </Button>
           </CardContent>
         </Card>
