@@ -22,6 +22,7 @@ import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
 import WeeklySpecialsManager from "@/pages/admin/WeeklySpecialsManager";
 import SettingsPage from "@/components/SettingsPage";
+import MessageTemplates from "@/components/MessageTemplates";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -310,8 +311,11 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="promotions" className="space-y-6">
-            <div className="max-w-2xl">
-              <PromotionCreator onSend={handleSendPromotion} />
+            <div className="grid gap-6">
+              <div className="max-w-2xl">
+                <PromotionCreator onSend={handleSendPromotion} />
+              </div>
+              <MessageTemplates />
             </div>
           </TabsContent>
 

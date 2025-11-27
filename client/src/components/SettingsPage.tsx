@@ -12,8 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, MessageSquare, Settings, ChevronDown, ChevronUp } from "lucide-react";
-import MessageTemplates from "./MessageTemplates";
+import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -164,12 +163,8 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">{t('admin.settings.pageDescription')}</p>
       </div>
 
-      <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="templates" className="flex items-center gap-2" data-testid="tab-templates">
-            <MessageSquare className="h-4 w-4" />
-            {t('admin.settings.tabTemplates')}
-          </TabsTrigger>
+      <Tabs defaultValue="security" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="security" className="flex items-center gap-2" data-testid="tab-security">
             <Shield className="h-4 w-4" />
             {t('admin.settings.tabSecurity')}
@@ -179,10 +174,6 @@ export default function SettingsPage() {
             {t('admin.settings.tabData')}
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="templates">
-          <MessageTemplates />
-        </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
           <Card>
