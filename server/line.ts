@@ -1,5 +1,6 @@
 import { messagingApi, validateSignature } from '@line/bot-sdk';
 import type { webhook } from '@line/bot-sdk';
+import { FlexMessage, generateLineFlexTemplate, LineTemplateType } from './line-flex-templates';
 const { MessagingApiClient } = messagingApi;
 
 // Type alias for webhook events
@@ -147,6 +148,165 @@ export async function replyLineMessage(
 export interface LineWebhookBody {
   destination: string;
   events: WebhookEvent[];
+}
+
+// Send Flex Message to a specific user
+export async function sendLineFlexMessage(
+  lineUserId: string,
+  flexMessage: FlexMessage
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const client = await getLineClient();
+
+    console.log(`📱 Sending LINE Flex message to ${lineUserId}`);
+    
+    await client.pushMessage({
+      to: lineUserId,
+      messages: [flexMessage as any]
+    });
+
+    console.log(`✅ LINE Flex message sent successfully`);
+    
+    return {
+      success: true,
+      messageId: lineUserId,
+    };
+  } catch (error: any) {
+    console.error('❌ Error sending LINE Flex message:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send LINE Flex message',
+    };
+  }
+}
+
+// Send templated Flex Message
+export async function sendLineTemplatedMessage(
+  lineUserId: string,
+  templateType: LineTemplateType,
+  params: {
+    customerName?: string;
+    points?: number;
+    pointsEarned?: number;
+    totalPoints?: number;
+    transactionAmount?: number;
+    reward?: string;
+    promoTitle?: string;
+    promoDescription?: string;
+    promoCode?: string;
+    validUntil?: string;
+    imageUrl?: string;
+    currentTier?: string;
+    pointsToNextTier?: number;
+    nextTier?: string;
+    phone?: string;
+    title?: string;
+    message?: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+    emoji?: string;
+  }
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const flexMessage = generateLineFlexTemplate(templateType, params);
+    return await sendLineFlexMessage(lineUserId, flexMessage);
+  } catch (error: any) {
+    console.error('❌ Error sending LINE templated message:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send LINE templated message',
+    };
+  }
+}
+
+// Reply with Flex Message
+export async function replyLineFlexMessage(
+  replyToken: string,
+  flexMessage: FlexMessage
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = await getLineClient();
+    
+    await client.replyMessage({
+      replyToken,
+      messages: [flexMessage as any]
+    });
+    
+    console.log(`✅ LINE Flex reply sent successfully`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ Error sending LINE Flex reply:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send LINE Flex reply',
+    };
+  }
+}
+
+// Reply with templated Flex Message
+export async function replyLineTemplatedMessage(
+  replyToken: string,
+  templateType: LineTemplateType,
+  params: {
+    customerName?: string;
+    points?: number;
+    pointsEarned?: number;
+    totalPoints?: number;
+    transactionAmount?: number;
+    reward?: string;
+    promoTitle?: string;
+    promoDescription?: string;
+    promoCode?: string;
+    validUntil?: string;
+    imageUrl?: string;
+    currentTier?: string;
+    pointsToNextTier?: number;
+    nextTier?: string;
+    phone?: string;
+    title?: string;
+    message?: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+    emoji?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const flexMessage = generateLineFlexTemplate(templateType, params);
+    return await replyLineFlexMessage(replyToken, flexMessage);
+  } catch (error: any) {
+    console.error('❌ Error sending LINE templated reply:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send LINE templated reply',
+    };
+  }
+}
+
+// Broadcast Flex Message to all followers
+export async function broadcastLineFlexMessage(
+  flexMessage: FlexMessage
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = await getLineClient();
+
+    console.log(`📢 Broadcasting LINE Flex message`);
+    
+    await client.broadcast({
+      messages: [flexMessage as any]
+    });
+
+    console.log(`✅ LINE Flex broadcast sent successfully`);
+    
+    return {
+      success: true,
+    };
+  } catch (error: any) {
+    console.error('❌ Error broadcasting LINE Flex message:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to broadcast LINE Flex message',
+    };
+  }
 }
 
 export { WebhookEvent };

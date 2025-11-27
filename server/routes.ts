@@ -7,7 +7,7 @@ import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
-import { sendLineMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent } from "./line";
+import { sendLineMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -3316,19 +3316,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (existingByLine) {
               console.log(`✅ Customer already linked: ${existingByLine.name}`);
               
-              // Send welcome back message
+              // Send beautiful welcome back Flex Message
               if ('replyToken' in event && event.replyToken) {
-                await replyLineMessage(
+                await replyLineTemplatedMessage(
                   event.replyToken,
-                  `ยินดีต้อนรับกลับมา ${existingByLine.name}! 🍦\n\nคะแนนสะสมของคุณ: ${existingByLine.points} คะแนน\nระดับสมาชิก: ${existingByLine.tier.toUpperCase()}\n\nWelcome back! Your points: ${existingByLine.points}`
+                  'welcome',
+                  {
+                    customerName: existingByLine.name,
+                    points: existingByLine.points
+                  }
                 );
               }
             } else {
-              // Send instructions to link account
+              // Send instructions to link account (plain text for simplicity)
               if ('replyToken' in event && event.replyToken) {
                 await replyLineMessage(
                   event.replyToken,
-                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nกรุณาส่งเบอร์โทรศัพท์ของคุณเพื่อเชื่อมต่อบัญชีสมาชิก\n\n🍦 Hello! Welcome to Yens Thai Ice Cream!\n\nPlease send your phone number to link your loyalty account.`
+                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nกรุณาส่งเบอร์โทรศัพท์ของคุณเพื่อเชื่อมต่อบัญชีสมาชิก\n\n🍦 Hello! Welcome to Yens Thai Ice Cream!\n\nPlease send your phone number to link your loyalty account.\n\nตัวอย่าง/Example: 0812345678`
                 );
               }
             }
@@ -3380,11 +3384,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
                   console.log(`✅ Linked ${customerByPhone.name} to LINE: ${lineUserId}`);
 
-                  // Send success message
+                  // Send beautiful Flex Message for account linked
                   if ('replyToken' in event && event.replyToken) {
-                    await replyLineMessage(
+                    await replyLineTemplatedMessage(
                       event.replyToken,
-                      `🎉 เชื่อมต่อสำเร็จ!\n\nสวัสดี ${customerByPhone.name}!\nคะแนนสะสม: ${customerByPhone.points} คะแนน\nระดับสมาชิก: ${customerByPhone.tier.toUpperCase()}\n\n🎉 Successfully linked!\n\nHello ${customerByPhone.name}!\nYour points: ${customerByPhone.points}\nTier: ${customerByPhone.tier.toUpperCase()}`
+                      'account_linked',
+                      {
+                        customerName: customerByPhone.name,
+                        phone: phone
+                      }
                     );
                   }
                 }

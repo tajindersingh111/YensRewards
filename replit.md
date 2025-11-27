@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.13.5** - **Customer App LINE Connect**: Added "Connect with LINE" card in Customer App Profile tab. Green LINE button opens add friend URL for @752afsdq. Customers can easily add Yens Thailand LINE Official Account, then send their phone number to link accounts. Full bilingual (Thai/English) support. Previous version (v3.13.4): LINE webhook verified and operational.
+**Current Version: v3.14.0** - **Rich Messaging Templates**: Added beautiful HTML email templates and LINE Flex Messages with Yens branding. Email templates include: LINE invite, birthday, welcome, promotions, points update. LINE Flex templates include: welcome, points earned, birthday, promotion, tier status, account linked. LINE webhook now sends visually rich Flex Messages when customers link accounts. Templates use Yens yellow (#FCD34D) and blue (#1E40AF) color scheme. Previous version (v3.13.5): Customer App LINE Connect feature.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

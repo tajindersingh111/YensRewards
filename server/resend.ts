@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { generateEmailTemplate, EmailTemplateType } from './email-templates';
 
 let connectionSettings: any;
 
@@ -69,6 +70,88 @@ export async function sendEmail(
     return {
       success: false,
       error: error.message || 'Failed to send email',
+    };
+  }
+}
+
+// Send email with HTML template
+export async function sendTemplatedEmail(
+  to: string,
+  subject: string,
+  templateType: EmailTemplateType,
+  params: {
+    customerName: string;
+    message?: string;
+    points?: number;
+    pointsEarned?: number;
+    promoTitle?: string;
+    promoDescription?: string;
+    promoCode?: string;
+    validUntil?: string;
+    rewardDetails?: string;
+    transactionDetails?: string;
+    ctaText?: string;
+    ctaUrl?: string;
+  }
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+
+    console.log(`📧 Sending templated email (${templateType}) to ${to}`);
+
+    const htmlContent = generateEmailTemplate(templateType, { ...params, subject });
+
+    const result = await client.emails.send({
+      from: fromEmail,
+      to: [to],
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`✅ Templated email sent successfully. ID: ${result.data?.id}`);
+
+    return {
+      success: true,
+      messageId: result.data?.id || undefined,
+    };
+  } catch (error: any) {
+    console.error('❌ Error sending templated email:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send templated email',
+    };
+  }
+}
+
+// Send HTML email directly
+export async function sendHtmlEmail(
+  to: string,
+  subject: string,
+  html: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+
+    console.log(`📧 Sending HTML email to ${to} with subject: ${subject}`);
+
+    const result = await client.emails.send({
+      from: fromEmail,
+      to: [to],
+      subject: subject,
+      html: html,
+    });
+
+    console.log(`✅ HTML email sent successfully. ID: ${result.data?.id}`);
+
+    return {
+      success: true,
+      messageId: result.data?.id || undefined,
+    };
+  } catch (error: any) {
+    console.error('❌ Error sending HTML email:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send HTML email',
     };
   }
 }
