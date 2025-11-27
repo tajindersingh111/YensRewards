@@ -159,11 +159,14 @@ export interface IStorage {
   // Message Template methods
   getAllMessageTemplates(): Promise<MessageTemplate[]>;
   getMessageTemplate(id: string): Promise<MessageTemplate | undefined>;
+  getMessageTemplateByKey(templateKey: string): Promise<MessageTemplate | undefined>;
   getMessageTemplatesByType(type: string): Promise<MessageTemplate[]>;
+  getMessageTemplatesByChannel(channel: string): Promise<MessageTemplate[]>;
   getDefaultMessageTemplate(type: string): Promise<MessageTemplate | undefined>;
   createMessageTemplate(template: InsertMessageTemplate): Promise<MessageTemplate>;
   updateMessageTemplate(id: string, template: Partial<MessageTemplate>): Promise<MessageTemplate | undefined>;
   deleteMessageTemplate(id: string): Promise<void>;
+  seedDefaultTemplates(): Promise<void>;
   
   // Message Log methods
   createMessageLog(log: InsertMessageLog): Promise<MessageLog>;
@@ -1211,6 +1214,159 @@ export class DbStorage implements IStorage {
 
   async deleteMessageTemplate(id: string): Promise<void> {
     await db.delete(messageTemplates).where(eq(messageTemplates.id, id));
+  }
+
+  async getMessageTemplateByKey(templateKey: string): Promise<MessageTemplate | undefined> {
+    const result = await db
+      .select()
+      .from(messageTemplates)
+      .where(eq(messageTemplates.templateKey, templateKey));
+    return result[0];
+  }
+
+  async getMessageTemplatesByChannel(channel: string): Promise<MessageTemplate[]> {
+    return await db
+      .select()
+      .from(messageTemplates)
+      .where(eq(messageTemplates.channel, channel))
+      .orderBy(asc(messageTemplates.name));
+  }
+
+  async seedDefaultTemplates(): Promise<void> {
+    const existingTemplates = await this.getAllMessageTemplates();
+    if (existingTemplates.length > 0) {
+      console.log('Templates already exist, skipping seed');
+      return;
+    }
+
+    const defaultTemplates = [
+      {
+        templateKey: 'email_line_invite',
+        name: 'เชิญเข้าร่วม LINE',
+        type: 'line_invite',
+        channel: 'email',
+        subject: 'เพิ่มเพื่อน Yens Thai Ice Cream ใน LINE',
+        message: 'สวัสดีคุณ {{customerName}} เพิ่มเพื่อน LINE เพื่อรับข้อมูลโปรโมชันและสิทธิพิเศษ',
+        variables: ['customerName', 'points', 'tier'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'email_birthday',
+        name: 'สุขสันต์วันเกิด',
+        type: 'birthday',
+        channel: 'email',
+        subject: 'สุขสันต์วันเกิด จาก Yens Thai Ice Cream',
+        message: 'สุขสันต์วันเกิดคุณ {{customerName}} รับของขวัญพิเศษจากเรา',
+        variables: ['customerName', 'points', 'tier'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'email_welcome',
+        name: 'ยินดีต้อนรับสมาชิกใหม่',
+        type: 'welcome',
+        channel: 'email',
+        subject: 'ยินดีต้อนรับสู่ Yens Thai Ice Cream',
+        message: 'ยินดีต้อนรับคุณ {{customerName}} สู่ครอบครัว Yens Thai Ice Cream',
+        variables: ['customerName', 'points', 'tier'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'email_promotion',
+        name: 'โปรโมชันพิเศษ',
+        type: 'promotion',
+        channel: 'email',
+        subject: 'โปรโมชันพิเศษจาก Yens Thai Ice Cream',
+        message: 'สวัสดีคุณ {{customerName}} เรามีโปรโมชันพิเศษสำหรับคุณ',
+        variables: ['customerName', 'points', 'tier', 'promotionTitle', 'promotionMessage'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'email_points_update',
+        name: 'แจ้งคะแนนสะสม',
+        type: 'points_update',
+        channel: 'email',
+        subject: 'อัพเดทคะแนนสะสม Yens Thai Ice Cream',
+        message: 'สวัสดีคุณ {{customerName}} คะแนนปัจจุบันของคุณคือ {{points}} คะแนน',
+        variables: ['customerName', 'points', 'tier', 'pointsEarned'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'line_welcome',
+        name: 'ต้อนรับ LINE',
+        type: 'welcome',
+        channel: 'line',
+        subject: null,
+        message: 'ยินดีต้อนรับสู่ Yens Thai Ice Cream',
+        variables: ['customerName'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'line_points_earned',
+        name: 'รับคะแนนแล้ว',
+        type: 'points_update',
+        channel: 'line',
+        subject: null,
+        message: 'คุณได้รับ {{pointsEarned}} คะแนน รวมทั้งหมด {{points}} คะแนน',
+        variables: ['customerName', 'points', 'pointsEarned', 'tier'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'line_birthday',
+        name: 'วันเกิด LINE',
+        type: 'birthday',
+        channel: 'line',
+        subject: null,
+        message: 'สุขสันต์วันเกิดคุณ {{customerName}}',
+        variables: ['customerName', 'points', 'tier'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'line_promotion',
+        name: 'โปรโมชัน LINE',
+        type: 'promotion',
+        channel: 'line',
+        subject: null,
+        message: '{{promotionTitle}}: {{promotionMessage}}',
+        variables: ['customerName', 'promotionTitle', 'promotionMessage'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'line_tier_status',
+        name: 'สถานะระดับสมาชิก',
+        type: 'tier_status',
+        channel: 'line',
+        subject: null,
+        message: 'คุณ {{customerName}} อยู่ในระดับ {{tier}} มี {{points}} คะแนน',
+        variables: ['customerName', 'points', 'tier'],
+        isDefault: true,
+        isActive: true,
+      },
+      {
+        templateKey: 'line_account_linked',
+        name: 'เชื่อมต่อสำเร็จ',
+        type: 'account_linked',
+        channel: 'line',
+        subject: null,
+        message: 'เชื่อมต่อบัญชีสำเร็จ คุณ {{customerName}} มี {{points}} คะแนน',
+        variables: ['customerName', 'points', 'tier'],
+        isDefault: true,
+        isActive: true,
+      },
+    ];
+
+    for (const template of defaultTemplates) {
+      await db.insert(messageTemplates).values(template);
+    }
+    console.log('Default templates seeded successfully');
   }
 
   // Message Log methods
