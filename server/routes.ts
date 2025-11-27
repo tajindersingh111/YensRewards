@@ -3332,7 +3332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if ('replyToken' in event && event.replyToken) {
                 await replyLineMessage(
                   event.replyToken,
-                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nกรุณาส่งเบอร์โทรศัพท์ของคุณเพื่อเชื่อมต่อบัญชีสมาชิก\n\n🍦 Hello! Welcome to Yens Thai Ice Cream!\n\nPlease send your phone number to link your loyalty account.\n\nตัวอย่าง/Example: 0812345678`
+                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nกรุณาส่งเบอร์โทรศัพท์ของคุณเพื่อเชื่อมต่อบัญชีสะสมคะแนน\n\nตัวอย่าง: 0812345678`
                 );
               }
             }
@@ -3373,7 +3373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   if ('replyToken' in event && event.replyToken) {
                     await replyLineMessage(
                       event.replyToken,
-                      `⚠️ เบอร์นี้เชื่อมต่อกับ LINE อื่นแล้ว\n\nThis phone number is already linked to another LINE account.`
+                      `⚠️ เบอร์นี้เชื่อมต่อกับ LINE อื่นแล้ว\n\nกรุณาติดต่อพนักงานเพื่อขอความช่วยเหลือ`
                     );
                   }
                 } else {
@@ -3401,7 +3401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 if ('replyToken' in event && event.replyToken) {
                   await replyLineMessage(
                     event.replyToken,
-                    `❓ ไม่พบเบอร์นี้ในระบบ\n\nกรุณาลงทะเบียนที่หน้าร้าน หรือถามพนักงาน\n\n❓ Phone number not found.\n\nPlease register at the store or ask our staff.`
+                    `❓ ไม่พบเบอร์นี้ในระบบ\n\nกรุณาลงทะเบียนที่หน้าร้าน หรือถามพนักงาน`
                   );
                 }
               }
@@ -3413,7 +3413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if ('replyToken' in event && event.replyToken) {
               await replyLineMessage(
                 event.replyToken,
-                `🍦 Yens Thai Ice Cream\n\nส่งเบอร์โทรศัพท์เพื่อเชื่อมต่อบัญชี\nSend your phone number to link your account.\n\nตัวอย่าง: 0812345678`
+                `🍦 Yens Thai Ice Cream\n\nส่งเบอร์โทรศัพท์เพื่อเชื่อมต่อบัญชีสะสมคะแนน\n\nตัวอย่าง: 0812345678`
               );
             }
           }

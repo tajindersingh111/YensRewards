@@ -1,4 +1,4 @@
-// Yens Thai Ice Cream - HTML Email Templates
+// Yens Thai Ice Cream - HTML Email Templates (Thai)
 // Beautiful, responsive email templates with Yens branding
 
 const YENS_YELLOW = '#FCD34D';
@@ -9,7 +9,7 @@ const YENS_LIGHT_YELLOW = '#FEF3C7';
 function emailWrapper(content: string, previewText: string = ''): string {
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,10 +22,10 @@ function emailWrapper(content: string, previewText: string = ''): string {
   </style>
   <![endif]-->
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
     
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', Arial, sans-serif; background-color: #f5f5f5; }
+    body { font-family: 'Sarabun', 'Inter', Arial, sans-serif; background-color: #f5f5f5; }
     
     @media only screen and (max-width: 600px) {
       .container { width: 100% !important; padding: 10px !important; }
@@ -35,7 +35,7 @@ function emailWrapper(content: string, previewText: string = ''): string {
     }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Inter', Arial, sans-serif;">
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Sarabun', 'Inter', Arial, sans-serif;">
   <!-- Preview text (hidden) -->
   <div style="display: none; max-height: 0; overflow: hidden;">
     ${previewText}
@@ -52,8 +52,8 @@ function emailWrapper(content: string, previewText: string = ''): string {
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin-top: 20px;">
           <tr>
             <td align="center" style="padding: 20px; color: #666666; font-size: 12px;">
-              <p style="margin: 0;">Yens Thai Ice Cream - Nakhon Sawan, Thailand</p>
-              <p style="margin: 5px 0 0 0;">🍨 Made with love since 2020</p>
+              <p style="margin: 0;">Yens Thai Ice Cream - นครสวรรค์</p>
+              <p style="margin: 5px 0 0 0;">ทำด้วยความรักตั้งแต่ปี 2020</p>
             </td>
           </tr>
         </table>
@@ -105,33 +105,33 @@ function divider(): string {
 }
 
 // ============================================
-// EMAIL TEMPLATES
+// EMAIL TEMPLATES (THAI)
 // ============================================
 
 // LINE Invitation Email
 export function lineInviteEmail(customerName: string, lineId: string = '@752afsdq'): string {
   const content = `
-    ${emailHeader('Connect with us on LINE!')}
+    ${emailHeader('เชื่อมต่อกับเราผ่าน LINE!')}
     <tr>
       <td class="content" style="padding: 40px;">
         <h2 style="color: #333333; font-size: 22px; margin: 0 0 15px 0;">
-          สวัสดี${customerName ? ` ${customerName}` : ''}! 👋
+          สวัสดี${customerName ? `คุณ${customerName}` : ''}! 👋
         </h2>
         <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-          Thank you for being a valued Yens Thai Ice Cream customer! We'd love to stay connected with you on LINE.
+          ขอบคุณที่เป็นลูกค้าคนสำคัญของ Yens Thai Ice Cream! เราอยากเชื่อมต่อกับคุณผ่าน LINE
         </p>
         
         <!-- LINE Benefits Box -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #E8F5E9; border-radius: 12px; margin: 20px 0;">
           <tr>
             <td style="padding: 25px;">
-              <h3 style="color: #2E7D32; font-size: 18px; margin: 0 0 15px 0;">🎁 Add us on LINE and get:</h3>
+              <h3 style="color: #2E7D32; font-size: 18px; margin: 0 0 15px 0;">🎁 เพิ่มเพื่อน LINE รับสิทธิพิเศษ:</h3>
               <ul style="color: #555555; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 20px;">
-                <li>Exclusive promotions & discounts</li>
-                <li>New flavor announcements</li>
-                <li>Birthday surprises</li>
-                <li>Easy loyalty point tracking</li>
-                <li>Quick customer support</li>
+                <li>โปรโมชันและส่วนลดพิเศษ</li>
+                <li>แจ้งเตือนรสชาติใหม่</li>
+                <li>ของขวัญวันเกิด</li>
+                <li>เช็คคะแนนสะสมง่ายๆ</li>
+                <li>บริการลูกค้าสะดวกรวดเร็ว</li>
               </ul>
             </td>
           </tr>
@@ -141,36 +141,36 @@ export function lineInviteEmail(customerName: string, lineId: string = '@752afsd
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #00B900; border-radius: 12px; margin: 25px 0;">
           <tr>
             <td style="padding: 25px; text-align: center;">
-              <p style="color: #ffffff; font-size: 14px; margin: 0 0 10px 0;">Our LINE Official Account:</p>
+              <p style="color: #ffffff; font-size: 14px; margin: 0 0 10px 0;">LINE Official Account ของเรา:</p>
               <p style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0; letter-spacing: 1px;">${lineId}</p>
-              <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 10px 0 0 0;">Search this ID in LINE app to add us!</p>
+              <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 10px 0 0 0;">ค้นหา ID นี้ในแอป LINE เพื่อเพิ่มเพื่อน!</p>
             </td>
           </tr>
         </table>
         
-        ${ctaButton('📱 Add Friend on LINE', `https://line.me/R/ti/p/${lineId}`, '#00B900')}
+        ${ctaButton('📱 เพิ่มเพื่อนใน LINE', `https://line.me/R/ti/p/${lineId}`, '#00B900')}
         
         <p style="color: #888888; font-size: 14px; text-align: center; margin-top: 20px;">
-          After adding us, send your phone number to link your rewards account!
+          หลังจากเพิ่มเพื่อนแล้ว ส่งเบอร์โทรศัพท์เพื่อเชื่อมต่อบัญชีสะสมคะแนน!
         </p>
       </td>
     </tr>
   `;
   
-  return emailWrapper(content, `${customerName}, connect with Yens Thai Ice Cream on LINE for exclusive rewards!`);
+  return emailWrapper(content, `${customerName} เชื่อมต่อกับ Yens Thai Ice Cream ผ่าน LINE รับสิทธิพิเศษมากมาย!`);
 }
 
 // Birthday Email
-export function birthdayEmail(customerName: string, rewardDetails: string = 'a special birthday treat'): string {
+export function birthdayEmail(customerName: string, rewardDetails: string = 'ไอศกรีมฟรี 1 สกู๊ป'): string {
   const content = `
-    ${emailHeader('Happy Birthday!', '🎂')}
+    ${emailHeader('สุขสันต์วันเกิด!', '🎂')}
     <tr>
       <td class="content" style="padding: 40px; text-align: center;">
         <h2 style="color: #333333; font-size: 26px; margin: 0 0 15px 0;">
-          🎉 Happy Birthday, ${customerName}! 🎉
+          🎉 สุขสันต์วันเกิด คุณ${customerName}! 🎉
         </h2>
         <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
-          Wishing you a sweet and wonderful birthday filled with joy!
+          ขอให้มีความสุขและสดใสในวันพิเศษของคุณ!
         </p>
         
         <!-- Birthday Gift Box -->
@@ -178,45 +178,45 @@ export function birthdayEmail(customerName: string, rewardDetails: string = 'a s
           <tr>
             <td style="padding: 30px; text-align: center;">
               <div style="font-size: 64px; margin-bottom: 15px;">🎁</div>
-              <h3 style="color: ${YENS_BLUE}; font-size: 20px; margin: 0 0 10px 0;">Your Birthday Gift</h3>
+              <h3 style="color: ${YENS_BLUE}; font-size: 20px; margin: 0 0 10px 0;">ของขวัญวันเกิดของคุณ</h3>
               <p style="color: #333333; font-size: 18px; font-weight: 600; margin: 0;">${rewardDetails}</p>
-              <p style="color: #666666; font-size: 14px; margin: 15px 0 0 0;">Valid for 7 days from your birthday</p>
+              <p style="color: #666666; font-size: 14px; margin: 15px 0 0 0;">ใช้ได้ภายใน 7 วันนับจากวันเกิด</p>
             </td>
           </tr>
         </table>
         
         <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 25px 0;">
-          Visit any Yens Thai Ice Cream location to claim your birthday treat! 🍨
+          มารับของขวัญวันเกิดได้ที่ Yens Thai Ice Cream ทุกสาขา! 🍨
         </p>
         
-        ${ctaButton('View My Rewards', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
+        ${ctaButton('ดูรางวัลของฉัน', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
       </td>
     </tr>
   `;
   
-  return emailWrapper(content, `Happy Birthday ${customerName}! Claim your special birthday treat from Yens Thai Ice Cream 🎂`);
+  return emailWrapper(content, `สุขสันต์วันเกิด คุณ${customerName}! รับของขวัญพิเศษจาก Yens Thai Ice Cream 🎂`);
 }
 
 // Welcome Email
 export function welcomeEmail(customerName: string, points: number = 0): string {
   const content = `
-    ${emailHeader('Welcome to the Family!')}
+    ${emailHeader('ยินดีต้อนรับสู่ครอบครัวเรา!')}
     <tr>
       <td class="content" style="padding: 40px;">
         <h2 style="color: #333333; font-size: 24px; margin: 0 0 15px 0;">
-          ยินดีต้อนรับ ${customerName}! 🎊
+          ยินดีต้อนรับ คุณ${customerName}! 🎊
         </h2>
         <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-          Welcome to the Yens Thai Ice Cream family! We're thrilled to have you as part of our loyalty program.
+          ขอบคุณที่เข้าร่วมครอบครัว Yens Thai Ice Cream! เรายินดีที่คุณเป็นส่วนหนึ่งของโปรแกรมสะสมคะแนน
         </p>
         
         <!-- Points Balance -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: ${YENS_LIGHT_YELLOW}; border-radius: 12px; margin: 20px 0;">
           <tr>
             <td style="padding: 25px; text-align: center;">
-              <p style="color: #666666; font-size: 14px; margin: 0;">Your Current Balance</p>
+              <p style="color: #666666; font-size: 14px; margin: 0;">คะแนนสะสมปัจจุบัน</p>
               <p style="color: ${YENS_BLUE}; font-size: 42px; font-weight: 700; margin: 10px 0;">${points}</p>
-              <p style="color: #666666; font-size: 16px; margin: 0;">Points</p>
+              <p style="color: #666666; font-size: 16px; margin: 0;">คะแนน</p>
             </td>
           </tr>
         </table>
@@ -225,36 +225,36 @@ export function welcomeEmail(customerName: string, points: number = 0): string {
         
         <tr>
           <td style="padding: 25px 40px;">
-            <h3 style="color: #333333; font-size: 18px; margin: 0 0 15px 0;">How to earn points:</h3>
+            <h3 style="color: #333333; font-size: 18px; margin: 0 0 15px 0;">วิธีสะสมคะแนน:</h3>
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
               <tr>
                 <td style="padding: 8px 0;">
                   <span style="display: inline-block; width: 30px; color: ${YENS_YELLOW}; font-size: 20px;">🍨</span>
-                  <span style="color: #555555; font-size: 15px;">1 point for every 10 THB spent</span>
+                  <span style="color: #555555; font-size: 15px;">รับ 1 คะแนนทุกการใช้จ่าย 10 บาท</span>
                 </td>
               </tr>
               <tr>
                 <td style="padding: 8px 0;">
                   <span style="display: inline-block; width: 30px; color: ${YENS_YELLOW}; font-size: 20px;">🎂</span>
-                  <span style="color: #555555; font-size: 15px;">Bonus points on your birthday</span>
+                  <span style="color: #555555; font-size: 15px;">คะแนนโบนัสพิเศษวันเกิด</span>
                 </td>
               </tr>
               <tr>
                 <td style="padding: 8px 0;">
                   <span style="display: inline-block; width: 30px; color: ${YENS_YELLOW}; font-size: 20px;">👫</span>
-                  <span style="color: #555555; font-size: 15px;">Refer friends for extra rewards</span>
+                  <span style="color: #555555; font-size: 15px;">แนะนำเพื่อนรับรางวัลเพิ่ม</span>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
         
-        ${ctaButton('Check My Rewards', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
+        ${ctaButton('ดูรางวัลของฉัน', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
       </td>
     </tr>
   `;
   
-  return emailWrapper(content, `Welcome to Yens Thai Ice Cream, ${customerName}! Start earning rewards today 🍨`);
+  return emailWrapper(content, `ยินดีต้อนรับสู่ Yens Thai Ice Cream คุณ${customerName}! เริ่มสะสมคะแนนวันนี้ 🍨`);
 }
 
 // Promotional Email
@@ -266,14 +266,14 @@ export function promotionEmail(
   validUntil: string = ''
 ): string {
   const content = `
-    ${emailHeader('Special Offer!')}
+    ${emailHeader('โปรโมชันพิเศษ!')}
     <tr>
       <td class="content" style="padding: 40px;">
         <h2 style="color: #333333; font-size: 24px; margin: 0 0 15px 0;">
-          Hi ${customerName}! 👋
+          สวัสดีคุณ${customerName}! 👋
         </h2>
         <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-          We have a special offer just for you!
+          เรามีข้อเสนอพิเศษสำหรับคุณ!
         </p>
         
         <!-- Promo Box -->
@@ -285,26 +285,26 @@ export function promotionEmail(
               
               ${promoCode ? `
                 <div style="background-color: white; border-radius: 8px; padding: 15px; margin-top: 20px; display: inline-block;">
-                  <p style="color: #666666; font-size: 12px; margin: 0 0 5px 0;">USE CODE:</p>
+                  <p style="color: #666666; font-size: 12px; margin: 0 0 5px 0;">ใช้โค้ด:</p>
                   <p style="color: ${YENS_BLUE}; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: 2px;">${promoCode}</p>
                 </div>
               ` : ''}
               
-              ${validUntil ? `<p style="color: #666666; font-size: 13px; margin: 15px 0 0 0;">Valid until: ${validUntil}</p>` : ''}
+              ${validUntil ? `<p style="color: #666666; font-size: 13px; margin: 15px 0 0 0;">ใช้ได้ถึง: ${validUntil}</p>` : ''}
             </td>
           </tr>
         </table>
         
-        ${ctaButton('Claim Offer', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
+        ${ctaButton('รับข้อเสนอ', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
         
         <p style="color: #888888; font-size: 13px; text-align: center; margin-top: 25px;">
-          Show this email at any Yens Thai Ice Cream location to redeem.
+          แสดงอีเมลนี้ที่ Yens Thai Ice Cream ทุกสาขาเพื่อรับสิทธิ์
         </p>
       </td>
     </tr>
   `;
   
-  return emailWrapper(content, `${customerName}, ${promoTitle} - Special offer from Yens Thai Ice Cream!`);
+  return emailWrapper(content, `${customerName} ${promoTitle} - ข้อเสนอพิเศษจาก Yens Thai Ice Cream!`);
 }
 
 // Points Update Email
@@ -315,20 +315,20 @@ export function pointsUpdateEmail(
   transactionDetails: string = ''
 ): string {
   const content = `
-    ${emailHeader('Points Earned!')}
+    ${emailHeader('รับคะแนนแล้ว!')}
     <tr>
       <td class="content" style="padding: 40px; text-align: center;">
         <h2 style="color: #333333; font-size: 22px; margin: 0 0 20px 0;">
-          Great news, ${customerName}! 🎉
+          ยินดีด้วย คุณ${customerName}! 🎉
         </h2>
         
         <!-- Points Earned -->
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #E8F5E9; border-radius: 16px; margin: 20px 0;">
           <tr>
             <td style="padding: 30px; text-align: center;">
-              <p style="color: #666666; font-size: 14px; margin: 0;">You just earned</p>
+              <p style="color: #666666; font-size: 14px; margin: 0;">คุณได้รับ</p>
               <p style="color: #2E7D32; font-size: 48px; font-weight: 700; margin: 10px 0;">+${pointsEarned}</p>
-              <p style="color: #2E7D32; font-size: 18px; margin: 0;">Points</p>
+              <p style="color: #2E7D32; font-size: 18px; margin: 0;">คะแนน</p>
               ${transactionDetails ? `<p style="color: #666666; font-size: 13px; margin: 15px 0 0 0;">${transactionDetails}</p>` : ''}
             </td>
           </tr>
@@ -338,22 +338,22 @@ export function pointsUpdateEmail(
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: ${YENS_LIGHT_YELLOW}; border-radius: 12px; margin: 20px 0;">
           <tr>
             <td style="padding: 20px; text-align: center;">
-              <p style="color: #666666; font-size: 14px; margin: 0;">Your Total Balance</p>
-              <p style="color: ${YENS_BLUE}; font-size: 32px; font-weight: 700; margin: 8px 0;">${totalPoints} Points</p>
+              <p style="color: #666666; font-size: 14px; margin: 0;">คะแนนสะสมทั้งหมด</p>
+              <p style="color: ${YENS_BLUE}; font-size: 32px; font-weight: 700; margin: 8px 0;">${totalPoints} คะแนน</p>
             </td>
           </tr>
         </table>
         
         <p style="color: #555555; font-size: 15px; margin: 20px 0;">
-          Keep collecting to unlock more rewards! 🍨
+          สะสมต่อไปเพื่อรับรางวัลเพิ่มเติม! 🍨
         </p>
         
-        ${ctaButton('View My Rewards', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
+        ${ctaButton('ดูรางวัลของฉัน', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
       </td>
     </tr>
   `;
   
-  return emailWrapper(content, `${customerName}, you earned ${pointsEarned} points at Yens Thai Ice Cream!`);
+  return emailWrapper(content, `${customerName} คุณได้รับ ${pointsEarned} คะแนนจาก Yens Thai Ice Cream!`);
 }
 
 // Generic styled email (for custom messages)
@@ -368,7 +368,7 @@ export function styledEmail(
     ${emailHeader('')}
     <tr>
       <td class="content" style="padding: 40px;">
-        ${customerName ? `<h2 style="color: #333333; font-size: 22px; margin: 0 0 15px 0;">Hi ${customerName}! 👋</h2>` : ''}
+        ${customerName ? `<h2 style="color: #333333; font-size: 22px; margin: 0 0 15px 0;">สวัสดีคุณ${customerName}! 👋</h2>` : ''}
         <div style="color: #555555; font-size: 16px; line-height: 1.7;">
           ${message.split('\n').map(p => `<p style="margin: 0 0 15px 0;">${p}</p>`).join('')}
         </div>
@@ -377,7 +377,7 @@ export function styledEmail(
     </tr>
   `;
   
-  return emailWrapper(content, `${customerName ? customerName + ', ' : ''}${subject}`);
+  return emailWrapper(content, `${customerName ? 'คุณ' + customerName + ' ' : ''}${subject}`);
 }
 
 // Export template type for selection
@@ -412,7 +412,7 @@ export function generateEmailTemplate(
     case 'promotion':
       return promotionEmail(
         params.customerName,
-        params.promoTitle || 'Special Offer',
+        params.promoTitle || 'ข้อเสนอพิเศษ',
         params.promoDescription || '',
         params.promoCode,
         params.validUntil

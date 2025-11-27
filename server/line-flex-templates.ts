@@ -1,11 +1,10 @@
-// Yens Thai Ice Cream - LINE Flex Message Templates
+// Yens Thai Ice Cream - LINE Flex Message Templates (Thai)
 // Rich, interactive message templates for LINE
 
 // Colors
 const YENS_YELLOW = '#FCD34D';
 const YENS_BLUE = '#1E40AF';
 const YENS_GREEN = '#10B981';
-const LINE_GREEN = '#00B900';
 
 // Type definitions for LINE Flex Message
 export interface FlexBubble {
@@ -101,7 +100,7 @@ export interface FlexMessage {
 }
 
 // ============================================
-// FLEX MESSAGE TEMPLATES
+// FLEX MESSAGE TEMPLATES (THAI)
 // ============================================
 
 // Welcome Message - When customer adds LINE
@@ -147,15 +146,16 @@ export function welcomeFlexMessage(customerName: string, points: number = 0): Fl
       contents: [
         {
           type: 'text',
-          text: `ยินดีต้อนรับ ${customerName}!`,
+          text: `ยินดีต้อนรับ คุณ${customerName}!`,
           size: 'xl',
           weight: 'bold',
           color: '#333333',
-          align: 'center'
+          align: 'center',
+          wrap: true
         } as FlexText,
         {
           type: 'text',
-          text: 'Welcome to Yens Rewards! 🎉',
+          text: 'ขอบคุณที่เข้าร่วม Yens Rewards 🎉',
           size: 'md',
           color: '#666666',
           align: 'center',
@@ -172,7 +172,7 @@ export function welcomeFlexMessage(customerName: string, points: number = 0): Fl
           contents: [
             {
               type: 'text',
-              text: 'Your Points Balance',
+              text: 'คะแนนสะสมของคุณ',
               size: 'sm',
               color: '#888888',
               align: 'center'
@@ -188,7 +188,7 @@ export function welcomeFlexMessage(customerName: string, points: number = 0): Fl
             } as FlexText,
             {
               type: 'text',
-              text: 'points',
+              text: 'คะแนน',
               size: 'sm',
               color: '#888888',
               align: 'center'
@@ -210,7 +210,7 @@ export function welcomeFlexMessage(customerName: string, points: number = 0): Fl
           type: 'button',
           action: {
             type: 'uri',
-            label: '📱 View My Rewards',
+            label: '📱 ดูรางวัลของฉัน',
             uri: 'https://yens-rewards-leonard59.replit.app/customer'
           },
           style: 'primary',
@@ -227,7 +227,7 @@ export function welcomeFlexMessage(customerName: string, points: number = 0): Fl
 
   return {
     type: 'flex',
-    altText: `Welcome ${customerName}! You have ${points} points.`,
+    altText: `ยินดีต้อนรับ คุณ${customerName}! คุณมี ${points} คะแนน`,
     contents: bubble
   };
 }
@@ -254,7 +254,7 @@ export function pointsEarnedFlexMessage(
         } as FlexText,
         {
           type: 'text',
-          text: 'Points Earned!',
+          text: 'รับคะแนนแล้ว!',
           size: 'lg',
           color: '#FFFFFF',
           weight: 'bold',
@@ -278,14 +278,14 @@ export function pointsEarnedFlexMessage(
         } as FlexText,
         {
           type: 'text',
-          text: 'points',
+          text: 'คะแนน',
           size: 'md',
           color: '#888888',
           align: 'center'
         } as FlexText,
         ...(transactionAmount ? [{
           type: 'text',
-          text: `฿${transactionAmount.toLocaleString()} purchase`,
+          text: `ยอดซื้อ ฿${transactionAmount.toLocaleString()}`,
           size: 'sm',
           color: '#AAAAAA',
           align: 'center',
@@ -302,13 +302,13 @@ export function pointsEarnedFlexMessage(
           contents: [
             {
               type: 'text',
-              text: 'Total Balance:',
+              text: 'คะแนนรวม:',
               size: 'md',
               color: '#666666'
             } as FlexText,
             {
               type: 'text',
-              text: `${totalPoints} pts`,
+              text: `${totalPoints} คะแนน`,
               size: 'lg',
               weight: 'bold',
               color: YENS_BLUE,
@@ -327,13 +327,13 @@ export function pointsEarnedFlexMessage(
 
   return {
     type: 'flex',
-    altText: `You earned ${pointsEarned} points! Total: ${totalPoints}`,
+    altText: `คุณได้รับ ${pointsEarned} คะแนน! รวม ${totalPoints} คะแนน`,
     contents: bubble
   };
 }
 
 // Birthday Message
-export function birthdayFlexMessage(customerName: string, reward: string = 'Free Ice Cream Scoop'): FlexMessage {
+export function birthdayFlexMessage(customerName: string, reward: string = 'ไอศกรีมฟรี 1 สกู๊ป'): FlexMessage {
   const bubble: FlexBubble = {
     type: 'bubble',
     size: 'mega',
@@ -349,7 +349,7 @@ export function birthdayFlexMessage(customerName: string, reward: string = 'Free
         } as FlexText,
         {
           type: 'text',
-          text: 'Happy Birthday!',
+          text: 'สุขสันต์วันเกิด!',
           size: 'xl',
           weight: 'bold',
           color: YENS_BLUE,
@@ -365,7 +365,7 @@ export function birthdayFlexMessage(customerName: string, reward: string = 'Free
       contents: [
         {
           type: 'text',
-          text: `สุขสันต์วันเกิด ${customerName}!`,
+          text: `สุขสันต์วันเกิด คุณ${customerName}!`,
           size: 'lg',
           weight: 'bold',
           color: '#333333',
@@ -374,7 +374,7 @@ export function birthdayFlexMessage(customerName: string, reward: string = 'Free
         } as FlexText,
         {
           type: 'text',
-          text: 'Wishing you a sweet day filled with joy!',
+          text: 'ขอให้มีความสุขมากๆ ในวันพิเศษของคุณ!',
           size: 'sm',
           color: '#666666',
           align: 'center',
@@ -387,7 +387,7 @@ export function birthdayFlexMessage(customerName: string, reward: string = 'Free
           contents: [
             {
               type: 'text',
-              text: '🎁 Your Birthday Gift',
+              text: '🎁 ของขวัญวันเกิด',
               size: 'md',
               color: '#333333',
               align: 'center',
@@ -405,7 +405,7 @@ export function birthdayFlexMessage(customerName: string, reward: string = 'Free
             } as FlexText,
             {
               type: 'text',
-              text: 'Valid for 7 days',
+              text: 'ใช้ได้ภายใน 7 วัน',
               size: 'xs',
               color: '#888888',
               align: 'center',
@@ -428,7 +428,7 @@ export function birthdayFlexMessage(customerName: string, reward: string = 'Free
           type: 'button',
           action: {
             type: 'uri',
-            label: '🎂 Claim Birthday Gift',
+            label: '🎂 รับของขวัญวันเกิด',
             uri: 'https://yens-rewards-leonard59.replit.app/customer'
           },
           style: 'primary',
@@ -445,7 +445,7 @@ export function birthdayFlexMessage(customerName: string, reward: string = 'Free
 
   return {
     type: 'flex',
-    altText: `Happy Birthday ${customerName}! Claim your birthday gift: ${reward}`,
+    altText: `สุขสันต์วันเกิด คุณ${customerName}! รับของขวัญ: ${reward}`,
     contents: bubble
   };
 }
@@ -476,7 +476,7 @@ export function promotionFlexMessage(
       contents: [
         {
           type: 'text',
-          text: '🔥 Special Offer!',
+          text: '🔥 โปรโมชันพิเศษ!',
           size: 'sm',
           color: YENS_BLUE
         } as FlexText,
@@ -509,7 +509,7 @@ export function promotionFlexMessage(
           contents: [
             {
               type: 'text',
-              text: 'USE CODE:',
+              text: 'ใช้โค้ด:',
               size: 'xs',
               color: '#888888',
               align: 'center'
@@ -530,7 +530,7 @@ export function promotionFlexMessage(
         } as FlexBox] : []),
         ...(validUntil ? [{
           type: 'text',
-          text: `Valid until: ${validUntil}`,
+          text: `ใช้ได้ถึง: ${validUntil}`,
           size: 'xs',
           color: '#888888',
           align: 'center',
@@ -547,7 +547,7 @@ export function promotionFlexMessage(
           type: 'button',
           action: {
             type: 'uri',
-            label: '🛒 Claim Offer',
+            label: '🛒 รับข้อเสนอ',
             uri: 'https://yens-rewards-leonard59.replit.app/customer'
           },
           style: 'primary',
@@ -564,7 +564,7 @@ export function promotionFlexMessage(
 
   return {
     type: 'flex',
-    altText: `Special Offer: ${promoTitle}`,
+    altText: `โปรโมชันพิเศษ: ${promoTitle}`,
     contents: bubble
   };
 }
@@ -585,7 +585,17 @@ export function tierStatusFlexMessage(
     'Diamond': '#B9F2FF'
   };
 
+  const tierNames: Record<string, string> = {
+    'Bronze': 'บรอนซ์',
+    'Silver': 'ซิลเวอร์',
+    'Gold': 'โกลด์',
+    'Platinum': 'แพลทินัม',
+    'Diamond': 'ไดมอนด์'
+  };
+
   const tierColor = tierColors[currentTier] || YENS_YELLOW;
+  const tierNameTh = tierNames[currentTier] || currentTier;
+  const nextTierNameTh = nextTier ? (tierNames[nextTier] || nextTier) : '';
 
   const bubble: FlexBubble = {
     type: 'bubble',
@@ -606,13 +616,13 @@ export function tierStatusFlexMessage(
           contents: [
             {
               type: 'text',
-              text: 'Your Tier Status',
+              text: 'ระดับสมาชิกของคุณ',
               size: 'xs',
               color: '#666666'
             } as FlexText,
             {
               type: 'text',
-              text: `${currentTier} Member`,
+              text: `สมาชิก${tierNameTh}`,
               size: 'lg',
               weight: 'bold',
               color: '#333333'
@@ -634,7 +644,7 @@ export function tierStatusFlexMessage(
           contents: [
             {
               type: 'text',
-              text: 'Total Points:',
+              text: 'คะแนนรวม:',
               size: 'md',
               color: '#666666'
             } as FlexText,
@@ -648,7 +658,7 @@ export function tierStatusFlexMessage(
             } as FlexText
           ]
         },
-        ...(pointsToNextTier && nextTier ? [
+        ...(pointsToNextTier && nextTierNameTh ? [
           {
             type: 'separator',
             margin: 'lg',
@@ -656,7 +666,7 @@ export function tierStatusFlexMessage(
           } as FlexSeparator,
           {
             type: 'text',
-            text: `${pointsToNextTier} more points to ${nextTier}!`,
+            text: `อีก ${pointsToNextTier} คะแนนเพื่อเลื่อนขั้นเป็น${nextTierNameTh}!`,
             size: 'sm',
             color: '#888888',
             align: 'center',
@@ -671,7 +681,7 @@ export function tierStatusFlexMessage(
 
   return {
     type: 'flex',
-    altText: `${customerName}, you're a ${currentTier} member with ${totalPoints} points!`,
+    altText: `คุณ${customerName} คุณเป็นสมาชิก${tierNameTh} มี ${totalPoints} คะแนน!`,
     contents: bubble
   };
 }
@@ -693,7 +703,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
         } as FlexText,
         {
           type: 'text',
-          text: 'Account Linked!',
+          text: 'เชื่อมต่อสำเร็จ!',
           size: 'lg',
           color: '#FFFFFF',
           weight: 'bold',
@@ -709,7 +719,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
       contents: [
         {
           type: 'text',
-          text: `สวัสดี ${customerName}!`,
+          text: `สวัสดี คุณ${customerName}!`,
           size: 'lg',
           weight: 'bold',
           color: '#333333',
@@ -717,7 +727,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
         } as FlexText,
         {
           type: 'text',
-          text: 'Your LINE account is now linked to your Yens Rewards.',
+          text: 'บัญชี LINE ของคุณเชื่อมต่อกับ Yens Rewards เรียบร้อยแล้ว',
           size: 'sm',
           color: '#666666',
           align: 'center',
@@ -760,7 +770,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
           type: 'button',
           action: {
             type: 'uri',
-            label: '📱 View My Rewards',
+            label: '📱 ดูรางวัลของฉัน',
             uri: 'https://yens-rewards-leonard59.replit.app/customer'
           },
           style: 'primary',
@@ -774,7 +784,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
 
   return {
     type: 'flex',
-    altText: `Hi ${customerName}! Your LINE account is now linked to your Yens Rewards.`,
+    altText: `สวัสดี คุณ${customerName}! บัญชี LINE เชื่อมต่อกับ Yens Rewards เรียบร้อยแล้ว`,
     contents: bubble
   };
 }
@@ -889,19 +899,19 @@ export function generateLineFlexTemplate(
 ): FlexMessage {
   switch (templateType) {
     case 'welcome':
-      return welcomeFlexMessage(params.customerName || 'Customer', params.points || 0);
+      return welcomeFlexMessage(params.customerName || 'ลูกค้า', params.points || 0);
     case 'points_earned':
       return pointsEarnedFlexMessage(
-        params.customerName || 'Customer',
+        params.customerName || 'ลูกค้า',
         params.pointsEarned || 0,
         params.totalPoints || 0,
         params.transactionAmount
       );
     case 'birthday':
-      return birthdayFlexMessage(params.customerName || 'Customer', params.reward);
+      return birthdayFlexMessage(params.customerName || 'ลูกค้า', params.reward);
     case 'promotion':
       return promotionFlexMessage(
-        params.promoTitle || 'Special Offer',
+        params.promoTitle || 'โปรโมชันพิเศษ',
         params.promoDescription || '',
         params.promoCode,
         params.validUntil,
@@ -909,14 +919,17 @@ export function generateLineFlexTemplate(
       );
     case 'tier_status':
       return tierStatusFlexMessage(
-        params.customerName || 'Customer',
+        params.customerName || 'ลูกค้า',
         params.currentTier || 'Bronze',
         params.totalPoints || 0,
         params.pointsToNextTier,
         params.nextTier
       );
     case 'account_linked':
-      return accountLinkedFlexMessage(params.customerName || 'Customer', params.phone || '');
+      return accountLinkedFlexMessage(
+        params.customerName || 'ลูกค้า',
+        params.phone || ''
+      );
     case 'custom':
     default:
       return styledFlexMessage(
