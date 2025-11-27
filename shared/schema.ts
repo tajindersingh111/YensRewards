@@ -110,12 +110,17 @@ export const products = pgTable("products", {
 // Message Templates table - for birthday and promotional SMS/email/LINE messages
 export const messageTemplates = pgTable("message_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateKey: text("template_key").unique(), // Unique key for lookup: email_welcome, line_birthday, etc.
   name: text("name").notNull(),
-  type: text("type").notNull(), // birthday, promotion, reminder
-  channel: text("channel").notNull(), // sms, email, line, both
+  type: text("type").notNull(), // welcome, birthday, promotion, points_update, tier_status, line_invite, account_linked
+  channel: text("channel").notNull(), // sms, email, line
   subject: text("subject"), // Email subject (null for SMS/LINE)
-  message: text("message").notNull(), // Template with placeholders: {name}, {points}, {tier}
+  message: text("message").notNull(), // Plain text template with placeholders: {{name}}, {{points}}, {{tier}}
+  htmlContent: text("html_content"), // HTML content for email templates
+  jsonContent: text("json_content"), // JSON Flex Message content for LINE templates
+  variables: text("variables").array(), // List of available placeholders: ["customerName", "points", "tier"]
   isDefault: boolean("is_default").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
