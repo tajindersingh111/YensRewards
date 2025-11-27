@@ -7,7 +7,7 @@ import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail } from "./resend";
-import { sendLineMessage } from "./line";
+import { sendLineMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent } from "./line";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -3238,6 +3238,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error sending LINE messages:", error);
       res.status(500).json({ message: "Failed to send LINE messages" });
+    }
+  });
+
+  // ============================================
+  // LINE Webhook - Customer auto-linking
+  // ============================================
+
+  // LINE Webhook endpoint (public - called by LINE Platform)
+  app.post('/api/line/webhook', async (req, res) => {
+    try {
+      // Get signature from header
+      const signature = req.headers['x-line-signature'] as string;
+      
+      if (!signature) {
+        console.warn('⚠️ LINE webhook: Missing signature');
+        return res.status(401).json({ message: 'Missing signature' });
+      }
+
+      // Verify signature using raw body
+      const rawBody = (req as any).rawBody;
+      if (!rawBody) {
+        console.error('❌ LINE webhook: Raw body not captured');
+        return res.status(500).json({ message: 'Raw body not available' });
+      }
+
+      if (!verifyLineSignature(rawBody, signature)) {
+        console.warn('⚠️ LINE webhook: Invalid signature');
+        return res.status(401).json({ message: 'Invalid signature' });
+      }
+
+      const body = req.body as LineWebhookBody;
+      
+      // Handle verification request (empty events array)
+      if (!body.events || body.events.length === 0) {
+        console.log('✅ LINE webhook verification successful');
+        return res.status(200).json({ message: 'OK' });
+      }
+
+      // Process each event
+      for (const event of body.events) {
+        const lineUserId = event.source?.userId;
+        
+        if (!lineUserId) {
+          console.log('⚠️ Event without userId, skipping');
+          continue;
+        }
+
+        console.log(`📩 LINE event: ${event.type} from ${lineUserId}`);
+
+        // Handle follow event (customer adds bot as friend)
+        if (event.type === 'follow') {
+          try {
+            // Get LINE profile
+            const profile = await getLineProfile(lineUserId);
+            console.log(`👤 LINE profile: ${profile.displayName}`);
+
+            // Check if customer already exists with this LINE UID
+            const allCustomers = await storage.getAllCustomers();
+            const existingByLine = allCustomers.find(c => c.lineUid === lineUserId);
+
+            if (existingByLine) {
+              console.log(`✅ Customer already linked: ${existingByLine.name}`);
+              
+              // Send welcome back message
+              if ('replyToken' in event && event.replyToken) {
+                await replyLineMessage(
+                  event.replyToken,
+                  `ยินดีต้อนรับกลับมา ${existingByLine.name}! 🍦\n\nคะแนนสะสมของคุณ: ${existingByLine.points} คะแนน\nระดับสมาชิก: ${existingByLine.tier.toUpperCase()}\n\nWelcome back! Your points: ${existingByLine.points}`
+                );
+              }
+            } else {
+              // Send instructions to link account
+              if ('replyToken' in event && event.replyToken) {
+                await replyLineMessage(
+                  event.replyToken,
+                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nกรุณาส่งเบอร์โทรศัพท์ของคุณเพื่อเชื่อมต่อบัญชีสมาชิก\n\n🍦 Hello! Welcome to Yens Thai Ice Cream!\n\nPlease send your phone number to link your loyalty account.`
+                );
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error handling follow event:', error);
+          }
+        }
+
+        // Handle message event (customer sends a message)
+        if (event.type === 'message' && event.message.type === 'text') {
+          const messageText = event.message.text.trim();
+          
+          // Check if message looks like a phone number
+          const phoneMatch = messageText.replace(/[\s\-\(\)]/g, '').match(/^(\+66|66|0)?(\d{8,9})$/);
+          
+          if (phoneMatch) {
+            // Normalize phone number (remove +66/66 prefix, add 0 if needed)
+            let phone = phoneMatch[2];
+            if (!phone.startsWith('0') && phone.length === 9) {
+              phone = '0' + phone;
+            } else if (phone.length === 8) {
+              phone = '0' + phone;
+            }
+            
+            console.log(`📞 Phone number received: ${phone}`);
+
+            try {
+              // Find customer by phone number
+              const allCustomers = await storage.getAllCustomers();
+              const customerByPhone = allCustomers.find(c => 
+                c.phone.replace(/[\s\-]/g, '') === phone || 
+                c.phone.replace(/[\s\-]/g, '').endsWith(phone)
+              );
+
+              if (customerByPhone) {
+                // Check if already linked to another LINE account
+                if (customerByPhone.lineUid && customerByPhone.lineUid !== lineUserId) {
+                  if ('replyToken' in event && event.replyToken) {
+                    await replyLineMessage(
+                      event.replyToken,
+                      `⚠️ เบอร์นี้เชื่อมต่อกับ LINE อื่นแล้ว\n\nThis phone number is already linked to another LINE account.`
+                    );
+                  }
+                } else {
+                  // Link LINE UID to customer
+                  await storage.updateCustomer(customerByPhone.id, {
+                    lineUid: lineUserId
+                  });
+
+                  console.log(`✅ Linked ${customerByPhone.name} to LINE: ${lineUserId}`);
+
+                  // Send success message
+                  if ('replyToken' in event && event.replyToken) {
+                    await replyLineMessage(
+                      event.replyToken,
+                      `🎉 เชื่อมต่อสำเร็จ!\n\nสวัสดี ${customerByPhone.name}!\nคะแนนสะสม: ${customerByPhone.points} คะแนน\nระดับสมาชิก: ${customerByPhone.tier.toUpperCase()}\n\n🎉 Successfully linked!\n\nHello ${customerByPhone.name}!\nYour points: ${customerByPhone.points}\nTier: ${customerByPhone.tier.toUpperCase()}`
+                    );
+                  }
+                }
+              } else {
+                // Phone not found - offer to register
+                if ('replyToken' in event && event.replyToken) {
+                  await replyLineMessage(
+                    event.replyToken,
+                    `❓ ไม่พบเบอร์นี้ในระบบ\n\nกรุณาลงทะเบียนที่หน้าร้าน หรือถามพนักงาน\n\n❓ Phone number not found.\n\nPlease register at the store or ask our staff.`
+                  );
+                }
+              }
+            } catch (error) {
+              console.error('❌ Error linking customer:', error);
+            }
+          } else {
+            // Not a phone number - send help message
+            if ('replyToken' in event && event.replyToken) {
+              await replyLineMessage(
+                event.replyToken,
+                `🍦 Yens Thai Ice Cream\n\nส่งเบอร์โทรศัพท์เพื่อเชื่อมต่อบัญชี\nSend your phone number to link your account.\n\nตัวอย่าง: 0812345678`
+              );
+            }
+          }
+        }
+
+        // Handle unfollow event (customer blocks/removes bot)
+        if (event.type === 'unfollow') {
+          console.log(`👋 User unfollowed: ${lineUserId}`);
+          // Optionally: Clear lineUid from customer record
+          // We'll keep it linked in case they re-follow later
+        }
+      }
+
+      res.status(200).json({ message: 'OK' });
+    } catch (error) {
+      console.error('❌ LINE webhook error:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 

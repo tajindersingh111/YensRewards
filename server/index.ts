@@ -3,8 +3,27 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Extend Request type to include rawBody
+declare global {
+  namespace Express {
+    interface Request {
+      rawBody?: string;
+    }
+  }
+}
+
 // Increase limit to 50MB to handle receipt photo uploads
-app.use(express.json({ limit: '50mb' }));
+// Capture raw body for LINE webhook signature verification
+app.use(express.json({ 
+  limit: '50mb',
+  verify: (req: Request, res, buf) => {
+    // Store raw body for LINE webhook signature verification
+    if (req.path === '/api/line/webhook') {
+      (req as any).rawBody = buf.toString('utf8');
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 app.use((req, res, next) => {

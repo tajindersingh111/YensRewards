@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.13.2** - **Edit Customer Dialog Fix & Tier Normalization**: Fixed critical bug where Edit Customer form fields were blank (caused by date parsing errors crashing the useEffect). Added `safeDateToInput()` helper for robust DD/MM/YYYY and ISO date parsing. Fixed tier normalization in CSV import to map "Member" → "bronze" and detect phone numbers in tier column. Cleaned 453 "member" and 53 corrupted tier values in database. Dialog now properly resets when closed. Previous version (v3.13.1): Data Downloads Center with secure admin-only endpoint for export files.
+**Current Version: v3.13.3** - **LINE Webhook Integration**: Added LINE webhook endpoint (`/api/line/webhook`) for automatic customer linking. When customers add the Yens Thailand LINE Official Account, they can send their phone number to link their loyalty account. Features: signature verification, follow/unfollow events, phone number matching, bilingual Thai/English messages. Previous version (v3.13.2): Edit Customer Dialog fix & tier normalization.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

@@ -1,5 +1,9 @@
-import { messagingApi } from '@line/bot-sdk';
+import { messagingApi, validateSignature } from '@line/bot-sdk';
+import type { webhook } from '@line/bot-sdk';
 const { MessagingApiClient } = messagingApi;
+
+// Type alias for webhook events
+type WebhookEvent = webhook.Event;
 
 export async function getLineClient() {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -88,3 +92,52 @@ export async function getLineProfile(lineUserId: string): Promise<any> {
     throw error;
   }
 }
+
+// Verify LINE webhook signature
+export function verifyLineSignature(body: string, signature: string): boolean {
+  const channelSecret = process.env.LINE_CHANNEL_SECRET;
+  
+  if (!channelSecret) {
+    console.error('❌ LINE_CHANNEL_SECRET not found');
+    return false;
+  }
+  
+  return validateSignature(body, channelSecret, signature);
+}
+
+// Send reply message (uses replyToken from webhook event)
+export async function replyLineMessage(
+  replyToken: string,
+  message: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = await getLineClient();
+    
+    await client.replyMessage({
+      replyToken,
+      messages: [
+        {
+          type: 'text',
+          text: message,
+        }
+      ]
+    });
+    
+    console.log(`✅ LINE reply sent successfully`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ Error sending LINE reply:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send LINE reply',
+    };
+  }
+}
+
+// Process webhook events
+export interface LineWebhookBody {
+  destination: string;
+  events: WebhookEvent[];
+}
+
+export { WebhookEvent };
