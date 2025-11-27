@@ -3250,7 +3250,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('📥 LINE webhook received');
       
-      // Get signature from header
+      const body = req.body as LineWebhookBody;
+      
+      // Handle LINE verification request (empty events array) - respond 200 OK immediately
+      // LINE sends this to verify the webhook URL is working
+      if (!body.events || body.events.length === 0) {
+        console.log('✅ LINE webhook verification - empty events, responding OK');
+        return res.status(200).json({ message: 'OK' });
+      }
+      
+      // For actual events, verify signature
       const signature = req.headers['x-line-signature'] as string;
       
       if (!signature) {
@@ -3281,13 +3290,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log('✅ LINE signature verified');
-      const body = req.body as LineWebhookBody;
-      
-      // Handle verification request (empty events array)
-      if (!body.events || body.events.length === 0) {
-        console.log('✅ LINE webhook verification successful');
-        return res.status(200).json({ message: 'OK' });
-      }
 
       // Process each event
       for (const event of body.events) {
