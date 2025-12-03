@@ -118,6 +118,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ version: 'v3.13.1' });
   });
 
+  // Check Resend configuration (admin only)
+  app.get('/api/admin/resend-config', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { getUncachableResendClient } = await import('./resend');
+      const { fromEmail } = await getUncachableResendClient();
+      res.json({ 
+        success: true, 
+        fromEmail: fromEmail,
+        message: "Resend is configured"
+      });
+    } catch (error: any) {
+      console.error("❌ Resend config check error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Resend not configured",
+        error: error.message 
+      });
+    }
+  });
+
   // Test Resend connection (admin only)
   app.post('/api/admin/test-resend', isAuthenticated, isAdmin, async (req, res) => {
     try {
