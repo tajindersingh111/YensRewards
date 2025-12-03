@@ -273,6 +273,18 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   referralCode: true,
   createdAt: true,
+}).extend({
+  // Allow dates as strings (ISO format) or Date objects for API compatibility
+  registerDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    return new Date(val);
+  }),
+  lastUse: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    return new Date(val);
+  }),
 });
 
 // CSV Import schema - all fields as strings from CSV, server will coerce types

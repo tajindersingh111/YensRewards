@@ -1024,14 +1024,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update customer (Admin only)
   app.patch('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log("Updating customer:", req.params.id, "with data:", JSON.stringify(req.body));
       const customer = await storage.updateCustomer(req.params.id, req.body);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
       res.json(customer);
-    } catch (error) {
-      console.error("Error updating customer:", error);
-      res.status(500).json({ message: "Failed to update customer" });
+    } catch (error: any) {
+      console.error("Error updating customer:", error?.message || error);
+      console.error("Stack:", error?.stack);
+      res.status(500).json({ message: "Failed to update customer", error: error?.message });
     }
   });
 
@@ -1227,20 +1229,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting customer:", error);
       res.status(500).json({ message: "Failed to delete customer" });
-    }
-  });
-
-  // Update customer
-  app.patch('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const customer = await storage.updateCustomer(req.params.id, req.body);
-      if (!customer) {
-        return res.status(404).json({ message: "Customer not found" });
-      }
-      res.json(customer);
-    } catch (error) {
-      console.error("Error updating customer:", error);
-      res.status(500).json({ message: "Failed to update customer" });
     }
   });
 
