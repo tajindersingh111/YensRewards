@@ -1025,7 +1025,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       console.log("Updating customer:", req.params.id, "with data:", JSON.stringify(req.body));
-      const customer = await storage.updateCustomer(req.params.id, req.body);
+      
+      // Transform date strings to Date objects for the database
+      const updateData = { ...req.body };
+      if (updateData.registerDate) {
+        updateData.registerDate = new Date(updateData.registerDate);
+      }
+      if (updateData.lastUse) {
+        updateData.lastUse = new Date(updateData.lastUse);
+      }
+      
+      const customer = await storage.updateCustomer(req.params.id, updateData);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
