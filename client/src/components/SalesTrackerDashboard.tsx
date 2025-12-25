@@ -535,7 +535,7 @@ export default function SalesTrackerDashboard() {
       autoTable(doc, {
         startY: 25,
         head: [['Date', 'Day', 'Channel', 'Net Sales (THB)', 'Other (THB)', 'Total (THB)']],
-        body: reportData.transactions.slice(0, 100).map(t => [
+        body: reportData.transactions.map(t => [
           formatDateDDMMYY(t.date),
           t.dayOfWeek || '-',
           t.channel,
@@ -548,10 +548,15 @@ export default function SalesTrackerDashboard() {
         styles: { fontSize: 9 },
       });
       
-      // Footer
+      // Add logo and footer to all pages
       const pageCount = doc.internal.pages.length - 1;
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        // Add logo to top left corner of each page
+        const img = new Image();
+        img.src = logoUrl;
+        doc.addImage(img, 'PNG', 10, 5, 18, 18);
+        // Footer
         doc.setFontSize(8);
         doc.setTextColor(128, 128, 128);
         doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
