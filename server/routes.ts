@@ -1894,6 +1894,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Validate that day-of-week totals match YTD total
+  app.get('/api/admin/sales/validate-totals', isAuthenticated, isAdmin, async (req, res) => {
+    console.log('🔍 Validating sales totals...');
+    try {
+      const currentYear = new Date().getFullYear();
+      const startOfYear = `${currentYear}-01-01`;
+      
+      // Get all sales for YTD
+      const allSales = await db.select().from(dailySales)
+        .where(sql`${dailySales.date} >= ${startOfYear}`);
+      
+      // Calculate YTD total
+      const ytdTotal = allSales.reduce((sum, sale) => sum + parseFloat(sale.totalSales), 0);
+      const ytdRounded = Math.round(ytdTotal * 100) / 100;
+      
+      // Calculate day-of-week breakdown
+      const dayMap = new Map<string, number>();
+      allSales.forEach(sale => {
+        const day = normalizeDayOfWeek(sale.dayOfWeek || '');
+        if (day) {
+          dayMap.set(day, (dayMap.get(day) || 0) + parseFloat(sale.totalSales));
+        }
+      });
+      
+      // Sum of all days
+      let daySum = 0;
+      const dayBreakdown: Record<string, number> = {};
+      ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
+        const amount = Math.round((dayMap.get(day) || 0) * 100) / 100;
+        dayBreakdown[day] = amount;
+        daySum += amount;
+      });
+      daySum = Math.round(daySum * 100) / 100;
+      
+      // Count records missing day_of_week
+      const missingDayCount = allSales.filter(s => !s.dayOfWeek || s.dayOfWeek.trim() === '').length;
+      
+      const difference = Math.round((ytdRounded - daySum) * 100) / 100;
+      const isValid = Math.abs(difference) < 0.01 && missingDayCount === 0;
+      
+      console.log(`✅ YTD: ฿${ytdRounded}, Day Sum: ฿${daySum}, Diff: ฿${difference}, Missing: ${missingDayCount}`);
+      
+      res.json({
+        success: true,
+        isValid,
+        ytdTotal: ytdRounded,
+        daySum,
+        difference,
+        missingDayOfWeek: missingDayCount,
+        totalRecords: allSales.length,
+        dayBreakdown,
+        message: isValid 
+          ? `All totals match! YTD ฿${ytdRounded.toLocaleString('en-US', { minimumFractionDigits: 2 })} = Day totals ฿${daySum.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          : missingDayCount > 0
+            ? `${missingDayCount} records missing day-of-week. Click "Fix Data" first.`
+            : `Mismatch: YTD ฿${ytdRounded.toLocaleString()} vs Days ฿${daySum.toLocaleString()} (diff: ฿${difference})`
+      });
+    } catch (error: any) {
+      console.error("Error validating totals:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to validate totals",
+        error: error.message 
+      });
+    }
+  });
+
   // Fix missing day_of_week values (one-time data repair)
   app.post('/api/admin/sales/fix-day-of-week', isAuthenticated, isAdmin, async (req, res) => {
     console.log('🔧 Starting day_of_week fix...');

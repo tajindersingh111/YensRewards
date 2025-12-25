@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Wrench } from "lucide-react";
+import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Wrench, CheckCircle } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 
@@ -274,6 +274,29 @@ export default function SalesTrackerDashboard() {
     },
   });
 
+  // Validate totals mutation
+  const validateTotalsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/sales/validate-totals', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to validate');
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: data.isValid ? "Totals Match!" : "Totals Mismatch",
+        description: data.message,
+        variant: data.isValid ? "default" : "destructive",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -352,17 +375,30 @@ export default function SalesTrackerDashboard() {
             <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
             <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fixDayOfWeekMutation.mutate()}
-            disabled={fixDayOfWeekMutation.isPending}
-            className="bg-white hover:bg-gray-100"
-            data-testid="button-fix-data"
-          >
-            <Wrench className="h-4 w-4 mr-2" />
-            {fixDayOfWeekMutation.isPending ? "Fixing..." : "Fix Data"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => validateTotalsMutation.mutate()}
+              disabled={validateTotalsMutation.isPending}
+              className="bg-white hover:bg-gray-100"
+              data-testid="button-verify-totals"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {validateTotalsMutation.isPending ? "Checking..." : "Verify Totals"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fixDayOfWeekMutation.mutate()}
+              disabled={fixDayOfWeekMutation.isPending}
+              className="bg-white hover:bg-gray-100"
+              data-testid="button-fix-data"
+            >
+              <Wrench className="h-4 w-4 mr-2" />
+              {fixDayOfWeekMutation.isPending ? "Fixing..." : "Fix Data"}
+            </Button>
+          </div>
         </div>
       </div>
 
