@@ -560,6 +560,7 @@ export default function SalesTrackerDashboard() {
         doc.setFontSize(8);
         doc.setTextColor(128, 128, 128);
         doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
+        doc.text('Private and Confidential', pageWidth - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
       }
       
       doc.save(`yens-sales-report-${formatDateDDMMYY(reportData.startDate)}-to-${formatDateDDMMYY(reportData.endDate)}.pdf`.replace(/\//g, '-'));
