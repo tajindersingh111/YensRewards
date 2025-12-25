@@ -1578,10 +1578,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(s => s.date >= lastMonthStart && s.date <= lastMonthEnd)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
-      // Calculate YTD (Year to Date) - from Jan 1 to today
+      // Calculate YTD (Year to Date) - from Jan 1 to today (using netSales for consistency with reports)
       const ytdSales = allSales
         .filter(s => s.date >= yearStart && s.date <= today)
-        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+        .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
       
       // Find best channel (highest total sales)
       const channelTotals = allSales.reduce((acc, sale) => {

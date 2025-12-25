@@ -1076,13 +1076,17 @@ export default function SalesTrackerDashboard() {
       <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-blue-700">
-              <FileText className="h-5 w-5" />
-              Sales Report
-            </DialogTitle>
-            <DialogDescription>
-              {reportData && `${reportData.startDate} to ${reportData.endDate}`}
-            </DialogDescription>
+            <div className="flex items-center gap-3 mb-2">
+              <img src={logoUrl} alt="Yens Logo" className="h-10 w-10 rounded-full" />
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-gray-900">
+                  Sales Report
+                </DialogTitle>
+                <DialogDescription>
+                  {reportData && `${reportData.startDate} to ${reportData.endDate}`}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           
           {reportData && (
