@@ -1738,11 +1738,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))
         .sort((a, b) => b.revenue - a.revenue);
 
-      // Day of Week Analysis - use netSales to match YTD calculation
+      // Day of Week Analysis - use netSales and filter to YTD only (to match YTD calculation)
       const dayMap = new Map<string, { revenue: number; transactions: number }>();
       const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const startOfYear = `${currentYear}-01-01`;
       
-      allSales.forEach(sale => {
+      // Filter to YTD sales only for day analysis
+      const ytdSales = allSales.filter(s => s.date >= startOfYear);
+      
+      ytdSales.forEach(sale => {
         const day = normalizeDayOfWeek(sale.dayOfWeek || '');
         if (day) {
           const existing = dayMap.get(day) || { revenue: 0, transactions: 0 };
