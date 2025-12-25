@@ -353,7 +353,14 @@ export default function AnalyticsDashboard() {
                   <XAxis dataKey="day" />
                   <YAxis yAxisId="left" orientation="left" stroke="#3B82F6" />
                   <YAxis yAxisId="right" orientation="right" stroke="#FCD34D" />
-                  <Tooltip />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      name.includes('Revenue') || name.includes('revenue') || name === t('analytics.dayAnalysis.revenue')
+                        ? `฿${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : value.toLocaleString(),
+                      name
+                    ]}
+                  />
                   <Legend />
                   <Bar
                     yAxisId="left"

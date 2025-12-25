@@ -1732,9 +1732,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const channelPerformance = Array.from(channelMap.entries())
         .map(([channel, data]) => ({
           channel,
-          revenue: data.revenue,
+          revenue: Math.round(data.revenue * 100) / 100,
           transactions: data.transactions,
-          avgTransaction: data.revenue / data.transactions,
+          avgTransaction: Math.round((data.revenue / data.transactions) * 100) / 100,
         }))
         .sort((a, b) => b.revenue - a.revenue);
 
@@ -1756,7 +1756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dayAnalysis = dayOrder
         .map(day => ({
           day,
-          revenue: dayMap.get(day)?.revenue || 0,
+          revenue: Math.round((dayMap.get(day)?.revenue || 0) * 100) / 100,
           transactions: dayMap.get(day)?.transactions || 0,
         }));
 
