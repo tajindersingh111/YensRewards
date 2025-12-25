@@ -415,9 +415,9 @@ export default function SalesTrackerDashboard() {
         break;
       }
       case 'ytd': {
-        // Year to Date starts January 1st
-        const start = new Date(now.getFullYear(), 0, 1); // January 1st
-        setReportStartDate(start.toISOString().split('T')[0]);
+        // Year to Date starts January 1st (use string format to avoid timezone issues)
+        const year = now.getFullYear();
+        setReportStartDate(`${year}-01-01`);
         setReportEndDate(todayStr);
         break;
       }
