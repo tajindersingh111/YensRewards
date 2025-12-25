@@ -1894,6 +1894,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fix missing day_of_week values (one-time data repair)
+  app.post('/api/admin/sales/fix-day-of-week', isAuthenticated, isAdmin, async (req, res) => {
+    console.log('🔧 Starting day_of_week fix...');
+    try {
+      // Find all records with missing day_of_week
+      const recordsToFix = await db.select()
+        .from(dailySales)
+        .where(sql`${dailySales.dayOfWeek} IS NULL OR ${dailySales.dayOfWeek} = ''`);
+      
+      console.log(`📊 Found ${recordsToFix.length} records with missing day_of_week`);
+      
+      if (recordsToFix.length === 0) {
+        return res.json({ 
+          success: true, 
+          message: "No records need fixing - all day_of_week values are already set!",
+          fixed: 0 
+        });
+      }
+
+      let fixedCount = 0;
+      const errors: string[] = [];
+
+      for (const record of recordsToFix) {
+        try {
+          // Calculate day of week from date
+          const date = new Date(record.date + 'T00:00:00Z');
+          const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+          const normalizedDay = normalizeDayOfWeek(dayOfWeek);
+          
+          // Update the record
+          await db.update(dailySales)
+            .set({ dayOfWeek: normalizedDay })
+            .where(eq(dailySales.id, record.id));
+          
+          fixedCount++;
+        } catch (err: any) {
+          errors.push(`Failed to fix record ${record.id}: ${err.message}`);
+        }
+      }
+
+      console.log(`✅ Fixed ${fixedCount} records`);
+      
+      res.json({ 
+        success: true, 
+        message: `Successfully fixed ${fixedCount} of ${recordsToFix.length} records`,
+        fixed: fixedCount,
+        total: recordsToFix.length,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error: any) {
+      console.error("Error fixing day_of_week:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fix day_of_week values",
+        error: error.message 
+      });
+    }
+  });
+
   // Import daily sales from Excel file
   app.post('/api/admin/import-sales-excel', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
     console.log('📊 Excel import request received');

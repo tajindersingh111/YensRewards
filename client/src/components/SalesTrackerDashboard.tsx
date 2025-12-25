@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
+import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Wrench } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 
@@ -251,6 +251,29 @@ export default function SalesTrackerDashboard() {
     },
   });
 
+  // Fix day_of_week mutation (one-time data repair)
+  const fixDayOfWeekMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/admin/sales/fix-day-of-week');
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
+      toast({
+        title: "Data Fixed!",
+        description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -324,9 +347,22 @@ export default function SalesTrackerDashboard() {
     <div className="min-h-screen" style={{ backgroundColor: '#FCD34D' }}>
       {/* Header */}
       <div className="px-6 py-4">
-        <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
-          <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
+            <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fixDayOfWeekMutation.mutate()}
+            disabled={fixDayOfWeekMutation.isPending}
+            className="bg-white hover:bg-gray-100"
+            data-testid="button-fix-data"
+          >
+            <Wrench className="h-4 w-4 mr-2" />
+            {fixDayOfWeekMutation.isPending ? "Fixing..." : "Fix Data"}
+          </Button>
         </div>
       </div>
 
