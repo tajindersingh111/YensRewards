@@ -42,6 +42,17 @@ import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { format, parse } from "date-fns";
+
+// Helper to format date as dd/mm/yy
+const formatDateDDMMYY = (dateStr: string) => {
+  try {
+    const date = parse(dateStr, 'yyyy-MM-dd', new Date());
+    return format(date, 'dd/MM/yy');
+  } catch {
+    return dateStr;
+  }
+};
 
 interface SalesReport {
   startDate: string;
@@ -462,8 +473,8 @@ export default function SalesTrackerDashboard() {
       // Date range
       doc.setFontSize(12);
       doc.setTextColor(60, 60, 60);
-      doc.text(`Period: ${reportData.startDate} to ${reportData.endDate}`, 14, 40);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 48);
+      doc.text(`Period: ${formatDateDDMMYY(reportData.startDate)} to ${formatDateDDMMYY(reportData.endDate)}`, 14, 40);
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yy')}`, 14, 48);
       
       // Summary section
       doc.setFontSize(14);
@@ -525,7 +536,7 @@ export default function SalesTrackerDashboard() {
         startY: 25,
         head: [['Date', 'Day', 'Channel', 'Net Sales (THB)', 'Other (THB)', 'Total (THB)']],
         body: reportData.transactions.slice(0, 100).map(t => [
-          t.date,
+          formatDateDDMMYY(t.date),
           t.dayOfWeek || '-',
           t.channel,
           t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
@@ -546,7 +557,7 @@ export default function SalesTrackerDashboard() {
         doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
       }
       
-      doc.save(`yens-sales-report-${reportData.startDate}-to-${reportData.endDate}.pdf`);
+      doc.save(`yens-sales-report-${formatDateDDMMYY(reportData.startDate)}-to-${formatDateDDMMYY(reportData.endDate)}.pdf`.replace(/\//g, '-'));
       toast({
         title: "PDF Downloaded",
         description: "Your sales report has been saved",
@@ -1092,7 +1103,7 @@ export default function SalesTrackerDashboard() {
                   Sales Report
                 </DialogTitle>
                 <DialogDescription>
-                  {reportData && `${reportData.startDate} to ${reportData.endDate}`}
+                  {reportData && `${formatDateDDMMYY(reportData.startDate)} to ${formatDateDDMMYY(reportData.endDate)}`}
                 </DialogDescription>
               </div>
             </div>
@@ -1198,7 +1209,7 @@ export default function SalesTrackerDashboard() {
                     <tbody>
                       {reportData.transactions.map((t, idx) => (
                         <tr key={t.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-3 py-1.5">{t.date}</td>
+                          <td className="px-3 py-1.5">{formatDateDDMMYY(t.date)}</td>
                           <td className="px-3 py-1.5">{t.dayOfWeek || '-'}</td>
                           <td className="px-3 py-1.5">
                             <Badge className={`${getChannelColor(t.channel)} text-white text-xs`}>{t.channel}</Badge>
