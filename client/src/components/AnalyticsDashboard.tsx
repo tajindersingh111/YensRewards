@@ -96,6 +96,12 @@ export default function AnalyticsDashboard() {
     totalTransactions: 0,
   };
 
+  // Calculate sum of day-of-week revenues for verification
+  const dayOfWeekTotal = (analytics?.dayAnalysis || []).reduce(
+    (sum, day) => sum + day.revenue,
+    0
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -141,50 +147,62 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Summary Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
         <Card className="bg-white" data-testid="card-current-revenue">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('analytics.currentRevenue')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium">{t('analytics.currentRevenue')}</CardTitle>
             <DollarSign className="h-4 w-4 text-[#FCD34D]" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold">
               ฿{summary.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-blue-500 text-white" data-testid="card-mom-growth">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-white">{t('analytics.momGrowth')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-white">{t('analytics.momGrowth')}</CardTitle>
             <TrendingUp className="h-4 w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold">
               {summary.momGrowth >= 0 ? '+' : ''}{summary.momGrowth.toFixed(1)}%
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-blue-500 text-white" data-testid="card-avg-transaction">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-white">{t('analytics.avgTransaction')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-white">{t('analytics.avgTransaction')}</CardTitle>
             <ShoppingCart className="h-4 w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ฿{summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 3 })}
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold">
+              ฿{summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-white" data-testid="card-transactions-month">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('analytics.transactionsMonth')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium">{t('analytics.transactionsMonth')}</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.totalTransactions}</div>
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold">{summary.totalTransactions}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-500 text-white" data-testid="card-day-total">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-white">Day Total (Mon-Sun)</CardTitle>
+            <BarChart3 className="h-4 w-4" />
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold">
+              ฿{dayOfWeekTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </div>
           </CardContent>
         </Card>
       </div>
