@@ -415,7 +415,8 @@ export default function SalesTrackerDashboard() {
         break;
       }
       case 'ytd': {
-        const start = new Date(now.getFullYear(), 0, 1);
+        // Year to Date starts January 1st
+        const start = new Date(now.getFullYear(), 0, 1); // January 1st
         setReportStartDate(start.toISOString().split('T')[0]);
         setReportEndDate(todayStr);
         break;
@@ -463,12 +464,12 @@ export default function SalesTrackerDashboard() {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       
-      // Header
+      // Header with logo space
       doc.setFillColor(252, 211, 77); // Yens Yellow
       doc.rect(0, 0, pageWidth, 30, 'F');
       doc.setFontSize(20);
       doc.setTextColor(30, 64, 175); // Blue
-      doc.text("Yen's Sales Report", 14, 20);
+      doc.text("Yen's Sales Report", 35, 20); // Offset for logo
       
       // Date range
       doc.setFontSize(12);
@@ -527,10 +528,10 @@ export default function SalesTrackerDashboard() {
       // Transaction list (new page if needed)
       doc.addPage();
       doc.setFillColor(252, 211, 77);
-      doc.rect(0, 0, pageWidth, 20, 'F');
+      doc.rect(0, 0, pageWidth, 25, 'F');
       doc.setFontSize(16);
       doc.setTextColor(30, 64, 175);
-      doc.text("Transaction Details", 14, 14);
+      doc.text("Transaction Details", 35, 16); // Offset for logo
       
       autoTable(doc, {
         startY: 25,
