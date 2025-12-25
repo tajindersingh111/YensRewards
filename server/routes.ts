@@ -1793,9 +1793,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add a new daily sale manually
   app.post('/api/admin/sales', isAuthenticated, isAdmin, async (req, res) => {
+    console.log('📊 Adding new sale:', JSON.stringify(req.body));
     try {
       const validatedData = insertDailySalesSchema.parse(req.body);
       const userId = (req.user as any).claims.sub;
+      console.log('✅ Validated sale data:', JSON.stringify(validatedData));
 
       // Calculate day of week from date
       const date = new Date(validatedData.date);
@@ -1816,6 +1818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }).returning();
 
+      console.log('✅ Sale saved successfully:', JSON.stringify(newSale));
       res.json(newSale);
     } catch (error) {
       console.error("Error adding sale:", error);
