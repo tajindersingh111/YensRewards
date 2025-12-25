@@ -1738,7 +1738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))
         .sort((a, b) => b.revenue - a.revenue);
 
-      // Day of Week Analysis
+      // Day of Week Analysis - use netSales to match YTD calculation
       const dayMap = new Map<string, { revenue: number; transactions: number }>();
       const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       
@@ -1747,7 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (day) {
           const existing = dayMap.get(day) || { revenue: 0, transactions: 0 };
           dayMap.set(day, {
-            revenue: existing.revenue + parseFloat(sale.totalSales),
+            revenue: existing.revenue + parseFloat(sale.netSales),
             transactions: existing.transactions + 1,
           });
         }
