@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp, Wrench, CheckCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -111,6 +111,51 @@ export default function SettingsPage() {
       toast({
         title: t('common.error'),
         description: error.message || t('admin.settings.twoFactorFailed'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Data maintenance mutations
+  const fixDayOfWeekMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/admin/sales/fix-day-of-week');
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
+      toast({
+        title: "Data Fixed!",
+        description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const validateTotalsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/sales/validate-totals', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to validate');
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: data.isValid ? "Totals Match!" : "Totals Mismatch",
+        description: data.message,
+        variant: data.isValid ? "default" : "destructive",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -370,6 +415,71 @@ export default function SettingsPage() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   {t('admin.settings.downloadTip')}
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Data Maintenance Section */}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="h-5 w-5" />
+                Data Maintenance
+              </CardTitle>
+              <CardDescription>
+                Tools for validating and repairing sales data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg hover-elevate">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                  <div>
+                    <p className="font-medium">Verify Totals</p>
+                    <p className="text-sm text-muted-foreground">
+                      Check if day-of-week totals match YTD sales total
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => validateTotalsMutation.mutate()}
+                  disabled={validateTotalsMutation.isPending}
+                  size="sm"
+                  variant="outline"
+                  data-testid="button-verify-totals"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {validateTotalsMutation.isPending ? 'Checking...' : 'Verify'}
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg hover-elevate">
+                <div className="flex items-center gap-3">
+                  <Wrench className="h-8 w-8 text-orange-500" />
+                  <div>
+                    <p className="font-medium">Fix Day of Week Data</p>
+                    <p className="text-sm text-muted-foreground">
+                      Auto-calculate missing day-of-week values from dates
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => fixDayOfWeekMutation.mutate()}
+                  disabled={fixDayOfWeekMutation.isPending}
+                  size="sm"
+                  variant="outline"
+                  data-testid="button-fix-data"
+                >
+                  <Wrench className="h-4 w-4 mr-2" />
+                  {fixDayOfWeekMutation.isPending ? 'Fixing...' : 'Fix Data'}
+                </Button>
+              </div>
+              
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Use these tools if you notice discrepancies in your sales data after importing from Excel.
                 </AlertDescription>
               </Alert>
             </CardContent>

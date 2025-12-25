@@ -1898,6 +1898,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate sales report for date range
+  app.get('/api/admin/sales/report', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Start and end dates are required" });
+      }
+      
+      console.log(`📊 Generating report for ${startDate} to ${endDate}`);
+      
+      // Fetch sales in date range
+      const sales = await db.select().from(dailySales)
+        .where(sql`${dailySales.date} >= ${startDate} AND ${dailySales.date} <= ${endDate}`)
+        .orderBy(sql`${dailySales.date} DESC`);
+      
+      // Calculate summary metrics
+      const totalNetSales = sales.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      const totalOtherSales = sales.reduce((sum, s) => sum + parseFloat(s.otherSales || '0'), 0);
+      const totalSales = sales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      const transactionCount = sales.length;
+      const avgTransaction = transactionCount > 0 ? totalNetSales / transactionCount : 0;
+      
+      // Channel breakdown
+      const channelMap = new Map<string, { revenue: number; count: number }>();
+      sales.forEach(sale => {
+        const existing = channelMap.get(sale.orderChannel) || { revenue: 0, count: 0 };
+        channelMap.set(sale.orderChannel, {
+          revenue: existing.revenue + parseFloat(sale.netSales),
+          count: existing.count + 1,
+        });
+      });
+      const channelBreakdown = Array.from(channelMap.entries())
+        .map(([channel, data]) => ({
+          channel,
+          revenue: Math.round(data.revenue * 100) / 100,
+          count: data.count,
+        }))
+        .sort((a, b) => b.revenue - a.revenue);
+      
+      // Day of week breakdown
+      const dayMap = new Map<string, { revenue: number; count: number }>();
+      sales.forEach(sale => {
+        const day = normalizeDayOfWeek(sale.dayOfWeek || '');
+        if (day) {
+          const existing = dayMap.get(day) || { revenue: 0, count: 0 };
+          dayMap.set(day, {
+            revenue: existing.revenue + parseFloat(sale.netSales),
+            count: existing.count + 1,
+          });
+        }
+      });
+      const dayBreakdown = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({
+        day,
+        revenue: Math.round((dayMap.get(day)?.revenue || 0) * 100) / 100,
+        count: dayMap.get(day)?.count || 0,
+      }));
+      
+      res.json({
+        startDate,
+        endDate,
+        summary: {
+          totalNetSales: Math.round(totalNetSales * 100) / 100,
+          totalOtherSales: Math.round(totalOtherSales * 100) / 100,
+          totalSales: Math.round(totalSales * 100) / 100,
+          transactionCount,
+          avgTransaction: Math.round(avgTransaction * 100) / 100,
+        },
+        channelBreakdown,
+        dayBreakdown,
+        transactions: sales.map(s => ({
+          id: s.id,
+          date: s.date,
+          channel: s.orderChannel,
+          netSales: parseFloat(s.netSales),
+          otherSales: parseFloat(s.otherSales || '0'),
+          totalSales: parseFloat(s.totalSales),
+          dayOfWeek: s.dayOfWeek,
+        })),
+      });
+    } catch (error: any) {
+      console.error("Error generating report:", error);
+      res.status(500).json({ message: "Failed to generate report", error: error.message });
+    }
+  });
+
   // Validate that day-of-week totals match YTD total
   app.get('/api/admin/sales/validate-totals', isAuthenticated, isAdmin, async (req, res) => {
     console.log('🔍 Validating sales totals...');

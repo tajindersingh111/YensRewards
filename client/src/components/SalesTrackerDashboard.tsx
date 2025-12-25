@@ -4,7 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +32,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calendar, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Wrench, CheckCircle } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Download, X } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
+interface SalesReport {
+  startDate: string;
+  endDate: string;
+  summary: {
+    totalNetSales: number;
+    totalOtherSales: number;
+    totalSales: number;
+    transactionCount: number;
+    avgTransaction: number;
+  };
+  channelBreakdown: { channel: string; revenue: number; count: number }[];
+  dayBreakdown: { day: string; revenue: number; count: number }[];
+  transactions: {
+    id: string;
+    date: string;
+    channel: string;
+    netSales: number;
+    otherSales: number;
+    totalSales: number;
+    dayOfWeek: string;
+  }[];
+}
 
 interface SalesFormData {
   date: string;
@@ -68,6 +98,14 @@ export default function SalesTrackerDashboard() {
     otherSales: "0",
     grabFee: "0",
   });
+
+  // Date range report state
+  const today = new Date().toISOString().split('T')[0];
+  const [reportStartDate, setReportStartDate] = useState(today);
+  const [reportEndDate, setReportEndDate] = useState(today);
+  const [reportData, setReportData] = useState<SalesReport | null>(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Fetch sales metrics
   const { data: metrics } = useQuery<{
@@ -251,52 +289,6 @@ export default function SalesTrackerDashboard() {
     },
   });
 
-  // Fix day_of_week mutation (one-time data repair)
-  const fixDayOfWeekMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/admin/sales/fix-day-of-week');
-      return await response.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
-      toast({
-        title: "Data Fixed!",
-        description: data.message,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Validate totals mutation
-  const validateTotalsMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/admin/sales/validate-totals', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to validate');
-      return await response.json();
-    },
-    onSuccess: (data: any) => {
-      toast({
-        title: data.isValid ? "Totals Match!" : "Totals Mismatch",
-        description: data.message,
-        variant: data.isValid ? "default" : "destructive",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -366,6 +358,200 @@ export default function SalesTrackerDashboard() {
     return colors[channel] || "bg-gray-500";
   };
 
+  // Date preset helpers
+  const setDatePreset = (preset: string) => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    
+    switch (preset) {
+      case 'today':
+        setReportStartDate(todayStr);
+        setReportEndDate(todayStr);
+        break;
+      case 'yesterday': {
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yStr = yesterday.toISOString().split('T')[0];
+        setReportStartDate(yStr);
+        setReportEndDate(yStr);
+        break;
+      }
+      case 'last7days': {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        setReportStartDate(start.toISOString().split('T')[0]);
+        setReportEndDate(todayStr);
+        break;
+      }
+      case 'last30days': {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 29);
+        setReportStartDate(start.toISOString().split('T')[0]);
+        setReportEndDate(todayStr);
+        break;
+      }
+      case 'thisMonth': {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        setReportStartDate(start.toISOString().split('T')[0]);
+        setReportEndDate(todayStr);
+        break;
+      }
+      case 'lastMonth': {
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), 0);
+        setReportStartDate(start.toISOString().split('T')[0]);
+        setReportEndDate(end.toISOString().split('T')[0]);
+        break;
+      }
+      case 'ytd': {
+        const start = new Date(now.getFullYear(), 0, 1);
+        setReportStartDate(start.toISOString().split('T')[0]);
+        setReportEndDate(todayStr);
+        break;
+      }
+    }
+  };
+
+  // Generate report
+  const handleGenerateReport = async () => {
+    if (!reportStartDate || !reportEndDate) {
+      toast({
+        title: "Error",
+        description: "Please select both start and end dates",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsGeneratingReport(true);
+    try {
+      const response = await fetch(
+        `/api/admin/sales/report?startDate=${reportStartDate}&endDate=${reportEndDate}`,
+        { credentials: 'include' }
+      );
+      if (!response.ok) throw new Error('Failed to generate report');
+      const data = await response.json();
+      setReportData(data);
+      setIsReportDialogOpen(true);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  // Export to PDF
+  const handleExportPDF = () => {
+    if (!reportData) return;
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFillColor(252, 211, 77); // Yens Yellow
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.setFontSize(20);
+    doc.setTextColor(30, 64, 175); // Blue
+    doc.text("Yen's Sales Report", 14, 20);
+    
+    // Date range
+    doc.setFontSize(12);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Period: ${reportData.startDate} to ${reportData.endDate}`, 14, 40);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 48);
+    
+    // Summary section
+    doc.setFontSize(14);
+    doc.setTextColor(30, 64, 175);
+    doc.text("Summary", 14, 62);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Total Net Sales: ฿${reportData.summary.totalNetSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 72);
+    doc.text(`Total Other Sales: ฿${reportData.summary.totalOtherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 80);
+    doc.text(`Total Sales: ฿${reportData.summary.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 88);
+    doc.text(`Transactions: ${reportData.summary.transactionCount}`, 14, 96);
+    doc.text(`Average Transaction: ฿${reportData.summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 104);
+    
+    // Channel breakdown table
+    doc.setFontSize(14);
+    doc.setTextColor(30, 64, 175);
+    doc.text("Sales by Channel", 14, 120);
+    
+    (doc as any).autoTable({
+      startY: 125,
+      head: [['Channel', 'Revenue (฿)', 'Transactions']],
+      body: reportData.channelBreakdown.map(ch => [
+        ch.channel,
+        ch.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+        ch.count.toString()
+      ]),
+      headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: [255, 250, 230] },
+    });
+    
+    // Day breakdown table
+    const afterChannelY = (doc as any).lastAutoTable.finalY + 15;
+    doc.setFontSize(14);
+    doc.setTextColor(30, 64, 175);
+    doc.text("Sales by Day of Week", 14, afterChannelY);
+    
+    (doc as any).autoTable({
+      startY: afterChannelY + 5,
+      head: [['Day', 'Revenue (฿)', 'Transactions']],
+      body: reportData.dayBreakdown.map(d => [
+        d.day,
+        d.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+        d.count.toString()
+      ]),
+      headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: [255, 250, 230] },
+    });
+    
+    // Transaction list (new page if needed)
+    doc.addPage();
+    doc.setFillColor(252, 211, 77);
+    doc.rect(0, 0, pageWidth, 20, 'F');
+    doc.setFontSize(16);
+    doc.setTextColor(30, 64, 175);
+    doc.text("Transaction Details", 14, 14);
+    
+    (doc as any).autoTable({
+      startY: 25,
+      head: [['Date', 'Day', 'Channel', 'Net Sales (฿)', 'Other (฿)', 'Total (฿)']],
+      body: reportData.transactions.slice(0, 100).map(t => [
+        t.date,
+        t.dayOfWeek || '-',
+        t.channel,
+        t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+        t.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+        t.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })
+      ]),
+      headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: [255, 250, 230] },
+      styles: { fontSize: 9 },
+    });
+    
+    // Footer
+    const pageCount = doc.internal.pages.length - 1;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
+    }
+    
+    doc.save(`yens-sales-report-${reportData.startDate}-to-${reportData.endDate}.pdf`);
+    toast({
+      title: "PDF Downloaded",
+      description: "Your sales report has been saved",
+    });
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FCD34D' }}>
       {/* Header */}
@@ -375,28 +561,66 @@ export default function SalesTrackerDashboard() {
             <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
             <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white hover:bg-gray-100"
+                  data-testid="button-date-range"
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  {reportStartDate === reportEndDate 
+                    ? reportStartDate 
+                    : `${reportStartDate} - ${reportEndDate}`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">From</Label>
+                      <Input
+                        type="date"
+                        value={reportStartDate}
+                        onChange={(e) => setReportStartDate(e.target.value)}
+                        className="text-sm"
+                        data-testid="input-start-date"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">To</Label>
+                      <Input
+                        type="date"
+                        value={reportEndDate}
+                        onChange={(e) => setReportEndDate(e.target.value)}
+                        className="text-sm"
+                        data-testid="input-end-date"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button size="sm" variant="outline" onClick={() => setDatePreset('today')} className="text-xs">Today</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDatePreset('yesterday')} className="text-xs">Yesterday</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDatePreset('last7days')} className="text-xs">Last 7 Days</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDatePreset('last30days')} className="text-xs">Last 30 Days</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDatePreset('thisMonth')} className="text-xs">This Month</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDatePreset('lastMonth')} className="text-xs">Last Month</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDatePreset('ytd')} className="col-span-2 text-xs">Year to Date</Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Button
-              variant="outline"
               size="sm"
-              onClick={() => validateTotalsMutation.mutate()}
-              disabled={validateTotalsMutation.isPending}
-              className="bg-white hover:bg-gray-100"
-              data-testid="button-verify-totals"
+              onClick={handleGenerateReport}
+              disabled={isGeneratingReport}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              data-testid="button-generate-report"
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {validateTotalsMutation.isPending ? "Checking..." : "Verify Totals"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fixDayOfWeekMutation.mutate()}
-              disabled={fixDayOfWeekMutation.isPending}
-              className="bg-white hover:bg-gray-100"
-              data-testid="button-fix-data"
-            >
-              <Wrench className="h-4 w-4 mr-2" />
-              {fixDayOfWeekMutation.isPending ? "Fixing..." : "Fix Data"}
+              <Search className="h-4 w-4 mr-2" />
+              {isGeneratingReport ? "Generating..." : "Generate Report"}
             </Button>
           </div>
         </div>
@@ -847,6 +1071,156 @@ export default function SalesTrackerDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Sales Report Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-700">
+              <FileText className="h-5 w-5" />
+              Sales Report
+            </DialogTitle>
+            <DialogDescription>
+              {reportData && `${reportData.startDate} to ${reportData.endDate}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {reportData && (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="bg-gradient-to-br from-green-500 to-green-600">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-white/80">Total Net Sales</p>
+                    <p className="text-xl font-bold text-white">
+                      ฿{reportData.summary.totalNetSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-blue-500 to-blue-600">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-white/80">Transactions</p>
+                    <p className="text-xl font-bold text-white">{reportData.summary.transactionCount}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-purple-500 to-purple-600">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-white/80">Avg Transaction</p>
+                    <p className="text-xl font-bold text-white">
+                      ฿{reportData.summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Channel Breakdown */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Sales by Channel</h3>
+                <div className="bg-gray-50 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#FCD34D]">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">Channel</th>
+                        <th className="px-3 py-2 text-right font-medium">Revenue</th>
+                        <th className="px-3 py-2 text-right font-medium">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.channelBreakdown.map((ch, idx) => (
+                        <tr key={ch.channel} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-2">
+                            <Badge className={`${getChannelColor(ch.channel)} text-white`}>{ch.channel}</Badge>
+                          </td>
+                          <td className="px-3 py-2 text-right">฿{ch.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2 text-right">{ch.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Day Breakdown */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Sales by Day of Week</h3>
+                <div className="bg-gray-50 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#FCD34D]">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">Day</th>
+                        <th className="px-3 py-2 text-right font-medium">Revenue</th>
+                        <th className="px-3 py-2 text-right font-medium">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.dayBreakdown.map((d, idx) => (
+                        <tr key={d.day} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-2 font-medium">{d.day}</td>
+                          <td className="px-3 py-2 text-right">฿{d.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2 text-right">{d.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Transactions List */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Transaction Details ({reportData.transactions.length} records)
+                </h3>
+                <div className="bg-gray-50 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#FCD34D] sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">Date</th>
+                        <th className="px-3 py-2 text-left font-medium">Day</th>
+                        <th className="px-3 py-2 text-left font-medium">Channel</th>
+                        <th className="px-3 py-2 text-right font-medium">Net Sales</th>
+                        <th className="px-3 py-2 text-right font-medium">Other</th>
+                        <th className="px-3 py-2 text-right font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.transactions.map((t, idx) => (
+                        <tr key={t.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-1.5">{t.date}</td>
+                          <td className="px-3 py-1.5">{t.dayOfWeek || '-'}</td>
+                          <td className="px-3 py-1.5">
+                            <Badge className={`${getChannelColor(t.channel)} text-white text-xs`}>{t.channel}</Badge>
+                          </td>
+                          <td className="px-3 py-1.5 text-right">฿{t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-1.5 text-right">฿{t.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-1.5 text-right font-medium">฿{t.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Export Button */}
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsReportDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={handleExportPDF}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  data-testid="button-export-pdf"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
