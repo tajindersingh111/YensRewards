@@ -448,108 +448,117 @@ export default function SalesTrackerDashboard() {
   const handleExportPDF = () => {
     if (!reportData) return;
     
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    
-    // Header
-    doc.setFillColor(252, 211, 77); // Yens Yellow
-    doc.rect(0, 0, pageWidth, 30, 'F');
-    doc.setFontSize(20);
-    doc.setTextColor(30, 64, 175); // Blue
-    doc.text("Yen's Sales Report", 14, 20);
-    
-    // Date range
-    doc.setFontSize(12);
-    doc.setTextColor(60, 60, 60);
-    doc.text(`Period: ${reportData.startDate} to ${reportData.endDate}`, 14, 40);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 48);
-    
-    // Summary section
-    doc.setFontSize(14);
-    doc.setTextColor(30, 64, 175);
-    doc.text("Summary", 14, 62);
-    
-    doc.setFontSize(11);
-    doc.setTextColor(60, 60, 60);
-    doc.text(`Total Net Sales: ฿${reportData.summary.totalNetSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 72);
-    doc.text(`Total Other Sales: ฿${reportData.summary.totalOtherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 80);
-    doc.text(`Total Sales: ฿${reportData.summary.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 88);
-    doc.text(`Transactions: ${reportData.summary.transactionCount}`, 14, 96);
-    doc.text(`Average Transaction: ฿${reportData.summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14, 104);
-    
-    // Channel breakdown table
-    doc.setFontSize(14);
-    doc.setTextColor(30, 64, 175);
-    doc.text("Sales by Channel", 14, 120);
-    
-    (doc as any).autoTable({
-      startY: 125,
-      head: [['Channel', 'Revenue (฿)', 'Transactions']],
-      body: reportData.channelBreakdown.map(ch => [
-        ch.channel,
-        ch.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-        ch.count.toString()
-      ]),
-      headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
-      alternateRowStyles: { fillColor: [255, 250, 230] },
-    });
-    
-    // Day breakdown table
-    const afterChannelY = (doc as any).lastAutoTable.finalY + 15;
-    doc.setFontSize(14);
-    doc.setTextColor(30, 64, 175);
-    doc.text("Sales by Day of Week", 14, afterChannelY);
-    
-    (doc as any).autoTable({
-      startY: afterChannelY + 5,
-      head: [['Day', 'Revenue (฿)', 'Transactions']],
-      body: reportData.dayBreakdown.map(d => [
-        d.day,
-        d.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-        d.count.toString()
-      ]),
-      headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
-      alternateRowStyles: { fillColor: [255, 250, 230] },
-    });
-    
-    // Transaction list (new page if needed)
-    doc.addPage();
-    doc.setFillColor(252, 211, 77);
-    doc.rect(0, 0, pageWidth, 20, 'F');
-    doc.setFontSize(16);
-    doc.setTextColor(30, 64, 175);
-    doc.text("Transaction Details", 14, 14);
-    
-    (doc as any).autoTable({
-      startY: 25,
-      head: [['Date', 'Day', 'Channel', 'Net Sales (฿)', 'Other (฿)', 'Total (฿)']],
-      body: reportData.transactions.slice(0, 100).map(t => [
-        t.date,
-        t.dayOfWeek || '-',
-        t.channel,
-        t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-        t.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-        t.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })
-      ]),
-      headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
-      alternateRowStyles: { fillColor: [255, 250, 230] },
-      styles: { fontSize: 9 },
-    });
-    
-    // Footer
-    const pageCount = doc.internal.pages.length - 1;
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
-      doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFillColor(252, 211, 77); // Yens Yellow
+      doc.rect(0, 0, pageWidth, 30, 'F');
+      doc.setFontSize(20);
+      doc.setTextColor(30, 64, 175); // Blue
+      doc.text("Yen's Sales Report", 14, 20);
+      
+      // Date range
+      doc.setFontSize(12);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Period: ${reportData.startDate} to ${reportData.endDate}`, 14, 40);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 48);
+      
+      // Summary section
+      doc.setFontSize(14);
+      doc.setTextColor(30, 64, 175);
+      doc.text("Summary", 14, 62);
+      
+      doc.setFontSize(11);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Total Net Sales: ${reportData.summary.totalNetSales.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 72);
+      doc.text(`Total Other Sales: ${reportData.summary.totalOtherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 80);
+      doc.text(`Total Sales: ${reportData.summary.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 88);
+      doc.text(`Transactions: ${reportData.summary.transactionCount}`, 14, 96);
+      doc.text(`Average Transaction: ${reportData.summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 104);
+      
+      // Channel breakdown table
+      doc.setFontSize(14);
+      doc.setTextColor(30, 64, 175);
+      doc.text("Sales by Channel", 14, 120);
+      
+      (doc as any).autoTable({
+        startY: 125,
+        head: [['Channel', 'Revenue (THB)', 'Transactions']],
+        body: reportData.channelBreakdown.map(ch => [
+          ch.channel,
+          ch.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+          ch.count.toString()
+        ]),
+        headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
+        alternateRowStyles: { fillColor: [255, 250, 230] },
+      });
+      
+      // Day breakdown table
+      const afterChannelY = (doc as any).lastAutoTable.finalY + 15;
+      doc.setFontSize(14);
+      doc.setTextColor(30, 64, 175);
+      doc.text("Sales by Day of Week", 14, afterChannelY);
+      
+      (doc as any).autoTable({
+        startY: afterChannelY + 5,
+        head: [['Day', 'Revenue (THB)', 'Transactions']],
+        body: reportData.dayBreakdown.map(d => [
+          d.day,
+          d.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+          d.count.toString()
+        ]),
+        headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
+        alternateRowStyles: { fillColor: [255, 250, 230] },
+      });
+      
+      // Transaction list (new page if needed)
+      doc.addPage();
+      doc.setFillColor(252, 211, 77);
+      doc.rect(0, 0, pageWidth, 20, 'F');
+      doc.setFontSize(16);
+      doc.setTextColor(30, 64, 175);
+      doc.text("Transaction Details", 14, 14);
+      
+      (doc as any).autoTable({
+        startY: 25,
+        head: [['Date', 'Day', 'Channel', 'Net Sales (THB)', 'Other (THB)', 'Total (THB)']],
+        body: reportData.transactions.slice(0, 100).map(t => [
+          t.date,
+          t.dayOfWeek || '-',
+          t.channel,
+          t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+          t.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+          t.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })
+        ]),
+        headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
+        alternateRowStyles: { fillColor: [255, 250, 230] },
+        styles: { fontSize: 9 },
+      });
+      
+      // Footer
+      const pageCount = doc.internal.pages.length - 1;
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
+      }
+      
+      doc.save(`yens-sales-report-${reportData.startDate}-to-${reportData.endDate}.pdf`);
+      toast({
+        title: "PDF Downloaded",
+        description: "Your sales report has been saved",
+      });
+    } catch (error: any) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "PDF Export Failed",
+        description: error.message || "Could not generate PDF",
+        variant: "destructive",
+      });
     }
-    
-    doc.save(`yens-sales-report-${reportData.startDate}-to-${reportData.endDate}.pdf`);
-    toast({
-      title: "PDF Downloaded",
-      description: "Your sales report has been saved",
-    });
   };
 
   return (
