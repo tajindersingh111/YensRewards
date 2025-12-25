@@ -41,7 +41,7 @@ import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpre
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { format, parse } from "date-fns";
 
 // Helper to format date as dd/mm/yy
@@ -494,7 +494,7 @@ export default function SalesTrackerDashboard() {
       doc.setTextColor(30, 64, 175);
       doc.text("Sales by Channel", 14, 120);
       
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 125,
         head: [['Channel', 'Revenue (THB)', 'Transactions']],
         body: reportData.channelBreakdown.map(ch => [
@@ -512,7 +512,7 @@ export default function SalesTrackerDashboard() {
       doc.setTextColor(30, 64, 175);
       doc.text("Sales by Day of Week", 14, afterChannelY);
       
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: afterChannelY + 5,
         head: [['Day', 'Revenue (THB)', 'Transactions']],
         body: reportData.dayBreakdown.map(d => [
@@ -532,7 +532,7 @@ export default function SalesTrackerDashboard() {
       doc.setTextColor(30, 64, 175);
       doc.text("Transaction Details", 14, 14);
       
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 25,
         head: [['Date', 'Day', 'Channel', 'Net Sales (THB)', 'Other (THB)', 'Total (THB)']],
         body: reportData.transactions.slice(0, 100).map(t => [
@@ -592,8 +592,8 @@ export default function SalesTrackerDashboard() {
                 >
                   <CalendarIcon className="h-4 w-4 mr-2" />
                   {reportStartDate === reportEndDate 
-                    ? reportStartDate 
-                    : `${reportStartDate} - ${reportEndDate}`}
+                    ? formatDateDDMMYY(reportStartDate) 
+                    : `${formatDateDDMMYY(reportStartDate)} - ${formatDateDDMMYY(reportEndDate)}`}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80" align="end">
