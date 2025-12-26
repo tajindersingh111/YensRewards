@@ -140,6 +140,96 @@ export class ObjectStorageService {
     });
   }
 
+  async getEmailAssetUploadURL(filename?: string): Promise<{ uploadURL: string; assetPath: string }> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    const publicPath = publicSearchPaths[0];
+
+    const assetId = `email_${Date.now()}_${randomUUID()}`;
+    const extension = filename ? filename.split('.').pop() : 'jpg';
+    const fullPath = `${publicPath}/email-assets/${assetId}.${extension}`;
+
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+
+    const uploadURL = await signObjectURL({
+      bucketName,
+      objectName,
+      method: "PUT",
+      ttlSec: 900,
+    });
+
+    return {
+      uploadURL,
+      assetPath: `/email-assets/${assetId}.${extension}`,
+    };
+  }
+
+  async setEmailAssetAclPolicy(rawPath: string): Promise<string> {
+    const { bucketName, objectName } = this.parseEmailAssetPath(rawPath);
+
+    const isValidPath = objectName.includes('/email-assets/') || objectName.startsWith('email-assets/');
+    if (!isValidPath) {
+      console.error(`Invalid object path: ${objectName}, expected to contain 'email-assets/'`);
+      throw new Error('Invalid object path: must be in email-assets/ directory');
+    }
+
+    const bucket = objectStorageClient.bucket(bucketName);
+    const objectFile = bucket.file(objectName);
+
+    const [exists] = await objectFile.exists();
+    if (!exists) {
+      throw new ObjectNotFoundError();
+    }
+
+    await setObjectAclPolicy(objectFile, {
+      owner: "admin",
+      visibility: "public",
+    });
+
+    const filename = objectName.split('/').pop();
+    return `/email-assets/${filename}`;
+  }
+
+  async listEmailAssets(): Promise<Array<{ name: string; url: string; size: number; created: string }>> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    const publicPath = publicSearchPaths[0];
+    
+    const { bucketName, objectName } = parseObjectPath(`${publicPath}/email-assets/`);
+    const bucket = objectStorageClient.bucket(bucketName);
+    
+    try {
+      const [files] = await bucket.getFiles({ prefix: objectName });
+      return files
+        .filter(file => !file.name.endsWith('/'))
+        .map(file => ({
+          name: file.name.split('/').pop() || file.name,
+          url: `/email-assets/${file.name.split('/').pop()}`,
+          size: parseInt(file.metadata.size as string) || 0,
+          created: file.metadata.timeCreated as string || new Date().toISOString(),
+        }));
+    } catch (error) {
+      console.error("Error listing email assets:", error);
+      return [];
+    }
+  }
+
+  private parseEmailAssetPath(rawPath: string): {
+    bucketName: string;
+    objectName: string;
+  } {
+    if (rawPath.startsWith("https://storage.googleapis.com/")) {
+      const url = new URL(rawPath);
+      const pathParts = url.pathname.split("/");
+      return {
+        bucketName: pathParts[1],
+        objectName: pathParts.slice(2).join("/"),
+      };
+    }
+
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    const publicPath = publicSearchPaths[0];
+    return parseObjectPath(`${publicPath}${rawPath}`);
+  }
+
   async setProductImageAclPolicy(rawPath: string): Promise<string> {
     const { bucketName, objectName } = this.parseProductImagePath(rawPath);
 

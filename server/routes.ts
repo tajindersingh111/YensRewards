@@ -2650,6 +2650,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // EMAIL ASSET ROUTES
+  // ============================================
+
+  // Get presigned URL for email asset upload
+  app.post('/api/admin/email-assets/upload-url', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { filename } = req.body;
+      const objectStorageService = new ObjectStorageService();
+      const result = await objectStorageService.getEmailAssetUploadURL(filename);
+      res.json(result);
+    } catch (error) {
+      console.error("Error generating email asset upload URL:", error);
+      res.status(500).json({ message: "Failed to generate upload URL" });
+    }
+  });
+
+  // Set ACL policy after email asset upload
+  app.post('/api/admin/email-assets/set-acl', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { assetPath } = req.body;
+      if (!assetPath) {
+        return res.status(400).json({ message: "Asset path is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const url = await objectStorageService.setEmailAssetAclPolicy(assetPath);
+      res.json({ url });
+    } catch (error) {
+      console.error("Error setting email asset ACL:", error);
+      res.status(500).json({ message: "Failed to set asset ACL" });
+    }
+  });
+
+  // List all email assets
+  app.get('/api/admin/email-assets', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const assets = await objectStorageService.listEmailAssets();
+      res.json(assets);
+    } catch (error) {
+      console.error("Error listing email assets:", error);
+      res.status(500).json({ message: "Failed to list email assets" });
+    }
+  });
+
+  // Serve email assets (public proxy)
+  app.get('/email-assets/:filePath', async (req, res) => {
+    try {
+      const { filePath } = req.params;
+      const objectStorageService = new ObjectStorageService();
+      const file = await objectStorageService.searchPublicObject(`email-assets/${filePath}`);
+      
+      if (!file) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+
+      const canAccess = await objectStorageService.canAccessPublicObject(file);
+      if (!canAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      await objectStorageService.downloadObject(file, res, 86400);
+    } catch (error) {
+      console.error("Error serving email asset:", error);
+      res.status(500).json({ message: "Failed to serve asset" });
+    }
+  });
+
   // Import customers from CSV (admin only)
   app.post('/api/admin/customers/import', isAuthenticated, isAdmin, async (req, res) => {
     try {
