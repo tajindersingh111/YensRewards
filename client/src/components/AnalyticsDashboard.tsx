@@ -289,35 +289,82 @@ export default function AnalyticsDashboard() {
               </CardContent>
             </Card>
 
-            {/* Pie Chart */}
+            {/* Pie Chart - Improved with grouping and legend */}
             <Card className="bg-white/95" data-testid="card-channel-distribution">
               <CardHeader>
                 <CardTitle>{t('analytics.channels.distribution')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <PieChart>
-                    <Pie
-                      data={analytics?.channelPerformance || []}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={(entry) => entry.channel}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="revenue"
-                    >
-                      {(analytics?.channelPerformance || []).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number) =>
-                        `฿${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-                      }
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                {(() => {
+                  const rawData = analytics?.channelPerformance || [];
+                  const totalRevenue = rawData.reduce((sum, c) => sum + c.revenue, 0);
+                  
+                  // Group channels: top 6 + "Others"
+                  const sortedData = [...rawData].sort((a, b) => b.revenue - a.revenue);
+                  const topChannels = sortedData.slice(0, 6);
+                  const otherChannels = sortedData.slice(6);
+                  const othersRevenue = otherChannels.reduce((sum, c) => sum + c.revenue, 0);
+                  
+                  const chartData = othersRevenue > 0 
+                    ? [...topChannels, { channel: 'Others', revenue: othersRevenue, transactions: 0, avgTransaction: 0 }]
+                    : topChannels;
+
+                  return (
+                    <div className="flex flex-col items-center">
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="revenue"
+                            paddingAngle={2}
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.channel === 'Others' ? '#9CA3AF' : CHANNEL_COLORS[index % CHANNEL_COLORS.length]} 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number) => [
+                              `฿${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+                              'Revenue'
+                            ]}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      
+                      {/* Center total */}
+                      <div className="absolute flex flex-col items-center justify-center pointer-events-none" style={{ marginTop: '-180px' }}>
+                        <span className="text-xs text-muted-foreground">Total</span>
+                        <span className="text-lg font-bold">฿{totalRevenue.toLocaleString()}</span>
+                      </div>
+                      
+                      {/* Legend */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm w-full">
+                        {chartData.map((entry, index) => {
+                          const percentage = totalRevenue > 0 ? ((entry.revenue / totalRevenue) * 100).toFixed(1) : '0';
+                          return (
+                            <div key={entry.channel} className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-sm flex-shrink-0" 
+                                style={{ backgroundColor: entry.channel === 'Others' ? '#9CA3AF' : CHANNEL_COLORS[index % CHANNEL_COLORS.length] }}
+                              />
+                              <span className="truncate text-muted-foreground">{entry.channel}</span>
+                              <span className="ml-auto font-medium">{percentage}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>
