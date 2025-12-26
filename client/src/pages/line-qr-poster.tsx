@@ -74,11 +74,11 @@ export default function LineQRPoster() {
               className="h-16 mx-auto object-contain"
             />
             
-            <div className="space-y-2">
+            <div className="bg-[#FCD34D] -mx-8 px-8 py-4 space-y-1">
               <h1 className="text-2xl font-bold text-gray-900">
                 Get FREE Birthday Rewards!
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-700 font-medium">
                 รับของขวัญวันเกิดฟรี!
               </p>
             </div>
@@ -101,14 +101,14 @@ export default function LineQRPoster() {
 
             <div className="space-y-2">
               <p className="text-sm text-gray-500">Or search for this ID in LINE:</p>
-              <div className="inline-block px-6 py-3 bg-gray-100 rounded-lg border-2 border-gray-200">
+              <div className="inline-block px-6 py-3 bg-[#FCD34D]/20 rounded-lg border-2 border-[#FCD34D]">
                 <span className="text-2xl font-mono font-bold text-gray-900">{LINE_ID}</span>
               </div>
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-yellow-800">How to link your account:</h3>
-              <ol className="text-sm text-yellow-700 text-left space-y-1">
+            <div className="bg-[#FCD34D]/20 border-2 border-[#FCD34D] rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-gray-900">How to link your account:</h3>
+              <ol className="text-sm text-gray-700 text-left space-y-1">
                 <li>1. Scan QR code or search @752afsdq</li>
                 <li>2. Add Yens Thai as friend</li>
                 <li>3. Send your phone number (same as loyalty card)</li>
