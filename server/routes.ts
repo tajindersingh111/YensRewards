@@ -118,6 +118,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ version: 'v3.13.1' });
   });
 
+  // Development-only: Quick test Resend connection (no auth required)
+  if (process.env.NODE_ENV !== 'production') {
+    app.post('/api/dev/test-resend', async (req, res) => {
+      try {
+        const { email } = req.body;
+        if (!email) {
+          return res.status(400).json({ message: "Email is required" });
+        }
+
+        console.log(`🧪 [DEV] Testing Resend connection with email: ${email}`);
+        const result = await sendEmail(email, "Test Email from Yens Thai Ice Cream", "สวัสดีค่ะ! This is a test email to verify Resend integration is working correctly.\n\nIf you received this, the email system is configured properly!");
+        
+        console.log(`📧 [DEV] Resend test result:`, JSON.stringify(result));
+        
+        if (result.success) {
+          res.json({ 
+            success: true, 
+            message: "Test email sent successfully",
+            messageId: result.messageId 
+          });
+        } else {
+          res.status(500).json({ 
+            success: false, 
+            message: "Failed to send test email",
+            error: result.error 
+          });
+        }
+      } catch (error: any) {
+        console.error("❌ [DEV] Resend test error:", error);
+        res.status(500).json({ 
+          success: false, 
+          message: "Error testing Resend connection",
+          error: error.message 
+        });
+      }
+    });
+  }
+
   // Check Resend configuration (admin only)
   app.get('/api/admin/resend-config', isAuthenticated, isAdmin, async (req, res) => {
     try {
