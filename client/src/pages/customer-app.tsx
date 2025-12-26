@@ -496,6 +496,24 @@ export default function CustomerApp() {
               <p className="text-3xl font-bold text-foreground" data-testid="text-customer-phone">{customer.phone}</p>
             </div>
             
+            {/* LINE Connection Banner - Only show if not connected */}
+            {!customer.lineUid && (
+              <div 
+                className="flex items-center gap-3 p-3 bg-[#06C755]/10 border border-[#06C755]/30 rounded-xl cursor-pointer hover-elevate"
+                onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
+                data-testid="banner-connect-line"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#06C755] flex items-center justify-center flex-shrink-0">
+                  <SiLine className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground">{t('customer.connectLine')}</p>
+                  <p className="text-xs text-muted-foreground">{t('customer.lineHomeBanner')}</p>
+                </div>
+                <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </div>
+            )}
+            
             <PointsCard 
               points={customer.points} 
               tier={customer.tier as "bronze" | "silver" | "gold"} 
