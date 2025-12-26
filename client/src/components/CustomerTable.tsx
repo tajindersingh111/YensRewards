@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MessageSquare, Edit, Eye, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { SiLine } from "react-icons/si";
 import { useState, useEffect } from "react";
 import { Customer } from "@shared/schema";
 import CustomerDetailsDialog from "@/components/CustomerDetailsDialog";
@@ -199,6 +200,7 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Customer</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
+                <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">LINE</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tier</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Points</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Total Spent</th>
@@ -208,13 +210,13 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
                     {t('common.loading')}...
                   </td>
                 </tr>
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
                     {t('admin.customers.pagination.noCustomers')}
                   </td>
                 </tr>
@@ -243,6 +245,15 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
                       <td className="py-3 px-4 text-muted-foreground">{customer.phone}</td>
                       <td className="py-3 px-4 text-muted-foreground text-sm" data-testid={`text-email-${customer.id}`}>
                         {customer.email || "-"}
+                      </td>
+                      <td className="py-3 px-4 text-center" data-testid={`text-line-${customer.id}`}>
+                        {customer.lineUid ? (
+                          <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#06C755]" title="LINE Connected">
+                            <SiLine className="w-4 h-4 text-white" />
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">-</span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <Badge className={tierColors[customer.tier as keyof typeof tierColors]} data-testid={`badge-tier-${customer.id}`}>
