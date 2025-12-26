@@ -50,7 +50,8 @@ export async function sendEmail(
   try {
     const { client, fromEmail } = await getUncachableResendClient();
 
-    console.log(`Sending email to ${to} with subject: ${subject}`);
+    console.log(`📧 Sending email from: ${fromEmail} to: ${to}`);
+    console.log(`📧 Subject: ${subject}`);
 
     const result = await client.emails.send({
       from: fromEmail,
@@ -59,14 +60,25 @@ export async function sendEmail(
       html: `<p>${message.replace(/\n/g, '<br>')}</p>`,
     });
 
-    console.log(`Email sent successfully. ID: ${result.data?.id}`);
+    // Log the full response for debugging
+    console.log(`📧 Full Resend API response:`, JSON.stringify(result, null, 2));
+
+    if (result.error) {
+      console.error(`❌ Resend API error:`, result.error);
+      return {
+        success: false,
+        error: result.error.message || 'Resend API error',
+      };
+    }
+
+    console.log(`✅ Email sent successfully. ID: ${result.data?.id}`);
 
     return {
       success: true,
       messageId: result.data?.id || undefined,
     };
   } catch (error: any) {
-    console.error('Error sending email:', error);
+    console.error('❌ Error sending email:', error);
     return {
       success: false,
       error: error.message || 'Failed to send email',
