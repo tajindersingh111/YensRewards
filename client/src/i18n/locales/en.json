@@ -921,7 +921,14 @@
       "success": "Success",
       "error": "Error",
       "setDefault": "Set as default template for this type",
-      "defaultTemplate": "Default"
+      "defaultTemplate": "Default",
+      "birthdayToday": "Birthday Today",
+      "birthdayThisWeek": "Birthday This Week",
+      "useTemplate": "Use Template",
+      "selectTemplate": "Select a template...",
+      "noTemplate": "No Template (Custom Message)",
+      "insertMergeField": "+ Insert Field",
+      "mergeFieldsHint": "Use {{customerName}} etc. for personalization"
     },
     "csv": {
       "selectFile": "Select CSV File",

@@ -1269,6 +1269,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get customers with birthday today or this week
+  app.get('/api/admin/customers/birthdays', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { filter } = req.query; // 'today' or 'week'
+      const customers = await storage.getAllCustomers();
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize to midnight
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      
+      // Get current week's date range (Sunday to Saturday), normalized to midnight
+      const dayOfWeek = today.getDay();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - dayOfWeek);
+      weekStart.setHours(0, 0, 0, 0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999); // End of day
+      
+      const birthdayCustomers = customers.filter(customer => {
+        if (!customer.birthday) return false;
+        
+        try {
+          const birthday = new Date(customer.birthday);
+          const birthMonth = birthday.getMonth() + 1;
+          const birthDay = birthday.getDate();
+          
+          if (filter === 'today') {
+            return birthMonth === todayMonth && birthDay === todayDay;
+          } else if (filter === 'week') {
+            // Check if birthday (this year) falls within current week
+            const thisYearBirthday = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+            thisYearBirthday.setHours(0, 0, 0, 0); // Normalize to midnight
+            return thisYearBirthday >= weekStart && thisYearBirthday <= weekEnd;
+          }
+          return false;
+        } catch (e) {
+          return false;
+        }
+      });
+      
+      res.json(birthdayCustomers);
+    } catch (error) {
+      console.error("Error fetching birthday customers:", error);
+      res.status(500).json({ message: "Failed to fetch birthday customers" });
+    }
+  });
+
   // Get duplicate phone numbers (must come before /:id route)
   app.get('/api/admin/customers/duplicates', isAuthenticated, isAdmin, async (req, res) => {
     try {

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,22 +22,122 @@ type Customer = {
   email: string | null;
   lineUid: string | null;
   tier: string;
+  birthday?: string | null;
 };
+
+type EmailTemplate = {
+  id: string;
+  name: string;
+  subject: string;
+  message: string;
+  type: 'birthday' | 'welcome' | 'promotion' | 'line_invite' | 'points_update' | 'custom';
+};
+
+const EMAIL_TEMPLATES: EmailTemplate[] = [
+  {
+    id: 'birthday',
+    name: 'Birthday Greeting',
+    type: 'birthday',
+    subject: 'สุขสันต์วันเกิด {{customerName}}! 🎂',
+    message: `สุขสันต์วันเกิด คุณ{{customerName}}! 🎉
+
+ขอให้มีความสุขและสดใสในวันพิเศษของคุณ!
+
+เรามีของขวัญพิเศษรอคุณอยู่ที่ Yens Thai Ice Cream - ไอศกรีมฟรี 1 สกู๊ป!
+
+ใช้ได้ภายใน 7 วันนับจากวันเกิด
+
+มารับของขวัญได้ที่ Yens Thai Ice Cream ทุกสาขา! 🍨`
+  },
+  {
+    id: 'welcome',
+    name: 'Welcome New Customer',
+    type: 'welcome',
+    subject: 'ยินดีต้อนรับสู่ครอบครัว Yens! 🍨',
+    message: `ยินดีต้อนรับ คุณ{{customerName}}! 🎊
+
+ขอบคุณที่เข้าร่วมครอบครัว Yens Thai Ice Cream! เรายินดีที่คุณเป็นส่วนหนึ่งของโปรแกรมสะสมคะแนน
+
+วิธีสะสมคะแนน:
+🍨 รับ 1 คะแนนทุกการใช้จ่าย 10 บาท
+🎂 คะแนนโบนัสพิเศษวันเกิด
+👫 แนะนำเพื่อนรับรางวัลเพิ่ม
+
+เริ่มสะสมคะแนนวันนี้!`
+  },
+  {
+    id: 'promotion',
+    name: 'Promotion Announcement',
+    type: 'promotion',
+    subject: 'โปรโมชันพิเศษสำหรับคุณ{{customerName}}! 🎁',
+    message: `สวัสดีคุณ{{customerName}}! 👋
+
+เรามีข้อเสนอพิเศษสำหรับคุณ!
+
+[ใส่รายละเอียดโปรโมชันที่นี่]
+
+แสดงอีเมลนี้ที่ Yens Thai Ice Cream ทุกสาขาเพื่อรับสิทธิ์
+
+รีบมาก่อนหมดเขต! 🍨`
+  },
+  {
+    id: 'line_invite',
+    name: 'LINE Friend Invitation',
+    type: 'line_invite',
+    subject: 'เชื่อมต่อกับ Yens ผ่าน LINE! 📱',
+    message: `สวัสดีคุณ{{customerName}}! 👋
+
+ขอบคุณที่เป็นลูกค้าคนสำคัญของ Yens Thai Ice Cream! เราอยากเชื่อมต่อกับคุณผ่าน LINE
+
+🎁 เพิ่มเพื่อน LINE รับสิทธิพิเศษ:
+- โปรโมชันและส่วนลดพิเศษ
+- แจ้งเตือนรสชาติใหม่
+- ของขวัญวันเกิด
+- เช็คคะแนนสะสมง่ายๆ
+
+LINE Official Account: @752afsdq
+
+หลังจากเพิ่มเพื่อนแล้ว ส่งเบอร์โทรศัพท์เพื่อเชื่อมต่อบัญชีสะสมคะแนน!`
+  },
+  {
+    id: 'points_update',
+    name: 'Points Update',
+    type: 'points_update',
+    subject: 'คุณ{{customerName}} ได้รับคะแนนแล้ว! 🎉',
+    message: `ยินดีด้วย คุณ{{customerName}}! 🎉
+
+คุณได้รับคะแนนจากการซื้อครั้งล่าสุด!
+
+สะสมต่อไปเพื่อรับรางวัลเพิ่มเติม! 🍨
+
+ดูคะแนนสะสมของคุณได้ที่แอพ Yens Rewards`
+  }
+];
+
+const MERGE_FIELDS = [
+  { key: '{{customerName}}', label: 'Customer Name', thLabel: 'ชื่อลูกค้า' },
+  { key: '{{customerPhone}}', label: 'Phone Number', thLabel: 'เบอร์โทรศัพท์' },
+  { key: '{{customerEmail}}', label: 'Email', thLabel: 'อีเมล' },
+  { key: '{{customerTier}}', label: 'Tier', thLabel: 'ระดับสมาชิก' },
+  { key: '{{customerPoints}}', label: 'Points', thLabel: 'คะแนนสะสม' },
+  { key: '{{customerBirthday}}', label: 'Birthday', thLabel: 'วันเกิด' },
+];
 
 export default function SendMessageForm() {
   const { t } = useTranslation();
   const { toast } = useToast();
   
   const [channel, setChannel] = useState<"sms" | "email" | "app" | "line">("app");
-  const [recipientType, setRecipientType] = useState<"all" | "tier" | "individual">("all");
+  const [recipientType, setRecipientType] = useState<"all" | "tier" | "individual" | "birthday_today" | "birthday_week">("all");
   const [selectedTier, setSelectedTier] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
   // LINE-specific state
-  const [lineRecipientType, setLineRecipientType] = useState<"all" | "tier" | "individual">("all");
+  const [lineRecipientType, setLineRecipientType] = useState<"all" | "tier" | "individual" | "birthday_today" | "birthday_week">("all");
   const [lineSelectedTier, setLineSelectedTier] = useState<string>("");
   const [lineMessage, setLineMessage] = useState("");
   const [lineSelectedCustomers, setLineSelectedCustomers] = useState<string[]>([]);
@@ -46,6 +146,18 @@ export default function SendMessageForm() {
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers'],
     enabled: recipientType === "individual",
+  });
+
+  // Fetch birthday customers (today)
+  const { data: birthdayTodayCustomers = [] } = useQuery<Customer[]>({
+    queryKey: ['/api/admin/customers/birthdays?filter=today'],
+    enabled: recipientType === "birthday_today" || lineRecipientType === "birthday_today",
+  });
+
+  // Fetch birthday customers (this week)
+  const { data: birthdayWeekCustomers = [] } = useQuery<Customer[]>({
+    queryKey: ['/api/admin/customers/birthdays?filter=week'],
+    enabled: recipientType === "birthday_week" || lineRecipientType === "birthday_week",
   });
 
   // Fetch all customers for LINE (need lineUid)
@@ -174,10 +286,53 @@ export default function SendMessageForm() {
               </div>
             </SelectItem>
             <SelectItem value="tier">{t('messages.byTier')}</SelectItem>
+            <SelectItem value="birthday_today">
+              <div className="flex items-center gap-2">
+                <Cake className="w-4 h-4 text-pink-500" />
+                {t('messages.birthdayToday')}
+              </div>
+            </SelectItem>
+            <SelectItem value="birthday_week">
+              <div className="flex items-center gap-2">
+                <Cake className="w-4 h-4 text-orange-500" />
+                {t('messages.birthdayThisWeek')}
+              </div>
+            </SelectItem>
             <SelectItem value="individual">{t('messages.selectIndividual')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      {/* Birthday Customer Info */}
+      {recipientType === "birthday_today" && (
+        <Alert className="border-pink-200 bg-pink-50">
+          <Cake className="h-4 w-4 text-pink-600" />
+          <AlertDescription className="text-pink-900">
+            <strong>{birthdayTodayCustomers.length}</strong> {birthdayTodayCustomers.length === 1 ? 'customer has' : 'customers have'} a birthday today
+            {birthdayTodayCustomers.length > 0 && (
+              <span className="block text-sm mt-1">
+                {birthdayTodayCustomers.slice(0, 3).map(c => c.name).join(', ')}
+                {birthdayTodayCustomers.length > 3 && ` +${birthdayTodayCustomers.length - 3} more`}
+              </span>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {recipientType === "birthday_week" && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <Cake className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-900">
+            <strong>{birthdayWeekCustomers.length}</strong> {birthdayWeekCustomers.length === 1 ? 'customer has' : 'customers have'} a birthday this week
+            {birthdayWeekCustomers.length > 0 && (
+              <span className="block text-sm mt-1">
+                {birthdayWeekCustomers.slice(0, 3).map(c => c.name).join(', ')}
+                {birthdayWeekCustomers.length > 3 && ` +${birthdayWeekCustomers.length - 3} more`}
+              </span>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Tier Selection */}
       {recipientType === "tier" && (
@@ -267,6 +422,50 @@ export default function SendMessageForm() {
 
       <Separator />
 
+      {/* Email Template Selector (for email channel) */}
+      {channel === "email" && (
+        <div className="space-y-2">
+          <Label>{t('messages.useTemplate')}</Label>
+          <Select 
+            value={selectedTemplate} 
+            onValueChange={(val) => {
+              setSelectedTemplate(val);
+              if (val) {
+                const template = EMAIL_TEMPLATES.find(t => t.id === val);
+                if (template) {
+                  setSubject(template.subject);
+                  setMessage(template.message);
+                }
+              }
+            }}
+          >
+            <SelectTrigger data-testid="select-email-template">
+              <SelectValue placeholder={t('messages.selectTemplate')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  {t('messages.noTemplate')}
+                </div>
+              </SelectItem>
+              {EMAIL_TEMPLATES.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  <div className="flex items-center gap-2">
+                    {template.type === 'birthday' && <Cake className="w-4 h-4 text-pink-500" />}
+                    {template.type === 'welcome' && <Users className="w-4 h-4 text-green-500" />}
+                    {template.type === 'promotion' && <Mail className="w-4 h-4 text-blue-500" />}
+                    {template.type === 'line_invite' && <MessageCircle className="w-4 h-4 text-green-600" />}
+                    {template.type === 'points_update' && <CheckCircle2 className="w-4 h-4 text-yellow-500" />}
+                    {template.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Email Subject (if email channel) */}
       {channel === "email" && (
         <div className="space-y-2">
@@ -283,7 +482,32 @@ export default function SendMessageForm() {
 
       {/* Message Content */}
       <div className="space-y-2">
-        <Label htmlFor="message">{t('messages.message')}</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="message">{t('messages.message')}</Label>
+          {/* Merge Fields Helper */}
+          <Select 
+            value="" 
+            onValueChange={(val) => {
+              if (val) {
+                setMessage(prev => prev + val);
+              }
+            }}
+          >
+            <SelectTrigger className="w-auto h-7 text-xs" data-testid="select-merge-field">
+              <span className="text-muted-foreground">{t('messages.insertMergeField')}</span>
+            </SelectTrigger>
+            <SelectContent>
+              {MERGE_FIELDS.map((field) => (
+                <SelectItem key={field.key} value={field.key}>
+                  <div className="flex items-center justify-between gap-4">
+                    <span>{field.thLabel}</span>
+                    <code className="text-xs bg-muted px-1 rounded">{field.key}</code>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Textarea
           id="message"
           placeholder={t('messages.messagePlaceholder')}
@@ -292,8 +516,9 @@ export default function SendMessageForm() {
           rows={6}
           data-testid="textarea-message"
         />
-        <div className="text-xs text-muted-foreground">
-          {t('messages.charactersCount', { count: message.length })}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{t('messages.charactersCount', { count: message.length })}</span>
+          <span className="text-muted-foreground">{t('messages.mergeFieldsHint')}</span>
         </div>
       </div>
 
@@ -375,7 +600,7 @@ export default function SendMessageForm() {
       )}
 
       <div className="space-y-2">
-        <Label>Recipients</Label>
+        <Label>{t('messages.recipients')}</Label>
         <Select value={lineRecipientType} onValueChange={(v: any) => setLineRecipientType(v)}>
           <SelectTrigger data-testid="select-line-recipient-type">
             <SelectValue />
@@ -384,11 +609,23 @@ export default function SendMessageForm() {
             <SelectItem value="all">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                All Customers ({customersWithLine.length} with LINE)
+                {t('messages.allCustomers')} ({customersWithLine.length} with LINE)
               </div>
             </SelectItem>
-            <SelectItem value="tier">By Tier</SelectItem>
-            <SelectItem value="individual">Select Individuals</SelectItem>
+            <SelectItem value="tier">{t('messages.byTier')}</SelectItem>
+            <SelectItem value="birthday_today">
+              <div className="flex items-center gap-2">
+                <Cake className="w-4 h-4 text-pink-500" />
+                {t('messages.birthdayToday')}
+              </div>
+            </SelectItem>
+            <SelectItem value="birthday_week">
+              <div className="flex items-center gap-2">
+                <Cake className="w-4 h-4 text-orange-500" />
+                {t('messages.birthdayThisWeek')}
+              </div>
+            </SelectItem>
+            <SelectItem value="individual">{t('messages.selectIndividual')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

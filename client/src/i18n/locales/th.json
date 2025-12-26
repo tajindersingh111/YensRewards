@@ -921,7 +921,14 @@
       "success": "สำเร็จ",
       "error": "ข้อผิดพลาด",
       "setDefault": "ตั้งเป็นเทมเพลตเริ่มต้นสำหรับประเภทนี้",
-      "defaultTemplate": "เริ่มต้น"
+      "defaultTemplate": "เริ่มต้น",
+      "birthdayToday": "วันเกิดวันนี้",
+      "birthdayThisWeek": "วันเกิดสัปดาห์นี้",
+      "useTemplate": "ใช้เทมเพลต",
+      "selectTemplate": "เลือกเทมเพลต...",
+      "noTemplate": "ไม่ใช้เทมเพลต (ข้อความกำหนดเอง)",
+      "insertMergeField": "+ แทรกตัวแปร",
+      "mergeFieldsHint": "ใช้ {{customerName}} ฯลฯ เพื่อปรับแต่ง"
     },
     "csv": {
       "selectFile": "เลือกไฟล์ CSV",
