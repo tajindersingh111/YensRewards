@@ -615,6 +615,16 @@ export default function MessageTemplates() {
                         />
                       </FormControl>
                       <FormMessage />
+                      <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm font-medium text-yellow-800 mb-1">
+                          {isThaiLanguage ? "ตัวแปรที่ใช้ได้ (แทนที่อัตโนมัติ):" : "Available Merge Fields (auto-replace):"}
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <code className="bg-white px-2 py-1 rounded border">{"{name}"}</code>
+                          <code className="bg-white px-2 py-1 rounded border">{"{points}"}</code>
+                          <code className="bg-white px-2 py-1 rounded border">{"{tier}"}</code>
+                        </div>
+                      </div>
                     </FormItem>
                   )}
                 />
