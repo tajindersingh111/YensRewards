@@ -6,7 +6,7 @@ import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema,
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
-import { sendEmail } from "./resend";
+import { sendEmail, sendHtmlEmail } from "./resend";
 import { sendLineMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -3445,7 +3445,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // For email channel
           if (channel === 'email' && customer.email) {
             const emailSubject = subject || 'Message from Yens Thai Ice Cream';
-            const emailResult = await sendEmail(customer.email, emailSubject, message);
+            
+            // Detect if message contains HTML (starts with HTML tag or contains common HTML elements)
+            const isHtmlContent = message.trim().startsWith('<') || 
+              /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(message);
+            
+            // Use appropriate email function based on content type
+            const emailResult = isHtmlContent 
+              ? await sendHtmlEmail(customer.email, emailSubject, message)
+              : await sendEmail(customer.email, emailSubject, message);
             
             await storage.createMessageLog({
               customerId: customer.id,
@@ -3535,7 +3543,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (messageLog.channel === 'email') {
         try {
           const subject = messageLog.subject || 'Message from Yens Thai Ice Cream';
-          const emailResult = await sendEmail(messageLog.recipient, subject, messageLog.message);
+          
+          // Detect if message contains HTML
+          const isHtmlContent = messageLog.message.trim().startsWith('<') || 
+            /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(messageLog.message);
+          
+          const emailResult = isHtmlContent
+            ? await sendHtmlEmail(messageLog.recipient, subject, messageLog.message)
+            : await sendEmail(messageLog.recipient, subject, messageLog.message);
           
           if (emailResult.success && emailResult.messageId) {
             await storage.updateMessageLogStatus(
