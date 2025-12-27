@@ -362,7 +362,9 @@ export default function SendMessageForm() {
                 const template = emailTemplates.find(t => t.id === val);
                 if (template) {
                   setSubject(template.subject || '');
-                  setMessage(template.message);
+                  // Use message if available, otherwise use htmlContent (for rich HTML templates)
+                  const messageContent = template.message || template.htmlContent || '';
+                  setMessage(messageContent);
                 }
               }
             }}
