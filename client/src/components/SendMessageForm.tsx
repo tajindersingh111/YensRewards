@@ -25,94 +25,16 @@ type Customer = {
   birthday?: string | null;
 };
 
-type EmailTemplate = {
+type MessageTemplate = {
   id: string;
   name: string;
-  subject: string;
+  subject: string | null;
   message: string;
-  type: 'birthday' | 'welcome' | 'promotion' | 'line_invite' | 'points_update' | 'custom';
+  type: string;
+  channel: string;
+  isDefault?: boolean;
+  htmlContent?: string | null;
 };
-
-const EMAIL_TEMPLATES: EmailTemplate[] = [
-  {
-    id: 'birthday',
-    name: 'Birthday Greeting',
-    type: 'birthday',
-    subject: 'สุขสันต์วันเกิด {{customerName}}! 🎂',
-    message: `สุขสันต์วันเกิด คุณ{{customerName}}! 🎉
-
-ขอให้มีความสุขและสดใสในวันพิเศษของคุณ!
-
-เรามีของขวัญพิเศษรอคุณอยู่ที่ Yens Thai Ice Cream - ไอศกรีมฟรี 1 สกู๊ป!
-
-ใช้ได้ภายใน 7 วันนับจากวันเกิด
-
-มารับของขวัญได้ที่ Yens Thai Ice Cream ทุกสาขา! 🍨`
-  },
-  {
-    id: 'welcome',
-    name: 'Welcome New Customer',
-    type: 'welcome',
-    subject: 'ยินดีต้อนรับสู่ครอบครัว Yens! 🍨',
-    message: `ยินดีต้อนรับ คุณ{{customerName}}! 🎊
-
-ขอบคุณที่เข้าร่วมครอบครัว Yens Thai Ice Cream! เรายินดีที่คุณเป็นส่วนหนึ่งของโปรแกรมสะสมคะแนน
-
-วิธีสะสมคะแนน:
-🍨 รับ 1 คะแนนทุกการใช้จ่าย 10 บาท
-🎂 คะแนนโบนัสพิเศษวันเกิด
-👫 แนะนำเพื่อนรับรางวัลเพิ่ม
-
-เริ่มสะสมคะแนนวันนี้!`
-  },
-  {
-    id: 'promotion',
-    name: 'Promotion Announcement',
-    type: 'promotion',
-    subject: 'โปรโมชันพิเศษสำหรับคุณ{{customerName}}! 🎁',
-    message: `สวัสดีคุณ{{customerName}}! 👋
-
-เรามีข้อเสนอพิเศษสำหรับคุณ!
-
-[ใส่รายละเอียดโปรโมชันที่นี่]
-
-แสดงอีเมลนี้ที่ Yens Thai Ice Cream ทุกสาขาเพื่อรับสิทธิ์
-
-รีบมาก่อนหมดเขต! 🍨`
-  },
-  {
-    id: 'line_invite',
-    name: 'LINE Friend Invitation',
-    type: 'line_invite',
-    subject: 'เชื่อมต่อกับ Yens ผ่าน LINE! 📱',
-    message: `สวัสดีคุณ{{customerName}}! 👋
-
-ขอบคุณที่เป็นลูกค้าคนสำคัญของ Yens Thai Ice Cream! เราอยากเชื่อมต่อกับคุณผ่าน LINE
-
-🎁 เพิ่มเพื่อน LINE รับสิทธิพิเศษ:
-- โปรโมชันและส่วนลดพิเศษ
-- แจ้งเตือนรสชาติใหม่
-- ของขวัญวันเกิด
-- เช็คคะแนนสะสมง่ายๆ
-
-LINE Official Account: @752afsdq
-
-หลังจากเพิ่มเพื่อนแล้ว ส่งเบอร์โทรศัพท์เพื่อเชื่อมต่อบัญชีสะสมคะแนน!`
-  },
-  {
-    id: 'points_update',
-    name: 'Points Update',
-    type: 'points_update',
-    subject: 'คุณ{{customerName}} ได้รับคะแนนแล้ว! 🎉',
-    message: `ยินดีด้วย คุณ{{customerName}}! 🎉
-
-คุณได้รับคะแนนจากการซื้อครั้งล่าสุด!
-
-สะสมต่อไปเพื่อรับรางวัลเพิ่มเติม! 🍨
-
-ดูคะแนนสะสมของคุณได้ที่แอพ Yens Rewards`
-  }
-];
 
 const MERGE_FIELDS = [
   { key: '{{customerName}}', label: 'Customer Name', thLabel: 'ชื่อลูกค้า' },
@@ -164,6 +86,12 @@ export default function SendMessageForm() {
   const { data: allCustomers = [], isLoading: loadingAllCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers/all'],
     enabled: channel === "line",
+  });
+
+  // Fetch email templates from database
+  const { data: emailTemplates = [] } = useQuery<MessageTemplate[]>({
+    queryKey: ['/api/admin/message-templates/channel/email'],
+    enabled: channel === "email",
   });
 
   // Send message mutation
@@ -430,10 +358,10 @@ export default function SendMessageForm() {
             value={selectedTemplate} 
             onValueChange={(val) => {
               setSelectedTemplate(val);
-              if (val) {
-                const template = EMAIL_TEMPLATES.find(t => t.id === val);
+              if (val && val !== "none") {
+                const template = emailTemplates.find(t => t.id === val);
                 if (template) {
-                  setSubject(template.subject);
+                  setSubject(template.subject || '');
                   setMessage(template.message);
                 }
               }
@@ -449,7 +377,7 @@ export default function SendMessageForm() {
                   {t('messages.noTemplate')}
                 </div>
               </SelectItem>
-              {EMAIL_TEMPLATES.map((template) => (
+              {emailTemplates.map((template) => (
                 <SelectItem key={template.id} value={template.id}>
                   <div className="flex items-center gap-2">
                     {template.type === 'birthday' && <Cake className="w-4 h-4 text-pink-500" />}
@@ -457,7 +385,9 @@ export default function SendMessageForm() {
                     {template.type === 'promotion' && <Mail className="w-4 h-4 text-blue-500" />}
                     {template.type === 'line_invite' && <MessageCircle className="w-4 h-4 text-green-600" />}
                     {template.type === 'points_update' && <CheckCircle2 className="w-4 h-4 text-yellow-500" />}
+                    {template.type === 'custom' && <FileText className="w-4 h-4 text-gray-500" />}
                     {template.name}
+                    {template.isDefault && <Badge variant="outline" className="ml-2 text-xs">Default</Badge>}
                   </div>
                 </SelectItem>
               ))}
