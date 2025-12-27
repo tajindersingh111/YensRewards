@@ -1806,12 +1806,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
         .slice(-12);
 
-      // Channel Performance
+      // Filter to YTD sales (used by both channel and day analysis)
+      const startOfYear = `${currentYear}-01-01`;
+      const ytdSales = allSales.filter(s => s.date >= startOfYear);
+
+      // Channel Performance - use YTD and netSales to match Day Total calculation
       const channelMap = new Map<string, { revenue: number; transactions: number }>();
-      allSales.forEach(sale => {
+      ytdSales.forEach(sale => {
         const existing = channelMap.get(sale.orderChannel) || { revenue: 0, transactions: 0 };
         channelMap.set(sale.orderChannel, {
-          revenue: existing.revenue + parseFloat(sale.totalSales),
+          revenue: existing.revenue + parseFloat(sale.netSales),
           transactions: existing.transactions + 1,
         });
       });
@@ -1825,13 +1829,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))
         .sort((a, b) => b.revenue - a.revenue);
 
-      // Day of Week Analysis - use netSales and filter to YTD only (to match YTD calculation)
+      // Day of Week Analysis - use netSales and YTD (ytdSales defined above)
       const dayMap = new Map<string, { revenue: number; transactions: number }>();
       const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const startOfYear = `${currentYear}-01-01`;
-      
-      // Filter to YTD sales only for day analysis
-      const ytdSales = allSales.filter(s => s.date >= startOfYear);
       
       ytdSales.forEach(sale => {
         const day = normalizeDayOfWeek(sale.dayOfWeek || '');
