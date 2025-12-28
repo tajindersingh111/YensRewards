@@ -142,6 +142,28 @@ export const messageLog = pgTable("message_log", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Scheduled Messages table - for sending messages at a specific time
+export const scheduledMessages = pgTable("scheduled_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channel: text("channel").notNull(), // sms, email, line
+  recipientType: text("recipient_type").notNull(), // all, tier, individual, birthday_today, birthday_week
+  recipientTier: text("recipient_tier"), // bronze, silver, gold, platinum (when recipientType is 'tier')
+  recipientIds: text("recipient_ids").array(), // Customer IDs (when recipientType is 'individual')
+  templateId: varchar("template_id").references(() => messageTemplates.id),
+  subject: text("subject"), // Email subject
+  message: text("message").notNull(), // Message content (HTML for email)
+  scheduledFor: timestamp("scheduled_for").notNull(), // When to send (UTC)
+  timezone: text("timezone").notNull().default("Asia/Bangkok"), // User's timezone for display
+  status: text("status").notNull().default("pending"), // pending, processing, completed, failed, cancelled
+  processingStartedAt: timestamp("processing_started_at"), // For idempotency/lock
+  sentCount: integer("sent_count").default(0),
+  failedCount: integer("failed_count").default(0),
+  errorMessage: text("error_message"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Sites table - physical locations/stalls where Yens products are sold
 export const sites = pgTable("sites", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -350,6 +372,15 @@ export const insertMessageLogSchema = createInsertSchema(messageLog).omit({
   deliveredAt: true,
 });
 
+export const insertScheduledMessageSchema = createInsertSchema(scheduledMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  processingStartedAt: true,
+  sentCount: true,
+  failedCount: true,
+});
+
 export const insertSiteSchema = createInsertSchema(sites).omit({
   id: true,
   createdAt: true,
@@ -427,6 +458,9 @@ export type InsertMessageTemplate = z.infer<typeof insertMessageTemplateSchema>;
 
 export type MessageLog = typeof messageLog.$inferSelect;
 export type InsertMessageLog = z.infer<typeof insertMessageLogSchema>;
+
+export type ScheduledMessage = typeof scheduledMessages.$inferSelect;
+export type InsertScheduledMessage = z.infer<typeof insertScheduledMessageSchema>;
 
 export type Site = typeof sites.$inferSelect;
 export type InsertSite = z.infer<typeof insertSiteSchema>;
