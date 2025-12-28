@@ -186,12 +186,30 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
           </tr>
         </table>
         
+        <!-- LINE Opt-in Section -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin-top: 20px; background-color: #E8F5E9; border-radius: 12px;">
+          <tr>
+            <td align="center" style="padding: 20px;">
+              <p style="margin: 0; color: #2E7D32; font-size: 14px; font-weight: 600;">📱 เชื่อมต่อกับเราผ่าน LINE!</p>
+              <p style="margin: 8px 0 12px 0; color: #555555; font-size: 13px;">รับโปรโมชั่นพิเศษและอัพเดทข่าวสารก่อนใคร</p>
+              <a href="https://lin.ee/yensthai" target="_blank" style="display: inline-block; padding: 10px 24px; background-color: #06C755; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 24px;">
+                ➕ เพิ่มเพื่อน LINE @752afsdq
+              </a>
+            </td>
+          </tr>
+        </table>
+        
         <!-- Footer -->
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin-top: 20px;">
           <tr>
             <td align="center" style="padding: 20px; color: #666666; font-size: 12px;">
-              <p style="margin: 0;">Yens Thai Ice Cream - นครสวรรค์</p>
-              <p style="margin: 5px 0 0 0;">ทำด้วยความรักตั้งแต่ปี 2020</p>
+              <p style="margin: 0; font-weight: 600;">Yens Thai Ice Cream - นครสวรรค์</p>
+              <p style="margin: 8px 0 0 0;">
+                <a href="https://yensthai.com" target="_blank" style="color: #1E40AF; text-decoration: none;">🌐 yensthai.com</a>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <a href="tel:+66812345678" style="color: #1E40AF; text-decoration: none;">📞 081-234-5678</a>
+              </p>
+              <p style="margin: 8px 0 0 0; color: #999999;">ทำด้วยความรักตั้งแต่ปี 2020</p>
             </td>
           </tr>
         </table>
