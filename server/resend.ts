@@ -391,8 +391,11 @@ export async function sendHtmlEmail(
 
     console.log(`📧 Sending HTML email to ${to} with subject: ${subject}`);
     
-    // Wrap HTML in complete email template if it's a fragment
-    const wrappedHtml = wrapHtmlInEmailTemplate(html, subject);
+    // ALWAYS strip legacy header from incoming HTML first, before any wrapping
+    const cleanedHtml = stripLegacyHeader(html);
+    
+    // Wrap cleaned HTML in complete email template
+    const wrappedHtml = wrapHtmlInEmailTemplate(cleanedHtml, subject);
 
     const result = await client.emails.send({
       from: fromEmail,
