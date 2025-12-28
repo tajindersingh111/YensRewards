@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -59,6 +60,11 @@ export default function SendMessageForm() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
 
+  // Scheduling state
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+
   // LINE-specific state
   const [lineRecipientType, setLineRecipientType] = useState<"all" | "tier" | "individual" | "birthday_today" | "birthday_week">("all");
   const [lineSelectedTier, setLineSelectedTier] = useState<string>("");
@@ -93,6 +99,35 @@ export default function SendMessageForm() {
   const { data: emailTemplates = [] } = useQuery<MessageTemplate[]>({
     queryKey: ['/api/admin/message-templates/channel/email'],
     enabled: channel === "email",
+  });
+
+  // Schedule message mutation
+  const scheduleMessage = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest('POST', '/api/admin/messages/schedule', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/scheduled-messages'] });
+      toast({
+        title: t('messages.messageScheduled'),
+        description: t('messages.messageScheduledDesc'),
+      });
+      setMessage("");
+      setSubject("");
+      setSelectedCustomers([]);
+      setSelectedTemplate("");
+      setShowPreview(false);
+      setScheduleEnabled(false);
+      setScheduleDate("");
+      setScheduleTime("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('messages.scheduleFailed'),
+        description: error.message || t('messages.scheduleFailedDesc'),
+        variant: "destructive",
+      });
+    },
   });
 
   // Send message mutation
@@ -177,6 +212,48 @@ export default function SendMessageForm() {
         description: t('messages.selectCustomers'),
         variant: "destructive",
       });
+      return;
+    }
+
+    // Handle scheduling
+    if (scheduleEnabled) {
+      if (!scheduleDate || !scheduleTime) {
+        toast({
+          title: t('common.error'),
+          description: t('messages.scheduleDateTimeRequired'),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Parse the date and time as Bangkok timezone (UTC+7)
+      // Create ISO string with explicit Bangkok offset
+      const bangkokOffset = '+07:00';
+      const scheduledAtBangkok = `${scheduleDate}T${scheduleTime}:00${bangkokOffset}`;
+      const scheduledDate = new Date(scheduledAtBangkok);
+      
+      // Check if in the future (comparing to now)
+      if (scheduledDate <= new Date()) {
+        toast({
+          title: t('common.error'),
+          description: t('messages.scheduleMustBeFuture'),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const scheduleData = {
+        channel,
+        recipientType,
+        recipientTier: selectedTier || undefined,
+        recipientIds: recipientType === "individual" ? selectedCustomers : undefined,
+        subject: channel === "email" ? subject : undefined,
+        message,
+        scheduledAt: scheduledDate.toISOString(),
+        timezone: 'Asia/Bangkok',
+      };
+
+      scheduleMessage.mutate(scheduleData);
       return;
     }
 
@@ -512,15 +589,77 @@ export default function SendMessageForm() {
         </div>
       </div>
 
+      <Separator />
+
+      {/* Schedule Toggle */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <Label htmlFor="schedule-toggle">{t('messages.scheduleMessage')}</Label>
+          </div>
+          <Switch
+            id="schedule-toggle"
+            checked={scheduleEnabled}
+            onCheckedChange={setScheduleEnabled}
+            data-testid="switch-schedule"
+          />
+        </div>
+
+        {scheduleEnabled && (
+          <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border">
+            <div className="space-y-2">
+              <Label htmlFor="schedule-date" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {t('messages.scheduleDate')}
+              </Label>
+              <Input
+                id="schedule-date"
+                type="date"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                data-testid="input-schedule-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="schedule-time" className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                {t('messages.scheduleTime')}
+              </Label>
+              <Input
+                id="schedule-time"
+                type="time"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                data-testid="input-schedule-time"
+              />
+            </div>
+            <div className="col-span-2 text-xs text-muted-foreground">
+              {t('messages.scheduleTimezone')}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Send Button */}
       <Button
         onClick={handleSend}
-        disabled={sendMessage.isPending}
+        disabled={sendMessage.isPending || scheduleMessage.isPending}
         className="w-full"
         data-testid="button-send-message"
       >
-        <Send className="w-4 h-4 mr-2" />
-        {sendMessage.isPending ? t('messages.sending') : t('messages.sendNow')}
+        {scheduleEnabled ? (
+          <>
+            <Clock className="w-4 h-4 mr-2" />
+            {scheduleMessage.isPending ? t('messages.scheduling') : t('messages.scheduleNow')}
+          </>
+        ) : (
+          <>
+            <Send className="w-4 h-4 mr-2" />
+            {sendMessage.isPending ? t('messages.sending') : t('messages.sendNow')}
+          </>
+        )}
       </Button>
     </div>
   );
