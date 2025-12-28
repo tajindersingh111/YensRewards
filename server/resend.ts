@@ -207,93 +207,39 @@ const STANDARD_EMAIL_FOOTER = `
         </table>
 `;
 
-// Strip ANY header/branding from body content using DOM parsing (cheerio)
-// This removes duplicate headers when user-composed HTML already has branding
+// Strip legacy header elements - CONSERVATIVE approach to preserve email body content
+// Only removes specific legacy text elements, never removes based on colors alone
 function stripLegacyHeader(bodyContent: string): string {
-  // Extended detection: any legacy keywords OR Yens branding patterns
+  // Only look for EXPLICIT legacy header text patterns
   const hasLegacyKeywords = 
-    bodyContent.includes('ICE CREAM') || 
-    bodyContent.includes('Member Rewards') ||
-    bodyContent.includes('รสชาติแห่งสวรรค์') ||  // Our Thai tagline (in case of double-wrap)
-    (bodyContent.includes('#1E3A5F') && bodyContent.toLowerCase().includes('yens')) || // Blue Yens badge
-    (bodyContent.includes('#FCD34D') && bodyContent.toLowerCase().includes('yens'));   // Yellow Yens header
+    bodyContent.includes('ICE CREAM & DRINK') || 
+    bodyContent.includes('Member Rewards');
   
   if (!hasLegacyKeywords) {
-    console.log('✅ [stripLegacyHeader] No legacy/duplicate header patterns detected');
+    console.log('✅ [stripLegacyHeader] No legacy header keywords, preserving all content');
     return bodyContent.trim();
   }
   
-  console.log('🔧 [stripLegacyHeader] Found header patterns, using DOM parser to remove...');
+  console.log('🔧 [stripLegacyHeader] Found legacy keywords, removing specific text elements only...');
   
-  // Wrap content to preserve fragment structure (avoid cheerio adding html/head/body)
+  // Wrap content to preserve fragment structure
   const wrappedContent = `<div id="__cheerio_root__">${bodyContent}</div>`;
   const $ = cheerio.load(wrappedContent, { xmlMode: false });
   const $root = $('#__cheerio_root__');
   
-  // Strategy 1: Remove any table that looks like a header (full-width, branding colors)
-  // These are typically the FIRST tables in the email with Yens branding
-  $root.find('table').each(function() {
-    const style = $(this).attr('style') || '';
-    const text = $(this).text().trim();
-    const html = $(this).html() || '';
-    
-    // Check if this table has header-like characteristics
-    const hasYensBranding = 
-      (style.includes('#1E3A5F') || style.includes('#FCD34D')) || // Blue or Yellow brand colors
-      html.includes('#1E3A5F') || html.includes('#FCD34D') ||
-      html.includes('ICE CREAM') || html.includes('Member Rewards') ||
-      html.includes('รสชาติแห่งสวรรค์');
-    
-    // Only Yens branding with minimal text = likely a header, not main content
-    const isLikelyHeader = hasYensBranding && (
-      text.length < 100 || // Headers have little text
-      text.includes('ICE CREAM') ||
-      text.includes('Member Rewards') ||
-      (text.toLowerCase() === 'yens') ||
-      text.includes('รสชาติแห่งสวรรค์')
-    );
-    
-    if (isLikelyHeader) {
-      console.log(`🗑️ [stripLegacyHeader] Removing header table with text: "${text.substring(0, 50)}..."`);
-      $(this).remove();
-    }
-  });
-  
-  // Strategy 2: Also remove standalone Yens badges (divs/spans with just "Yens")
+  // ONLY remove elements with EXACT legacy header text - never based on colors
   $root.find('td, div, span, p').each(function() {
     const text = $(this).text().trim();
-    const style = $(this).attr('style') || '';
     
-    // Remove the blue Yens badge (small element with just "Yens" text and blue background)
-    if ((style.includes('#1E3A5F') || style.includes('background')) && text === 'Yens') {
-      console.log('🗑️ [stripLegacyHeader] Removing Yens badge element');
-      $(this).remove();
-      return;
-    }
-    
-    // Remove elements that contain ONLY legacy header text
+    // Only remove if text is EXACTLY the legacy header text
     if (text === 'ICE CREAM & DRINK' || text === 'Member Rewards') {
-      console.log(`🗑️ [stripLegacyHeader] Removing "${text}" element`);
-      $(this).remove();
-      return;
-    }
-  });
-  
-  // Clean up any empty rows left behind
-  $root.find('tr').each(function() {
-    const text = $(this).text().trim();
-    const hasImages = $(this).find('img').length > 0;
-    const hasTables = $(this).find('table').length > 0;
-    
-    if (!text && !hasImages && !hasTables) {
+      console.log(`🗑️ [stripLegacyHeader] Removing legacy text: "${text}"`);
       $(this).remove();
     }
   });
   
-  // Get the cleaned inner HTML (without our wrapper)
   const result = $root.html() || '';
-  
-  console.log('✅ [stripLegacyHeader] Header stripping complete');
+  console.log('✅ [stripLegacyHeader] Legacy header stripping complete');
   
   return result.trim();
 }
