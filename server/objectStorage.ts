@@ -1,6 +1,8 @@
 import { Storage, File } from "@google-cloud/storage";
 import { Response } from "express";
 import { randomUUID } from "crypto";
+import * as fs from "fs";
+import * as path from "path";
 import {
   ObjectAclPolicy,
   ObjectPermission,
@@ -294,6 +296,79 @@ export class ObjectStorageService {
     const publicSearchPaths = this.getPublicObjectSearchPaths();
     const publicPath = publicSearchPaths[0];
     return parseObjectPath(`${publicPath}${rawPath}`);
+  }
+
+  // Upload a local file to email-assets and return the public URL path
+  async uploadLocalFileToEmailAssets(localFilePath: string, targetFilename: string): Promise<string> {
+    try {
+      // Check if file exists locally
+      if (!fs.existsSync(localFilePath)) {
+        throw new Error(`Local file not found: ${localFilePath}`);
+      }
+
+      // Get upload URL
+      const { uploadURL, assetPath } = await this.getEmailAssetUploadURL(targetFilename);
+      
+      // Read file content
+      const fileContent = fs.readFileSync(localFilePath);
+      
+      // Determine content type
+      const ext = path.extname(targetFilename).toLowerCase();
+      const contentTypes: Record<string, string> = {
+        '.webp': 'image/webp',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+      };
+      const contentType = contentTypes[ext] || 'application/octet-stream';
+
+      // Upload using signed URL
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+        },
+        body: fileContent,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status}`);
+      }
+
+      // Set ACL policy to make it public
+      const publicPath = await this.setEmailAssetAclPolicy(uploadURL);
+      
+      console.log(`✅ Uploaded ${targetFilename} to email-assets: ${publicPath}`);
+      return publicPath;
+    } catch (error) {
+      console.error(`Failed to upload local file to email-assets:`, error);
+      throw error;
+    }
+  }
+
+  // Check if logo exists in email-assets, upload if not
+  async ensureYensLogoUploaded(): Promise<string> {
+    const logoFilename = 'yens-logo.webp';
+    const localLogoPath = './attached_assets/Copy-of-Yens-Logo_1766916126077.webp';
+    
+    try {
+      // Check if logo already exists in email-assets
+      const assets = await this.listEmailAssets();
+      const existingLogo = assets.find(a => a.name === logoFilename || a.name.includes('yens-logo'));
+      
+      if (existingLogo) {
+        console.log(`✅ Yens logo already exists in email-assets: ${existingLogo.url}`);
+        return existingLogo.url;
+      }
+      
+      // Upload the logo
+      const logoUrl = await this.uploadLocalFileToEmailAssets(localLogoPath, logoFilename);
+      return logoUrl;
+    } catch (error) {
+      console.error('Failed to ensure Yens logo is uploaded:', error);
+      throw error;
+    }
   }
 }
 

@@ -135,18 +135,40 @@ export async function sendTemplatedEmail(
   }
 }
 
-// Standard email header with Yens branding
-// To use a logo image, update YENS_LOGO_URL to a publicly accessible URL
-const YENS_LOGO_URL = ''; // Leave empty for text-based header, or add public URL like 'https://yensthai.com/logo.png'
+// Dynamic logo URL - will be set on server initialization
+let YENS_LOGO_URL = ''; // Will be populated with the email-assets URL
 
-const STANDARD_EMAIL_HEADER = `
+// Function to set the logo URL after upload
+export function setEmailLogoUrl(url: string) {
+  // Construct full URL using the app's domain
+  // For production, use the published domain; for development, use the Replit dev URL
+  const baseUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
+    ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+    : process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : 'https://yensthai.com'; // Fallback to production domain
+  
+  // If it's a relative URL, make it absolute
+  if (url.startsWith('/')) {
+    YENS_LOGO_URL = `${baseUrl}${url}`;
+  } else {
+    YENS_LOGO_URL = url;
+  }
+  console.log(`📧 Email logo URL set to: ${YENS_LOGO_URL}`);
+}
+
+// Generate the standard email header with logo
+function getStandardEmailHeader(): string {
+  const logoSection = YENS_LOGO_URL 
+    ? `<img src="${YENS_LOGO_URL}" alt="Yens Thai Ice Cream" style="height: 80px; margin-bottom: 8px;" />`
+    : `<div style="background-color: #1E3A5F; color: #ffffff; font-size: 28px; font-weight: 700; padding: 12px 28px; border-radius: 8px; display: inline-block; font-family: 'Sarabun', Arial, sans-serif; margin-bottom: 8px;">Yens</div>`;
+  
+  return `
         <!-- Email Header with Yens Branding -->
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 20px auto; background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%); border-radius: 12px; overflow: hidden;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 20px auto; background-color: #FCD34D; border-radius: 12px; overflow: hidden;">
           <tr>
             <td align="center" style="padding: 24px 20px;">
-              <div style="background-color: #1E3A5F; color: #ffffff; font-size: 28px; font-weight: 700; padding: 12px 28px; border-radius: 8px; display: inline-block; font-family: 'Sarabun', Arial, sans-serif; margin-bottom: 8px;">
-                Yens
-              </div>
+              ${logoSection}
               <p style="margin: 8px 0 0 0; color: #1E3A5F; font-size: 14px; font-weight: 600; font-family: 'Sarabun', Arial, sans-serif;">
                 รสชาติแห่งสวรรค์ • สิทธิพิเศษสมาชิก
               </p>
@@ -154,6 +176,7 @@ const STANDARD_EMAIL_HEADER = `
           </tr>
         </table>
 `;
+}
 
 // Standard footer HTML with LINE opt-in and contact info
 const STANDARD_EMAIL_FOOTER = `
@@ -221,7 +244,7 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
     if (modifiedHtml.toLowerCase().includes('<body')) {
       modifiedHtml = modifiedHtml.replace(
         /(<body[^>]*>)/i,
-        `$1\n<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding: 20px 10px 0 10px;">${STANDARD_EMAIL_HEADER}</td></tr></table>`
+        `$1\n<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding: 20px 10px 0 10px;">${getStandardEmailHeader()}</td></tr></table>`
       );
     }
     
@@ -269,7 +292,7 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f5f5;">
     <tr>
       <td align="center" style="padding: 20px 10px;">
-        ${STANDARD_EMAIL_HEADER}
+        ${getStandardEmailHeader()}
         <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
           <tr>
             <td style="padding: 30px 40px;">

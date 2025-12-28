@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { ObjectStorageService } from "./objectStorage";
+import { setEmailLogoUrl } from "./resend";
 
 const app = express();
 
@@ -67,6 +69,17 @@ app.use((req, res, next) => {
     log('Registering routes...');
     const server = await registerRoutes(app);
     log('Routes registered successfully');
+    
+    // Initialize email logo from object storage
+    try {
+      const objectStorage = new ObjectStorageService();
+      const logoUrl = await objectStorage.ensureYensLogoUploaded();
+      setEmailLogoUrl(logoUrl);
+      log(`Email logo initialized: ${logoUrl}`);
+    } catch (error) {
+      log('Warning: Failed to initialize email logo, using fallback text');
+      console.error('Logo initialization error:', error);
+    }
 
     // Global error handler - logs error but doesn't rethrow to prevent crashes
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
