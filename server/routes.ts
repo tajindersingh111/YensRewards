@@ -3407,7 +3407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get target customers based on recipient type
-      let targetCustomers = [];
+      let targetCustomers: any[] = [];
       
       if (recipientType === 'all') {
         targetCustomers = await storage.getAllCustomers();
@@ -3419,6 +3419,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customerIds.map(id => storage.getCustomer(id))
         );
         targetCustomers = targetCustomers.filter(c => c !== undefined);
+      } else if (recipientType === 'birthday_today' || recipientType === 'birthday_week') {
+        // Get customers with birthdays today or this week
+        const allCustomers = await storage.getAllCustomers();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayMonth = today.getMonth() + 1;
+        const todayDay = today.getDate();
+        
+        // Week range calculation
+        const dayOfWeek = today.getDay();
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - dayOfWeek);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+        
+        targetCustomers = allCustomers.filter(customer => {
+          if (!customer.birthday) return false;
+          
+          try {
+            const birthdayStr = customer.birthday.toString().trim();
+            let birthMonth: number = 0, birthDay: number = 0;
+            
+            if (birthdayStr.includes('-')) {
+              const parts = birthdayStr.split('-');
+              if (parts.length === 2) {
+                birthMonth = parseInt(parts[0], 10);
+                birthDay = parseInt(parts[1], 10);
+              } else if (parts.length === 3) {
+                birthMonth = parseInt(parts[1], 10);
+                birthDay = parseInt(parts[2], 10);
+              }
+            } else if (birthdayStr.includes('/')) {
+              const parts = birthdayStr.split('/');
+              if (parts.length === 2) {
+                birthMonth = parseInt(parts[0], 10);
+                birthDay = parseInt(parts[1], 10);
+              } else if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                  birthMonth = parseInt(parts[1], 10);
+                  birthDay = parseInt(parts[2], 10);
+                } else {
+                  birthMonth = parseInt(parts[0], 10);
+                  birthDay = parseInt(parts[1], 10);
+                }
+              }
+            } else if (!isNaN(Date.parse(birthdayStr))) {
+              const parsedDate = new Date(birthdayStr);
+              birthMonth = parsedDate.getMonth() + 1;
+              birthDay = parsedDate.getDate();
+            }
+            
+            if (!birthMonth || !birthDay || isNaN(birthMonth) || isNaN(birthDay)) return false;
+            
+            if (recipientType === 'birthday_today') {
+              return birthMonth === todayMonth && birthDay === todayDay;
+            } else {
+              const thisYearBirthday = new Date(today.getFullYear(), birthMonth - 1, birthDay);
+              thisYearBirthday.setHours(0, 0, 0, 0);
+              return thisYearBirthday >= weekStart && thisYearBirthday <= weekEnd;
+            }
+          } catch (e) {
+            return false;
+          }
+        });
       } else {
         return res.status(400).json({ message: "Invalid recipient configuration" });
       }

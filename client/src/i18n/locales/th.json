@@ -856,6 +856,8 @@
       "sending": "กำลังส่ง...",
       "messageSent": "ส่งข้อความสำเร็จ!",
       "messageSentDesc": "ข้อความของคุณถูกส่งให้กับลูกค้าแล้ว",
+      "messageSentCount": "ส่งสำเร็จ {{sent}} จาก {{total}} ข้อความ",
+      "messageSentCountWithFailed": "ส่งสำเร็จ {{sent}} จาก {{total}} ข้อความ ไม่สำเร็จ {{failed}} รายการ",
       "sendFailed": "ส่งข้อความไม่สำเร็จ",
       "sendFailedDesc": "เกิดข้อผิดพลาดขณะส่งข้อความ",
       "messageRequired": "ต้องกรอกเนื้อหาข้อความ",

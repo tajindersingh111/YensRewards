@@ -856,6 +856,8 @@
       "sending": "Sending...",
       "messageSent": "Messages sent successfully!",
       "messageSentDesc": "Your messages have been sent to customers",
+      "messageSentCount": "Successfully sent {{sent}} of {{total}} messages.",
+      "messageSentCountWithFailed": "Successfully sent {{sent}} of {{total}} messages. {{failed}} failed.",
       "sendFailed": "Failed to send messages",
       "sendFailedDesc": "An error occurred while sending messages",
       "messageRequired": "Message content is required",

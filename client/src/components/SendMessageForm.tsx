@@ -100,12 +100,18 @@ export default function SendMessageForm() {
     mutationFn: async (data: any) => {
       return await apiRequest('POST', '/api/admin/messages/send', data);
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
+      const sentCount = result?.sent || 0;
+      const failedCount = result?.failed || 0;
+      const totalCount = result?.total || 0;
+      const description = failedCount > 0 
+        ? t('messages.messageSentCountWithFailed', { sent: sentCount, total: totalCount, failed: failedCount })
+        : t('messages.messageSentCount', { sent: sentCount, total: totalCount });
       toast({
         title: t('messages.messageSent'),
-        description: t('messages.messageSentDesc'),
+        description,
       });
       // Reset form completely to allow sending another message
       setMessage("");
