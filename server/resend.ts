@@ -251,20 +251,14 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
                          htmlContent.trim().toLowerCase().startsWith('<html');
   
   if (isCompleteHtml) {
-    // Extract the body content
+    // SIMPLE APPROACH: Complete HTML docs already have their own header/structure
+    // Just extract body content, add our footer only (no header injection)
     const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     let bodyContent = bodyMatch ? bodyMatch[1] : htmlContent;
     
-    // Aggressively strip the legacy header from the body content
-    bodyContent = stripLegacyHeader(bodyContent);
+    console.log('📧 Complete HTML detected - preserving user content, adding footer only');
     
-    // Also remove old footer patterns
-    bodyContent = bodyContent.replace(
-      /<table[^>]*>[\s\S]*?(?:Yens Thailand[\s\S]*?Crafted with love|Facebook[\s\S]*?LINE[\s\S]*?Unsubscribe)[\s\S]*?<\/table>/gi,
-      ''
-    );
-    
-    // Build new email with only our standard header + cleaned content + standard footer
+    // Build email with user's content (no header) + our standard footer
     return `
 <!DOCTYPE html>
 <html lang="th">
@@ -283,8 +277,7 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f5f5;">
     <tr>
       <td align="center" style="padding: 20px 10px;">
-        ${getStandardEmailHeader()}
-        <!-- Original Content (with legacy header stripped) -->
+        <!-- User's Original Content (preserved as-is) -->
         ${bodyContent}
         ${STANDARD_EMAIL_FOOTER}
       </td>
@@ -356,11 +349,8 @@ export async function sendHtmlEmail(
 
     console.log(`📧 Sending HTML email to ${to} with subject: ${subject}`);
     
-    // ALWAYS strip legacy header from incoming HTML first, before any wrapping
-    const cleanedHtml = stripLegacyHeader(html);
-    
-    // Wrap cleaned HTML in complete email template
-    const wrappedHtml = wrapHtmlInEmailTemplate(cleanedHtml, subject);
+    // Simple approach: wrap HTML in template (adds header for fragments, footer only for complete docs)
+    const wrappedHtml = wrapHtmlInEmailTemplate(html, subject);
 
     const result = await client.emails.send({
       from: fromEmail,
