@@ -156,18 +156,18 @@ export function setEmailLogoUrl(url: string) {
 
 // Generate the standard email header with logo
 function getStandardEmailHeader(): string {
-  // Use larger display size (220px) for crisp logo rendering on retina displays
+  // Proportionate logo size (160px) for balanced email layout
   const logoSection = YENS_LOGO_URL 
-    ? `<img src="${YENS_LOGO_URL}" alt="Yens Thai Ice Cream" width="220" style="max-width: 220px; width: 220px; height: auto; margin-bottom: 12px; display: block;" />`
-    : `<div style="background-color: #1E3A5F; color: #ffffff; font-size: 28px; font-weight: 700; padding: 12px 28px; border-radius: 8px; display: inline-block; font-family: 'Sarabun', Arial, sans-serif; margin-bottom: 8px;">Yens</div>`;
+    ? `<img src="${YENS_LOGO_URL}" alt="Yens Thai Ice Cream" width="160" style="max-width: 160px; width: 160px; height: auto; margin-bottom: 10px; display: block;" />`
+    : `<div style="background-color: #1E3A5F; color: #ffffff; font-size: 24px; font-weight: 700; padding: 10px 24px; border-radius: 8px; display: inline-block; font-family: 'Sarabun', Arial, sans-serif; margin-bottom: 8px;">Yens</div>`;
   
   return `
         <!-- Email Header with Yens Branding -->
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 20px auto; background-color: #FCD34D; border-radius: 12px; overflow: hidden;">
           <tr>
-            <td align="center" style="padding: 28px 20px;">
+            <td align="center" style="padding: 20px 20px;">
               ${logoSection}
-              <p style="margin: 0; color: #1E3A5F; font-size: 15px; font-weight: 600; font-family: 'Sarabun', Arial, sans-serif;">
+              <p style="margin: 0; color: #1E3A5F; font-size: 14px; font-weight: 600; font-family: 'Sarabun', Arial, sans-serif;">
                 รสชาติแห่งสวรรค์ • สิทธิพิเศษสมาชิก
               </p>
             </td>
@@ -251,14 +251,26 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
                          htmlContent.trim().toLowerCase().startsWith('<html');
   
   if (isCompleteHtml) {
-    // SIMPLE APPROACH: Complete HTML docs already have their own header/structure
-    // Just extract body content, add our footer only (no header injection)
+    // Extract body content from complete HTML document
     const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     let bodyContent = bodyMatch ? bodyMatch[1] : htmlContent;
     
-    console.log('📧 Complete HTML detected - preserving user content, adding footer only');
+    console.log('📧 Complete HTML detected - stripping old header, adding new header + footer');
     
-    // Build email with user's content (no header) + our standard footer
+    // Strip the old "Yens ICE CREAM & DRINK Member Rewards" header pattern
+    // This is the blue badge + text header that appears in templates
+    bodyContent = bodyContent.replace(
+      /<table[^>]*>[\s\S]*?Yens[\s\S]*?ICE CREAM[\s\S]*?Member Rewards[\s\S]*?<\/table>/gi,
+      ''
+    );
+    
+    // Also try to remove just the header row if nested differently
+    bodyContent = bodyContent.replace(
+      /<tr[^>]*>[\s\S]*?<td[^>]*>[\s\S]*?Yens[\s\S]*?<\/td>[\s\S]*?<td[^>]*>[\s\S]*?ICE CREAM[\s\S]*?Member Rewards[\s\S]*?<\/td>[\s\S]*?<\/tr>/gi,
+      ''
+    );
+    
+    // Build email with our NEW header + cleaned content + footer
     return `
 <!DOCTYPE html>
 <html lang="th">
@@ -277,7 +289,8 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f5f5;">
     <tr>
       <td align="center" style="padding: 20px 10px;">
-        <!-- User's Original Content (preserved as-is) -->
+        ${getStandardEmailHeader()}
+        <!-- User's Content (with old header stripped) -->
         ${bodyContent}
         ${STANDARD_EMAIL_FOOTER}
       </td>
