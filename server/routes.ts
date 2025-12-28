@@ -1293,20 +1293,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!customer.birthday) return false;
         
         try {
-          const birthday = new Date(customer.birthday);
-          const birthMonth = birthday.getMonth() + 1;
-          const birthDay = birthday.getDate();
+          // Parse birthday from various formats: MM-DD, MM/DD, YYYY-MM-DD
+          let birthMonth: number = 0, birthDay: number = 0;
+          const birthdayStr = customer.birthday.toString().trim();
+          
+          if (birthdayStr.includes('-')) {
+            const parts = birthdayStr.split('-');
+            if (parts.length === 2) {
+              // MM-DD format
+              birthMonth = parseInt(parts[0], 10);
+              birthDay = parseInt(parts[1], 10);
+            } else if (parts.length === 3) {
+              // YYYY-MM-DD format
+              birthMonth = parseInt(parts[1], 10);
+              birthDay = parseInt(parts[2], 10);
+            }
+          } else if (birthdayStr.includes('/')) {
+            const parts = birthdayStr.split('/');
+            if (parts.length === 2) {
+              // MM/DD format
+              birthMonth = parseInt(parts[0], 10);
+              birthDay = parseInt(parts[1], 10);
+            } else if (parts.length === 3) {
+              // MM/DD/YYYY or YYYY/MM/DD format
+              if (parts[0].length === 4) {
+                // YYYY/MM/DD
+                birthMonth = parseInt(parts[1], 10);
+                birthDay = parseInt(parts[2], 10);
+              } else {
+                // MM/DD/YYYY
+                birthMonth = parseInt(parts[0], 10);
+                birthDay = parseInt(parts[1], 10);
+              }
+            }
+          } else if (!isNaN(Date.parse(birthdayStr))) {
+            // Try parsing as ISO date string
+            const parsedDate = new Date(birthdayStr);
+            birthMonth = parsedDate.getMonth() + 1;
+            birthDay = parsedDate.getDate();
+          }
+          
+          if (!birthMonth || !birthDay || isNaN(birthMonth) || isNaN(birthDay)) return false;
+          if (birthMonth < 1 || birthMonth > 12 || birthDay < 1 || birthDay > 31) return false;
           
           if (filter === 'today') {
             return birthMonth === todayMonth && birthDay === todayDay;
           } else if (filter === 'week') {
             // Check if birthday (this year) falls within current week
-            const thisYearBirthday = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+            const thisYearBirthday = new Date(today.getFullYear(), birthMonth - 1, birthDay);
             thisYearBirthday.setHours(0, 0, 0, 0); // Normalize to midnight
             return thisYearBirthday >= weekStart && thisYearBirthday <= weekEnd;
           }
           return false;
         } catch (e) {
+          console.error(`Failed to parse birthday for customer: ${customer.id}`, e);
           return false;
         }
       });

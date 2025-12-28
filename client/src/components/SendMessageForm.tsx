@@ -107,10 +107,12 @@ export default function SendMessageForm() {
         title: t('messages.messageSent'),
         description: t('messages.messageSentDesc'),
       });
-      // Reset form
+      // Reset form completely to allow sending another message
       setMessage("");
       setSubject("");
       setSelectedCustomers([]);
+      setSelectedTemplate("");
+      setShowPreview(false);
     },
     onError: (error: Error) => {
       toast({
