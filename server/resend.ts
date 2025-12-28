@@ -135,6 +135,74 @@ export async function sendTemplatedEmail(
   }
 }
 
+// Wrap HTML content in a complete email template structure if needed
+function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
+  // Check if HTML is already a complete document
+  const isCompleteHtml = htmlContent.trim().toLowerCase().startsWith('<!doctype') || 
+                         htmlContent.trim().toLowerCase().startsWith('<html');
+  
+  if (isCompleteHtml) {
+    return htmlContent;
+  }
+  
+  // Wrap the content in a professional email template
+  return `
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${subject}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    table {border-collapse: collapse;}
+    .fallback-font {font-family: Arial, sans-serif;}
+  </style>
+  <![endif]-->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Sarabun', 'Inter', Arial, sans-serif; background-color: #f5f5f5; }
+    
+    @media only screen and (max-width: 600px) {
+      .container { width: 100% !important; padding: 10px !important; }
+      .content { padding: 20px !important; }
+      .button { width: 100% !important; text-align: center !important; }
+      .header-title { font-size: 24px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Sarabun', 'Inter', Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f5f5;">
+    <tr>
+      <td align="center" style="padding: 20px 10px;">
+        <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td style="padding: 30px 40px;">
+              ${htmlContent}
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Footer -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin-top: 20px;">
+          <tr>
+            <td align="center" style="padding: 20px; color: #666666; font-size: 12px;">
+              <p style="margin: 0;">Yens Thai Ice Cream - นครสวรรค์</p>
+              <p style="margin: 5px 0 0 0;">ทำด้วยความรักตั้งแต่ปี 2020</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
 // Send HTML email directly
 export async function sendHtmlEmail(
   to: string,
@@ -145,12 +213,15 @@ export async function sendHtmlEmail(
     const { client, fromEmail } = await getUncachableResendClient();
 
     console.log(`📧 Sending HTML email to ${to} with subject: ${subject}`);
+    
+    // Wrap HTML in complete email template if it's a fragment
+    const wrappedHtml = wrapHtmlInEmailTemplate(html, subject);
 
     const result = await client.emails.send({
       from: fromEmail,
       to: [to],
       subject: subject,
-      html: html,
+      html: wrappedHtml,
     });
 
     console.log(`✅ HTML email sent successfully. ID: ${result.data?.id}`);
