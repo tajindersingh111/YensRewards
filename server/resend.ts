@@ -135,6 +135,26 @@ export async function sendTemplatedEmail(
   }
 }
 
+// Standard email header with Yens branding
+// To use a logo image, update YENS_LOGO_URL to a publicly accessible URL
+const YENS_LOGO_URL = ''; // Leave empty for text-based header, or add public URL like 'https://yensthai.com/logo.png'
+
+const STANDARD_EMAIL_HEADER = `
+        <!-- Email Header with Yens Branding -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 20px auto; background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%); border-radius: 12px; overflow: hidden;">
+          <tr>
+            <td align="center" style="padding: 24px 20px;">
+              <div style="background-color: #1E3A5F; color: #ffffff; font-size: 28px; font-weight: 700; padding: 12px 28px; border-radius: 8px; display: inline-block; font-family: 'Sarabun', Arial, sans-serif; margin-bottom: 8px;">
+                Yens
+              </div>
+              <p style="margin: 8px 0 0 0; color: #1E3A5F; font-size: 14px; font-weight: 600; font-family: 'Sarabun', Arial, sans-serif;">
+                รสชาติแห่งสวรรค์ • สิทธิพิเศษสมาชิก
+              </p>
+            </td>
+          </tr>
+        </table>
+`;
+
 // Standard footer HTML with LINE opt-in and contact info
 const STANDARD_EMAIL_FOOTER = `
         <!-- LINE Opt-in Section -->
@@ -173,8 +193,7 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
                          htmlContent.trim().toLowerCase().startsWith('<html');
   
   if (isCompleteHtml) {
-    // For complete HTML documents, inject the standard footer before </body>
-    // First, remove any existing old footer patterns
+    // For complete HTML documents, inject the standard header and footer
     let modifiedHtml = htmlContent;
     
     // Remove old footer patterns (Yens Thailand • Crafted with love, Facebook • LINE • Unsubscribe, etc.)
@@ -186,6 +205,24 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
     
     for (const pattern of oldFooterPatterns) {
       modifiedHtml = modifiedHtml.replace(pattern, '');
+    }
+    
+    // Remove old header patterns (ICE CREAM & DRINK, Member Rewards, blue Yens box)
+    const oldHeaderPatterns = [
+      /<table[^>]*>[\s\S]*?ICE CREAM & DRINK[\s\S]*?Member Rewards[\s\S]*?<\/table>/gi,
+      /<div[^>]*>[\s\S]*?ICE CREAM & DRINK[\s\S]*?<\/div>/gi,
+    ];
+    
+    for (const pattern of oldHeaderPatterns) {
+      modifiedHtml = modifiedHtml.replace(pattern, '');
+    }
+    
+    // Inject the standard header after <body> tag
+    if (modifiedHtml.toLowerCase().includes('<body')) {
+      modifiedHtml = modifiedHtml.replace(
+        /(<body[^>]*>)/i,
+        `$1\n<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding: 20px 10px 0 10px;">${STANDARD_EMAIL_HEADER}</td></tr></table>`
+      );
     }
     
     // Inject the standard footer before </body>
@@ -232,6 +269,7 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f5f5;">
     <tr>
       <td align="center" style="padding: 20px 10px;">
+        ${STANDARD_EMAIL_HEADER}
         <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
           <tr>
             <td style="padding: 30px 40px;">
