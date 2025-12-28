@@ -210,6 +210,15 @@ const STANDARD_EMAIL_FOOTER = `
 function stripLegacyHeader(bodyContent: string): string {
   let content = bodyContent;
   
+  // Log for debugging
+  const hasLegacyKeywords = content.includes('ICE CREAM') || content.includes('Member Rewards');
+  if (hasLegacyKeywords) {
+    console.log('🔧 [stripLegacyHeader] Found legacy keywords in HTML, attempting removal...');
+    console.log('🔧 [stripLegacyHeader] HTML length:', content.length);
+    // Log first 500 chars of HTML for debugging
+    console.log('🔧 [stripLegacyHeader] HTML start:', content.substring(0, 500).replace(/\s+/g, ' '));
+  }
+  
   // Strategy: Remove everything up to and including the first image/content block that follows the old header
   // The old header contains: blue "Yens" box, "ICE CREAM & DRINK", "Member Rewards"
   
@@ -248,6 +257,23 @@ function stripLegacyHeader(bodyContent: string): string {
   content = content.replace(/<table[^>]*>\s*<tbody[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/tbody>\s*<\/table>/gi, '');
   content = content.replace(/<table[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/table>/gi, '');
   content = content.replace(/<div[^>]*>\s*<\/div>/gi, '');
+  
+  // Log result
+  const stillHasKeywords = content.includes('ICE CREAM') || content.includes('Member Rewards');
+  if (stillHasKeywords) {
+    console.log('⚠️ [stripLegacyHeader] WARNING: Legacy keywords STILL present after removal attempts!');
+    // Find the position of these keywords
+    const iceCreamPos = content.indexOf('ICE CREAM');
+    const memberRewardsPos = content.indexOf('Member Rewards');
+    if (iceCreamPos >= 0) {
+      console.log('⚠️ [stripLegacyHeader] ICE CREAM found at position', iceCreamPos, '- Context:', content.substring(Math.max(0, iceCreamPos - 100), iceCreamPos + 100).replace(/\s+/g, ' '));
+    }
+    if (memberRewardsPos >= 0) {
+      console.log('⚠️ [stripLegacyHeader] Member Rewards found at position', memberRewardsPos, '- Context:', content.substring(Math.max(0, memberRewardsPos - 100), memberRewardsPos + 100).replace(/\s+/g, ' '));
+    }
+  } else if (hasLegacyKeywords) {
+    console.log('✅ [stripLegacyHeader] Legacy keywords successfully removed!');
+  }
   
   return content.trim();
 }
