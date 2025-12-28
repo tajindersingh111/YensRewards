@@ -3392,12 +3392,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetCustomers.map(async (customer) => {
           if (!customer) return null;
 
+          // Replace merge fields with customer data
+          const personalizedMessage = message
+            .replace(/\{name\}/g, customer.name)
+            .replace(/\{points\}/g, customer.points.toString())
+            .replace(/\{tier\}/g, customer.tier);
+          
+          const personalizedSubject = subject
+            ? subject
+                .replace(/\{name\}/g, customer.name)
+                .replace(/\{points\}/g, customer.points.toString())
+                .replace(/\{tier\}/g, customer.tier)
+            : null;
+
           // For app channel, create notification
           if (channel === 'app') {
             // Create a promotion to represent the app notification
             const promotion = await storage.createPromotion({
-              title: subject || 'Message',
-              message: message,
+              title: personalizedSubject || 'Message',
+              message: personalizedMessage,
               targetTier: tier || null,
             });
 
@@ -3413,8 +3426,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               templateId: null,
               channel: 'app',
               recipient: customer.phone,
-              subject: subject || null,
-              message: message,
+              subject: personalizedSubject || null,
+              message: personalizedMessage,
               status: 'sent',
               externalId: promotion.id,
               errorMessage: null,
@@ -3425,7 +3438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // For SMS channel
           if (channel === 'sms' && customer.phone) {
-            const smsResult = await sendSMS(customer.phone, message);
+            const smsResult = await sendSMS(customer.phone, personalizedMessage);
             
             await storage.createMessageLog({
               customerId: customer.id,
@@ -3433,7 +3446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               channel: 'sms',
               recipient: customer.phone,
               subject: null,
-              message: message,
+              message: personalizedMessage,
               status: smsResult.success ? 'sent' : 'failed',
               externalId: smsResult.messageId || null,
               errorMessage: smsResult.error || null,
@@ -3444,16 +3457,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // For email channel
           if (channel === 'email' && customer.email) {
-            const emailSubject = subject || 'Message from Yens Thai Ice Cream';
+            const emailSubject = personalizedSubject || 'Message from Yens Thai Ice Cream';
             
             // Detect if message contains HTML (starts with HTML tag or contains common HTML elements)
-            const isHtmlContent = message.trim().startsWith('<') || 
-              /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(message);
+            const isHtmlContent = personalizedMessage.trim().startsWith('<') || 
+              /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(personalizedMessage);
             
             // Use appropriate email function based on content type
             const emailResult = isHtmlContent 
-              ? await sendHtmlEmail(customer.email, emailSubject, message)
-              : await sendEmail(customer.email, emailSubject, message);
+              ? await sendHtmlEmail(customer.email, emailSubject, personalizedMessage)
+              : await sendEmail(customer.email, emailSubject, personalizedMessage);
             
             await storage.createMessageLog({
               customerId: customer.id,
@@ -3461,7 +3474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               channel: 'email',
               recipient: customer.email,
               subject: emailSubject,
-              message: message,
+              message: personalizedMessage,
               status: emailResult.success ? 'sent' : 'failed',
               externalId: emailResult.messageId || null,
               errorMessage: emailResult.error || null,
