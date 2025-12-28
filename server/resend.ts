@@ -135,6 +135,37 @@ export async function sendTemplatedEmail(
   }
 }
 
+// Standard footer HTML with LINE opt-in and contact info
+const STANDARD_EMAIL_FOOTER = `
+        <!-- LINE Opt-in Section -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin: 20px auto 0 auto; background-color: #E8F5E9; border-radius: 12px;">
+          <tr>
+            <td align="center" style="padding: 20px;">
+              <p style="margin: 0; color: #2E7D32; font-size: 14px; font-weight: 600;">📱 เชื่อมต่อกับเราผ่าน LINE!</p>
+              <p style="margin: 8px 0 12px 0; color: #555555; font-size: 13px;">รับโปรโมชั่นพิเศษและอัพเดทข่าวสารก่อนใคร</p>
+              <a href="https://lin.ee/yensthai" target="_blank" style="display: inline-block; padding: 10px 24px; background-color: #06C755; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 24px;">
+                ➕ เพิ่มเพื่อน LINE @752afsdq
+              </a>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Footer -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin: 20px auto 0 auto;">
+          <tr>
+            <td align="center" style="padding: 20px; color: #666666; font-size: 12px;">
+              <p style="margin: 0; font-weight: 600;">Yens Thai Ice Cream - นครสวรรค์</p>
+              <p style="margin: 8px 0 0 0;">
+                <a href="https://yensthai.com" target="_blank" style="color: #1E40AF; text-decoration: none;">🌐 yensthai.com</a>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <a href="tel:+66818719866" style="color: #1E40AF; text-decoration: none;">📞 081-871-9866</a>
+              </p>
+              <p style="margin: 8px 0 0 0; color: #999999;">ทำด้วยความรักตั้งแต่ปี 2020</p>
+            </td>
+          </tr>
+        </table>
+`;
+
 // Wrap HTML content in a complete email template structure if needed
 function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
   // Check if HTML is already a complete document
@@ -142,7 +173,30 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
                          htmlContent.trim().toLowerCase().startsWith('<html');
   
   if (isCompleteHtml) {
-    return htmlContent;
+    // For complete HTML documents, inject the standard footer before </body>
+    // First, remove any existing old footer patterns
+    let modifiedHtml = htmlContent;
+    
+    // Remove old footer patterns (Yens Thailand • Crafted with love, Facebook • LINE • Unsubscribe, etc.)
+    const oldFooterPatterns = [
+      /<table[^>]*>[\s\S]*?Yens Thailand[\s\S]*?Crafted with love[\s\S]*?<\/table>/gi,
+      /<table[^>]*>[\s\S]*?Facebook[\s\S]*?LINE[\s\S]*?Unsubscribe[\s\S]*?<\/table>/gi,
+      /<p[^>]*>[\s\S]*?Yens Thailand[\s\S]*?Crafted with love[\s\S]*?<\/p>/gi,
+    ];
+    
+    for (const pattern of oldFooterPatterns) {
+      modifiedHtml = modifiedHtml.replace(pattern, '');
+    }
+    
+    // Inject the standard footer before </body>
+    if (modifiedHtml.toLowerCase().includes('</body>')) {
+      modifiedHtml = modifiedHtml.replace(
+        /<\/body>/i,
+        `${STANDARD_EMAIL_FOOTER}\n</body>`
+      );
+    }
+    
+    return modifiedHtml;
   }
   
   // Wrap the content in a professional email template
@@ -185,34 +239,7 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
             </td>
           </tr>
         </table>
-        
-        <!-- LINE Opt-in Section -->
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin-top: 20px; background-color: #E8F5E9; border-radius: 12px;">
-          <tr>
-            <td align="center" style="padding: 20px;">
-              <p style="margin: 0; color: #2E7D32; font-size: 14px; font-weight: 600;">📱 เชื่อมต่อกับเราผ่าน LINE!</p>
-              <p style="margin: 8px 0 12px 0; color: #555555; font-size: 13px;">รับโปรโมชั่นพิเศษและอัพเดทข่าวสารก่อนใคร</p>
-              <a href="https://lin.ee/yensthai" target="_blank" style="display: inline-block; padding: 10px 24px; background-color: #06C755; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 24px;">
-                ➕ เพิ่มเพื่อน LINE @752afsdq
-              </a>
-            </td>
-          </tr>
-        </table>
-        
-        <!-- Footer -->
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin-top: 20px;">
-          <tr>
-            <td align="center" style="padding: 20px; color: #666666; font-size: 12px;">
-              <p style="margin: 0; font-weight: 600;">Yens Thai Ice Cream - นครสวรรค์</p>
-              <p style="margin: 8px 0 0 0;">
-                <a href="https://yensthai.com" target="_blank" style="color: #1E40AF; text-decoration: none;">🌐 yensthai.com</a>
-                &nbsp;&nbsp;|&nbsp;&nbsp;
-                <a href="tel:+66818719866" style="color: #1E40AF; text-decoration: none;">📞 081-871-9866</a>
-              </p>
-              <p style="margin: 8px 0 0 0; color: #999999;">ทำด้วยความรักตั้งแต่ปี 2020</p>
-            </td>
-          </tr>
-        </table>
+        ${STANDARD_EMAIL_FOOTER}
       </td>
     </tr>
   </table>
