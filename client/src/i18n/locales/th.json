@@ -943,7 +943,18 @@
       "selectTemplate": "เลือกเทมเพลต...",
       "noTemplate": "ไม่ใช้เทมเพลต (ข้อความกำหนดเอง)",
       "insertMergeField": "+ แทรกตัวแปร",
-      "mergeFieldsHint": "ใช้ {{customerName}} ฯลฯ เพื่อปรับแต่ง"
+      "mergeFieldsHint": "ใช้ {{customerName}} ฯลฯ เพื่อปรับแต่ง",
+      "todaySummary": "สรุปวันนี้",
+      "todaySummaryDesc": "ข้อความที่ส่งวันนี้ (เวลากรุงเทพ)",
+      "totalSent": "ส่งทั้งหมด",
+      "failedToday": "ข้อความล้มเหลววันนี้",
+      "lineMessages": "ข้อความ LINE",
+      "messageDetails": "รายละเอียดข้อความ",
+      "birthdayMessage": "วันเกิด",
+      "messageContent": "เนื้อหาข้อความ",
+      "errorDetails": "รายละเอียดข้อผิดพลาด",
+      "externalId": "รหัสภายนอก",
+      "viewDetails": "ดูรายละเอียด"
     },
     "csv": {
       "selectFile": "เลือกไฟล์ CSV",

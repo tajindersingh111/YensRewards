@@ -943,7 +943,18 @@
       "selectTemplate": "Select a template...",
       "noTemplate": "No Template (Custom Message)",
       "insertMergeField": "+ Insert Field",
-      "mergeFieldsHint": "Use {{customerName}} etc. for personalization"
+      "mergeFieldsHint": "Use {{customerName}} etc. for personalization",
+      "todaySummary": "Today's Summary",
+      "todaySummaryDesc": "Messages sent today (Bangkok time)",
+      "totalSent": "Total Sent",
+      "failedToday": "message(s) failed today",
+      "lineMessages": "LINE Messages",
+      "messageDetails": "Message Details",
+      "birthdayMessage": "Birthday",
+      "messageContent": "Message Content",
+      "errorDetails": "Error Details",
+      "externalId": "External ID",
+      "viewDetails": "View Details"
     },
     "csv": {
       "selectFile": "Select CSV File",

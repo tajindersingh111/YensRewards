@@ -3379,6 +3379,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const logs = await storage.getMessageLogs();
       
+      // Calculate today's stats (Bangkok timezone)
+      const now = new Date();
+      const bangkokOffset = 7 * 60 * 60 * 1000; // UTC+7
+      const bangkokNow = new Date(now.getTime() + bangkokOffset);
+      const todayStart = new Date(bangkokNow);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayStartUTC = new Date(todayStart.getTime() - bangkokOffset);
+      
+      const todayLogs = logs.filter(l => {
+        const sentAt = l.sentAt ? new Date(l.sentAt) : new Date(l.createdAt);
+        return sentAt >= todayStartUTC;
+      });
+      
       const stats = {
         total: logs.length,
         sent: logs.filter(l => l.status === 'sent').length,
@@ -3388,6 +3401,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         smsCount: logs.filter(l => l.channel === 'sms').length,
         emailCount: logs.filter(l => l.channel === 'email').length,
         lineCount: logs.filter(l => l.channel === 'line').length,
+        // Today's stats
+        todayTotal: todayLogs.length,
+        todaySent: todayLogs.filter(l => l.status === 'sent').length,
+        todayFailed: todayLogs.filter(l => l.status === 'failed').length,
+        todayEmail: todayLogs.filter(l => l.channel === 'email').length,
+        todaySms: todayLogs.filter(l => l.channel === 'sms').length,
+        todayLine: todayLogs.filter(l => l.channel === 'line').length,
       };
 
       res.json(stats);
