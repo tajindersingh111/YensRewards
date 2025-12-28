@@ -217,58 +217,56 @@ function stripLegacyHeader(bodyContent: string): string {
   
   console.log('🔧 [stripLegacyHeader] Found legacy keywords, using DOM parser to remove...');
   
-  // Load HTML with cheerio for reliable DOM manipulation
-  const $ = cheerio.load(bodyContent, { xmlMode: false });
+  // Wrap content to preserve fragment structure (avoid cheerio adding html/head/body)
+  const wrappedContent = `<div id="__cheerio_root__">${bodyContent}</div>`;
+  const $ = cheerio.load(wrappedContent, { xmlMode: false });
+  const $root = $('#__cheerio_root__');
   
-  // Strategy: Find and remove any table/div that contains the legacy header text
-  // The legacy header contains: "ICE CREAM & DRINK", "Member Rewards", blue "Yens" badge
+  // Strategy: Target ONLY the legacy header elements precisely
+  // The legacy header has: blue "Yens" badge (#1E3A5F), "ICE CREAM & DRINK", "Member Rewards"
+  // We need to find and remove ONLY the header row/table, not the entire email content
   
-  // Find all tables and check if they contain legacy header content
-  $('table').each(function() {
-    const tableHtml = $(this).html() || '';
-    const tableText = $(this).text();
-    
-    // Check for legacy header keywords
-    const hasIceCream = tableText.includes('ICE CREAM') || tableText.includes('ICE CREAM & DRINK');
-    const hasMemberRewards = tableText.includes('Member Rewards');
-    const hasBlueBadge = tableHtml.includes('#1E3A5F') && tableText.includes('Yens');
-    
-    if (hasIceCream || hasMemberRewards || hasBlueBadge) {
-      console.log('🗑️ [stripLegacyHeader] Removing table with legacy header content');
-      $(this).remove();
-    }
-  });
-  
-  // Also check divs for the blue Yens badge
-  $('div').each(function() {
+  // Find elements containing ONLY the legacy header text (not nested content)
+  $root.find('td, div, span, p').each(function() {
+    const text = $(this).text().trim();
     const style = $(this).attr('style') || '';
-    const text = $(this).text().trim();
     
-    // Remove the blue Yens badge div
+    // Remove the blue Yens badge (small div with just "Yens" text and blue background)
     if (style.includes('#1E3A5F') && text === 'Yens') {
-      console.log('🗑️ [stripLegacyHeader] Removing blue Yens badge div');
+      console.log('🗑️ [stripLegacyHeader] Removing blue Yens badge');
       $(this).remove();
+      return;
     }
-  });
-  
-  // Remove any remaining standalone text nodes with legacy keywords
-  $('span, p, div, td').each(function() {
-    const text = $(this).text().trim();
+    
+    // Remove elements that contain ONLY "ICE CREAM & DRINK" or "Member Rewards"
     if (text === 'ICE CREAM & DRINK' || text === 'Member Rewards') {
-      console.log('🗑️ [stripLegacyHeader] Removing standalone legacy text element');
+      console.log(`🗑️ [stripLegacyHeader] Removing "${text}" element`);
       $(this).remove();
+      return;
     }
   });
   
-  // Clean up empty tables/rows left behind
-  $('table').each(function() {
+  // Now find and remove the header table row that contained these elements
+  // Look for table rows (tr) that are now empty or nearly empty after removal
+  $root.find('tr').each(function() {
     const text = $(this).text().trim();
-    if (!text) {
-      $(this).remove();
+    const hasImages = $(this).find('img').length > 0;
+    
+    // Only remove if the row has no meaningful content AND no images
+    if (!text && !hasImages) {
+      // Check if this row's parent table also has no other content
+      const $parentTable = $(this).closest('table');
+      const siblings = $(this).siblings('tr').length;
+      
+      // Only remove the row, not the whole table
+      if (siblings > 0) {
+        $(this).remove();
+      }
     }
   });
   
-  const result = $.html();
+  // Get the cleaned inner HTML (without our wrapper)
+  const result = $root.html() || '';
   
   // Verify removal
   const stillHasKeywords = result.includes('ICE CREAM') || result.includes('Member Rewards');
