@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { generateEmailTemplate, EmailTemplateType } from './email-templates';
+import * as cheerio from 'cheerio';
 
 let connectionSettings: any;
 
@@ -206,76 +207,78 @@ const STANDARD_EMAIL_FOOTER = `
         </table>
 `;
 
-// Strip old legacy header from body content
+// Strip old legacy header from body content using DOM parsing (cheerio)
 function stripLegacyHeader(bodyContent: string): string {
-  let content = bodyContent;
+  const hasLegacyKeywords = bodyContent.includes('ICE CREAM') || bodyContent.includes('Member Rewards');
   
-  // Log for debugging
-  const hasLegacyKeywords = content.includes('ICE CREAM') || content.includes('Member Rewards');
-  if (hasLegacyKeywords) {
-    console.log('🔧 [stripLegacyHeader] Found legacy keywords in HTML, attempting removal...');
-    console.log('🔧 [stripLegacyHeader] HTML length:', content.length);
-    // Log first 500 chars of HTML for debugging
-    console.log('🔧 [stripLegacyHeader] HTML start:', content.substring(0, 500).replace(/\s+/g, ' '));
+  if (!hasLegacyKeywords) {
+    return bodyContent.trim();
   }
   
-  // Strategy: Remove everything up to and including the first image/content block that follows the old header
-  // The old header contains: blue "Yens" box, "ICE CREAM & DRINK", "Member Rewards"
+  console.log('🔧 [stripLegacyHeader] Found legacy keywords, using DOM parser to remove...');
   
-  // Pattern 1: Match the entire header table structure containing legacy keywords
-  // This catches tables containing "ICE CREAM & DRINK" or "Member Rewards" regardless of nesting
-  content = content.replace(
-    /<table[^>]*>(?:(?!<table).)*?(?:ICE CREAM & DRINK|Member Rewards)[\s\S]*?<\/table>/gi,
-    ''
-  );
+  // Load HTML with cheerio for reliable DOM manipulation
+  const $ = cheerio.load(bodyContent, { xmlMode: false });
   
-  // Pattern 2: More aggressive - remove any table that has the old blue color scheme (#1E3A5F)
-  // and contains "Yens" text (the blue badge)
-  content = content.replace(
-    /<table[^>]*>[\s\S]*?#1E3A5F[\s\S]*?Yens[\s\S]*?<\/table>/gi,
-    ''
-  );
+  // Strategy: Find and remove any table/div that contains the legacy header text
+  // The legacy header contains: "ICE CREAM & DRINK", "Member Rewards", blue "Yens" badge
   
-  // Pattern 3: Remove the outer wrapper table that contains the header
-  // Look for tables with gradient backgrounds that contain header keywords
-  content = content.replace(
-    /<table[^>]*>[\s\S]*?linear-gradient[\s\S]*?(?:ICE CREAM|Member Rewards)[\s\S]*?<\/table>/gi,
-    ''
-  );
+  // Find all tables and check if they contain legacy header content
+  $('table').each(function() {
+    const tableHtml = $(this).html() || '';
+    const tableText = $(this).text();
+    
+    // Check for legacy header keywords
+    const hasIceCream = tableText.includes('ICE CREAM') || tableText.includes('ICE CREAM & DRINK');
+    const hasMemberRewards = tableText.includes('Member Rewards');
+    const hasBlueBadge = tableHtml.includes('#1E3A5F') && tableText.includes('Yens');
+    
+    if (hasIceCream || hasMemberRewards || hasBlueBadge) {
+      console.log('🗑️ [stripLegacyHeader] Removing table with legacy header content');
+      $(this).remove();
+    }
+  });
   
-  // Pattern 4: Direct text removal - strip standalone header text blocks
-  content = content.replace(/<[^>]*>ICE CREAM & DRINK<\/[^>]*>/gi, '');
-  content = content.replace(/<[^>]*>Member Rewards<\/[^>]*>/gi, '');
+  // Also check divs for the blue Yens badge
+  $('div').each(function() {
+    const style = $(this).attr('style') || '';
+    const text = $(this).text().trim();
+    
+    // Remove the blue Yens badge div
+    if (style.includes('#1E3A5F') && text === 'Yens') {
+      console.log('🗑️ [stripLegacyHeader] Removing blue Yens badge div');
+      $(this).remove();
+    }
+  });
   
-  // Pattern 5: Remove the blue Yens badge div
-  content = content.replace(
-    /<div[^>]*style="[^"]*background-color:\s*#1E3A5F[^"]*"[^>]*>[\s\S]*?Yens[\s\S]*?<\/div>/gi,
-    ''
-  );
+  // Remove any remaining standalone text nodes with legacy keywords
+  $('span, p, div, td').each(function() {
+    const text = $(this).text().trim();
+    if (text === 'ICE CREAM & DRINK' || text === 'Member Rewards') {
+      console.log('🗑️ [stripLegacyHeader] Removing standalone legacy text element');
+      $(this).remove();
+    }
+  });
   
-  // Pattern 6: Remove empty wrapper tables and divs left behind
-  content = content.replace(/<table[^>]*>\s*<tbody[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/tbody>\s*<\/table>/gi, '');
-  content = content.replace(/<table[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/table>/gi, '');
-  content = content.replace(/<div[^>]*>\s*<\/div>/gi, '');
+  // Clean up empty tables/rows left behind
+  $('table').each(function() {
+    const text = $(this).text().trim();
+    if (!text) {
+      $(this).remove();
+    }
+  });
   
-  // Log result
-  const stillHasKeywords = content.includes('ICE CREAM') || content.includes('Member Rewards');
+  const result = $.html();
+  
+  // Verify removal
+  const stillHasKeywords = result.includes('ICE CREAM') || result.includes('Member Rewards');
   if (stillHasKeywords) {
-    console.log('⚠️ [stripLegacyHeader] WARNING: Legacy keywords STILL present after removal attempts!');
-    // Find the position of these keywords
-    const iceCreamPos = content.indexOf('ICE CREAM');
-    const memberRewardsPos = content.indexOf('Member Rewards');
-    if (iceCreamPos >= 0) {
-      console.log('⚠️ [stripLegacyHeader] ICE CREAM found at position', iceCreamPos, '- Context:', content.substring(Math.max(0, iceCreamPos - 100), iceCreamPos + 100).replace(/\s+/g, ' '));
-    }
-    if (memberRewardsPos >= 0) {
-      console.log('⚠️ [stripLegacyHeader] Member Rewards found at position', memberRewardsPos, '- Context:', content.substring(Math.max(0, memberRewardsPos - 100), memberRewardsPos + 100).replace(/\s+/g, ' '));
-    }
-  } else if (hasLegacyKeywords) {
-    console.log('✅ [stripLegacyHeader] Legacy keywords successfully removed!');
+    console.log('⚠️ [stripLegacyHeader] WARNING: Some legacy content may still remain');
+  } else {
+    console.log('✅ [stripLegacyHeader] Legacy header successfully removed via DOM parsing!');
   }
   
-  return content.trim();
+  return result.trim();
 }
 
 // Wrap HTML content in a complete email template structure if needed
