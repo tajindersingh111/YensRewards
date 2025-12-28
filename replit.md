@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.16.2** - **Scheduled Messaging**: Added ability to schedule messages for automatic sending at specific times. UI includes schedule toggle with date/time picker, background scheduler runs every 60 seconds to process due messages. Supports all channels (email, SMS, LINE) and recipient types (all, tier, individual, birthday). Bangkok timezone (GMT+7) handling ensures messages send at correct local time.
+**Current Version: v3.16.3** - **Enhanced Message History**: Added "Today's Summary" dashboard card showing daily message stats (total sent, by channel: email/LINE/SMS, failures) with Bangkok timezone awareness. Added View Details dialog for inspecting full resolved message content with merge fields substituted. Birthday message indicator (cake icon) auto-detects birthday messages. Full bilingual support (EN/TH) for all new UI elements.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
