@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.15.7** - **Email Header Fix Complete**: Strip legacy header from ALL incoming HTML before wrapping, not just complete documents. Cheerio DOM parsing removes "ICE CREAM & DRINK / Member Rewards" content from user-composed HTML. Previous version (v3.15.6): Added cheerio parsing but only for complete HTML documents.
+**Current Version: v3.15.8** - **Email Header Fix V2**: Extended detection to find ANY Yens branding (blue #1E3A5F badge, yellow #FCD34D header, Thai tagline) and remove header-like tables. Previous v3.15.7 only looked for "ICE CREAM" keywords which weren't present in the current user content.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
