@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -57,6 +57,7 @@ export default function SendMessageForm() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [showPreview, setShowPreview] = useState(false);
 
   // LINE-specific state
   const [lineRecipientType, setLineRecipientType] = useState<"all" | "tier" | "individual" | "birthday_today" | "birthday_week">("all");
@@ -365,7 +366,13 @@ export default function SendMessageForm() {
                   // Use message if available, otherwise use htmlContent (for rich HTML templates)
                   const messageContent = template.message || template.htmlContent || '';
                   setMessage(messageContent);
+                  // Auto-switch to preview mode if HTML content
+                  if (messageContent.includes('<') || messageContent.includes('html')) {
+                    setShowPreview(true);
+                  }
                 }
+              } else {
+                setShowPreview(false);
               }
             }}
           >
@@ -414,40 +421,83 @@ export default function SendMessageForm() {
 
       {/* Message Content */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <Label htmlFor="message">{t('messages.message')}</Label>
-          {/* Merge Fields Helper */}
-          <Select 
-            value="" 
-            onValueChange={(val) => {
-              if (val) {
-                setMessage(prev => prev + val);
-              }
-            }}
-          >
-            <SelectTrigger className="w-auto h-7 text-xs" data-testid="select-merge-field">
-              <span className="text-muted-foreground">{t('messages.insertMergeField')}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {MERGE_FIELDS.map((field) => (
-                <SelectItem key={field.key} value={field.key}>
-                  <div className="flex items-center justify-between gap-4">
-                    <span>{field.thLabel}</span>
-                    <code className="text-xs bg-muted px-1 rounded">{field.key}</code>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            {/* Preview Toggle for HTML content */}
+            {channel === "email" && message && (message.includes('<') || message.includes('html')) && (
+              <Button
+                type="button"
+                variant={showPreview ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowPreview(!showPreview)}
+                className="h-7 text-xs"
+                data-testid="button-toggle-preview"
+              >
+                {showPreview ? (
+                  <>
+                    <Code className="w-3 h-3 mr-1" />
+                    Edit HTML
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3 h-3 mr-1" />
+                    Preview
+                  </>
+                )}
+              </Button>
+            )}
+            {/* Merge Fields Helper */}
+            {!showPreview && (
+              <Select 
+                value="" 
+                onValueChange={(val) => {
+                  if (val) {
+                    setMessage(prev => prev + val);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-auto h-7 text-xs" data-testid="select-merge-field">
+                  <span className="text-muted-foreground">{t('messages.insertMergeField')}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {MERGE_FIELDS.map((field) => (
+                    <SelectItem key={field.key} value={field.key}>
+                      <div className="flex items-center justify-between gap-4">
+                        <span>{field.thLabel}</span>
+                        <code className="text-xs bg-muted px-1 rounded">{field.key}</code>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
-        <Textarea
-          id="message"
-          placeholder={t('messages.messagePlaceholder')}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={6}
-          data-testid="textarea-message"
-        />
+        
+        {/* Show either Preview or Edit mode */}
+        {showPreview && channel === "email" ? (
+          <div className="border rounded-md overflow-hidden">
+            <div className="bg-muted/50 px-3 py-1.5 border-b flex items-center gap-2">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground font-medium">Email Preview</span>
+            </div>
+            <div 
+              className="p-4 bg-white max-h-[400px] overflow-y-auto"
+              dangerouslySetInnerHTML={{ __html: message }}
+            />
+          </div>
+        ) : (
+          <Textarea
+            id="message"
+            placeholder={t('messages.messagePlaceholder')}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={6}
+            data-testid="textarea-message"
+          />
+        )}
+        
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{t('messages.charactersCount', { count: message.length })}</span>
           <span className="text-muted-foreground">{t('messages.mergeFieldsHint')}</span>
