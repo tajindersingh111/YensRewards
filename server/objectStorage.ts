@@ -349,22 +349,22 @@ export class ObjectStorageService {
 
   // Check if logo exists in email-assets, upload if not
   async ensureYensLogoUploaded(): Promise<string> {
-    // Use the higher-quality PNG logo instead of compressed WebP
-    const logoFilename = 'yens-logo-hq.png';
-    const localLogoPath = './attached_assets/yens logo_1760702216221.png';
+    // Use the official high-resolution Yens logo with polar bear mascot
+    const logoFilename = 'yens-logo-official-hires.png';
+    const localLogoPath = './attached_assets/Yens_logo_high_res_1766925576641.png';
     
     try {
-      // Check if HIGH-QUALITY logo already exists in email-assets
+      // Check if the official hi-res logo already exists in email-assets
       const assets = await this.listEmailAssets();
       const existingLogo = assets.find(a => a.name === logoFilename);
       
       if (existingLogo) {
-        console.log(`✅ Yens HQ logo already exists in email-assets: ${existingLogo.url}`);
+        console.log(`✅ Yens official hi-res logo already exists: ${existingLogo.url}`);
         return existingLogo.url;
       }
       
-      // Upload the high-quality PNG logo (always upload fresh to ensure quality)
-      console.log(`📤 Uploading high-quality Yens logo (PNG): ${localLogoPath}`);
+      // Upload the official high-resolution logo (593KB PNG with transparent background)
+      console.log(`📤 Uploading official Yens hi-res logo: ${localLogoPath}`);
       const logoUrl = await this.uploadLocalFileToEmailAssets(localLogoPath, logoFilename);
       return logoUrl;
     } catch (error) {
