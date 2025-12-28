@@ -3800,6 +3800,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============================================
+  // Scheduled Messages
+  // ============================================
+
+  // Get all scheduled messages
+  app.get('/api/admin/messages/scheduled', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const messages = await storage.getScheduledMessages();
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching scheduled messages:", error);
+      res.status(500).json({ message: "Failed to fetch scheduled messages" });
+    }
+  });
+
+  // Create a scheduled message
+  app.post('/api/admin/messages/schedule', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { channel, recipientType, tier, customerIds, subject, message, scheduledFor, timezone } = req.body;
+
+      if (!channel || !recipientType || !message || !scheduledFor) {
+        return res.status(400).json({ message: "Missing required fields: channel, recipientType, message, scheduledFor" });
+      }
+
+      // Validate email subject
+      if (channel === 'email' && !subject) {
+        return res.status(400).json({ message: "Email subject is required" });
+      }
+
+      // Validate recipient configuration
+      if (recipientType === 'tier' && !tier) {
+        return res.status(400).json({ message: "Tier is required when recipient type is 'tier'" });
+      }
+      if (recipientType === 'individual' && (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0)) {
+        return res.status(400).json({ message: "Customer IDs are required when recipient type is 'individual'" });
+      }
+
+      // Parse scheduled time
+      const scheduledDate = new Date(scheduledFor);
+      if (isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ message: "Invalid scheduled date" });
+      }
+
+      // Scheduled time must be in the future
+      if (scheduledDate <= new Date()) {
+        return res.status(400).json({ message: "Scheduled time must be in the future" });
+      }
+
+      const scheduledMessage = await storage.createScheduledMessage({
+        channel,
+        recipientType,
+        recipientTier: tier || null,
+        recipientIds: customerIds || null,
+        templateId: null,
+        subject: subject || null,
+        message,
+        scheduledFor: scheduledDate,
+        timezone: timezone || 'Asia/Bangkok',
+        status: 'pending',
+        createdBy: userId || null,
+      });
+
+      res.json({ success: true, scheduledMessage });
+    } catch (error) {
+      console.error("Error scheduling message:", error);
+      res.status(500).json({ message: "Failed to schedule message" });
+    }
+  });
+
+  // Cancel a scheduled message
+  app.post('/api/admin/messages/scheduled/:id/cancel', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const existingMessage = await storage.getScheduledMessage(id);
+      if (!existingMessage) {
+        return res.status(404).json({ message: "Scheduled message not found" });
+      }
+      
+      if (existingMessage.status !== 'pending') {
+        return res.status(400).json({ message: "Can only cancel pending messages" });
+      }
+
+      const cancelled = await storage.cancelScheduledMessage(id);
+      res.json({ success: true, scheduledMessage: cancelled });
+    } catch (error) {
+      console.error("Error cancelling scheduled message:", error);
+      res.status(500).json({ message: "Failed to cancel scheduled message" });
+    }
+  });
+
+  // ============================================
   // LINE Webhook - Customer auto-linking
   // ============================================
 

@@ -16,6 +16,8 @@ import {
   type InsertMessageTemplate,
   type MessageLog,
   type InsertMessageLog,
+  type ScheduledMessage,
+  type InsertScheduledMessage,
   type Site,
   type InsertSite,
   type TimeEntry,
@@ -32,7 +34,7 @@ import {
   type InsertBaristaPerformance,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -219,6 +221,16 @@ export interface IStorage {
   getWeeklyLeaderboard(weekStart: string, limit?: number): Promise<Array<BaristaPerformance & { user: User }>>;
   updateBaristaPerformance(performance: InsertBaristaPerformance): Promise<BaristaPerformance>;
   getUserPerformanceHistory(userId: string, limit?: number): Promise<BaristaPerformance[]>;
+  
+  // Scheduled Message methods
+  createScheduledMessage(message: InsertScheduledMessage): Promise<ScheduledMessage>;
+  getScheduledMessages(): Promise<ScheduledMessage[]>;
+  getScheduledMessage(id: string): Promise<ScheduledMessage | undefined>;
+  getPendingScheduledMessages(): Promise<ScheduledMessage[]>;
+  updateScheduledMessage(id: string, updates: Partial<ScheduledMessage>): Promise<ScheduledMessage | undefined>;
+  cancelScheduledMessage(id: string): Promise<ScheduledMessage | undefined>;
+  markScheduledMessageProcessing(id: string): Promise<ScheduledMessage | undefined>;
+  completeScheduledMessage(id: string, sentCount: number, failedCount: number, errorMessage?: string): Promise<ScheduledMessage | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -1869,6 +1881,88 @@ export class DbStorage implements IStorage {
       .where(eq(baristaPerformance.userId, userId))
       .orderBy(desc(baristaPerformance.weekStart))
       .limit(limit);
+  }
+
+  // Scheduled Message methods
+  async createScheduledMessage(message: InsertScheduledMessage): Promise<ScheduledMessage> {
+    const result = await db.insert(scheduledMessages).values(message).returning();
+    return result[0];
+  }
+
+  async getScheduledMessages(): Promise<ScheduledMessage[]> {
+    return await db.select().from(scheduledMessages).orderBy(desc(scheduledMessages.createdAt));
+  }
+
+  async getScheduledMessage(id: string): Promise<ScheduledMessage | undefined> {
+    const result = await db.select().from(scheduledMessages).where(eq(scheduledMessages.id, id));
+    return result[0];
+  }
+
+  async getPendingScheduledMessages(): Promise<ScheduledMessage[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(scheduledMessages)
+      .where(
+        and(
+          eq(scheduledMessages.status, 'pending'),
+          lte(scheduledMessages.scheduledFor, now)
+        )
+      )
+      .orderBy(asc(scheduledMessages.scheduledFor));
+  }
+
+  async updateScheduledMessage(id: string, updates: Partial<ScheduledMessage>): Promise<ScheduledMessage | undefined> {
+    const result = await db
+      .update(scheduledMessages)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(scheduledMessages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async cancelScheduledMessage(id: string): Promise<ScheduledMessage | undefined> {
+    const result = await db
+      .update(scheduledMessages)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(eq(scheduledMessages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async markScheduledMessageProcessing(id: string): Promise<ScheduledMessage | undefined> {
+    const now = new Date();
+    const result = await db
+      .update(scheduledMessages)
+      .set({ 
+        status: 'processing', 
+        processingStartedAt: now,
+        updatedAt: now 
+      })
+      .where(
+        and(
+          eq(scheduledMessages.id, id),
+          eq(scheduledMessages.status, 'pending')
+        )
+      )
+      .returning();
+    return result[0];
+  }
+
+  async completeScheduledMessage(id: string, sentCount: number, failedCount: number, errorMessage?: string): Promise<ScheduledMessage | undefined> {
+    const status = failedCount > 0 && sentCount === 0 ? 'failed' : 'completed';
+    const result = await db
+      .update(scheduledMessages)
+      .set({ 
+        status,
+        sentCount,
+        failedCount,
+        errorMessage,
+        updatedAt: new Date() 
+      })
+      .where(eq(scheduledMessages.id, id))
+      .returning();
+    return result[0];
   }
 }
 
