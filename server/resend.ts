@@ -155,17 +155,18 @@ export function setEmailLogoUrl(url: string) {
 
 // Generate the standard email header with logo
 function getStandardEmailHeader(): string {
+  // Use max-width for crisp logo rendering - email clients will downscale smoothly
   const logoSection = YENS_LOGO_URL 
-    ? `<img src="${YENS_LOGO_URL}" alt="Yens Thai Ice Cream" style="height: 80px; margin-bottom: 8px;" />`
+    ? `<img src="${YENS_LOGO_URL}" alt="Yens Thai Ice Cream" style="max-width: 180px; height: auto; margin-bottom: 12px;" />`
     : `<div style="background-color: #1E3A5F; color: #ffffff; font-size: 28px; font-weight: 700; padding: 12px 28px; border-radius: 8px; display: inline-block; font-family: 'Sarabun', Arial, sans-serif; margin-bottom: 8px;">Yens</div>`;
   
   return `
         <!-- Email Header with Yens Branding -->
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 20px auto; background-color: #FCD34D; border-radius: 12px; overflow: hidden;">
           <tr>
-            <td align="center" style="padding: 24px 20px;">
+            <td align="center" style="padding: 28px 20px;">
               ${logoSection}
-              <p style="margin: 8px 0 0 0; color: #1E3A5F; font-size: 14px; font-weight: 600; font-family: 'Sarabun', Arial, sans-serif;">
+              <p style="margin: 0; color: #1E3A5F; font-size: 15px; font-weight: 600; font-family: 'Sarabun', Arial, sans-serif;">
                 รสชาติแห่งสวรรค์ • สิทธิพิเศษสมาชิก
               </p>
             </td>
@@ -205,6 +206,52 @@ const STANDARD_EMAIL_FOOTER = `
         </table>
 `;
 
+// Strip old legacy header from body content
+function stripLegacyHeader(bodyContent: string): string {
+  let content = bodyContent;
+  
+  // Strategy: Remove everything up to and including the first image/content block that follows the old header
+  // The old header contains: blue "Yens" box, "ICE CREAM & DRINK", "Member Rewards"
+  
+  // Pattern 1: Match the entire header table structure containing legacy keywords
+  // This catches tables containing "ICE CREAM & DRINK" or "Member Rewards" regardless of nesting
+  content = content.replace(
+    /<table[^>]*>(?:(?!<table).)*?(?:ICE CREAM & DRINK|Member Rewards)[\s\S]*?<\/table>/gi,
+    ''
+  );
+  
+  // Pattern 2: More aggressive - remove any table that has the old blue color scheme (#1E3A5F)
+  // and contains "Yens" text (the blue badge)
+  content = content.replace(
+    /<table[^>]*>[\s\S]*?#1E3A5F[\s\S]*?Yens[\s\S]*?<\/table>/gi,
+    ''
+  );
+  
+  // Pattern 3: Remove the outer wrapper table that contains the header
+  // Look for tables with gradient backgrounds that contain header keywords
+  content = content.replace(
+    /<table[^>]*>[\s\S]*?linear-gradient[\s\S]*?(?:ICE CREAM|Member Rewards)[\s\S]*?<\/table>/gi,
+    ''
+  );
+  
+  // Pattern 4: Direct text removal - strip standalone header text blocks
+  content = content.replace(/<[^>]*>ICE CREAM & DRINK<\/[^>]*>/gi, '');
+  content = content.replace(/<[^>]*>Member Rewards<\/[^>]*>/gi, '');
+  
+  // Pattern 5: Remove the blue Yens badge div
+  content = content.replace(
+    /<div[^>]*style="[^"]*background-color:\s*#1E3A5F[^"]*"[^>]*>[\s\S]*?Yens[\s\S]*?<\/div>/gi,
+    ''
+  );
+  
+  // Pattern 6: Remove empty wrapper tables and divs left behind
+  content = content.replace(/<table[^>]*>\s*<tbody[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/tbody>\s*<\/table>/gi, '');
+  content = content.replace(/<table[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/table>/gi, '');
+  content = content.replace(/<div[^>]*>\s*<\/div>/gi, '');
+  
+  return content.trim();
+}
+
 // Wrap HTML content in a complete email template structure if needed
 function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
   // Check if HTML is already a complete document
@@ -212,71 +259,48 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
                          htmlContent.trim().toLowerCase().startsWith('<html');
   
   if (isCompleteHtml) {
-    // For complete HTML documents, inject the standard header and footer
-    let modifiedHtml = htmlContent;
+    // Extract the body content
+    const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    let bodyContent = bodyMatch ? bodyMatch[1] : htmlContent;
     
-    // Remove old footer patterns (Yens Thailand • Crafted with love, Facebook • LINE • Unsubscribe, etc.)
-    const oldFooterPatterns = [
-      /<table[^>]*>[\s\S]*?Yens Thailand[\s\S]*?Crafted with love[\s\S]*?<\/table>/gi,
-      /<table[^>]*>[\s\S]*?Facebook[\s\S]*?LINE[\s\S]*?Unsubscribe[\s\S]*?<\/table>/gi,
-      /<p[^>]*>[\s\S]*?Yens Thailand[\s\S]*?Crafted with love[\s\S]*?<\/p>/gi,
-    ];
+    // Aggressively strip the legacy header from the body content
+    bodyContent = stripLegacyHeader(bodyContent);
     
-    for (const pattern of oldFooterPatterns) {
-      modifiedHtml = modifiedHtml.replace(pattern, '');
-    }
-    
-    // Aggressively remove old header patterns - target any table/td containing these keywords
-    // Use multiple passes to catch nested structures
-    
-    // First pass: Remove the outer table containing the old header (entire header block)
-    // This targets the full-width table that wraps the old branded header
-    modifiedHtml = modifiedHtml.replace(
-      /<table[^>]*(?:background-color:\s*#1E3A5F|#F8FAFC|linear-gradient)[^>]*>[\s\S]*?(?:ICE CREAM & DRINK|Member Rewards)[\s\S]*?<\/table>/gi,
+    // Also remove old footer patterns
+    bodyContent = bodyContent.replace(
+      /<table[^>]*>[\s\S]*?(?:Yens Thailand[\s\S]*?Crafted with love|Facebook[\s\S]*?LINE[\s\S]*?Unsubscribe)[\s\S]*?<\/table>/gi,
       ''
     );
     
-    // Second pass: Remove any remaining td cells containing old header content
-    modifiedHtml = modifiedHtml.replace(
-      /<td[^>]*>[\s\S]*?(?:ICE CREAM & DRINK|Member Rewards)[\s\S]*?<\/td>/gi,
-      '<td></td>'
-    );
-    
-    // Third pass: Remove standalone tables with old header text
-    modifiedHtml = modifiedHtml.replace(
-      /<table[^>]*>[\s\S]*?ICE CREAM & DRINK[\s\S]*?<\/table>/gi,
-      ''
-    );
-    
-    // Fourth pass: Remove the blue "Yens" box div that appears with old headers
-    modifiedHtml = modifiedHtml.replace(
-      /<div[^>]*background-color:\s*#1E3A5F[^>]*>[\s\S]*?Yens[\s\S]*?<\/div>/gi,
-      ''
-    );
-    
-    // Fifth pass: Remove empty wrapper tables left behind
-    modifiedHtml = modifiedHtml.replace(
-      /<table[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/table>/gi,
-      ''
-    );
-    
-    // Inject the standard header after <body> tag
-    if (modifiedHtml.toLowerCase().includes('<body')) {
-      modifiedHtml = modifiedHtml.replace(
-        /(<body[^>]*>)/i,
-        `$1\n<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding: 20px 10px 0 10px;">${getStandardEmailHeader()}</td></tr></table>`
-      );
-    }
-    
-    // Inject the standard footer before </body>
-    if (modifiedHtml.toLowerCase().includes('</body>')) {
-      modifiedHtml = modifiedHtml.replace(
-        /<\/body>/i,
-        `${STANDARD_EMAIL_FOOTER}\n</body>`
-      );
-    }
-    
-    return modifiedHtml;
+    // Build new email with only our standard header + cleaned content + standard footer
+    return `
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${subject}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Sarabun', 'Inter', Arial, sans-serif; background-color: #f5f5f5; }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Sarabun', 'Inter', Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f5f5;">
+    <tr>
+      <td align="center" style="padding: 20px 10px;">
+        ${getStandardEmailHeader()}
+        <!-- Original Content (with legacy header stripped) -->
+        ${bodyContent}
+        ${STANDARD_EMAIL_FOOTER}
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
   }
   
   // Wrap the content in a professional email template
