@@ -207,7 +207,7 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
               <p style="margin: 8px 0 0 0;">
                 <a href="https://yensthai.com" target="_blank" style="color: #1E40AF; text-decoration: none;">🌐 yensthai.com</a>
                 &nbsp;&nbsp;|&nbsp;&nbsp;
-                <a href="tel:+66812345678" style="color: #1E40AF; text-decoration: none;">📞 081-234-5678</a>
+                <a href="tel:+66818719866" style="color: #1E40AF; text-decoration: none;">📞 081-871-9866</a>
               </p>
               <p style="margin: 8px 0 0 0; color: #999999;">ทำด้วยความรักตั้งแต่ปี 2020</p>
             </td>
