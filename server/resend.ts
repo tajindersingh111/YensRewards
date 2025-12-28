@@ -140,13 +140,9 @@ let YENS_LOGO_URL = ''; // Will be populated with the email-assets URL
 
 // Function to set the logo URL after upload
 export function setEmailLogoUrl(url: string) {
-  // Construct full URL using the app's domain
-  // For production, use the published domain; for development, use the Replit dev URL
-  const baseUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
-    ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-    : process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : 'https://yensthai.com'; // Fallback to production domain
+  // ALWAYS use the production domain for email assets so they're accessible to recipients
+  // The dev domain (workspace.*.repl.co) is not accessible externally
+  const baseUrl = 'https://app.yensthai.com';
   
   // If it's a relative URL, make it absolute
   if (url.startsWith('/')) {
@@ -230,15 +226,39 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
       modifiedHtml = modifiedHtml.replace(pattern, '');
     }
     
-    // Remove old header patterns (ICE CREAM & DRINK, Member Rewards, blue Yens box)
-    const oldHeaderPatterns = [
-      /<table[^>]*>[\s\S]*?ICE CREAM & DRINK[\s\S]*?Member Rewards[\s\S]*?<\/table>/gi,
-      /<div[^>]*>[\s\S]*?ICE CREAM & DRINK[\s\S]*?<\/div>/gi,
-    ];
+    // Aggressively remove old header patterns - target any table/td containing these keywords
+    // Use multiple passes to catch nested structures
     
-    for (const pattern of oldHeaderPatterns) {
-      modifiedHtml = modifiedHtml.replace(pattern, '');
-    }
+    // First pass: Remove the outer table containing the old header (entire header block)
+    // This targets the full-width table that wraps the old branded header
+    modifiedHtml = modifiedHtml.replace(
+      /<table[^>]*(?:background-color:\s*#1E3A5F|#F8FAFC|linear-gradient)[^>]*>[\s\S]*?(?:ICE CREAM & DRINK|Member Rewards)[\s\S]*?<\/table>/gi,
+      ''
+    );
+    
+    // Second pass: Remove any remaining td cells containing old header content
+    modifiedHtml = modifiedHtml.replace(
+      /<td[^>]*>[\s\S]*?(?:ICE CREAM & DRINK|Member Rewards)[\s\S]*?<\/td>/gi,
+      '<td></td>'
+    );
+    
+    // Third pass: Remove standalone tables with old header text
+    modifiedHtml = modifiedHtml.replace(
+      /<table[^>]*>[\s\S]*?ICE CREAM & DRINK[\s\S]*?<\/table>/gi,
+      ''
+    );
+    
+    // Fourth pass: Remove the blue "Yens" box div that appears with old headers
+    modifiedHtml = modifiedHtml.replace(
+      /<div[^>]*background-color:\s*#1E3A5F[^>]*>[\s\S]*?Yens[\s\S]*?<\/div>/gi,
+      ''
+    );
+    
+    // Fifth pass: Remove empty wrapper tables left behind
+    modifiedHtml = modifiedHtml.replace(
+      /<table[^>]*>\s*<tr[^>]*>\s*<td[^>]*>\s*<\/td>\s*<\/tr>\s*<\/table>/gi,
+      ''
+    );
     
     // Inject the standard header after <body> tag
     if (modifiedHtml.toLowerCase().includes('<body')) {
