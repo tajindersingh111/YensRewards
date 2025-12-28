@@ -156,9 +156,9 @@ export function setEmailLogoUrl(url: string) {
 
 // Generate the standard email header with logo
 function getStandardEmailHeader(): string {
-  // Use max-width for crisp logo rendering - email clients will downscale smoothly
+  // Use larger display size (220px) for crisp logo rendering on retina displays
   const logoSection = YENS_LOGO_URL 
-    ? `<img src="${YENS_LOGO_URL}" alt="Yens Thai Ice Cream" style="max-width: 180px; height: auto; margin-bottom: 12px;" />`
+    ? `<img src="${YENS_LOGO_URL}" alt="Yens Thai Ice Cream" width="220" style="max-width: 220px; width: 220px; height: auto; margin-bottom: 12px; display: block;" />`
     : `<div style="background-color: #1E3A5F; color: #ffffff; font-size: 28px; font-weight: 700; padding: 12px 28px; border-radius: 8px; display: inline-block; font-family: 'Sarabun', Arial, sans-serif; margin-bottom: 8px;">Yens</div>`;
   
   return `
