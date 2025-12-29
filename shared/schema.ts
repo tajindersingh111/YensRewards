@@ -485,3 +485,16 @@ export type InsertBaristaPerformance = z.infer<typeof insertBaristaPerformanceSc
 
 export type DailySales = typeof dailySales.$inferSelect;
 export type InsertDailySales = z.infer<typeof insertDailySalesSchema>;
+
+// LINE Linking Codes table - persistent storage for linking codes
+export const lineLinkingCodes = pgTable("line_linking_codes", {
+  code: varchar("code", { length: 10 }).primaryKey(), // e.g., LINK-ABCD
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+});
+
+export const insertLineLinkingCodeSchema = createInsertSchema(lineLinkingCodes).omit({ createdAt: true });
+export type LineLinkingCode = typeof lineLinkingCodes.$inferSelect;
+export type InsertLineLinkingCode = z.infer<typeof insertLineLinkingCodeSchema>;

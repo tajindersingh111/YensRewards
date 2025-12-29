@@ -2,14 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes } from "@shared/schema";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail, sendHtmlEmail } from "./resend";
 import { sendLineMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, gt, lt } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
 import * as XLSX from "xlsx";
@@ -73,10 +73,9 @@ function sanitizeUsers(users: any[]) {
 }
 
 // ============================================
-// LINE Linking Code Storage (in-memory with TTL)
+// LINE Linking Code Storage (database-backed with TTL)
 // ============================================
-const lineLinkingCodes: Map<string, { customerId: string; createdAt: number }> = new Map();
-const LINKING_CODE_TTL = 30 * 60 * 1000; // 30 minutes
+const LINKING_CODE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 function generateLinkingCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars like 0/O, 1/I
@@ -87,54 +86,79 @@ function generateLinkingCode(): string {
   return `LINK-${code}`;
 }
 
-function getOrCreateLinkingCode(customerId: string): string {
-  // Check if customer already has a valid code
-  for (const [code, data] of Array.from(lineLinkingCodes.entries())) {
-    if (data.customerId === customerId) {
-      // Check if still valid
-      if (Date.now() - data.createdAt < LINKING_CODE_TTL) {
-        return code;
-      }
-      // Expired, remove it
-      lineLinkingCodes.delete(code);
-    }
+async function getOrCreateLinkingCode(customerId: string): Promise<string> {
+  // Check if customer already has a valid unexpired code
+  const existing = await db.select()
+    .from(lineLinkingCodes)
+    .where(and(
+      eq(lineLinkingCodes.customerId, customerId),
+      eq(lineLinkingCodes.used, false),
+      gt(lineLinkingCodes.expiresAt, new Date())
+    ))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    console.log(`🔗 Returning existing LINE linking code ${existing[0].code} for customer ${customerId}`);
+    return existing[0].code;
   }
   
   // Generate new unique code
   let code: string;
+  let attempts = 0;
   do {
     code = generateLinkingCode();
-  } while (lineLinkingCodes.has(code));
+    const existingCode = await db.select().from(lineLinkingCodes).where(eq(lineLinkingCodes.code, code)).limit(1);
+    if (existingCode.length === 0) break;
+    attempts++;
+  } while (attempts < 10);
   
-  lineLinkingCodes.set(code, { customerId, createdAt: Date.now() });
-  console.log(`🔗 Generated LINE linking code ${code} for customer ${customerId}`);
+  const expiresAt = new Date(Date.now() + LINKING_CODE_TTL_MS);
+  await db.insert(lineLinkingCodes).values({
+    code,
+    customerId,
+    expiresAt,
+    used: false
+  });
+  
+  console.log(`🔗 Generated new LINE linking code ${code} for customer ${customerId}, expires at ${expiresAt.toISOString()}`);
   return code;
 }
 
-function validateLinkingCode(code: string): string | null {
-  const data = lineLinkingCodes.get(code.toUpperCase());
-  if (!data) return null;
+async function validateLinkingCode(code: string): Promise<string | null> {
+  const upperCode = code.toUpperCase();
+  const result = await db.select()
+    .from(lineLinkingCodes)
+    .where(and(
+      eq(lineLinkingCodes.code, upperCode),
+      eq(lineLinkingCodes.used, false),
+      gt(lineLinkingCodes.expiresAt, new Date())
+    ))
+    .limit(1);
   
-  // Check if expired
-  if (Date.now() - data.createdAt >= LINKING_CODE_TTL) {
-    lineLinkingCodes.delete(code.toUpperCase());
+  if (result.length === 0) {
+    console.log(`❌ LINE linking code ${upperCode} not found, used, or expired`);
     return null;
   }
   
-  return data.customerId;
+  console.log(`✅ LINE linking code ${upperCode} is valid for customer ${result[0].customerId}`);
+  return result[0].customerId;
 }
 
-function consumeLinkingCode(code: string): void {
-  lineLinkingCodes.delete(code.toUpperCase());
+async function consumeLinkingCode(code: string): Promise<void> {
+  const upperCode = code.toUpperCase();
+  await db.update(lineLinkingCodes)
+    .set({ used: true })
+    .where(eq(lineLinkingCodes.code, upperCode));
+  console.log(`🔗 Consumed LINE linking code ${upperCode}`);
 }
 
-// Clean up expired codes periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [code, data] of Array.from(lineLinkingCodes.entries())) {
-    if (now - data.createdAt >= LINKING_CODE_TTL) {
-      lineLinkingCodes.delete(code);
-    }
+// Clean up expired codes periodically (database cleanup)
+setInterval(async () => {
+  try {
+    await db.delete(lineLinkingCodes)
+      .where(lt(lineLinkingCodes.expiresAt, new Date()));
+  } catch (error) {
+    console.error('Error cleaning up expired linking codes:', error);
   }
 }, 5 * 60 * 1000); // Clean every 5 minutes
 
@@ -1105,7 +1129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ alreadyLinked: true, linkCode: null });
       }
       
-      const linkCode = getOrCreateLinkingCode(customer.id);
+      const linkCode = await getOrCreateLinkingCode(customer.id);
       res.json({ alreadyLinked: false, linkCode });
     } catch (error) {
       console.error("Error generating LINE link code:", error);
@@ -4166,7 +4190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (linkCodeMatch) {
             const fullCode = `LINK-${linkCodeMatch[1]}`;
-            const customerId = validateLinkingCode(fullCode);
+            const customerId = await validateLinkingCode(fullCode);
             
             if (customerId) {
               try {
@@ -4182,7 +4206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   });
                   
                   // Consume the code so it can't be reused
-                  consumeLinkingCode(fullCode);
+                  await consumeLinkingCode(fullCode);
                   
                   console.log(`✅ Linked ${customer.name} to LINE via code ${fullCode}: ${lineUserId}${wasNotLinked ? ` (+${LINE_BONUS_POINTS} bonus points!)` : ''}`);
                   
