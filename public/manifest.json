@@ -9,13 +9,13 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/pwa-icon-192.png",
+      "src": "/yens-icon-192-v39.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/pwa-icon-512.png",
+      "src": "/yens-icon-512-v39.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
