@@ -479,7 +479,7 @@ export default function CustomerApp() {
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">{t('customer.yensRewards')}</h1>
               <span className="text-xs opacity-70" data-testid="text-version">
-                {t('common.version')} | {typeof window !== 'undefined' ? Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)) : '?'}px | VW:{typeof window !== 'undefined' ? window.innerWidth : '?'}
+                {t('common.version')}
               </span>
             </div>
           </div>
@@ -782,7 +782,7 @@ export default function CustomerApp() {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border bottom-nav-safe" style={{zIndex: 9999}}>
-        <div className="mx-auto w-full px-6 flex justify-around p-3" style={{maxWidth: "min(100vw, 480px)"}}>
+        <div className="mx-auto w-full px-2 flex justify-around py-2" style={{maxWidth: "min(100vw, 480px)"}}>
           <button
             onClick={() => { enableAudio(); setActiveTab("home"); }}
             className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${
