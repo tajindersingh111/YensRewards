@@ -72,6 +72,72 @@ function sanitizeUsers(users: any[]) {
   return users.map(sanitizeUser);
 }
 
+// ============================================
+// LINE Linking Code Storage (in-memory with TTL)
+// ============================================
+const lineLinkingCodes: Map<string, { customerId: string; createdAt: number }> = new Map();
+const LINKING_CODE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function generateLinkingCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars like 0/O, 1/I
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `LINK-${code}`;
+}
+
+function getOrCreateLinkingCode(customerId: string): string {
+  // Check if customer already has a valid code
+  for (const [code, data] of Array.from(lineLinkingCodes.entries())) {
+    if (data.customerId === customerId) {
+      // Check if still valid
+      if (Date.now() - data.createdAt < LINKING_CODE_TTL) {
+        return code;
+      }
+      // Expired, remove it
+      lineLinkingCodes.delete(code);
+    }
+  }
+  
+  // Generate new unique code
+  let code: string;
+  do {
+    code = generateLinkingCode();
+  } while (lineLinkingCodes.has(code));
+  
+  lineLinkingCodes.set(code, { customerId, createdAt: Date.now() });
+  console.log(`🔗 Generated LINE linking code ${code} for customer ${customerId}`);
+  return code;
+}
+
+function validateLinkingCode(code: string): string | null {
+  const data = lineLinkingCodes.get(code.toUpperCase());
+  if (!data) return null;
+  
+  // Check if expired
+  if (Date.now() - data.createdAt >= LINKING_CODE_TTL) {
+    lineLinkingCodes.delete(code.toUpperCase());
+    return null;
+  }
+  
+  return data.customerId;
+}
+
+function consumeLinkingCode(code: string): void {
+  lineLinkingCodes.delete(code.toUpperCase());
+}
+
+// Clean up expired codes periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, data] of Array.from(lineLinkingCodes.entries())) {
+    if (now - data.createdAt >= LINKING_CODE_TTL) {
+      lineLinkingCodes.delete(code);
+    }
+  }
+}, 5 * 60 * 1000); // Clean every 5 minutes
+
 // Configure multer for file uploads (memory storage for Excel files)
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -1023,6 +1089,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching customer:", error);
       res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  // Get LINE linking code for a customer (by phone)
+  app.get('/api/customers/phone/:phone/line-link-code', async (req, res) => {
+    try {
+      const customer = await storage.getCustomerByPhone(req.params.phone);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      // Don't generate code if already linked
+      if (customer.lineUid) {
+        return res.json({ alreadyLinked: true, linkCode: null });
+      }
+      
+      const linkCode = getOrCreateLinkingCode(customer.id);
+      res.json({ alreadyLinked: false, linkCode });
+    } catch (error) {
+      console.error("Error generating LINE link code:", error);
+      res.status(500).json({ message: "Failed to generate link code" });
     }
   });
 
@@ -4002,7 +4089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if ('replyToken' in event && event.replyToken) {
                 await replyLineMessage(
                   event.replyToken,
-                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nกรุณาส่งเบอร์โทรศัพท์ของคุณเพื่อเชื่อมต่อบัญชีสะสมคะแนน\n\nตัวอย่าง: 0812345678`
+                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nเชื่อมต่อบัญชีเพื่อรับ 50 คะแนนโบนัส!\n\n📱 วิธีที่ 1: คัดลอกรหัส LINK-XXXX จากแอพลูกค้าแล้วส่งมาที่นี่\n\n📞 วิธีที่ 2: ส่งเบอร์โทรศัพท์ของคุณ\nตัวอย่าง: 0812345678`
                 );
               }
             }
@@ -4014,6 +4101,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Handle message event (customer sends a message)
         if (event.type === 'message' && event.message.type === 'text') {
           const messageText = event.message.text.trim();
+          
+          // Check if message is a linking code (format: LINK-XXXX)
+          const linkCodeMatch = messageText.toUpperCase().match(/^LINK-([A-Z0-9]{4})$/);
+          
+          if (linkCodeMatch) {
+            const fullCode = `LINK-${linkCodeMatch[1]}`;
+            const customerId = validateLinkingCode(fullCode);
+            
+            if (customerId) {
+              try {
+                const customer = await storage.getCustomer(customerId);
+                if (customer) {
+                  // Link LINE UID to customer and award bonus points
+                  const LINE_BONUS_POINTS = 50;
+                  const wasNotLinked = !customer.lineUid;
+                  
+                  await storage.updateCustomer(customer.id, {
+                    lineUid: lineUserId,
+                    points: wasNotLinked ? customer.points + LINE_BONUS_POINTS : customer.points
+                  });
+                  
+                  // Consume the code so it can't be reused
+                  consumeLinkingCode(fullCode);
+                  
+                  console.log(`✅ Linked ${customer.name} to LINE via code ${fullCode}: ${lineUserId}${wasNotLinked ? ` (+${LINE_BONUS_POINTS} bonus points!)` : ''}`);
+                  
+                  // Send beautiful Flex Message for account linked
+                  if ('replyToken' in event && event.replyToken) {
+                    await replyLineTemplatedMessage(
+                      event.replyToken,
+                      'account_linked',
+                      {
+                        customerName: customer.name,
+                        phone: customer.phone
+                      }
+                    );
+                  }
+                } else {
+                  if ('replyToken' in event && event.replyToken) {
+                    await replyLineMessage(
+                      event.replyToken,
+                      `❌ ไม่พบบัญชีลูกค้า กรุณาลองใหม่อีกครั้ง`
+                    );
+                  }
+                }
+              } catch (error) {
+                console.error('❌ Error linking via code:', error);
+              }
+            } else {
+              // Invalid or expired code
+              if ('replyToken' in event && event.replyToken) {
+                await replyLineMessage(
+                  event.replyToken,
+                  `❌ รหัสไม่ถูกต้องหรือหมดอายุแล้ว\n\nกรุณาขอรหัสใหม่จากแอพลูกค้า หรือส่งเบอร์โทรศัพท์ของคุณ`
+                );
+              }
+            }
+            continue; // Don't process further for this event
+          }
           
           // Check if message looks like a phone number
           const phoneMatch = messageText.replace(/[\s\-\(\)]/g, '').match(/^(\+66|66|0)?(\d{8,9})$/);
@@ -4084,11 +4230,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.error('❌ Error linking customer:', error);
             }
           } else {
-            // Not a phone number - send help message
+            // Not a phone number or linking code - send help message
             if ('replyToken' in event && event.replyToken) {
               await replyLineMessage(
                 event.replyToken,
-                `🍦 Yens Thai Ice Cream\n\nส่งเบอร์โทรศัพท์เพื่อเชื่อมต่อบัญชีสะสมคะแนน\n\nตัวอย่าง: 0812345678`
+                `🍦 Yens Thai Ice Cream\n\nเชื่อมต่อบัญชีเพื่อรับ 50 คะแนนโบนัส!\n\n📱 ส่งรหัส LINK-XXXX จากแอพลูกค้า\n📞 หรือส่งเบอร์โทรศัพท์ของคุณ\n\nตัวอย่าง: 0812345678`
               );
             }
           }

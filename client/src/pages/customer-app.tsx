@@ -47,6 +47,7 @@ export default function CustomerApp() {
   const [celebrationType, setCelebrationType] = useState<"points" | "tier-upgrade">("points");
   const previousDataRef = useRef<{ points: number; tier: string } | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [linkCodeCopied, setLinkCodeCopied] = useState(false);
   const { toast } = useToast();
 
   // Enable audio on first user interaction (iOS requirement)
@@ -173,6 +174,28 @@ export default function CustomerApp() {
   });
 
   const unreadCount = unreadData?.count || 0;
+
+  // Fetch LINE linking code (only if not already linked)
+  const { data: linkCodeData } = useQuery<{ alreadyLinked: boolean; linkCode: string | null }>({
+    queryKey: ['/api/customers/phone', phone, 'line-link-code'],
+    enabled: !!phone && !customer?.lineUid,
+  });
+
+  const handleCopyLinkCode = async () => {
+    if (linkCodeData?.linkCode) {
+      try {
+        await navigator.clipboard.writeText(linkCodeData.linkCode);
+        setLinkCodeCopied(true);
+        toast({
+          title: t('customer.lineCopied'),
+          description: linkCodeData.linkCode,
+        });
+        setTimeout(() => setLinkCodeCopied(false), 3000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
 
   // Update PWA badge when unread count changes
   useEffect(() => {
@@ -523,24 +546,69 @@ export default function CustomerApp() {
                     <p className="text-xs text-muted-foreground">{t('customer.lineGetBonusPoints')}</p>
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <div className="bg-white p-2 rounded-lg border-2 border-[#06C755] flex-shrink-0">
-                    <QRCode value="https://line.me/R/ti/p/@752afsdq" size={80} level="L" />
-                  </div>
-                  <div className="flex flex-col justify-center gap-2 flex-1">
-                    <p className="text-xs text-foreground">{t('customer.lineScanOrSearch')}</p>
-                    <div className="inline-block px-2 py-1 bg-card border rounded text-sm font-mono font-medium text-foreground">@752afsdq</div>
+                
+                {/* One-tap linking code section */}
+                {linkCodeData?.linkCode && (
+                  <div className="space-y-3">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-2">{t('customer.lineLinkingCode')}</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="px-4 py-2 bg-white border-2 border-[#06C755] rounded-lg">
+                          <span className="text-xl font-mono font-bold text-[#06C755] tracking-wider" data-testid="text-link-code">
+                            {linkCodeData.linkCode}
+                          </span>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="border-[#06C755] text-[#06C755] hover:bg-[#06C755]/10"
+                          onClick={handleCopyLinkCode}
+                          data-testid="button-copy-link-code"
+                        >
+                          {linkCodeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <span>{t('customer.lineStep1')}</span>
+                      <span>{t('customer.lineStep2')}</span>
+                      <span>{t('customer.lineStep3')}</span>
+                    </div>
+                    
                     <Button
-                      size="sm"
-                      className="bg-[#06C755] hover:bg-[#05a648] text-white"
-                      onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
-                      data-testid="button-add-line-home"
+                      className="w-full bg-[#06C755] hover:bg-[#05a648] text-white"
+                      onClick={() => window.open('https://line.me/R/oaMessage/@752afsdq', '_blank')}
+                      data-testid="button-open-line-chat"
                     >
-                      <SiLine className="w-4 h-4 mr-1" />
-                      {t('customer.addLineFriend')}
+                      <SiLine className="w-5 h-5 mr-2" />
+                      {t('customer.lineOpenChat')}
+                      <ExternalLink className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
-                </div>
+                )}
+                
+                {/* Fallback if link code not loaded yet */}
+                {!linkCodeData?.linkCode && (
+                  <div className="flex gap-3">
+                    <div className="bg-white p-2 rounded-lg border-2 border-[#06C755] flex-shrink-0">
+                      <QRCode value="https://line.me/R/ti/p/@752afsdq" size={80} level="L" />
+                    </div>
+                    <div className="flex flex-col justify-center gap-2 flex-1">
+                      <p className="text-xs text-foreground">{t('customer.lineScanOrSearch')}</p>
+                      <div className="inline-block px-2 py-1 bg-card border rounded text-sm font-mono font-medium text-foreground">@752afsdq</div>
+                      <Button
+                        size="sm"
+                        className="bg-[#06C755] hover:bg-[#05a648] text-white"
+                        onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
+                        data-testid="button-add-line-home"
+                      >
+                        <SiLine className="w-4 h-4 mr-1" />
+                        {t('customer.addLineFriend')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Card>
             )}
             
@@ -635,23 +703,68 @@ export default function CustomerApp() {
                     <p className="text-xs text-muted-foreground">{t('customer.lineGetBonusPoints')}</p>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <Button
-                    className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
-                    onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
-                    data-testid="button-add-line"
-                  >
-                    <SiLine className="w-5 h-5 mr-2" />
-                    {t('customer.addLineFriend')}
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-2">{t('customer.lineInstructions')}</p>
-                    <div className="inline-block px-3 py-1 bg-card border rounded-md">
-                      <span className="text-sm font-mono font-medium text-foreground">@752afsdq</span>
+                
+                {/* One-tap linking code section */}
+                {linkCodeData?.linkCode && (
+                  <div className="space-y-3">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-2">{t('customer.lineLinkingCode')}</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="px-4 py-2 bg-white border-2 border-[#06C755] rounded-lg">
+                          <span className="text-xl font-mono font-bold text-[#06C755] tracking-wider">
+                            {linkCodeData.linkCode}
+                          </span>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="border-[#06C755] text-[#06C755] hover:bg-[#06C755]/10"
+                          onClick={handleCopyLinkCode}
+                          data-testid="button-copy-link-code-profile"
+                        >
+                          {linkCodeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <span>{t('customer.lineStep1')}</span>
+                      <span>{t('customer.lineStep2')}</span>
+                      <span>{t('customer.lineStep3')}</span>
+                    </div>
+                    
+                    <Button
+                      className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
+                      onClick={() => window.open('https://line.me/R/oaMessage/@752afsdq', '_blank')}
+                      data-testid="button-open-line-chat-profile"
+                    >
+                      <SiLine className="w-5 h-5 mr-2" />
+                      {t('customer.lineOpenChat')}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Fallback if link code not loaded yet */}
+                {!linkCodeData?.linkCode && (
+                  <div className="space-y-3">
+                    <Button
+                      className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
+                      onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
+                      data-testid="button-add-line"
+                    >
+                      <SiLine className="w-5 h-5 mr-2" />
+                      {t('customer.addLineFriend')}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-2">{t('customer.lineInstructions')}</p>
+                      <div className="inline-block px-3 py-1 bg-card border rounded-md">
+                        <span className="text-sm font-mono font-medium text-foreground">@752afsdq</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </Card>
             )}
             
