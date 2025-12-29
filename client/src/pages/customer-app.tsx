@@ -515,9 +515,9 @@ export default function CustomerApp() {
             <QRCodeDisplay customerId={customer.id} customerName={customer.name} />
             
             {/* Customer Phone Number - Prominent Display */}
-            <div className="flex flex-col items-center gap-1 py-3 px-4 bg-card rounded-xl border-2 border-border" data-testid="phone-display">
+            <div className="flex flex-col items-center gap-1 py-3 px-4 bg-card rounded-xl border-2 border-border min-w-0 max-w-full" data-testid="phone-display">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('customer.customerPhone')}</p>
-              <p className="text-3xl font-bold text-foreground" data-testid="text-customer-phone">{customer.phone}</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground truncate max-w-full" data-testid="text-customer-phone">{customer.phone}</p>
             </div>
             
             {/* LINE Connection Card - Show different states */}
@@ -780,39 +780,42 @@ export default function CustomerApp() {
         </div>
       </main>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - Responsive grid with icon-only on narrow screens */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border bottom-nav-safe" style={{zIndex: 9999}}>
-        <div className="mx-auto w-full px-2 flex justify-around py-2" style={{maxWidth: "min(100vw, 480px)"}}>
+        <div className="mx-auto w-full grid grid-cols-5 py-2" style={{maxWidth: "min(100vw, 480px)"}}>
           <button
             onClick={() => { enableAudio(); setActiveTab("home"); }}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${
+            className={`flex flex-col items-center justify-center gap-0.5 py-2 hover-elevate active-elevate-2 ${
               activeTab === "home" ? "text-primary" : "text-muted-foreground"
             }`}
+            aria-label={t('customer.home')}
             data-testid="button-nav-home"
           >
-            <Home className="w-6 h-6" />
-            <span className="text-xs">{t('customer.home')}</span>
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] hidden xs:block">{t('customer.home')}</span>
           </button>
           <button
             onClick={() => setLocation("/menu")}
-            className="flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 text-muted-foreground"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 hover-elevate active-elevate-2 text-muted-foreground"
+            aria-label={t('customer.menuNav')}
             data-testid="button-nav-menu"
           >
-            <IceCream className="w-6 h-6" />
-            <span className="text-xs">{t('customer.menuNav')}</span>
+            <IceCream className="w-5 h-5" />
+            <span className="text-[10px] hidden xs:block">{t('customer.menuNav')}</span>
           </button>
           <button
             onClick={() => setActiveTab("messages")}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 relative ${
+            className={`flex flex-col items-center justify-center gap-0.5 py-2 hover-elevate active-elevate-2 relative ${
               activeTab === "messages" ? "text-primary" : "text-muted-foreground"
             }`}
+            aria-label={t('customer.messages')}
             data-testid="button-nav-messages"
           >
-            <MessageSquare className="w-6 h-6" />
-            <span className="text-xs">{t('customer.messages')}</span>
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-[10px] hidden xs:block">{t('customer.messages')}</span>
             {unreadCount > 0 && (
               <Badge 
-                className="absolute top-1 right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs font-bold rounded-full"
+                className="absolute top-0 right-1/4 h-4 w-4 flex items-center justify-center p-0 bg-red-500 text-white text-[10px] font-bold rounded-full"
                 data-testid="badge-unread-count"
               >
                 {unreadCount}
@@ -821,23 +824,25 @@ export default function CustomerApp() {
           </button>
           <button
             onClick={() => setActiveTab("referrals")}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${
+            className={`flex flex-col items-center justify-center gap-0.5 py-2 hover-elevate active-elevate-2 ${
               activeTab === "referrals" ? "text-primary" : "text-muted-foreground"
             }`}
+            aria-label={t('customer.referrals')}
             data-testid="button-nav-referrals"
           >
-            <Users className="w-6 h-6" />
-            <span className="text-xs">{t('customer.referrals')}</span>
+            <Users className="w-5 h-5" />
+            <span className="text-[10px] hidden xs:block">{t('customer.referrals')}</span>
           </button>
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 hover-elevate active-elevate-2 ${
+            className={`flex flex-col items-center justify-center gap-0.5 py-2 hover-elevate active-elevate-2 ${
               activeTab === "profile" ? "text-primary" : "text-muted-foreground"
             }`}
+            aria-label={t('customer.profileNav')}
             data-testid="button-nav-profile"
           >
-            <User className="w-6 h-6" />
-            <span className="text-xs">{t('customer.profileNav')}</span>
+            <User className="w-5 h-5" />
+            <span className="text-[10px] hidden xs:block">{t('customer.profileNav')}</span>
           </button>
         </div>
       </nav>
