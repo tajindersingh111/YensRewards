@@ -686,8 +686,9 @@ export function tierStatusFlexMessage(
   };
 }
 
-// Account Linked Confirmation
+// Account Linked Confirmation with Bonus Points
 export function accountLinkedFlexMessage(customerName: string, phone: string): FlexMessage {
+  const BONUS_POINTS = 50;
   const bubble: FlexBubble = {
     type: 'bubble',
     size: 'kilo',
@@ -697,7 +698,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
       contents: [
         {
           type: 'text',
-          text: '✅',
+          text: '🎉',
           size: 'xl',
           flex: 0
         } as FlexText,
@@ -736,6 +737,31 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
         } as FlexText,
         {
           type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              text: '🎁 คุณได้รับโบนัส',
+              size: 'sm',
+              color: '#666666',
+              align: 'center'
+            } as FlexText,
+            {
+              type: 'text',
+              text: `+${BONUS_POINTS} คะแนน!`,
+              size: 'xxl',
+              weight: 'bold',
+              color: YENS_BLUE,
+              align: 'center'
+            } as FlexText
+          ],
+          margin: 'lg',
+          paddingAll: 'lg',
+          backgroundColor: YENS_YELLOW,
+          cornerRadius: 'lg'
+        },
+        {
+          type: 'box',
           layout: 'horizontal',
           contents: [
             {
@@ -771,7 +797,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
           action: {
             type: 'uri',
             label: '📱 ดูรางวัลของฉัน',
-            uri: 'https://yens-rewards-leonard59.replit.app/customer'
+            uri: 'https://app.yensthai.com/customer'
           },
           style: 'primary',
           color: YENS_BLUE,
@@ -784,7 +810,7 @@ export function accountLinkedFlexMessage(customerName: string, phone: string): F
 
   return {
     type: 'flex',
-    altText: `สวัสดี คุณ${customerName}! บัญชี LINE เชื่อมต่อกับ Yens Rewards เรียบร้อยแล้ว`,
+    altText: `สวัสดี คุณ${customerName}! บัญชี LINE เชื่อมต่อกับ Yens Rewards เรียบร้อยแล้ว +${BONUS_POINTS} คะแนน!`,
     contents: bubble
   };
 }

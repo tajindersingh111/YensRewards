@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink, Copy, Check, Search } from "lucide-react";
 import { SiLine } from "react-icons/si";
+import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
@@ -496,22 +497,51 @@ export default function CustomerApp() {
               <p className="text-3xl font-bold text-foreground" data-testid="text-customer-phone">{customer.phone}</p>
             </div>
             
-            {/* LINE Connection Banner - Only show if not connected */}
-            {!customer.lineUid && (
+            {/* LINE Connection Card - Show different states */}
+            {customer.lineUid ? (
               <div 
-                className="flex items-center gap-3 p-3 bg-[#06C755]/10 border border-[#06C755]/30 rounded-xl cursor-pointer hover-elevate"
-                onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
-                data-testid="banner-connect-line"
+                className="flex items-center gap-3 p-3 bg-[#06C755]/10 border border-[#06C755]/30 rounded-xl"
+                data-testid="banner-line-connected"
               >
                 <div className="w-10 h-10 rounded-full bg-[#06C755] flex items-center justify-center flex-shrink-0">
-                  <SiLine className="w-6 h-6 text-white" />
+                  <Check className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-foreground">{t('customer.connectLine')}</p>
-                  <p className="text-xs text-muted-foreground">{t('customer.lineHomeBanner')}</p>
+                  <p className="font-semibold text-sm text-foreground">{t('customer.lineConnected')}</p>
+                  <p className="text-xs text-muted-foreground">{t('customer.lineConnectedDesc')}</p>
                 </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <SiLine className="w-5 h-5 text-[#06C755] flex-shrink-0" />
               </div>
+            ) : (
+              <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/5" data-testid="banner-connect-line">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-[#06C755] flex items-center justify-center">
+                    <SiLine className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">{t('customer.connectLine')}</p>
+                    <p className="text-xs text-muted-foreground">{t('customer.lineGetBonusPoints')}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="bg-white p-2 rounded-lg border-2 border-[#06C755] flex-shrink-0">
+                    <QRCode value="https://line.me/R/ti/p/@752afsdq" size={80} level="L" />
+                  </div>
+                  <div className="flex flex-col justify-center gap-2 flex-1">
+                    <p className="text-xs text-foreground">{t('customer.lineScanOrSearch')}</p>
+                    <div className="inline-block px-2 py-1 bg-card border rounded text-sm font-mono font-medium text-foreground">@752afsdq</div>
+                    <Button
+                      size="sm"
+                      className="bg-[#06C755] hover:bg-[#05a648] text-white"
+                      onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
+                      data-testid="button-add-line-home"
+                    >
+                      <SiLine className="w-4 h-4 mr-1" />
+                      {t('customer.addLineFriend')}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
             )}
             
             <PointsCard 
@@ -578,35 +608,52 @@ export default function CustomerApp() {
               </div>
             </div>
             
-            {/* Connect LINE Card */}
-            <Card className="p-4 border-2 border-[#06C755]/30 bg-[#06C755]/5" data-testid="card-connect-line">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-[#06C755] flex items-center justify-center">
-                  <SiLine className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{t('customer.connectLine')}</h3>
-                  <p className="text-xs text-muted-foreground">{t('customer.connectLineDesc')}</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <Button
-                  className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
-                  onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
-                  data-testid="button-add-line"
-                >
-                  <SiLine className="w-5 h-5 mr-2" />
-                  {t('customer.addLineFriend')}
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </Button>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">{t('customer.lineInstructions')}</p>
-                  <div className="inline-block px-3 py-1 bg-card border rounded-md">
-                    <span className="text-sm font-mono font-medium text-foreground">@752afsdq</span>
+            {/* LINE Connection Card - Show different states */}
+            {customer.lineUid ? (
+              <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/10" data-testid="card-line-connected">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#06C755] flex items-center justify-center">
+                    <Check className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-foreground flex items-center gap-2">
+                      <SiLine className="w-5 h-5 text-[#06C755]" />
+                      {t('customer.lineConnected')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{t('customer.lineConnectedDesc')}</p>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            ) : (
+              <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/5" data-testid="card-connect-line">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-[#06C755] flex items-center justify-center">
+                    <SiLine className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{t('customer.connectLine')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('customer.lineGetBonusPoints')}</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Button
+                    className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
+                    onClick={() => window.open('https://line.me/R/ti/p/@752afsdq', '_blank')}
+                    data-testid="button-add-line"
+                  >
+                    <SiLine className="w-5 h-5 mr-2" />
+                    {t('customer.addLineFriend')}
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-2">{t('customer.lineInstructions')}</p>
+                    <div className="inline-block px-3 py-1 bg-card border rounded-md">
+                      <span className="text-sm font-mono font-medium text-foreground">@752afsdq</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
             
             {transactionsLoading ? (
               <Card className="p-6 text-center">

@@ -4047,12 +4047,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     );
                   }
                 } else {
-                  // Link LINE UID to customer
+                  // Link LINE UID to customer and award bonus points
+                  const LINE_BONUS_POINTS = 50;
+                  const wasNotLinked = !customerByPhone.lineUid;
+                  
                   await storage.updateCustomer(customerByPhone.id, {
-                    lineUid: lineUserId
+                    lineUid: lineUserId,
+                    // Award bonus points only if this is first time linking
+                    points: wasNotLinked ? customerByPhone.points + LINE_BONUS_POINTS : customerByPhone.points
                   });
 
-                  console.log(`✅ Linked ${customerByPhone.name} to LINE: ${lineUserId}`);
+                  console.log(`✅ Linked ${customerByPhone.name} to LINE: ${lineUserId}${wasNotLinked ? ` (+${LINE_BONUS_POINTS} bonus points!)` : ''}`);
 
                   // Send beautiful Flex Message for account linked
                   if ('replyToken' in event && event.replyToken) {
