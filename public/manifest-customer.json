@@ -1,6 +1,6 @@
 {
-  "name": "Yens Loyalty",
-  "short_name": "Yens Loyalty",
+  "name": "Yens Rewards",
+  "short_name": "Yens Rewards",
   "description": "View your points and rewards at Yens Thai Ice Cream",
   "start_url": "/customer",
   "display": "standalone",
