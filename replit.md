@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.16.3** - **Enhanced Message History**: Added "Today's Summary" dashboard card showing daily message stats (total sent, by channel: email/LINE/SMS, failures) with Bangkok timezone awareness. Added View Details dialog for inspecting full resolved message content with merge fields substituted. Birthday message indicator (cake icon) auto-detects birthday messages. Full bilingual support (EN/TH) for all new UI elements.
+**Current Version: v3.16.4** - **One-Tap LINE Linking**: Added unique linking codes (LINK-XXXX format) for single-phone users to easily link their LINE account without scanning QR codes. Customers can copy the code from the app and paste it in LINE chat to instantly link their account and earn 50 bonus points. Updated LINE webhook to accept linking codes with 30-minute TTL. Full bilingual support (EN/TH) for all new UI elements.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
