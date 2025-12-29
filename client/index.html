@@ -48,10 +48,13 @@
         const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
         
         if (path.startsWith('/customer')) {
-          if (manifestLink) manifestLink.href = '/manifest-customer.json';
-          document.title = 'Yens Customer';
+          if (manifestLink) manifestLink.href = '/manifest-customer.json?v=3.17.4';
+          document.title = 'Yens Rewards';
           if (themeColorMeta) themeColorMeta.content = '#FCD34D';
-          if (appleTitleMeta) appleTitleMeta.content = 'Yens Customer';
+          if (appleTitleMeta) appleTitleMeta.content = 'Yens Rewards';
+          // Update apple-touch-icon for customer app
+          var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+          if (appleIcon) appleIcon.href = '/yens-apple-touch-v39.png?v=3.17.4';
         } else if (path.startsWith('/barista')) {
           if (manifestLink) manifestLink.href = '/manifest-barista.json';
           document.title = 'Yens Barista';

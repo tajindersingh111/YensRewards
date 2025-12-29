@@ -10,25 +10,25 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/yens-icon-192-v39.png",
+      "src": "/yens-icon-192-v39.png?v=3.17.4",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/yens-icon-192-v39.png",
+      "src": "/yens-icon-192-v39.png?v=3.17.4",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/yens-icon-512-v39.png",
+      "src": "/yens-icon-512-v39.png?v=3.17.4",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/yens-icon-512-v39.png",
+      "src": "/yens-icon-512-v39.png?v=3.17.4",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
