@@ -4047,10 +4047,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LINE Webhook - Customer auto-linking
   // ============================================
 
+  // LINE Webhook test endpoint (for debugging)
+  app.get('/api/line/webhook', (req, res) => {
+    console.log('🔍 LINE webhook GET test accessed');
+    res.json({ 
+      status: 'ok', 
+      message: 'LINE webhook endpoint is reachable',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // LINE Webhook endpoint (public - called by LINE Platform)
   app.post('/api/line/webhook', async (req, res) => {
     try {
-      console.log('📥 LINE webhook received');
+      // Immediate logging - this MUST appear for any request
+      console.log('📥 ========== LINE WEBHOOK RECEIVED ==========');
+      console.log('📥 Headers:', JSON.stringify(req.headers, null, 2));
+      console.log('📥 Body:', JSON.stringify(req.body, null, 2));
+      console.log('📥 =============================================');
       
       const body = req.body as LineWebhookBody;
       
