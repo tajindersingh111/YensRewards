@@ -462,43 +462,34 @@ export default function CustomerApp() {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground py-3 px-4 sticky top-0 z-50 flex-shrink-0">
-        <div className="mx-auto w-full px-4 flex items-center justify-between" style={{maxWidth: "min(100vw, 400px)"}}>
+      {/* Header - Compact for narrow Android screens */}
+      <header className="bg-primary text-primary-foreground py-2 px-2 sticky top-0 z-50 flex-shrink-0">
+        <div className="mx-auto w-full flex items-center justify-between gap-1" style={{maxWidth: "min(100vw, 400px)"}}>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => setLocation("/")}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
+            className="text-primary-foreground hover:bg-primary-foreground/20 flex-shrink-0 w-8 h-8"
             data-testid="button-back-home"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-            <div className="flex flex-col">
-              <h1 className="text-xl font-bold">{t('customer.yensRewards')}</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">
+          <div className="flex items-center gap-2 flex-1 min-w-0 justify-center">
+            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-base font-bold truncate">{t('customer.yensRewards')}</h1>
+              <span className="text-[10px] opacity-70" data-testid="text-version">
                 {t('common.version')}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 flex-shrink-0">
             <LanguageSwitcher />
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => setLocation("/menu")}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
-              data-testid="button-menu"
-            >
-              <IceCream className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
               onClick={handleLogout}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
+              className="text-primary-foreground hover:bg-primary-foreground/20 w-8 h-8"
               data-testid="button-logout"
             >
               <LogOut className="w-4 h-4" />

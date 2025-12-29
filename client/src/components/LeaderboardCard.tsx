@@ -37,26 +37,26 @@ export default function LeaderboardCard({ entries, currentUserId }: LeaderboardC
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className={`flex items-center gap-3 p-3 rounded-lg ${
+              className={`flex items-center gap-2 p-2 rounded-lg ${
                 entry.id === currentUserId ? "bg-primary/10" : "bg-muted/50"
               }`}
               data-testid={`row-leaderboard-${entry.id}`}
             >
-              <div className="w-8 flex items-center justify-center">
+              <div className="w-6 flex items-center justify-center flex-shrink-0">
                 {getRankIcon(entry.rank) || (
-                  <span className="font-bold text-muted-foreground">{entry.rank}</span>
+                  <span className="font-bold text-muted-foreground text-sm">{entry.rank}</span>
                 )}
               </div>
               
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="font-bold text-primary">{entry.name.charAt(0)}</span>
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <span className="font-bold text-primary text-sm">{entry.name.charAt(0)}</span>
               </div>
 
-              <div className="flex-1">
-                <p className="font-semibold text-foreground">{entry.name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">{entry.name}</p>
               </div>
 
-              <Badge variant="secondary" data-testid={`text-points-${entry.id}`}>
+              <Badge variant="secondary" className="flex-shrink-0 text-xs" data-testid={`text-points-${entry.id}`}>
                 {entry.points} {t('customer.leaderboard.pointsAbbr')}
               </Badge>
             </div>
