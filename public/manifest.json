@@ -36,27 +36,5 @@
     }
   ],
   "categories": ["business", "lifestyle"],
-  "shortcuts": [
-    {
-      "name": "Customer App",
-      "short_name": "Customer",
-      "description": "View your points and rewards",
-      "url": "/customer",
-      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Barista App",
-      "short_name": "Barista",
-      "description": "Scan QR and process transactions",
-      "url": "/barista",
-      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Admin Dashboard",
-      "short_name": "Admin",
-      "description": "View reports and manage customers",
-      "url": "/admin",
-      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
-    }
-  ]
+  "shortcuts": []
 }
