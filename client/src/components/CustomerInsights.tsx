@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, Cake, Eye, Edit, MessageSquare, Trash2, Send } from "lucide-react";
+import { Trophy, Cake, Eye, Edit, MessageSquare, Trash2, Send, CheckCircle2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Customer } from "@shared/schema";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,13 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers/all'],
   });
+
+  // Fetch customer IDs who already received birthday messages today
+  const { data: birthdaySentData } = useQuery<{ customerIds: string[] }>({
+    queryKey: ['/api/admin/customers/birthdays/sent-today'],
+    refetchInterval: 30000, // Refetch every 30 seconds to catch newly sent messages
+  });
+  const birthdayMessagesSentToday = new Set(birthdaySentData?.customerIds || []);
 
   // Sort customers by totalSpent
   const topSpenders = [...customers]
@@ -311,13 +318,24 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
                         <Cake className="w-5 h-5 text-yellow-500 drop-shadow-md" />
                       </div>
+                      {birthdayMessagesSentToday.has(customer.id) && (
+                        <div className="absolute -top-1 -right-1" title={t('admin.overview.birthdayMessageSent')}>
+                          <CheckCircle2 className="w-6 h-6 text-green-500 fill-white drop-shadow-md" />
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs font-medium text-center line-clamp-1">
                       {customer.name}
                     </p>
-                    <Badge variant="outline" className="text-xs">
-                      {customer.timePeriod}
-                    </Badge>
+                    {birthdayMessagesSentToday.has(customer.id) ? (
+                      <Badge className="text-xs bg-green-100 text-green-700 border-green-300">
+                        {t('admin.overview.sent')}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        {customer.timePeriod}
+                      </Badge>
+                    )}
                     <div className="invisible group-hover:visible absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-background border rounded-md shadow-lg p-1 z-10">
                       {onViewDetails && (
                         <Button

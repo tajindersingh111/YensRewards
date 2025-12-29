@@ -533,6 +533,8 @@
       "thisWeek": "This Week",
       "currentWeek": "Current Week",
       "thisMonth": "This Month",
+      "sent": "Sent",
+      "birthdayMessageSent": "Birthday message already sent today",
       "sendAll": "Send All",
       "sendToGroup": "Send to Group",
       "sendingMessages": "Sending birthday messages...",

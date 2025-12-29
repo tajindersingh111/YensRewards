@@ -1445,6 +1445,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get customer IDs who received birthday messages today
+  app.get('/api/admin/customers/birthdays/sent-today', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      // Get all message logs
+      const allLogs = await storage.getMessageLogs();
+      
+      // Get today's date in Bangkok timezone
+      const bangkokNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+      const todayStart = new Date(bangkokNow);
+      todayStart.setHours(0, 0, 0, 0);
+      
+      // Filter for birthday messages sent today
+      const birthdayMessagesSentToday = allLogs.filter(log => {
+        // Check if message contains birthday-related keywords
+        const isBirthday = log.subject?.toLowerCase().includes('birthday') ||
+                          log.subject?.toLowerCase().includes('วันเกิด') ||
+                          log.message?.toLowerCase().includes('happy birthday') ||
+                          log.message?.toLowerCase().includes('สุขสันต์วันเกิด');
+        
+        // Check if sent today
+        const sentDate = log.sentAt || log.createdAt;
+        if (!sentDate) return false;
+        
+        const logDate = new Date(sentDate);
+        const logDateBangkok = new Date(logDate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+        logDateBangkok.setHours(0, 0, 0, 0);
+        
+        const isSentToday = logDateBangkok.getTime() === todayStart.getTime();
+        
+        // Only count successfully sent messages
+        const isSuccess = log.status === 'sent' || log.status === 'delivered';
+        
+        return isBirthday && isSentToday && isSuccess;
+      });
+      
+      // Get unique customer IDs
+      const customerIds = [...new Set(birthdayMessagesSentToday.map(log => log.customerId))];
+      
+      res.json({ customerIds });
+    } catch (error) {
+      console.error("Error fetching birthday messages sent today:", error);
+      res.status(500).json({ message: "Failed to fetch birthday messages" });
+    }
+  });
+
   // Get duplicate phone numbers (must come before /:id route)
   app.get('/api/admin/customers/duplicates', isAuthenticated, isAdmin, async (req, res) => {
     try {
