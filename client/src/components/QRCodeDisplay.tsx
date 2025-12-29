@@ -16,7 +16,6 @@ export default function QRCodeDisplay({ customerId, customerName }: QRCodeDispla
         <QRCode value={customerId} size={217} style={{ height: "auto", maxWidth: "100%", width: "100%" }} data-testid="qr-code" />
       </div>
       <p className="text-sm text-muted-foreground">{t('customer.scanAtCounter')}</p>
-      <p className="text-xs text-muted-foreground">{t('customer.idLabel')}: {customerId}</p>
     </div>
   );
 }
