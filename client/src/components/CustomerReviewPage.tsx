@@ -79,7 +79,7 @@ export default function CustomerReviewPage({ customerId, onBack }: CustomerRevie
   };
 
   const openGoogleMaps = () => {
-    window.open("https://g.page/r/CZeiwpKhbpYsEBM/review", "_blank");
+    window.open("https://maps.app.goo.gl/JgLQYrmdJ4b2bFFw9?g_st=ic", "_blank");
   };
 
   if (submitted) {
