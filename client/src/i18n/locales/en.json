@@ -172,6 +172,22 @@
       "yellowTheme": "Photos get a special Yens yellow theme!"
     }
   },
+  "review": {
+    "title": "Rate Your Experience",
+    "rateExperience": "Please rate your satisfaction with our service",
+    "whatYouLiked": "What did you especially like?",
+    "additionalComments": "Additional comments (optional)",
+    "commentPlaceholder": "Tell us what you liked or how we can improve...",
+    "thankYou": "Thank You!",
+    "feedbackReceived": "Your feedback has been received",
+    "loveItShare": "We're glad you loved it! Would you share your experience on Google Maps?",
+    "shareOnGoogle": "Share on Google Maps",
+    "backToHome": "Back to Home",
+    "ratingRequired": "Rating Required",
+    "pleaseSelectRating": "Please select a star rating",
+    "submitError": "Failed to submit review. Please try again.",
+    "navLabel": "Rate"
+  },
   "barista": {
     "title": "Barista",
     "searchPlaceholder": "Enter phone number",

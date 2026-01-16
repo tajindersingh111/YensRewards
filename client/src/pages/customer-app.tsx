@@ -13,13 +13,14 @@ import MessageCard from "@/components/MessageCard";
 import InstallPrompt from "@/components/InstallPrompt";
 import ProfilePhotoCapture from "@/components/ProfilePhotoCapture";
 import Celebration from "@/components/Celebration";
+import CustomerReviewPage from "@/components/CustomerReviewPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink, Copy, Check, Search } from "lucide-react";
+import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink, Copy, Check, Search, Star } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,7 @@ export default function CustomerApp() {
   const previousDataRef = useRef<{ points: number; tier: string } | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [linkCodeCopied, setLinkCodeCopied] = useState(false);
+  const [showReviewPage, setShowReviewPage] = useState(false);
   const { toast } = useToast();
 
   // Enable audio on first user interaction (iOS requirement)
@@ -460,6 +462,16 @@ export default function CustomerApp() {
   // Determine next tier points
   const nextTierPoints = customer.tier === "bronze" ? 500 : customer.tier === "silver" ? 1000 : 0;
 
+  // Show Review Page
+  if (showReviewPage) {
+    return (
+      <CustomerReviewPage 
+        customerId={customer.id}
+        onBack={() => setShowReviewPage(false)}
+      />
+    );
+  }
+
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header - Compact for narrow Android screens */}
@@ -758,6 +770,24 @@ export default function CustomerApp() {
                 )}
               </Card>
             )}
+            
+            {/* Rate Us Card */}
+            <Card 
+              className="p-4 border-2 border-yens-yellow bg-yens-yellow/10 hover-elevate cursor-pointer"
+              onClick={() => setShowReviewPage(true)}
+              data-testid="card-rate-us"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-yens-yellow flex items-center justify-center">
+                  <Star className="w-7 h-7 text-yens-blue fill-yens-blue" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-foreground">{t('review.title')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('review.rateExperience')}</p>
+                </div>
+                <ExternalLink className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </Card>
             
             {transactionsLoading ? (
               <Card className="p-6 text-center">

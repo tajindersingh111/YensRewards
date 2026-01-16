@@ -486,6 +486,28 @@ export type InsertBaristaPerformance = z.infer<typeof insertBaristaPerformanceSc
 export type DailySales = typeof dailySales.$inferSelect;
 export type InsertDailySales = z.infer<typeof insertDailySalesSchema>;
 
+// Customer Reviews table - store customer feedback and ratings
+export const customerReviews = pgTable("customer_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").references(() => customers.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  feedbackTags: text("feedback_tags").array(), // ["delicious", "fast_service", "good_value", etc.]
+  comment: text("comment"), // Optional free-form comment (max 500 chars)
+  siteId: varchar("site_id").references(() => sites.id), // Which location
+  postedToGoogle: boolean("posted_to_google").notNull().default(false), // Tracking if synced
+  googlePlaceId: text("google_place_id"), // Google Place ID for the review
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCustomerReviewSchema = createInsertSchema(customerReviews).omit({
+  id: true,
+  createdAt: true,
+  postedToGoogle: true,
+});
+
+export type CustomerReview = typeof customerReviews.$inferSelect;
+export type InsertCustomerReview = z.infer<typeof insertCustomerReviewSchema>;
+
 // LINE Linking Codes table - persistent storage for linking codes
 export const lineLinkingCodes = pgTable("line_linking_codes", {
   code: varchar("code", { length: 10 }).primaryKey(), // e.g., LINK-ABCD

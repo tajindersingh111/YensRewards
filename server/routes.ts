@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
@@ -4985,6 +4985,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error downloading file:", error);
       res.status(500).json({ message: "Failed to download file" });
+    }
+  });
+
+  // ============================================
+  // Customer Reviews API
+  // ============================================
+  
+  // Submit a customer review
+  app.post('/api/reviews', async (req, res) => {
+    try {
+      const reviewData = insertCustomerReviewSchema.parse(req.body);
+      
+      // Insert the review into the database
+      const [newReview] = await db.insert(customerReviews).values({
+        customerId: reviewData.customerId || null,
+        rating: reviewData.rating,
+        feedbackTags: reviewData.feedbackTags || [],
+        comment: reviewData.comment || null,
+        siteId: reviewData.siteId || null,
+        googlePlaceId: reviewData.googlePlaceId || null,
+      }).returning();
+      
+      console.log(`⭐ New review submitted: ${reviewData.rating} stars`);
+      
+      res.json(newReview);
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: fromError(error).message });
+      }
+      res.status(500).json({ message: "Failed to submit review" });
+    }
+  });
+  
+  // Get all reviews (admin)
+  app.get('/api/reviews', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const reviews = await db.select().from(customerReviews).orderBy(customerReviews.createdAt);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
     }
   });
 

@@ -172,6 +172,22 @@
       "yellowTheme": "รูปภาพจะได้รับธีมสีเหลือง Yens พิเศษ!"
     }
   },
+  "review": {
+    "title": "ให้คะแนนประสบการณ์",
+    "rateExperience": "กรุณาให้คะแนนความพึงพอใจในการใช้บริการ",
+    "whatYouLiked": "สิ่งที่คุณชอบเป็นพิเศษ",
+    "additionalComments": "ความคิดเห็นเพิ่มเติม (ไม่บังคับ)",
+    "commentPlaceholder": "บอกเราว่าคุณชอบอะไรหรือเราจะปรับปรุงได้อย่างไร...",
+    "thankYou": "ขอบคุณ!",
+    "feedbackReceived": "ได้รับข้อเสนอแนะของคุณแล้ว",
+    "loveItShare": "ยินดีที่คุณพอใจ! อยากแบ่งปันประสบการณ์ใน Google Maps ไหม?",
+    "shareOnGoogle": "แชร์ใน Google Maps",
+    "backToHome": "กลับหน้าแรก",
+    "ratingRequired": "กรุณาให้คะแนน",
+    "pleaseSelectRating": "กรุณาเลือกดาวให้คะแนน",
+    "submitError": "ไม่สามารถส่งรีวิวได้ กรุณาลองอีกครั้ง",
+    "navLabel": "ให้คะแนน"
+  },
   "barista": {
     "title": "บาริสต้า",
     "searchPlaceholder": "ป้อนหมายเลขโทรศัพท์",
