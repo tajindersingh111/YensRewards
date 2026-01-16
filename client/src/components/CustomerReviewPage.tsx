@@ -103,7 +103,7 @@ export default function CustomerReviewPage({ customerId, onBack }: CustomerRevie
             </p>
             <Button 
               onClick={openGoogleMaps}
-              className="w-full bg-yens-blue hover:bg-yens-blue/90 text-white gap-2"
+              className="w-full bg-yens-blue text-white gap-2 border-yens-blue-border"
               data-testid="button-share-google"
             >
               <ExternalLink className="w-4 h-4" />
@@ -181,10 +181,10 @@ export default function CustomerReviewPage({ customerId, onBack }: CustomerRevie
               variant={selectedTags.includes(tag.key) ? "default" : "outline"}
               size="sm"
               onClick={() => toggleTag(tag.key)}
-              className={`rounded-full transition-all ${
+              className={`rounded-full transition-all toggle-elevate ${
                 selectedTags.includes(tag.key)
-                  ? "bg-yens-yellow text-yens-blue border-yens-yellow hover:bg-yens-yellow/90"
-                  : "border-gray-300 text-gray-600 hover:border-yens-yellow hover:text-yens-blue"
+                  ? "bg-yens-yellow text-yens-blue border-yens-yellow toggle-elevated"
+                  : "border-gray-300 text-gray-600"
               }`}
               data-testid={`tag-${tag.key}`}
             >
@@ -212,7 +212,7 @@ export default function CustomerReviewPage({ customerId, onBack }: CustomerRevie
         <Button
           onClick={handleSubmit}
           disabled={submitReviewMutation.isPending}
-          className="w-full max-w-sm mt-6 bg-yens-yellow text-yens-blue hover:bg-yens-yellow/90 font-semibold py-6"
+          className="w-full max-w-sm mt-6 bg-yens-yellow text-yens-blue font-semibold py-6 border-yens-yellow-border"
           data-testid="button-submit-review"
         >
           {submitReviewMutation.isPending ? t("common.loading") : t("common.submit")}

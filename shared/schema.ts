@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, serial, timestamp, decimal, boolean, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -488,21 +488,20 @@ export type InsertDailySales = z.infer<typeof insertDailySalesSchema>;
 
 // Customer Reviews table - store customer feedback and ratings
 export const customerReviews = pgTable("customer_reviews", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  customerId: varchar("customer_id").references(() => customers.id),
+  id: serial("id").primaryKey(), // Auto-increment serial
+  customerId: varchar("customer_id").references(() => customers.id).notNull(),
   rating: integer("rating").notNull(), // 1-5 stars
   feedbackTags: text("feedback_tags").array(), // ["delicious", "fast_service", "good_value", etc.]
   comment: text("comment"), // Optional free-form comment (max 500 chars)
-  siteId: varchar("site_id").references(() => sites.id), // Which location
-  postedToGoogle: boolean("posted_to_google").notNull().default(false), // Tracking if synced
   googlePlaceId: text("google_place_id"), // Google Place ID for the review
+  syncedToGoogle: boolean("synced_to_google").notNull().default(false), // Tracking if synced
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertCustomerReviewSchema = createInsertSchema(customerReviews).omit({
   id: true,
   createdAt: true,
-  postedToGoogle: true,
+  syncedToGoogle: true,
 });
 
 export type CustomerReview = typeof customerReviews.$inferSelect;
