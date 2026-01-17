@@ -804,6 +804,8 @@
       "importError": "Failed to import customers",
       "downloadTemplate": "Download Template",
       "templateDownloaded": "CSV template downloaded successfully",
+      "filterTier": "Filter by tier",
+      "allTiers": "All Tiers",
       "pagination": {
         "showing": "Showing",
         "to": "to",

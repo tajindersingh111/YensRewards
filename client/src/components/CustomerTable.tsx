@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MessageSquare, Edit, Eye, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MessageSquare, Edit, Eye, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import { useState, useEffect } from "react";
 import { Customer } from "@shared/schema";
@@ -15,6 +15,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+
+type SortField = 'name' | 'totalSpent' | 'points' | 'createdAt';
+type SortOrder = 'asc' | 'desc';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +48,9 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [detailsCustomer, setDetailsCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [sortBy, setSortBy] = useState<SortField>('createdAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [tierFilter, setTierFilter] = useState<string>('all');
   const { toast } = useToast();
 
   // Debounce search input and reset page
@@ -56,16 +62,38 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
     return () => clearTimeout(timer);
   }, [search]);
 
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setPage(1);
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortBy !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
+    return sortOrder === 'asc' 
+      ? <ArrowUp className="w-3 h-3 ml-1" /> 
+      : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
   // Fetch paginated customers
   const { data, isLoading } = useQuery<{ data: Customer[]; totalCount: number }>({
-    queryKey: ['/api/admin/customers', page, pageSize, debouncedSearch],
+    queryKey: ['/api/admin/customers', page, pageSize, debouncedSearch, sortBy, sortOrder, tierFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         pageSize: pageSize.toString(),
+        sortBy,
+        sortOrder,
       });
       if (debouncedSearch) {
         params.append('search', debouncedSearch);
+      }
+      if (tierFilter && tierFilter !== 'all') {
+        params.append('tier', tierFilter);
       }
       const response = await fetch(`/api/admin/customers?${params}`);
       if (!response.ok) throw new Error('Failed to fetch customers');
@@ -117,12 +145,12 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
     <Card className="p-6" data-testid="card-customer-table">
       <div className="space-y-4">
         {/* Header with search and bulk actions */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-foreground">{t('admin.customers.title')}</h3>
             <Badge variant="secondary" data-testid="badge-customer-count">{totalCount}</Badge>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -133,6 +161,17 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
                 data-testid="input-search-customers"
               />
             </div>
+            <Select value={tierFilter} onValueChange={(value) => { setTierFilter(value); setPage(1); }}>
+              <SelectTrigger className="w-32" data-testid="select-tier-filter">
+                <SelectValue placeholder={t('admin.customers.filterTier')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('admin.customers.allTiers')}</SelectItem>
+                <SelectItem value="bronze">Bronze</SelectItem>
+                <SelectItem value="silver">Silver</SelectItem>
+                <SelectItem value="gold">Gold</SelectItem>
+              </SelectContent>
+            </Select>
             <DuplicateCustomersDialog />
             <BulkDeleteCustomersDialog customers={customers} />
           </div>
@@ -197,13 +236,31 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Customer</th>
+                <th 
+                  className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => handleSort('name')}
+                  data-testid="header-sort-name"
+                >
+                  <span className="flex items-center">Customer<SortIcon field="name" /></span>
+                </th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
                 <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">LINE</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tier</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Points</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Total Spent</th>
+                <th 
+                  className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => handleSort('points')}
+                  data-testid="header-sort-points"
+                >
+                  <span className="flex items-center">Points<SortIcon field="points" /></span>
+                </th>
+                <th 
+                  className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => handleSort('totalSpent')}
+                  data-testid="header-sort-total-spent"
+                >
+                  <span className="flex items-center">Total Spent<SortIcon field="totalSpent" /></span>
+                </th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>

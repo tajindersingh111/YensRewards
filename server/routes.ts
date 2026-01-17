@@ -1342,12 +1342,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all customers (with optional pagination and search)
+  // Get all customers (with optional pagination, search, sorting, and filtering)
   app.get('/api/admin/customers', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string, 10) : undefined;
       const search = req.query.search as string | undefined;
+      const sortBy = req.query.sortBy as 'name' | 'totalSpent' | 'points' | 'createdAt' | undefined;
+      const sortOrder = req.query.sortOrder as 'asc' | 'desc' | undefined;
+      const tierFilter = req.query.tier as string | undefined;
 
       // If pagination params provided, use paginated query
       if (page !== undefined && pageSize !== undefined) {
@@ -1356,7 +1359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Invalid pagination parameters" });
         }
 
-        const result = await storage.listCustomers({ page, pageSize, search });
+        const result = await storage.listCustomers({ page, pageSize, search, sortBy, sortOrder, tierFilter });
         res.json(result);
       } else {
         // Legacy behavior: return all customers

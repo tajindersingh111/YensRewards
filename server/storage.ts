@@ -564,28 +564,50 @@ export class DbStorage implements IStorage {
     page: number;
     pageSize: number;
     search?: string;
+    sortBy?: 'name' | 'totalSpent' | 'points' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    tierFilter?: string;
   }): Promise<{ data: Customer[]; totalCount: number }> {
-    const { page, pageSize, search } = params;
+    const { page, pageSize, search, sortBy = 'createdAt', sortOrder = 'desc', tierFilter } = params;
     const offset = (page - 1) * pageSize;
 
     // Build base query with optional search
     let query = db.select().from(customers);
     let countQuery = db.select({ count: sql<number>`count(*)` }).from(customers);
 
+    const conditions = [];
+
     if (search && search.trim()) {
       const searchTerm = `%${search.trim()}%`;
-      const searchCondition = sql`(
+      conditions.push(sql`(
         ${customers.name} ILIKE ${searchTerm} OR 
         ${customers.phone} ILIKE ${searchTerm} OR 
         ${customers.email} ILIKE ${searchTerm}
-      )`;
-      query = query.where(searchCondition) as any;
-      countQuery = countQuery.where(searchCondition) as any;
+      )`);
     }
+
+    if (tierFilter && tierFilter !== 'all') {
+      conditions.push(sql`${customers.tier} = ${tierFilter}`);
+    }
+
+    if (conditions.length > 0) {
+      const combined = sql.join(conditions, sql` AND `);
+      query = query.where(combined) as any;
+      countQuery = countQuery.where(combined) as any;
+    }
+
+    // Determine sort column and order
+    let orderByClause;
+    const sortColumn = sortBy === 'totalSpent' ? customers.totalSpent 
+      : sortBy === 'points' ? customers.points 
+      : sortBy === 'name' ? customers.name
+      : customers.createdAt;
+    
+    orderByClause = sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Execute both queries in parallel
     const [data, countResult] = await Promise.all([
-      query.orderBy(desc(customers.createdAt)).limit(pageSize).offset(offset),
+      query.orderBy(orderByClause).limit(pageSize).offset(offset),
       countQuery
     ]);
 

@@ -103,7 +103,52 @@ export default function CustomerCSVImport({ open, onOpenChange, showTrigger = tr
     const lines = text.split('\n').filter(line => line.trim());
     const customers: ParsedCustomer[] = [];
 
-    // Skip header row (index 0)
+    if (lines.length < 2) return customers;
+
+    // Parse header row to detect column positions
+    const headerLine = lines[0];
+    const headerRegex = /"([^"]*)"|([^,]+)/g;
+    const headers: string[] = [];
+    let headerMatch;
+    while ((headerMatch = headerRegex.exec(headerLine)) !== null) {
+      headers.push((headerMatch[1] || headerMatch[2] || '').trim().toLowerCase());
+    }
+
+    // Map column names to their indices (support multiple variations)
+    const columnMap: Record<string, number> = {};
+    headers.forEach((header, index) => {
+      const h = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+      // Name variations
+      if (h.includes('name') || h.includes('crm') || h === 'customer') columnMap['name'] = index;
+      // Tier variations
+      if (h.includes('tier') || h.includes('membership') || h.includes('level')) columnMap['tier'] = index;
+      // Phone variations
+      if (h.includes('phone') || h.includes('mobile') || h.includes('tel')) columnMap['phone'] = index;
+      // Email variations
+      if (h.includes('email') || h.includes('mail') || h === 'email') columnMap['email'] = index;
+      // Gender variations
+      if (h.includes('gender') || h.includes('sex')) columnMap['gender'] = index;
+      // Birthday variations
+      if (h.includes('birth') || h.includes('dob') || h.includes('birthday')) columnMap['birthday'] = index;
+      // Register date variations
+      if (h.includes('register') && h.includes('date')) columnMap['registerDate'] = index;
+      // Register branch variations
+      if (h.includes('register') && h.includes('branch')) columnMap['registerBranch'] = index;
+      if (h.includes('branch') && !columnMap['registerBranch']) columnMap['registerBranch'] = index;
+      // Total spent variations
+      if (h.includes('total') && (h.includes('spend') || h.includes('spent') || h.includes('spending'))) columnMap['totalSpent'] = index;
+      if (h.includes('spending') && !columnMap['totalSpent']) columnMap['totalSpent'] = index;
+      // Points variations
+      if (h === 'point' || h === 'points' || h.includes('point')) columnMap['points'] = index;
+      // Last use variations
+      if (h.includes('last') && (h.includes('use') || h.includes('visit'))) columnMap['lastUse'] = index;
+      // Tag variations
+      if (h === 'tag' || h === 'tags' || h.includes('tag')) columnMap['tag'] = index;
+      // LINE UID variations
+      if (h.includes('line') && (h.includes('uid') || h.includes('id'))) columnMap['lineUid'] = index;
+    });
+
+    // Process data rows
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
       
@@ -115,21 +160,27 @@ export default function CustomerCSVImport({ open, onOpenChange, showTrigger = tr
         values.push(match[1] || match[2] || '');
       }
 
-      if (values.length < 3) continue; // Need at least name, tier, phone
+      if (values.length < 3) continue;
 
-      const name = values[0]?.trim();
-      const tier = values[1]?.trim();
-      const phone = values[2]?.trim();
-      const email = values[3]?.trim() || undefined;
-      const gender = values[4]?.trim() || undefined;
-      const birthday = values[5]?.trim() || undefined;
-      const registerDate = values[6]?.trim() || undefined;
-      const registerBranch = values[7]?.trim() || undefined;
-      const totalSpent = values[8]?.trim() || undefined;
-      const points = values[9]?.trim();
-      const lastUse = values[10]?.trim() || undefined;
-      const tag = values[11]?.trim() || undefined;
-      const lineUid = values[12]?.trim() || undefined;
+      // Get values by detected column positions, with fallback to fixed positions
+      const getValue = (field: string, fallbackIndex: number): string | undefined => {
+        const idx = columnMap[field] ?? fallbackIndex;
+        return values[idx]?.trim() || undefined;
+      };
+
+      const name = getValue('name', 0);
+      const tier = getValue('tier', 1);
+      const phone = getValue('phone', 2);
+      const email = getValue('email', 3);
+      const gender = getValue('gender', 4);
+      const birthday = getValue('birthday', 5);
+      const registerDate = getValue('registerDate', 6);
+      const registerBranch = getValue('registerBranch', 7);
+      const totalSpent = getValue('totalSpent', 8);
+      const points = getValue('points', 9);
+      const lastUse = getValue('lastUse', 10);
+      const tag = getValue('tag', 11);
+      const lineUid = getValue('lineUid', 12);
 
       // Skip if required fields are empty
       if (!name || !phone) continue;

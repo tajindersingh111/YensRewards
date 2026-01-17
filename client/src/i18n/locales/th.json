@@ -804,6 +804,8 @@
       "importError": "ไม่สามารถนำเข้าลูกค้าได้",
       "downloadTemplate": "ดาวน์โหลดแบบฟอร์ม",
       "templateDownloaded": "ดาวน์โหลดแบบฟอร์ม CSV สำเร็จ",
+      "filterTier": "กรองตามระดับ",
+      "allTiers": "ทุกระดับ",
       "pagination": {
         "showing": "แสดง",
         "to": "ถึง",
