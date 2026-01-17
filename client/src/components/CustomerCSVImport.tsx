@@ -99,20 +99,43 @@ export default function CustomerCSVImport({ open, onOpenChange, showTrigger = tr
     },
   });
 
+  // Parse a single CSV line, preserving empty fields
+  const parseCSVLine = (line: string): string[] => {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++; // Skip escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim()); // Push last value
+    return values;
+  };
+
   const parseCSV = (text: string) => {
-    const lines = text.split('\n').filter(line => line.trim());
+    // Normalize line endings (handle Windows CRLF and Mac CR)
+    const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = normalizedText.split('\n').filter(line => line.trim());
     const customers: ParsedCustomer[] = [];
 
     if (lines.length < 2) return customers;
 
     // Parse header row to detect column positions
-    const headerLine = lines[0];
-    const headerRegex = /"([^"]*)"|([^,]+)/g;
-    const headers: string[] = [];
-    let headerMatch;
-    while ((headerMatch = headerRegex.exec(headerLine)) !== null) {
-      headers.push((headerMatch[1] || headerMatch[2] || '').trim().toLowerCase());
-    }
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
 
     // Map column names to their indices (support multiple variations)
     const columnMap: Record<string, number> = {};
@@ -150,15 +173,7 @@ export default function CustomerCSVImport({ open, onOpenChange, showTrigger = tr
 
     // Process data rows
     for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      
-      // Parse CSV (handle quoted values)
-      const regex = /"([^"]*)"|([^,]+)/g;
-      const values: string[] = [];
-      let match;
-      while ((match = regex.exec(line)) !== null) {
-        values.push(match[1] || match[2] || '');
-      }
+      const values = parseCSVLine(lines[i]);
 
       if (values.length < 3) continue;
 

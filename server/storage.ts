@@ -73,6 +73,9 @@ export interface IStorage {
     page: number;
     pageSize: number;
     search?: string;
+    sortBy?: 'totalSpent' | 'points' | 'name' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    tierFilter?: string;
   }): Promise<{ data: Customer[]; totalCount: number }>;
   getFilteredCustomers(filters: {
     tier?: string[];
