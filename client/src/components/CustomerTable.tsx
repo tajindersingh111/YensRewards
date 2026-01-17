@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MessageSquare, Edit, Eye, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, MessageSquare, Edit, Eye, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Wrench } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import { useState, useEffect } from "react";
 import { Customer } from "@shared/schema";
@@ -107,6 +107,26 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
   const startIndex = totalCount > 0 ? (page - 1) * pageSize + 1 : 0;
   const endIndex = Math.min(page * pageSize, totalCount);
 
+  const cleanupEmailsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/admin/customers/cleanup-emails');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/customers"] });
+      toast({
+        title: t('common.success'),
+        description: "Email data cleaned up successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message || "Failed to clean up emails",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (customerId: string) => {
       return await apiRequest('DELETE', `/api/admin/customers/${customerId}`);
@@ -172,6 +192,16 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
                 <SelectItem value="gold">Gold</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => cleanupEmailsMutation.mutate()}
+              disabled={cleanupEmailsMutation.isPending}
+              data-testid="button-cleanup-emails"
+            >
+              <Wrench className="w-4 h-4 mr-1" />
+              Fix Emails
+            </Button>
             <DuplicateCustomersDialog />
             <BulkDeleteCustomersDialog customers={customers} />
           </div>
