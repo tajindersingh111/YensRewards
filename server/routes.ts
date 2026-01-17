@@ -3025,21 +3025,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (validData.registerBranch?.trim()) normalized.registerBranch = validData.registerBranch.trim();
 
           // Parse numeric fields (points must be whole numbers - database column is INTEGER)
+          // Be forgiving: if points is invalid, default to 0 and continue importing the customer
           if (validData.points !== undefined && validData.points.trim()) {
             const pointsNum = Number(validData.points.trim());
             if (Number.isFinite(pointsNum) && Number.isInteger(pointsNum)) {
               normalized.points = pointsNum;
             } else if (Number.isFinite(pointsNum)) {
-              // Fractional points detected - reject row
-              throw new Error(`Points must be a whole number, got: "${validData.points}"`);
+              // Fractional points - round to nearest integer
+              console.warn(`Fractional points for ${validData.phone}: "${validData.points}" - rounding to ${Math.round(pointsNum)}`);
+              normalized.points = Math.round(pointsNum);
             } else {
-              // Detect if value looks like a date (contains slashes or looks like date/time)
-              const looksLikeDate = validData.points.includes('/') || validData.points.includes(':');
-              if (looksLikeDate) {
-                throw new Error(`Invalid points value: "${validData.points}" - This looks like a date/time value. Points must be a whole number (e.g., 0, 50, 100). Please check your CSV column mapping.`);
-              } else {
-                throw new Error(`Invalid points value: "${validData.points}" - Points must be a whole number (e.g., 0, 50, 100). Please check your CSV column mapping.`);
-              }
+              // Invalid points (date, text, etc.) - default to 0 and continue
+              console.warn(`Invalid points for ${validData.phone}: "${validData.points}" - defaulting to 0`);
+              normalized.points = 0;
             }
           }
 
