@@ -3217,6 +3217,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clean up invalid email values (admin only)
+  app.post('/api/admin/customers/cleanup-emails', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        UPDATE customers 
+        SET email = NULL 
+        WHERE email IN ('Male', 'Female', 'male', 'female', 'Anonymous')
+        OR (email IS NOT NULL AND email != '' AND email NOT LIKE '%@%' AND email NOT LIKE '%@%')
+      `);
+      
+      res.json({
+        success: true,
+        message: "Email cleanup completed",
+        rowsAffected: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error("Error cleaning up emails:", error);
+      res.status(500).json({ message: "Failed to clean up emails" });
+    }
+  });
+
   // ============ Message Template API Endpoints (Admin Only) ============
   
   // Get all message templates
