@@ -814,52 +814,46 @@ export default function SalesTrackerDashboard() {
           <div className="col-span-3 grid grid-rows-3 gap-2">
             {/* Best Channel - Smaller */}
             <Card className="bg-yellow-400 rounded-lg">
-              <CardContent className="p-2 flex items-center justify-between">
-                <div>
-                  <p className="text-[8px] font-medium text-gray-700">Best Channel</p>
+              <CardContent className="p-2">
+                <p className="text-[8px] font-medium text-gray-700 mb-0.5">Best Channel</p>
+                <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-gray-900" data-testid="text-best-channel">
                     {metrics?.bestChannel?.name || 'N/A'}
                   </p>
-                </div>
-                {metrics?.bestChannel && (
-                  <p className="text-[10px] font-semibold text-gray-700">
-                    ฿{(metrics.bestChannel.total / 1000).toFixed(0)}k
+                  <p className="text-xs font-bold text-gray-800">
+                    {metrics?.bestChannel ? `฿${(metrics.bestChannel.total / 1000).toFixed(0)}k` : ''}
                   </p>
-                )}
+                </div>
               </CardContent>
             </Card>
 
             {/* Best Day - Smaller */}
             <Card className="bg-blue-400 rounded-lg">
-              <CardContent className="p-2 flex items-center justify-between">
-                <div>
-                  <p className="text-[8px] font-medium text-white/80">Best Day</p>
+              <CardContent className="p-2">
+                <p className="text-[8px] font-medium text-white/80 mb-0.5">Best Day</p>
+                <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-white" data-testid="text-best-day">
                     {metrics?.bestDay?.day || 'N/A'}
                   </p>
-                </div>
-                {metrics?.bestDay && (
-                  <p className="text-[10px] font-semibold text-white">
-                    ฿{(metrics.bestDay.total / 1000).toFixed(0)}k
+                  <p className="text-xs font-bold text-white">
+                    {metrics?.bestDay ? `฿${(metrics.bestDay.total / 1000).toFixed(0)}k` : ''}
                   </p>
-                )}
+                </div>
               </CardContent>
             </Card>
 
             {/* Best Month - Smaller */}
             <Card className="bg-green-400 rounded-lg">
-              <CardContent className="p-2 flex items-center justify-between">
-                <div>
-                  <p className="text-[8px] font-medium text-white/80">Best Month</p>
+              <CardContent className="p-2">
+                <p className="text-[8px] font-medium text-white/80 mb-0.5">Best Month</p>
+                <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-white" data-testid="text-best-month">
                     {metrics?.bestMonth?.month ? new Date(metrics.bestMonth.month + '-01').toLocaleDateString('en-US', { month: 'short' }) : 'N/A'}
                   </p>
-                </div>
-                {metrics?.bestMonth && (
-                  <p className="text-[10px] font-semibold text-white">
-                    ฿{(metrics.bestMonth.total / 1000).toFixed(0)}k
+                  <p className="text-xs font-bold text-white">
+                    {metrics?.bestMonth ? `฿${(metrics.bestMonth.total / 1000).toFixed(0)}k` : ''}
                   </p>
-                )}
+                </div>
               </CardContent>
             </Card>
           </div>
