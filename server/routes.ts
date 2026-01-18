@@ -1898,8 +1898,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const weeklyTarget = annualTarget / 52;
       const monthlyTarget = annualTarget / 12;
       
-      // Find best channel (highest total sales)
-      const channelTotals = allSales.reduce((acc, sale) => {
+      // Filter sales to current year only for best channel/day/month
+      const currentYear = now.getUTCFullYear();
+      const currentYearSales = allSales.filter(s => s.date.startsWith(String(currentYear)));
+      
+      // Find best channel (highest total sales) - Current Year Only
+      const channelTotals = currentYearSales.reduce((acc, sale) => {
         const channel = sale.orderChannel;
         if (!acc[channel]) {
           acc[channel] = 0;
@@ -1912,8 +1916,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? Object.entries(channelTotals).sort(([, a], [, b]) => b - a)[0]
         : null;
       
-      // Find best day of week (highest average sales)
-      const dayTotals = allSales.reduce((acc, sale) => {
+      // Find best day of week (highest average sales) - Current Year Only
+      // Also track the total sales for the best day
+      const dayTotals = currentYearSales.reduce((acc, sale) => {
         const day = sale.dayOfWeek;
         if (!acc[day]) {
           acc[day] = { total: 0, count: 0 };
@@ -1925,12 +1930,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const bestDay = Object.entries(dayTotals).length > 0
         ? Object.entries(dayTotals)
-            .map(([day, data]) => ({ day, avg: data.total / data.count }))
+            .map(([day, data]) => ({ day, avg: data.total / data.count, total: data.total }))
             .sort((a, b) => b.avg - a.avg)[0]
         : null;
       
-      // Find best month (highest total sales)
-      const monthTotals = allSales.reduce((acc, sale) => {
+      // Find best month (highest total sales) - Current Year Only
+      const monthTotals = currentYearSales.reduce((acc, sale) => {
         const month = sale.date.substring(0, 7); // YYYY-MM
         if (!acc[month]) {
           acc[month] = 0;
@@ -1950,8 +1955,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastMonthSales,
         ytdSales,
         bestChannel: bestChannel ? { name: bestChannel[0], total: bestChannel[1] } : null,
-        bestDay: bestDay ? bestDay.day : null,
-        bestMonth: bestMonth ? bestMonth[0] : null,
+        bestDay: bestDay ? { day: bestDay.day, total: bestDay.total } : null,
+        bestMonth: bestMonth ? { month: bestMonth[0], total: bestMonth[1] } : null,
         // Enhanced CFO metrics
         currentWeekTransactions,
         currentMonthTransactions,

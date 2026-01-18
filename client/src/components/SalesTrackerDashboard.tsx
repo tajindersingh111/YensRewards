@@ -126,8 +126,8 @@ export default function SalesTrackerDashboard() {
     lastMonthSales: number;
     ytdSales: number;
     bestChannel: { name: string; total: number } | null;
-    bestDay: string | null;
-    bestMonth: string | null;
+    bestDay: { day: string; total: number } | null;
+    bestMonth: { month: string; total: number } | null;
     // Enhanced CFO metrics
     currentWeekTransactions: number;
     currentMonthTransactions: number;
@@ -835,9 +835,14 @@ export default function SalesTrackerDashboard() {
                 <div>
                   <p className="text-[8px] font-medium text-white/80">Best Day</p>
                   <p className="text-xs font-bold text-white" data-testid="text-best-day">
-                    {metrics?.bestDay || 'N/A'}
+                    {metrics?.bestDay?.day || 'N/A'}
                   </p>
                 </div>
+                {metrics?.bestDay && (
+                  <p className="text-[10px] font-semibold text-white">
+                    ฿{(metrics.bestDay.total / 1000).toFixed(0)}k
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -847,9 +852,14 @@ export default function SalesTrackerDashboard() {
                 <div>
                   <p className="text-[8px] font-medium text-white/80">Best Month</p>
                   <p className="text-xs font-bold text-white" data-testid="text-best-month">
-                    {metrics?.bestMonth ? new Date(metrics.bestMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
+                    {metrics?.bestMonth?.month ? new Date(metrics.bestMonth.month + '-01').toLocaleDateString('en-US', { month: 'short' }) : 'N/A'}
                   </p>
                 </div>
+                {metrics?.bestMonth && (
+                  <p className="text-[10px] font-semibold text-white">
+                    ฿{(metrics.bestMonth.total / 1000).toFixed(0)}k
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
