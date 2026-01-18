@@ -1865,9 +1865,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
       // Calculate YTD (Year to Date) - from Jan 1 to today (using netSales for consistency with reports)
-      const ytdSales = allSales
-        .filter(s => s.date >= yearStart && s.date <= today)
+      const ytdSalesData = allSales.filter(s => s.date >= yearStart && s.date <= today);
+      const ytdSales = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      const ytdTransactionCount = ytdSalesData.length;
+      
+      // Calculate transaction counts for week and month
+      const currentWeekTransactions = allSales.filter(s => s.date >= weekStart && s.date <= today).length;
+      const currentMonthTransactions = allSales.filter(s => s.date >= monthStart && s.date <= today).length;
+      
+      // Calculate days elapsed for projections
+      const daysElapsedWeek = Math.floor((new Date(today).getTime() - new Date(weekStart).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const daysElapsedMonth = now.getUTCDate();
+      const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+      const daysElapsedYear = Math.floor((new Date(today).getTime() - new Date(yearStart).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Calculate same month last year for YoY comparison
+      const lastYearMonthStart = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
+      const lastYearMonthEnd = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(daysElapsedMonth).padStart(2, '0')}`;
+      const sameMonthLastYear = allSales
+        .filter(s => s.date >= lastYearMonthStart && s.date <= lastYearMonthEnd)
         .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      
+      // Calculate same YTD period last year
+      const lastYearStart = `${now.getUTCFullYear() - 1}-01-01`;
+      const lastYearToday = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+      const ytdLastYear = allSales
+        .filter(s => s.date >= lastYearStart && s.date <= lastYearToday)
+        .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      
+      // FY2026 Annual Target from business forecast
+      const annualTarget = 1732028;
+      const weeklyTarget = annualTarget / 52;
+      const monthlyTarget = annualTarget / 12;
       
       // Find best channel (highest total sales)
       const channelTotals = allSales.reduce((acc, sale) => {
@@ -1923,6 +1952,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bestChannel: bestChannel ? { name: bestChannel[0], total: bestChannel[1] } : null,
         bestDay: bestDay ? bestDay.day : null,
         bestMonth: bestMonth ? bestMonth[0] : null,
+        // Enhanced CFO metrics
+        currentWeekTransactions,
+        currentMonthTransactions,
+        ytdTransactionCount,
+        daysElapsedWeek,
+        daysElapsedMonth,
+        daysInMonth,
+        daysElapsedYear,
+        sameMonthLastYear,
+        ytdLastYear,
+        annualTarget,
+        weeklyTarget,
+        monthlyTarget,
+        // Calculated projections
+        weeklyDailyAvg: daysElapsedWeek > 0 ? currentWeekSales / daysElapsedWeek : 0,
+        monthlyDailyAvg: daysElapsedMonth > 0 ? currentMonthSales / daysElapsedMonth : 0,
+        projectedMonthEnd: daysElapsedMonth > 0 ? (currentMonthSales / daysElapsedMonth) * daysInMonth : 0,
+        projectedAnnual: daysElapsedYear > 0 ? (ytdSales / daysElapsedYear) * 365 : 0,
+        weeklyTargetPercent: weeklyTarget > 0 ? (currentWeekSales / weeklyTarget) * 100 : 0,
+        monthlyTargetPercent: monthlyTarget > 0 ? (currentMonthSales / monthlyTarget) * 100 : 0,
+        annualTargetPercent: annualTarget > 0 ? (ytdSales / annualTarget) * 100 : 0,
+        yoyMonthGrowth: sameMonthLastYear > 0 ? ((currentMonthSales - sameMonthLastYear) / sameMonthLastYear) * 100 : 0,
+        yoyYtdGrowth: ytdLastYear > 0 ? ((ytdSales - ytdLastYear) / ytdLastYear) * 100 : 0,
       });
     } catch (error) {
       console.error("Error fetching sales tracker metrics:", error);

@@ -128,6 +128,28 @@ export default function SalesTrackerDashboard() {
     bestChannel: { name: string; total: number } | null;
     bestDay: string | null;
     bestMonth: string | null;
+    // Enhanced CFO metrics
+    currentWeekTransactions: number;
+    currentMonthTransactions: number;
+    ytdTransactionCount: number;
+    daysElapsedWeek: number;
+    daysElapsedMonth: number;
+    daysInMonth: number;
+    daysElapsedYear: number;
+    sameMonthLastYear: number;
+    ytdLastYear: number;
+    annualTarget: number;
+    weeklyTarget: number;
+    monthlyTarget: number;
+    weeklyDailyAvg: number;
+    monthlyDailyAvg: number;
+    projectedMonthEnd: number;
+    projectedAnnual: number;
+    weeklyTargetPercent: number;
+    monthlyTargetPercent: number;
+    annualTargetPercent: number;
+    yoyMonthGrowth: number;
+    yoyYtdGrowth: number;
   }>({
     queryKey: ['/api/admin/sales-tracker-metrics'],
   });
@@ -653,27 +675,23 @@ export default function SalesTrackerDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards - 6 Boxes in Single Row */}
+      {/* KPI Cards - Enhanced CFO Dashboard */}
       <div className="px-6 mb-6">
-        <div className="grid grid-cols-9 gap-2">
-          {/* Current Week Total - Larger (2/9) */}
-          <Card className="col-span-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-            <CardContent className="p-2">
-              <div className="flex items-start justify-between gap-2">
+        <div className="grid grid-cols-12 gap-2">
+          {/* Current Week Total - Blue Card (3/12) */}
+          <Card className="col-span-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1">
                   <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Week</p>
-                  <p className="text-base font-bold text-white" data-testid="text-current-week-sales">
+                  <p className="text-lg font-bold text-white" data-testid="text-current-week-sales">
                     ฿{(metrics?.currentWeekSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </p>
-                  <p className="text-[9px] text-white/80 mt-0.5">Mon - Today</p>
+                  <p className="text-[9px] text-white/70">Mon - Today ({metrics?.daysElapsedWeek ?? 0} days)</p>
                 </div>
                 {metrics && metrics.lastWeekSales > 0 && (
                   <div className="text-right">
-                    <p className="text-[8px] text-white/70">Last Week</p>
-                    <p className="text-[9px] font-semibold text-white/90">
-                      ฿{metrics.lastWeekSales.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </p>
-                    <p className={`text-[8px] font-medium ${
+                    <p className={`text-xs font-bold ${
                       metrics.currentWeekSales >= metrics.lastWeekSales 
                         ? 'text-green-200' 
                         : 'text-red-200'
@@ -681,88 +699,160 @@ export default function SalesTrackerDashboard() {
                       {metrics.currentWeekSales >= metrics.lastWeekSales ? '↑' : '↓'}
                       {Math.abs(((metrics.currentWeekSales - metrics.lastWeekSales) / metrics.lastWeekSales) * 100).toFixed(1)}%
                     </p>
+                    <p className="text-[8px] text-white/60">vs last week</p>
                   </div>
                 )}
+              </div>
+              <div className="border-t border-white/20 pt-2 space-y-1">
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">Daily Avg</span>
+                  <span className="text-white font-medium">฿{(metrics?.weeklyDailyAvg ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                </div>
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">vs Target</span>
+                  <span className={`font-medium ${(metrics?.weeklyTargetPercent ?? 0) >= 100 ? 'text-green-200' : 'text-yellow-200'}`}>
+                    {(metrics?.weeklyTargetPercent ?? 0).toFixed(0)}% of ฿{((metrics?.weeklyTarget ?? 0) / 1000).toFixed(0)}k
+                  </span>
+                </div>
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">Transactions</span>
+                  <span className="text-white font-medium">{metrics?.currentWeekTransactions ?? 0}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Current Month Total - Larger (2/9) */}
-          <Card className="col-span-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-            <CardContent className="p-2">
-              <div className="flex items-start justify-between gap-2">
+          {/* Current Month Total - Green Card (3/12) */}
+          <Card className="col-span-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1">
                   <p className="text-[10px] font-medium text-white/90 mb-0.5">Current Month</p>
-                  <p className="text-base font-bold text-white" data-testid="text-current-month-sales">
+                  <p className="text-lg font-bold text-white" data-testid="text-current-month-sales">
                     ฿{(metrics?.currentMonthSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </p>
-                  <p className="text-[9px] text-white/80 mt-0.5">{new Date().toLocaleDateString('en-US', { month: 'short' })}</p>
+                  <p className="text-[9px] text-white/70">{new Date().toLocaleDateString('en-US', { month: 'short' })} (Day {metrics?.daysElapsedMonth ?? 0}/{metrics?.daysInMonth ?? 0})</p>
                 </div>
-                {metrics && metrics.lastMonthSales > 0 && (
+                {metrics && (metrics.sameMonthLastYear > 0 || metrics.lastMonthSales > 0) && (
                   <div className="text-right">
-                    <p className="text-[8px] text-white/70">Last Month</p>
-                    <p className="text-[9px] font-semibold text-white/90">
-                      ฿{metrics.lastMonthSales.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </p>
-                    <p className={`text-[8px] font-medium ${
-                      metrics.currentMonthSales >= metrics.lastMonthSales 
+                    <p className={`text-xs font-bold ${
+                      (metrics.yoyMonthGrowth ?? 0) >= 0 
                         ? 'text-green-200' 
                         : 'text-red-200'
                     }`}>
-                      {metrics.currentMonthSales >= metrics.lastMonthSales ? '↑' : '↓'}
-                      {Math.abs(((metrics.currentMonthSales - metrics.lastMonthSales) / metrics.lastMonthSales) * 100).toFixed(1)}%
+                      {(metrics.yoyMonthGrowth ?? 0) >= 0 ? '↑' : '↓'}
+                      {Math.abs(metrics.yoyMonthGrowth ?? 0).toFixed(1)}%
                     </p>
+                    <p className="text-[8px] text-white/60">YoY growth</p>
                   </div>
                 )}
+              </div>
+              <div className="border-t border-white/20 pt-2 space-y-1">
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">vs Target</span>
+                  <span className={`font-medium ${(metrics?.monthlyTargetPercent ?? 0) >= ((metrics?.daysElapsedMonth ?? 1) / (metrics?.daysInMonth ?? 1) * 100) ? 'text-green-200' : 'text-yellow-200'}`}>
+                    {(metrics?.monthlyTargetPercent ?? 0).toFixed(0)}% of ฿{((metrics?.monthlyTarget ?? 0) / 1000).toFixed(0)}k
+                  </span>
+                </div>
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">Projected</span>
+                  <span className="text-white font-medium">฿{((metrics?.projectedMonthEnd ?? 0) / 1000).toFixed(0)}k</span>
+                </div>
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">Transactions</span>
+                  <span className="text-white font-medium">{metrics?.currentMonthTransactions ?? 0}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* YTD (Year to Date) - Larger (2/9) */}
-          <Card className="col-span-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
-            <CardContent className="p-2">
-              <p className="text-[10px] font-medium text-white/90 mb-0.5">YTD Sales</p>
-              <p className="text-base font-bold text-white" data-testid="text-ytd-sales">
-                ฿{(metrics?.ytdSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </p>
-              <p className="text-[9px] text-white/80 mt-0.5">Since Jan 1</p>
+          {/* YTD (Year to Date) - Purple Card (3/12) */}
+          <Card className="col-span-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex-1">
+                  <p className="text-[10px] font-medium text-white/90 mb-0.5">YTD Sales</p>
+                  <p className="text-lg font-bold text-white" data-testid="text-ytd-sales">
+                    ฿{(metrics?.ytdSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </p>
+                  <p className="text-[9px] text-white/70">Since Jan 1 ({metrics?.daysElapsedYear ?? 0} days)</p>
+                </div>
+                {metrics && metrics.ytdLastYear > 0 && (
+                  <div className="text-right">
+                    <p className={`text-xs font-bold ${
+                      (metrics.yoyYtdGrowth ?? 0) >= 0 
+                        ? 'text-green-200' 
+                        : 'text-red-200'
+                    }`}>
+                      {(metrics.yoyYtdGrowth ?? 0) >= 0 ? '↑' : '↓'}
+                      {Math.abs(metrics.yoyYtdGrowth ?? 0).toFixed(1)}%
+                    </p>
+                    <p className="text-[8px] text-white/60">YoY growth</p>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-white/20 pt-2 space-y-1">
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">vs Annual Target</span>
+                  <span className={`font-medium ${(metrics?.annualTargetPercent ?? 0) >= ((metrics?.daysElapsedYear ?? 1) / 365 * 100) ? 'text-green-200' : 'text-yellow-200'}`}>
+                    {(metrics?.annualTargetPercent ?? 0).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">Projection</span>
+                  <span className="text-white font-medium">฿{((metrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M</span>
+                </div>
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-white/70">Target</span>
+                  <span className="text-white font-medium">฿{((metrics?.annualTarget ?? 0) / 1000000).toFixed(2)}M</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Best Channel - Smaller (1/9) */}
-          <Card className="col-span-1 bg-yellow-400 rounded-lg">
-            <CardContent className="p-1.5">
-              <p className="text-[9px] font-medium text-gray-800 mb-0.5">Best Channel</p>
-              <p className="text-sm font-bold text-gray-900 leading-tight" data-testid="text-best-channel">
-                {metrics?.bestChannel?.name || 'N/A'}
-              </p>
-              {metrics?.bestChannel && (
-                <p className="text-[8px] text-gray-700 mt-0.5">
-                  ฿{(metrics.bestChannel.total / 1000).toFixed(0)}k
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Smaller Yellow Cards Container (3/12 total) */}
+          <div className="col-span-3 grid grid-rows-3 gap-2">
+            {/* Best Channel - Smaller */}
+            <Card className="bg-yellow-400 rounded-lg">
+              <CardContent className="p-2 flex items-center justify-between">
+                <div>
+                  <p className="text-[8px] font-medium text-gray-700">Best Channel</p>
+                  <p className="text-xs font-bold text-gray-900" data-testid="text-best-channel">
+                    {metrics?.bestChannel?.name || 'N/A'}
+                  </p>
+                </div>
+                {metrics?.bestChannel && (
+                  <p className="text-[10px] font-semibold text-gray-700">
+                    ฿{(metrics.bestChannel.total / 1000).toFixed(0)}k
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-          {/* Best Day - Smaller (1/9) */}
-          <Card className="col-span-1 bg-blue-400 rounded-lg">
-            <CardContent className="p-1.5">
-              <p className="text-[9px] font-medium text-white/90 mb-0.5">Best Day</p>
-              <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-day">
-                {metrics?.bestDay || 'N/A'}
-              </p>
-            </CardContent>
-          </Card>
+            {/* Best Day - Smaller */}
+            <Card className="bg-blue-400 rounded-lg">
+              <CardContent className="p-2 flex items-center justify-between">
+                <div>
+                  <p className="text-[8px] font-medium text-white/80">Best Day</p>
+                  <p className="text-xs font-bold text-white" data-testid="text-best-day">
+                    {metrics?.bestDay || 'N/A'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Best Month - Smaller (1/9) */}
-          <Card className="col-span-1 bg-green-400 rounded-lg">
-            <CardContent className="p-1.5">
-              <p className="text-[9px] font-medium text-white/90 mb-0.5">Best Month</p>
-              <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-month">
-                {metrics?.bestMonth ? new Date(metrics.bestMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
-              </p>
-            </CardContent>
-          </Card>
+            {/* Best Month - Smaller */}
+            <Card className="bg-green-400 rounded-lg">
+              <CardContent className="p-2 flex items-center justify-between">
+                <div>
+                  <p className="text-[8px] font-medium text-white/80">Best Month</p>
+                  <p className="text-xs font-bold text-white" data-testid="text-best-month">
+                    {metrics?.bestMonth ? new Date(metrics.bestMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
