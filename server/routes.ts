@@ -1899,8 +1899,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const monthlyTarget = annualTarget / 12;
       
       // Filter sales to current year only for best channel/day/month
-      const currentYear = now.getUTCFullYear();
+      // Use fresh Date() to ensure we get the actual current year
+      const currentYear = new Date().getFullYear();
+      console.log(`[Sales Tracker] Filtering for year: ${currentYear}, Total sales records: ${allSales.length}`);
       const currentYearSales = allSales.filter(s => s.date.startsWith(String(currentYear)));
+      console.log(`[Sales Tracker] Current year sales count: ${currentYearSales.length}`);
       
       // Find best channel (highest total sales) - Current Year Only
       const channelTotals = currentYearSales.reduce((acc, sale) => {
@@ -1957,6 +1960,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bestChannel: bestChannel ? { name: bestChannel[0], total: bestChannel[1] } : null,
         bestDay: bestDay ? { day: bestDay.day, total: bestDay.total } : null,
         bestMonth: bestMonth ? { month: bestMonth[0], total: bestMonth[1] } : null,
+        // Debug info
+        filterYear: currentYear,
+        totalSalesRecords: allSales.length,
+        currentYearRecords: currentYearSales.length,
         // Enhanced CFO metrics
         currentWeekTransactions,
         currentMonthTransactions,
