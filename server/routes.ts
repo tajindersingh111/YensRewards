@@ -2038,10 +2038,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentMonthSales = allSales.filter(s => s.date >= currentMonthStart && s.date < nextMonthStart);
       const lastMonthSales = allSales.filter(s => s.date >= lastMonthStart && s.date < currentMonthStart);
 
-      const currentMonthRevenue = currentMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
-      const lastMonthRevenue = lastMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      const currentMonthRevenue = currentMonthSales.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      const lastMonthRevenue = lastMonthSales.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
       const momGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
       const avgTransaction = currentMonthSales.length > 0 ? currentMonthRevenue / currentMonthSales.length : 0;
+
+      // CFO-Level Metrics: YTD and Annual Target
+      const yearStart = `${currentYear}-01-01`;
+      const today = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const ytdSalesData = allSales.filter(s => s.date >= yearStart && s.date <= today);
+      const ytdRevenue = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      const ytdTransactions = ytdSalesData.length;
+      
+      // Same period last year for YoY comparison
+      const lastYearStart = `${currentYear - 1}-01-01`;
+      const lastYearToday = `${currentYear - 1}-${String(currentMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const sameMonthLastYearStart = `${currentYear - 1}-${String(currentMonth).padStart(2, '0')}-01`;
+      const sameMonthLastYearEnd = `${currentYear - 1}-${String(currentMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      const sameMonthLastYear = allSales
+        .filter(s => s.date >= sameMonthLastYearStart && s.date <= sameMonthLastYearEnd)
+        .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      const ytdLastYear = allSales
+        .filter(s => s.date >= lastYearStart && s.date <= lastYearToday)
+        .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+
+      // Targets from business forecast
+      const annualTarget = 1732028;
+      const monthlyTarget = annualTarget / 12;
+      const daysElapsedMonth = now.getDate();
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      const daysElapsedYear = Math.floor((new Date(today).getTime() - new Date(yearStart).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+      // Projections
+      const projectedMonthEnd = daysElapsedMonth > 0 ? (currentMonthRevenue / daysElapsedMonth) * daysInMonth : 0;
+      const projectedAnnual = daysElapsedYear > 0 ? (ytdRevenue / daysElapsedYear) * 365 : 0;
+      const monthlyTargetPercent = monthlyTarget > 0 ? (currentMonthRevenue / monthlyTarget) * 100 : 0;
+      const annualTargetPercent = annualTarget > 0 ? (ytdRevenue / annualTarget) * 100 : 0;
+      const yoyMonthGrowth = sameMonthLastYear > 0 ? ((currentMonthRevenue - sameMonthLastYear) / sameMonthLastYear) * 100 : 0;
+      const yoyYtdGrowth = ytdLastYear > 0 ? ((ytdRevenue - ytdLastYear) / ytdLastYear) * 100 : 0;
+      const dailyAverage = daysElapsedMonth > 0 ? currentMonthRevenue / daysElapsedMonth : 0;
 
       console.log('📊 Analytics Summary:', {
         currentMonth: `${currentYear}-${currentMonth}`,
@@ -2123,6 +2159,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? monthlyTrends.reduce((max, m) => m.totalSales > max.totalSales ? m : max).month
         : 'N/A';
 
+      // Generate last year's monthly trends for YoY comparison
+      const lastYearMonthlyTrendsMap = new Map<string, { totalSales: number; netSales: number }>();
+      allSales.forEach(sale => {
+        const saleDate = new Date(sale.date);
+        const saleYear = saleDate.getFullYear();
+        if (saleYear === currentYear - 1) {
+          const monthKey = saleDate.toLocaleDateString('en-US', { month: 'short' });
+          const existing = lastYearMonthlyTrendsMap.get(monthKey) || { totalSales: 0, netSales: 0 };
+          lastYearMonthlyTrendsMap.set(monthKey, {
+            totalSales: existing.totalSales + parseFloat(sale.totalSales),
+            netSales: existing.netSales + parseFloat(sale.netSales),
+          });
+        }
+      });
+
+      // Merge current year and last year trends for chart comparison
+      const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const combinedMonthlyTrends = monthOrder.map(month => {
+        const currentYearData = monthlyTrends.find(m => m.month.startsWith(month));
+        const lastYearData = lastYearMonthlyTrendsMap.get(month);
+        return {
+          month,
+          currentYearSales: currentYearData?.netSales || 0,
+          lastYearSales: lastYearData?.netSales || 0,
+          currentYearTotal: currentYearData?.totalSales || 0,
+          lastYearTotal: lastYearData?.totalSales || 0,
+        };
+      });
+
+      // Find best single day (date) in current year
+      const currentYearSalesOnly = allSales.filter(s => s.date.startsWith(String(currentYear)));
+      const dateTotals = currentYearSalesOnly.reduce((acc, sale) => {
+        const date = sale.date;
+        if (!acc[date]) acc[date] = 0;
+        acc[date] += parseFloat(sale.netSales);
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const bestSingleDay = Object.entries(dateTotals).length > 0
+        ? Object.entries(dateTotals).sort(([, a], [, b]) => b - a)[0]
+        : null;
+
       res.json({
         summary: {
           totalRevenue: currentMonthRevenue,
@@ -2130,7 +2208,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           avgTransaction,
           totalTransactions: currentMonthSales.length,
         },
+        // CFO-Level Metrics
+        cfoMetrics: {
+          ytdRevenue,
+          ytdTransactions,
+          annualTarget,
+          monthlyTarget,
+          projectedMonthEnd,
+          projectedAnnual,
+          monthlyTargetPercent,
+          annualTargetPercent,
+          yoyMonthGrowth,
+          yoyYtdGrowth,
+          dailyAverage,
+          daysElapsedMonth,
+          daysInMonth,
+          daysElapsedYear,
+          sameMonthLastYear,
+          ytdLastYear,
+          bestSingleDay: bestSingleDay ? { date: bestSingleDay[0], total: bestSingleDay[1] } : null,
+        },
         monthlyTrends,
+        combinedMonthlyTrends,
         channelPerformance,
         dayAnalysis,
         topPerformers: {
