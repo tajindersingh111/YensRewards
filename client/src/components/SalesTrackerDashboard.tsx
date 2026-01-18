@@ -126,7 +126,7 @@ export default function SalesTrackerDashboard() {
     lastMonthSales: number;
     ytdSales: number;
     bestChannel: { name: string; total: number } | null;
-    bestDay: { day: string; total: number } | null;
+    bestDay: { date: string; dayOfWeek: string; total: number } | null;
     bestMonth: { month: string; total: number } | null;
     // Enhanced CFO metrics
     currentWeekTransactions: number;
@@ -833,10 +833,12 @@ export default function SalesTrackerDashboard() {
                 <p className="text-[8px] font-medium text-white/80 mb-0.5">Best Day</p>
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-white" data-testid="text-best-day">
-                    {metrics?.bestDay?.day || 'N/A'}
+                    {metrics?.bestDay?.date 
+                      ? `${new Date(metrics.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (${metrics.bestDay.dayOfWeek.substring(0, 3)})`
+                      : 'N/A'}
                   </p>
                   <p className="text-xs font-bold text-white">
-                    {metrics?.bestDay ? `฿${(metrics.bestDay.total / 1000).toFixed(0)}k` : ''}
+                    {metrics?.bestDay ? `฿${(metrics.bestDay.total / 1000).toFixed(1)}k` : ''}
                   </p>
                 </div>
               </CardContent>

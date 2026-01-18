@@ -1919,22 +1919,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? Object.entries(channelTotals).sort(([, a], [, b]) => b - a)[0]
         : null;
       
-      // Find best day of week (highest average sales) - Current Year Only
-      // Also track the total sales for the best day
-      const dayTotals = currentYearSales.reduce((acc, sale) => {
-        const day = sale.dayOfWeek;
-        if (!acc[day]) {
-          acc[day] = { total: 0, count: 0 };
+      // Find best single calendar date (highest total sales on one date) - Current Year Only
+      // Group sales by date and find the date with highest combined sales
+      const dateTotals = currentYearSales.reduce((acc, sale) => {
+        const date = sale.date;
+        const dayOfWeek = sale.dayOfWeek;
+        if (!acc[date]) {
+          acc[date] = { total: 0, dayOfWeek };
         }
-        acc[day].total += parseFloat(sale.totalSales);
-        acc[day].count += 1;
+        acc[date].total += parseFloat(sale.totalSales);
         return acc;
-      }, {} as Record<string, { total: number; count: number }>);
+      }, {} as Record<string, { total: number; dayOfWeek: string }>);
       
-      const bestDay = Object.entries(dayTotals).length > 0
-        ? Object.entries(dayTotals)
-            .map(([day, data]) => ({ day, avg: data.total / data.count, total: data.total }))
-            .sort((a, b) => b.avg - a.avg)[0]
+      const bestDay = Object.entries(dateTotals).length > 0
+        ? Object.entries(dateTotals)
+            .map(([date, data]) => ({ date, dayOfWeek: data.dayOfWeek, total: data.total }))
+            .sort((a, b) => b.total - a.total)[0]
         : null;
       
       // Find best month (highest total sales) - Current Year Only
@@ -1958,7 +1958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastMonthSales,
         ytdSales,
         bestChannel: bestChannel ? { name: bestChannel[0], total: bestChannel[1] } : null,
-        bestDay: bestDay ? { day: bestDay.day, total: bestDay.total } : null,
+        bestDay: bestDay ? { date: bestDay.date, dayOfWeek: bestDay.dayOfWeek, total: bestDay.total } : null,
         bestMonth: bestMonth ? { month: bestMonth[0], total: bestMonth[1] } : null,
         // Debug info
         filterYear: currentYear,
