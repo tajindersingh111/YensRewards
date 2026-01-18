@@ -624,6 +624,13 @@
       "error": "ข้อผิดพลาด",
       "noImage": "ไม่มีรูปภาพ",
       "cost": "ต้นทุน",
+      "deleteAll": "ลบทั้งหมด",
+      "deleteAllTitle": "ลบสินค้าทั้งหมด",
+      "deleteAllWarning": "การดำเนินการนี้จะลบสินค้าทั้งหมด {{count}} รายการอย่างถาวร ไม่สามารถยกเลิกได้",
+      "deleteAllConfirm": "ใช่ ลบทั้งหมด",
+      "allProductsDeleted": "ลบสินค้า {{count}} รายการสำเร็จ",
+      "deleteAllFailed": "ลบสินค้าทั้งหมดไม่สำเร็จ",
+      "promoFocus": "โปรโมชั่นพิเศษ",
       "categories": {
         "soft_serve": "ซอฟท์เสิร์ฟ",
         "milk_tea": "ชานม",

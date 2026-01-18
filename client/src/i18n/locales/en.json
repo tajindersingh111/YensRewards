@@ -624,6 +624,13 @@
       "error": "Error",
       "noImage": "No Image",
       "cost": "Cost",
+      "deleteAll": "Delete All",
+      "deleteAllTitle": "Delete All Products",
+      "deleteAllWarning": "This will permanently delete all {{count}} products. This action cannot be undone.",
+      "deleteAllConfirm": "Yes, Delete All",
+      "allProductsDeleted": "{{count}} products deleted successfully",
+      "deleteAllFailed": "Failed to delete all products",
+      "promoFocus": "Promo Focus",
       "categories": {
         "soft_serve": "Soft Serve",
         "milk_tea": "Milk Tea",

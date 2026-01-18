@@ -48,7 +48,7 @@ export function ProductCard({
   };
 
   return (
-    <Card className="overflow-hidden hover-elevate h-full flex flex-col" data-testid={`card-product-${product.id}`}>
+    <Card className={`overflow-hidden hover-elevate h-full flex flex-col ${product.promoFocus ? 'ring-2 ring-orange-400 ring-offset-2' : ''}`} data-testid={`card-product-${product.id}`}>
       {/* Image Container - Fixed Aspect Ratio */}
       <div className="relative w-full bg-muted" style={{ paddingBottom: "75%" }}>
         {product.imageUrl ? (
@@ -81,7 +81,16 @@ export function ProductCard({
         {product.featured && (
           <div className="absolute top-2 left-2">
             <Badge variant="default" className="bg-yellow-500 text-black text-xs">
-              ⭐ {t('admin.products.featured')}
+              {t('admin.products.featured')}
+            </Badge>
+          </div>
+        )}
+        
+        {/* Promo Focus Indicator */}
+        {product.promoFocus && (
+          <div className="absolute bottom-2 left-2">
+            <Badge variant="default" className="bg-orange-500 text-white text-xs animate-pulse" data-testid={`badge-promo-focus-${product.id}`}>
+              {t('admin.products.promoFocus')}
             </Badge>
           </div>
         )}
@@ -110,11 +119,6 @@ export function ProductCard({
             >
               {formatPrice(product.price)}
             </span>
-            {variant === "management" && product.cost && (
-              <span className="text-sm text-muted-foreground" data-testid={`text-product-cost-${product.id}`}>
-                {t('admin.products.cost')}: {formatPrice(product.cost)}
-              </span>
-            )}
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">

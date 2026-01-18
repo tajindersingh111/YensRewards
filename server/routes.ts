@@ -2945,6 +2945,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete ALL products (admin only)
+  app.delete('/api/admin/products', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const deletedCount = await storage.deleteAllProducts();
+      res.json({ success: true, deletedCount });
+    } catch (error) {
+      console.error("Error deleting all products:", error);
+      res.status(500).json({ message: "Failed to delete all products" });
+    }
+  });
+
   // Bulk import products from CSV
   app.post('/api/admin/products/import', isAuthenticated, isAdmin, async (req, res) => {
     try {

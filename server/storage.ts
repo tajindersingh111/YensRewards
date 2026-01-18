@@ -160,6 +160,7 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<Product>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<void>;
+  deleteAllProducts(): Promise<number>;
   
   // Message Template methods
   getAllMessageTemplates(): Promise<MessageTemplate[]>;
@@ -1185,6 +1186,11 @@ export class DbStorage implements IStorage {
 
   async deleteProduct(id: string): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  async deleteAllProducts(): Promise<number> {
+    const result = await db.delete(products).returning();
+    return result.length;
   }
 
   // Message Template methods

@@ -24,7 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Edit, Trash2, Package, AlertTriangle } from "lucide-react";
 import ProductCSVImport from "@/components/ProductCSVImport";
 import ProductPhotoUpload from "@/components/ProductPhotoUpload";
 import { ProductCard } from "@/components/ProductCard";
@@ -49,6 +49,7 @@ interface ProductFormData {
   imageUrl: string;
   badge: string;
   featured: boolean;
+  promoFocus: boolean;
   available: boolean;
   sortOrder: number;
 }
@@ -68,9 +69,11 @@ export default function ProductManager() {
     imageUrl: "",
     badge: "",
     featured: false,
+    promoFocus: false,
     available: true,
     sortOrder: 0,
   });
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -119,6 +122,20 @@ export default function ProductManager() {
     },
   });
 
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('DELETE', '/api/admin/products');
+    },
+    onSuccess: (response: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({ title: t('products.success'), description: t('products.allProductsDeleted', { count: response.deletedCount || 0 }) });
+      setShowDeleteAllDialog(false);
+    },
+    onError: () => {
+      toast({ title: t('products.error'), description: t('products.deleteAllFailed'), variant: "destructive" });
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       productCode: "",
@@ -130,6 +147,7 @@ export default function ProductManager() {
       imageUrl: "",
       badge: "",
       featured: false,
+      promoFocus: false,
       available: true,
       sortOrder: 0,
     });
@@ -148,6 +166,7 @@ export default function ProductManager() {
       imageUrl: product.imageUrl || "",
       badge: product.badge || "",
       featured: product.featured,
+      promoFocus: product.promoFocus || false,
       available: product.available,
       sortOrder: product.sortOrder,
     });
@@ -182,6 +201,40 @@ export default function ProductManager() {
           <p className="text-muted-foreground">{t('products.subtitle')}</p>
         </div>
         <div className="flex gap-2">
+          {products.length > 0 && (
+            <Dialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="text-red-600 border-red-200" data-testid="button-delete-all-products">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {t('products.deleteAll')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-red-600">
+                    <AlertTriangle className="w-5 h-5" />
+                    {t('products.deleteAllTitle')}
+                  </DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground py-4">
+                  {t('products.deleteAllWarning', { count: products.length })}
+                </p>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowDeleteAllDialog(false)} data-testid="button-cancel-delete-all">
+                    {t('products.cancel')}
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => deleteAllMutation.mutate()}
+                    disabled={deleteAllMutation.isPending}
+                    data-testid="button-confirm-delete-all"
+                  >
+                    {deleteAllMutation.isPending ? t('common.deleting') : t('products.deleteAllConfirm')}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
           <ProductCSVImport />
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
@@ -312,7 +365,7 @@ export default function ProductManager() {
                   />
                 </div>
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-4 flex-wrap">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -322,6 +375,16 @@ export default function ProductManager() {
                     data-testid="checkbox-product-featured"
                   />
                   <span className="text-sm">{t('products.featured')}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.promoFocus}
+                    onChange={(e) => setFormData({ ...formData, promoFocus: e.target.checked })}
+                    className="w-4 h-4 accent-orange-500"
+                    data-testid="checkbox-product-promo-focus"
+                  />
+                  <span className="text-sm text-orange-600 font-medium">{t('products.promoFocus')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input

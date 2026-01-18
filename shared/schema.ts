@@ -101,6 +101,7 @@ export const products = pgTable("products", {
   imageUrl: text("image_url"),
   badge: text("badge"), // new, popular, limited, sale, null
   featured: boolean("featured").notNull().default(false),
+  promoFocus: boolean("promo_focus").notNull().default(false), // Highlight as promotional focus
   available: boolean("available").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
