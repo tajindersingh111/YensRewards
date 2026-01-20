@@ -170,7 +170,25 @@
       "changePhoto": "แตะไอคอนกล้องเพื่อเปลี่ยนรูป",
       "addPhoto": "เพิ่มรูปโปรไฟล์ของคุณ",
       "yellowTheme": "รูปภาพจะได้รับธีมสีเหลือง Yens พิเศษ!"
-    }
+    },
+    "todayAtYens": "วันนี้ที่ Yen's",
+    "doublePoints": "คะแนน 2 เท่าวันนี้!",
+    "orderNow": "สั่งเลย",
+    "pointsAway": "อีก {{points}} คะแนน!",
+    "pointsUntilReward": "คะแนนจนถึงรางวัลถัดไป",
+    "myQRCode": "QR Code ของฉัน",
+    "tapToExpand": "แตะเพื่อขยาย",
+    "showToBarista": "แสดงให้บาริสต้า",
+    "availableRewards": "รางวัลที่มี",
+    "pointsLabel": "คะแนน",
+    "noRewardsYet": "รางวัลมาเร็วๆ นี้!",
+    "totalPointsLabel": "คะแนนทั้งหมด",
+    "tierProgress": "ความคืบหน้าระดับ",
+    "maxTier": "คุณถึงระดับสูงสุดแล้ว!",
+    "pointsToNextTier": "คะแนนไประดับถัดไป",
+    "recentActivity": "กิจกรรมล่าสุด",
+    "rewardsNav": "รางวัล",
+    "logout": "ออกจากระบบ"
   },
   "review": {
     "title": "ให้คะแนนประสบการณ์",

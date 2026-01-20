@@ -170,7 +170,25 @@
       "changePhoto": "Tap camera icon to change photo",
       "addPhoto": "Add your profile photo",
       "yellowTheme": "Photos get a special Yens yellow theme!"
-    }
+    },
+    "todayAtYens": "Today at Yen's",
+    "doublePoints": "Double Points Today!",
+    "orderNow": "Order Now",
+    "pointsAway": "You're {{points}} points away!",
+    "pointsUntilReward": "Points until your next reward",
+    "myQRCode": "My QR Code",
+    "tapToExpand": "Tap to expand",
+    "showToBarista": "Show this to the barista",
+    "availableRewards": "Available Rewards",
+    "pointsLabel": "Points",
+    "noRewardsYet": "Rewards coming soon!",
+    "totalPointsLabel": "Total Points",
+    "tierProgress": "Tier Progress",
+    "maxTier": "You've reached the highest tier!",
+    "pointsToNextTier": "points to next tier",
+    "recentActivity": "Recent Activity",
+    "rewardsNav": "Rewards",
+    "logout": "Log Out"
   },
   "review": {
     "title": "Rate Your Experience",

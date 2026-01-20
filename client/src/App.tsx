@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAManager from "@/components/PWAManager";
 import Home from "@/pages/home";
 import CustomerApp from "@/pages/customer-app";
+import CustomerAppV2 from "@/pages/customer-app-v2";
 import CustomerMenu from "@/pages/customer-menu";
 import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -28,7 +29,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/customer" component={CustomerApp} />
+      <Route path="/customer" component={CustomerAppV2} />
+      <Route path="/customer-old" component={CustomerApp} />
       <Route path="/menu" component={CustomerMenu} />
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
