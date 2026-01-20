@@ -264,34 +264,32 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
           </div>
         )}
 
-        {/* Message Composer */}
-        <div className="space-y-2">
-          <Label htmlFor="message">Message (Plain Text for SMS)</Label>
-          <Textarea
-            id="message"
-            placeholder="Hi {name}! You currently have {points} points as a {tier} member..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            data-testid="textarea-message"
-          />
-        </div>
-
-        {/* HTML Email Preview */}
-        {htmlContent && (channel === "email" || channel === "both") && (
+        {/* HTML Email Preview - Show when template has HTML content and email channel */}
+        {htmlContent && (channel === "email" || channel === "both") ? (
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-purple-600" />
-              Email Preview (HTML Template)
+              Email Preview
             </Label>
             <div 
-              className="border rounded-lg p-4 bg-white max-h-96 overflow-y-auto"
+              className="border rounded-lg p-4 bg-white overflow-y-auto"
+              style={{ maxHeight: '500px' }}
               dangerouslySetInnerHTML={{ __html: htmlContent }}
               data-testid="html-email-preview"
             />
-            <p className="text-xs text-muted-foreground">
-              This is what the email will look like. The HTML template includes the birthday graphic, benefits, and terms & conditions.
-            </p>
+          </div>
+        ) : (
+          /* Plain Text Message - Show for SMS or when no HTML template */
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              placeholder="Hi {name}! You currently have {points} points as a {tier} member..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={6}
+              data-testid="textarea-message"
+            />
           </div>
         )}
 
