@@ -740,7 +740,7 @@ export default function MessageTemplates() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    {template.name}
+                    {template.name || (isThaiLanguage ? "(ไม่มีชื่อ)" : "(No name)")}
                     {template.isDefault && (
                       <Badge variant="default" className="bg-[#FCD34D] text-gray-900">
                         <Star className="w-3 h-3 mr-1" />
@@ -783,10 +783,27 @@ export default function MessageTemplates() {
                 </div>
               )}
               <div>
-                {template.subject && <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateMessage')}:</p>}
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {template.message}
-                </p>
+                {(template.subject || template.message || template.htmlContent) && (
+                  <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateMessage')}:</p>
+                )}
+                {template.message ? (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {template.message}
+                  </p>
+                ) : template.htmlContent ? (
+                  <div className="text-sm">
+                    <Badge variant="outline" className="text-xs">
+                      {isThaiLanguage ? "📧 อีเมล HTML" : "📧 HTML Email"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {isThaiLanguage ? "คลิกแก้ไขเพื่อดูเนื้อหา" : "Click edit to view content"}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    {isThaiLanguage ? "(ไม่มีเนื้อหา)" : "(No content)"}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
