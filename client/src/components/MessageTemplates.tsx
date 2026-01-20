@@ -549,7 +549,8 @@ export default function MessageTemplates() {
                         </TabsTrigger>
                       </TabsList>
 
-                      <TabsContent value="visual" className="mt-3">
+                      {/* Visual editor - kept mounted to preserve state */}
+                      <div className={emailEditorTab === "visual" ? "mt-3" : "hidden"}>
                         <div className="border rounded-lg p-4 bg-white">
                           <EmailVisualEditor
                             onExportHtml={(html) => {
@@ -563,7 +564,7 @@ export default function MessageTemplates() {
                             height="500px"
                           />
                         </div>
-                      </TabsContent>
+                      </div>
 
                       <TabsContent value="content" className="mt-3">
                         <Textarea
