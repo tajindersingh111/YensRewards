@@ -757,6 +757,23 @@ export default function MessageTemplates() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    {!template.isDefault && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          updateTemplateMutation.mutate({
+                            id: template.id,
+                            data: { isDefault: true }
+                          });
+                        }}
+                        data-testid={`button-set-default-${template.id}`}
+                        className="text-xs"
+                      >
+                        <Star className="w-3 h-3 mr-1" />
+                        {isThaiLanguage ? "ตั้งเป็นค่าเริ่มต้น" : "Set Default"}
+                      </Button>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"
