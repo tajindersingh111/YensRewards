@@ -13,19 +13,6 @@ interface EmailVisualEditorProps {
   height?: string;
 }
 
-const yensThemeColors = [
-  '#FCD34D', // Yens Yellow
-  '#FBBF24', // Yens Yellow Dark
-  '#FEF3C7', // Yens Yellow Light
-  '#1E40AF', // Yens Blue
-  '#3B82F6', // Blue Light
-  '#FFFFFF', // White
-  '#000000', // Black
-  '#333333', // Dark Gray
-  '#666666', // Medium Gray
-  '#999999', // Light Gray
-];
-
 export default function EmailVisualEditor({ 
   onExportHtml, 
   onSaveDesign, 
@@ -83,7 +70,7 @@ export default function EmailVisualEditor({
 
   const handleSaveDesign = useCallback(() => {
     if (emailEditorRef.current?.editor && onSaveDesign) {
-      emailEditorRef.current.editor.saveDesign((design) => {
+      emailEditorRef.current.editor.saveDesign((design: Record<string, unknown>) => {
         onSaveDesign(design);
       });
     }
@@ -220,10 +207,10 @@ export default function EmailVisualEditor({
         </div>
       </div>
 
-      <div className="relative border rounded-lg overflow-hidden" style={{ height }}>
+      <div className="relative border rounded-lg overflow-hidden" style={{ height }} data-testid="container-email-visual-editor">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10" data-testid="loader-email-editor">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             <span className="ml-2">{isThaiLanguage ? 'กำลังโหลด...' : 'Loading editor...'}</span>
           </div>
         )}
@@ -243,8 +230,9 @@ export default function EmailVisualEditor({
           </DialogHeader>
           <ScrollArea className="h-[70vh]">
             <div 
-              className="p-4 bg-white"
+              className="p-4 bg-background"
               dangerouslySetInnerHTML={{ __html: previewHtml }}
+              data-testid="preview-email-html"
             />
           </ScrollArea>
         </DialogContent>
@@ -256,7 +244,7 @@ export default function EmailVisualEditor({
             <DialogTitle>{isThaiLanguage ? 'HTML Code' : 'HTML Code'}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[70vh]">
-            <pre className="p-4 bg-muted rounded text-xs overflow-x-auto whitespace-pre-wrap">
+            <pre className="p-4 bg-muted rounded text-xs overflow-x-auto whitespace-pre-wrap" data-testid="code-email-html">
               {htmlCode}
             </pre>
           </ScrollArea>

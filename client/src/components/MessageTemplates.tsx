@@ -13,7 +13,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Plus, Edit2, Trash2, Eye, Star, Sparkles, Upload, Image, Layout, Loader2, X } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, Star, Sparkles, Upload, Image, Layout, Loader2, X, Paintbrush } from "lucide-react";
+import EmailVisualEditor from "./EmailVisualEditor";
 import { insertMessageTemplateSchema, type MessageTemplate, type InsertMessageTemplate } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -121,7 +122,7 @@ export default function MessageTemplates() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAssetGalleryOpen, setIsAssetGalleryOpen] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
-  const [emailEditorTab, setEmailEditorTab] = useState("content");
+  const [emailEditorTab, setEmailEditorTab] = useState("visual");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isThaiLanguage = i18n.language === 'th';
 
@@ -312,7 +313,7 @@ export default function MessageTemplates() {
     setIsCreating(false);
     setEditingTemplate(null);
     setHtmlContent("");
-    setEmailEditorTab("content");
+    setEmailEditorTab("visual");
   };
 
   const handleEdit = (template: MessageTemplate) => {
@@ -530,9 +531,13 @@ export default function MessageTemplates() {
                     </div>
 
                     <Tabs value={emailEditorTab} onValueChange={setEmailEditorTab}>
-                      <TabsList className="grid grid-cols-3 w-full">
+                      <TabsList className="grid grid-cols-4 w-full">
+                        <TabsTrigger value="visual" data-testid="tab-email-visual">
+                          <Paintbrush className="w-4 h-4 mr-1" />
+                          {isThaiLanguage ? "ออกแบบ" : "Design"}
+                        </TabsTrigger>
                         <TabsTrigger value="content" data-testid="tab-email-content">
-                          {isThaiLanguage ? "เนื้อหา" : "Content"}
+                          {isThaiLanguage ? "HTML" : "HTML"}
                         </TabsTrigger>
                         <TabsTrigger value="snippets" data-testid="tab-email-snippets">
                           <Layout className="w-4 h-4 mr-1" />
@@ -543,6 +548,22 @@ export default function MessageTemplates() {
                           {isThaiLanguage ? "ตัวอย่าง" : "Preview"}
                         </TabsTrigger>
                       </TabsList>
+
+                      <TabsContent value="visual" className="mt-3">
+                        <div className="border rounded-lg p-4 bg-white">
+                          <EmailVisualEditor
+                            onExportHtml={(html) => {
+                              setHtmlContent(html);
+                              setEmailEditorTab("preview");
+                              toast({
+                                title: isThaiLanguage ? "ส่งออก HTML สำเร็จ" : "HTML Exported",
+                                description: isThaiLanguage ? "HTML ถูกส่งไปยังเนื้อหาอีเมลแล้ว" : "HTML has been applied to email content",
+                              });
+                            }}
+                            height="500px"
+                          />
+                        </div>
+                      </TabsContent>
 
                       <TabsContent value="content" className="mt-3">
                         <Textarea
