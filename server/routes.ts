@@ -3901,14 +3901,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetCustomers.map(async (customer) => {
           if (!customer) return null;
 
-          // Replace merge fields with customer data
+          // Replace merge fields with customer data (support both {name} and {{name}} formats)
           const personalizedMessage = message
+            .replace(/\{\{name\}\}/g, customer.name)
+            .replace(/\{\{points\}\}/g, customer.points.toString())
+            .replace(/\{\{tier\}\}/g, customer.tier)
             .replace(/\{name\}/g, customer.name)
             .replace(/\{points\}/g, customer.points.toString())
             .replace(/\{tier\}/g, customer.tier);
           
           const personalizedSubject = subject
             ? subject
+                .replace(/\{\{name\}\}/g, customer.name)
+                .replace(/\{\{points\}\}/g, customer.points.toString())
+                .replace(/\{\{tier\}\}/g, customer.tier)
                 .replace(/\{name\}/g, customer.name)
                 .replace(/\{points\}/g, customer.points.toString())
                 .replace(/\{tier\}/g, customer.tier)

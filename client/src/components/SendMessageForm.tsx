@@ -446,10 +446,14 @@ export default function SendMessageForm() {
               setSelectedTemplate(val);
               if (val && val !== "none") {
                 const template = emailTemplates.find(t => t.id === val);
+                console.log("🔍 Loading template:", template?.name);
+                console.log("📧 Has htmlContent:", template?.htmlContent ? `YES (${template.htmlContent.length} chars)` : "NO");
+                console.log("📝 htmlContent preview:", template?.htmlContent?.substring(0, 200));
                 if (template) {
                   setSubject(template.subject || '');
                   // For email: prefer htmlContent (rich HTML) over plain text message
                   const messageContent = template.htmlContent || template.message || '';
+                  console.log("💬 Setting message content length:", messageContent.length);
                   setMessage(messageContent);
                   // Auto-switch to preview mode if HTML content
                   if (template.htmlContent || messageContent.includes('<') || messageContent.includes('html')) {
