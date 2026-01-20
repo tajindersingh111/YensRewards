@@ -205,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Version endpoint for auto-update checking
   app.get('/api/version', (req, res) => {
-    res.json({ version: 'v3.17.7' });
+    res.json({ version: 'v3.17.8' });
   });
 
   // Development-only: Quick test Resend connection (no auth required)
