@@ -512,10 +512,33 @@ export default function CustomerAppV2() {
                 </div>
               </div>
 
+              {/* QR Code Card - Centered in the list like a reward item */}
+              <div 
+                className="bg-white rounded-2xl p-4 shadow-sm text-center"
+                data-testid="qr-section"
+              >
+                <div className="flex items-center justify-center gap-4">
+                  {/* QR Code */}
+                  <div className="bg-white p-2 rounded-xl border-2 border-gray-100 shadow-inner">
+                    <QRCode 
+                      value={`YENS-${customer.id}`} 
+                      size={100} 
+                      level="M"
+                    />
+                  </div>
+                  {/* Customer Info */}
+                  <div className="text-left">
+                    <p className="font-bold text-foreground text-lg">{customer.name}</p>
+                    <p className="text-sm text-muted-foreground">ID: {customer.id}</p>
+                    <p className="text-xs text-amber-600 mt-1">{t('customer.showToBarista') || "Show this to the barista"}</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Rewards List - Clean cards like mockup */}
               <div className="space-y-3" data-testid="rewards-list">
                 {rewardProducts.length > 0 ? (
-                  rewardProducts.slice(0, 3).map((product) => (
+                  rewardProducts.slice(0, 2).map((product) => (
                     <div 
                       key={product.id}
                       className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-4 hover-elevate"
