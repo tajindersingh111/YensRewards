@@ -266,16 +266,34 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
 
         {/* Message Composer */}
         <div className="space-y-2">
-          <Label htmlFor="message">Message</Label>
+          <Label htmlFor="message">Message (Plain Text for SMS)</Label>
           <Textarea
             id="message"
             placeholder="Hi {name}! You currently have {points} points as a {tier} member..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            rows={6}
+            rows={4}
             data-testid="textarea-message"
           />
         </div>
+
+        {/* HTML Email Preview */}
+        {htmlContent && (channel === "email" || channel === "both") && (
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-purple-600" />
+              Email Preview (HTML Template)
+            </Label>
+            <div 
+              className="border rounded-lg p-4 bg-white max-h-96 overflow-y-auto"
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
+              data-testid="html-email-preview"
+            />
+            <p className="text-xs text-muted-foreground">
+              This is what the email will look like. The HTML template includes the birthday graphic, benefits, and terms & conditions.
+            </p>
+          </div>
+        )}
 
         {/* Placeholder Helper */}
         <Alert>
