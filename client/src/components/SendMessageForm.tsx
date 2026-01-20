@@ -568,7 +568,8 @@ export default function SendMessageForm() {
               <span className="text-xs text-muted-foreground font-medium">Email Preview</span>
             </div>
             <div 
-              className="p-4 bg-white max-h-[400px] overflow-y-auto"
+              className="p-4 bg-white"
+              style={{ minHeight: '200px' }}
               dangerouslySetInnerHTML={{ __html: message }}
             />
           </div>
