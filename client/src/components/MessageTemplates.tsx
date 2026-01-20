@@ -733,70 +733,81 @@ export default function MessageTemplates() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {templates.map((template) => (
-          <Card key={template.id} data-testid={`template-card-${template.id}`}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {template.name || (isThaiLanguage ? "(ไม่มีชื่อ)" : "(No name)")}
-                    {template.isDefault && (
-                      <Badge variant="default" className="bg-[#FCD34D] text-gray-900">
-                        <Star className="w-3 h-3 mr-1" />
-                        {t('admin.messages.defaultTemplate')}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <span className="capitalize">{t(`messages.${template.type}`)}</span>
-                    <span>•</span>
-                    <Badge variant="outline" className="capitalize">{t(`messages.${template.channel}`)}</Badge>
-                  </CardDescription>
+      {/* Only show template list when NOT editing/creating */}
+      {!isCreating && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {templates.map((template) => (
+            <Card key={template.id} data-testid={`template-card-${template.id}`} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="flex items-center gap-2 flex-wrap">
+                      <span className="truncate">{template.name || (isThaiLanguage ? "(ไม่มีชื่อ)" : "(No name)")}</span>
+                      {template.isDefault && (
+                        <Badge variant="default" className="bg-[#FCD34D] text-gray-900 shrink-0">
+                          <Star className="w-3 h-3 mr-1" />
+                          {t('admin.messages.defaultTemplate')}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2 mt-1">
+                      <span className="capitalize">{t(`messages.${template.type}`)}</span>
+                      <span>•</span>
+                      <Badge variant="outline" className="capitalize">{t(`messages.${template.channel}`)}</Badge>
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleEdit(template)}
+                      data-testid={`button-edit-${template.id}`}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDelete(template.id)}
+                      disabled={template.isDefault}
+                      data-testid={`button-delete-${template.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleEdit(template)}
-                    data-testid={`button-edit-${template.id}`}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDelete(template.id)}
-                    disabled={template.isDefault}
-                    data-testid={`button-delete-${template.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {template.subject && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateSubject')}:</p>
-                  <p className="text-sm">{template.subject}</p>
-                </div>
-              )}
-              <div>
-                {(template.subject || template.message || template.htmlContent) && (
-                  <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateMessage')}:</p>
+              </CardHeader>
+              <CardContent className="pt-2">
+                {template.subject && (
+                  <div className="mb-2">
+                    <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateSubject')}:</p>
+                    <p className="text-sm truncate">{template.subject}</p>
+                  </div>
                 )}
-                {template.message ? (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {template.message}
-                  </p>
-                ) : template.htmlContent ? (
-                  <div className="text-sm">
-                    <Badge variant="outline" className="text-xs">
-                      {isThaiLanguage ? "📧 อีเมล HTML" : "📧 HTML Email"}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {isThaiLanguage ? "คลิกแก้ไขเพื่อดูเนื้อหา" : "Click edit to view content"}
+                {template.htmlContent ? (
+                  <div className="border rounded-md overflow-hidden bg-white">
+                    <div className="max-h-32 overflow-hidden relative">
+                      <div 
+                        className="transform scale-50 origin-top-left w-[200%]"
+                        dangerouslySetInnerHTML={{ __html: template.htmlContent }} 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
+                    </div>
+                    <div className="p-2 bg-gray-50 border-t flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        {isThaiLanguage ? "📧 HTML Email" : "📧 HTML Email"}
+                      </Badge>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(template)}>
+                        <Eye className="w-3 h-3 mr-1" />
+                        {isThaiLanguage ? "ดู" : "View"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : template.message ? (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">{t('admin.messages.templateMessage')}:</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">
+                      {template.message}
                     </p>
                   </div>
                 ) : (
@@ -804,11 +815,11 @@ export default function MessageTemplates() {
                     {isThaiLanguage ? "(ไม่มีเนื้อหา)" : "(No content)"}
                   </p>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {templates.length === 0 && !isCreating && (
         <Card>
