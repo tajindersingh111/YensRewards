@@ -409,35 +409,42 @@ export default function CustomerAppV2() {
           
           {/* Home Tab Content */}
           {activeTab === "home" && (
-            <div className="space-y-4 py-4">
-              {/* Hero Promotional Banner */}
-              <div className="relative rounded-2xl overflow-hidden shadow-lg" data-testid="hero-banner">
-                {/* Background gradient with warm colors */}
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-200 via-amber-100 to-orange-300" />
+            <div className="space-y-4">
+              {/* Hero Promotional Banner - Large visual like mockup */}
+              <div className="relative rounded-b-3xl overflow-hidden shadow-xl -mx-4" data-testid="hero-banner">
+                {/* Background with warm gradient and decorative elements */}
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-200 via-orange-100 to-amber-300" />
+                
+                {/* Decorative blur circles for depth */}
+                <div className="absolute top-10 left-10 w-32 h-32 bg-white/30 rounded-full blur-2xl" />
+                <div className="absolute bottom-10 right-10 w-40 h-40 bg-orange-200/40 rounded-full blur-3xl" />
                 
                 {/* Content */}
-                <div className="relative p-6">
-                  {/* Today at Yen's Badge */}
-                  <div className="inline-block mb-3">
-                    <Badge className="bg-yens-blue/90 text-white px-3 py-1 text-xs font-medium rounded-full">
-                      {t('customer.todayAtYens') || "Today at Yen's"}
-                    </Badge>
+                <div className="relative px-6 pt-6 pb-8 min-h-[280px] flex flex-col justify-between">
+                  {/* Top section with badge and text */}
+                  <div>
+                    {/* Today at Yen's Badge */}
+                    <div className="inline-block mb-3">
+                      <Badge className="bg-yens-blue text-white px-4 py-1.5 text-sm font-semibold rounded-full shadow-lg">
+                        {t('customer.todayAtYens') || "Today at Yen's"}
+                      </Badge>
+                    </div>
+                    
+                    {/* Main Promo Text - Large and bold */}
+                    <h2 className="text-4xl font-extrabold text-yens-blue mb-3 leading-tight drop-shadow-sm">
+                      {promotions?.[0]?.title || t('customer.doublePoints') || "Double Points Today!"}
+                    </h2>
+                    
+                    {/* Time indicator */}
+                    <div className="flex items-center gap-2 text-yens-blue/80 mb-5">
+                      <Clock className="w-5 h-5" />
+                      <span className="text-base font-medium">4:00 pm – 6:00 pm</span>
+                    </div>
                   </div>
                   
-                  {/* Main Promo Text */}
-                  <h2 className="text-3xl font-bold text-yens-blue mb-2 leading-tight">
-                    {promotions?.[0]?.title || t('customer.doublePoints') || "Double Points Today!"}
-                  </h2>
-                  
-                  {/* Time indicator */}
-                  <div className="flex items-center gap-2 text-yens-blue/70 mb-4">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm">4:00 pm – 6:00 pm</span>
-                  </div>
-                  
-                  {/* Order Now Button */}
+                  {/* Order Now Button - Prominent at bottom */}
                   <Button 
-                    className="bg-yens-yellow text-yens-blue font-semibold px-6 py-2 rounded-full shadow-md"
+                    className="bg-yens-yellow text-yens-blue font-bold px-8 py-3 rounded-full shadow-lg text-lg w-fit"
                     onClick={() => setLocation("/menu")}
                     data-testid="button-order-now"
                   >
@@ -445,40 +452,49 @@ export default function CustomerAppV2() {
                   </Button>
                 </div>
                 
-                {/* Decorative ice cream image placeholder */}
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 w-24 h-32 opacity-90">
-                  <IceCream className="w-full h-full text-pink-300/60" />
+                {/* Large decorative ice cream - positioned to the right */}
+                <div className="absolute right-0 top-4 w-36 h-52 opacity-95 pointer-events-none">
+                  <div className="relative w-full h-full">
+                    <IceCream className="w-full h-full text-pink-400/70 drop-shadow-xl" strokeWidth={1} />
+                    {/* Small decorative ice cream bowls */}
+                    <div className="absolute -left-8 top-8 opacity-60">
+                      <IceCream className="w-12 h-12 text-orange-300 rotate-12" />
+                    </div>
+                    <div className="absolute -left-4 bottom-12 opacity-50">
+                      <IceCream className="w-10 h-10 text-amber-400 -rotate-12" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Points Progress Section */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm" data-testid="points-progress">
+              {/* Points Progress Section - More compact like mockup */}
+              <div className="bg-white rounded-2xl p-4 shadow-sm mx-0" data-testid="points-progress">
                 <div className="flex items-center gap-4">
-                  {/* Circular Progress */}
-                  <div className="relative w-16 h-16 flex-shrink-0">
-                    <svg className="w-16 h-16 transform -rotate-90">
+                  {/* Circular Progress - Amber/Orange color scheme */}
+                  <div className="relative w-14 h-14 flex-shrink-0">
+                    <svg className="w-14 h-14 transform -rotate-90">
                       <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
+                        cx="28"
+                        cy="28"
+                        r="24"
                         fill="none"
-                        stroke="#f3f4f6"
-                        strokeWidth="6"
+                        stroke="#fef3c7"
+                        strokeWidth="5"
                       />
                       <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
+                        cx="28"
+                        cy="28"
+                        r="24"
                         fill="none"
-                        stroke="#22c55e"
-                        strokeWidth="6"
+                        stroke="#f59e0b"
+                        strokeWidth="5"
                         strokeLinecap="round"
-                        strokeDasharray={`${pointsProgress * 1.76} 176`}
+                        strokeDasharray={`${pointsProgress * 1.51} 151`}
                         className="transition-all duration-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg font-bold text-green-600" data-testid="text-current-points">
+                      <span className="text-base font-bold text-amber-600" data-testid="text-current-points">
                         {customer.points % REWARD_THRESHOLD}
                       </span>
                     </div>
@@ -486,8 +502,8 @@ export default function CustomerAppV2() {
                   
                   {/* Points Text */}
                   <div className="flex-1">
-                    <p className="text-lg font-semibold text-foreground">
-                      {t('customer.pointsAway', { points: pointsToNextReward }) || `You're ${pointsToNextReward} points away!`}
+                    <p className="text-base font-bold text-foreground">
+                      You're <span className="text-amber-600">{pointsToNextReward} points</span> away!
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {REWARD_THRESHOLD} {t('customer.pointsUntilReward') || "Points until your next reward"}
@@ -496,82 +512,75 @@ export default function CustomerAppV2() {
                 </div>
               </div>
 
-              {/* Small QR Code Section - Tap to expand */}
-              <div 
-                className="bg-white rounded-2xl p-4 shadow-sm cursor-pointer hover-elevate"
-                onClick={() => setShowQR(!showQR)}
-                data-testid="qr-section"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-yens-yellow/20 p-2 rounded-xl">
-                      <QRCode 
-                        value={`YENS-${customer.id}`} 
-                        size={showQR ? 120 : 48} 
-                        level="M"
-                        className="transition-all duration-300"
-                      />
-                    </div>
-                    {!showQR && (
-                      <div>
-                        <p className="font-medium text-foreground">{t('customer.myQRCode') || "My QR Code"}</p>
-                        <p className="text-xs text-muted-foreground">{t('customer.tapToExpand') || "Tap to expand"}</p>
-                      </div>
-                    )}
-                  </div>
-                  {!showQR && <ChevronRight className="w-5 h-5 text-muted-foreground" />}
-                </div>
-                {showQR && (
-                  <div className="mt-3 text-center">
-                    <p className="font-semibold text-foreground">{customer.name}</p>
-                    <p className="text-sm text-muted-foreground">ID: {customer.id}</p>
-                    <p className="text-xs text-muted-foreground mt-2">{t('customer.showToBarista') || "Show this to the barista"}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Rewards List */}
+              {/* Rewards List - Clean cards like mockup */}
               <div className="space-y-3" data-testid="rewards-list">
-                <h3 className="text-lg font-semibold text-foreground px-1">{t('customer.availableRewards') || "Available Rewards"}</h3>
-                
                 {rewardProducts.length > 0 ? (
-                  rewardProducts.map((product) => (
+                  rewardProducts.slice(0, 3).map((product) => (
                     <div 
                       key={product.id}
-                      className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-3 hover-elevate"
+                      className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-4 hover-elevate"
                       data-testid={`reward-item-${product.id}`}
                     >
-                      {/* Product Image */}
-                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-pink-100 to-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {/* Product Image - Larger like mockup */}
+                      <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                         {product.imageUrl ? (
                           <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
-                          <IceCream className="w-8 h-8 text-pink-400" />
+                          <div className="w-full h-full bg-gradient-to-br from-pink-100 to-amber-100 flex items-center justify-center">
+                            <IceCream className="w-10 h-10 text-pink-400" />
+                          </div>
                         )}
                       </div>
                       
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">{REWARD_THRESHOLD} {t('customer.pointsLabel') || "Points"}</p>
+                        <p className="font-semibold text-foreground text-base">{product.name}</p>
+                        <p className="text-sm text-amber-600 font-medium">{REWARD_THRESHOLD} {t('customer.pointsLabel') || "Points"}</p>
                       </div>
                       
-                      {/* Dots indicator */}
-                      <div className="flex gap-1">
+                      {/* Progress dots - Orange like mockup */}
+                      <div className="flex gap-1.5">
                         {[...Array(3)].map((_, i) => (
                           <div 
                             key={i} 
-                            className={`w-2 h-2 rounded-full ${i < Math.min(3, Math.floor(customer.points / (REWARD_THRESHOLD / 3))) ? 'bg-orange-400' : 'bg-gray-200'}`}
+                            className={`w-2.5 h-2.5 rounded-full ${i < Math.min(3, Math.floor(customer.points / (REWARD_THRESHOLD / 3))) ? 'bg-amber-500' : 'bg-gray-200'}`}
                           />
                         ))}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <Card className="p-6 text-center">
-                    <Gift className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                    <p className="text-muted-foreground">{t('customer.noRewardsYet') || "Rewards coming soon!"}</p>
-                  </Card>
+                  <>
+                    {/* Placeholder reward items when no products */}
+                    <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-pink-100 to-amber-100 flex items-center justify-center">
+                        <IceCream className="w-10 h-10 text-pink-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">Thai Tea Ice Cream</p>
+                        <p className="text-sm text-amber-600 font-medium">{REWARD_THRESHOLD} Points</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < Math.min(3, Math.floor(customer.points / (REWARD_THRESHOLD / 3))) ? 'bg-amber-500' : 'bg-gray-200'}`} />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                        <IceCream className="w-10 h-10 text-amber-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">Chocolate Fudge Sundae</p>
+                        <p className="text-sm text-amber-600 font-medium">{REWARD_THRESHOLD} Points</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < Math.min(3, Math.floor(customer.points / (REWARD_THRESHOLD / 3))) ? 'bg-amber-500' : 'bg-gray-200'}`} />
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -641,17 +650,31 @@ export default function CustomerAppV2() {
           {/* Profile Tab Content */}
           {activeTab === "profile" && (
             <div className="space-y-4 py-4">
-              {/* Profile Header */}
-              <div className="text-center py-4">
+              {/* QR Code - Prominent at top of profile */}
+              <Card className="p-6 text-center shadow-lg" data-testid="profile-qr-section">
+                <div className="bg-white p-4 rounded-2xl inline-block shadow-inner border-2 border-gray-100">
+                  <QRCode 
+                    value={`YENS-${customer.id}`} 
+                    size={160} 
+                    level="M"
+                  />
+                </div>
+                <p className="font-bold text-foreground text-lg mt-4">{customer.name}</p>
+                <p className="text-muted-foreground text-sm">ID: {customer.id}</p>
+                <p className="text-xs text-muted-foreground mt-2">{t('customer.showToBarista') || "Show this to the barista"}</p>
+              </Card>
+              
+              {/* Profile Info */}
+              <div className="text-center">
                 {customer.photo ? (
-                  <img src={customer.photo} alt={customer.name} className="w-24 h-24 rounded-full mx-auto object-cover shadow-lg" />
+                  <img src={customer.photo} alt={customer.name} className="w-20 h-20 rounded-full mx-auto object-cover shadow-lg" />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yens-yellow to-amber-500 text-white flex items-center justify-center mx-auto text-4xl font-bold shadow-lg">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yens-yellow to-amber-500 text-white flex items-center justify-center mx-auto text-3xl font-bold shadow-lg">
                     {customer.name.charAt(0)}
                   </div>
                 )}
-                <h2 className="text-2xl font-bold text-foreground mt-3">{customer.name}</h2>
-                <p className="text-muted-foreground">{customer.phone}</p>
+                <h2 className="text-xl font-bold text-foreground mt-2">{customer.name}</h2>
+                <p className="text-muted-foreground text-sm">{customer.phone}</p>
               </div>
               
               {/* LINE Connection */}
