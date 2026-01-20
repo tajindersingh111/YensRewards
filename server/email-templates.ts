@@ -161,35 +161,59 @@ export function lineInviteEmail(customerName: string, lineId: string = '@752afsd
 }
 
 // Birthday Email
-export function birthdayEmail(customerName: string, rewardDetails: string = 'ไอศกรีมฟรี 1 สกู๊ป'): string {
+export function birthdayEmail(customerName: string, rewardDetails: string = 'ไอศกรีม หรือ ชามะลิ ใส 1 รายการ'): string {
+  const birthdayGraphicUrl = 'https://storage.googleapis.com/replit-objstore-9ef64889-c133-4adc-88a6-507df91b2247/public/email-assets/birthday-graphic-2026.jpg';
+  
   const content = `
     ${emailHeader('สุขสันต์วันเกิด!', '🎂')}
     <tr>
       <td class="content" style="padding: 40px; text-align: center;">
         <h2 style="color: #333333; font-size: 26px; margin: 0 0 15px 0;">
-          🎉 สุขสันต์วันเกิด คุณ${customerName}! 🎉
+          🎂 สุขสันต์วันเกิด คุณ${customerName}! 🎂
         </h2>
         <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
-          ขอให้มีความสุขและสดใสในวันพิเศษของคุณ!
+          เยนส์ ขอมอบของขวัญแทนคำขอบคุณ 💛
         </p>
         
-        <!-- Birthday Gift Box -->
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, ${YENS_LIGHT_YELLOW} 0%, #FDE68A 100%); border-radius: 16px; margin: 20px 0;">
+        <!-- Birthday Graphic Image -->
+        <img src="${birthdayGraphicUrl}" alt="Happy Birthday" style="width: 100%; max-width: 520px; border-radius: 12px; margin: 20px 0;">
+        
+        <!-- Benefits Section -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; margin: 20px 0;">
           <tr>
-            <td style="padding: 30px; text-align: center;">
-              <div style="font-size: 64px; margin-bottom: 15px;">🎁</div>
-              <h3 style="color: ${YENS_BLUE}; font-size: 20px; margin: 0 0 10px 0;">ของขวัญวันเกิดของคุณ</h3>
-              <p style="color: #333333; font-size: 18px; font-weight: 600; margin: 0;">${rewardDetails}</p>
-              <p style="color: #666666; font-size: 14px; margin: 15px 0 0 0;">ใช้ได้ภายใน 7 วันนับจากวันเกิด</p>
+            <td style="padding: 20px; text-align: left;">
+              <p style="margin: 0 0 12px; font-size: 15px; color: #059669;">
+                🎁 <strong>เมื่อมียอดใช้จ่าย ตั้งแต่ 35 บาทขึ้นไป และเป็นสมาชิกกับเราเท่านั้น!</strong>
+              </p>
+              <p style="margin: 0; font-size: 15px; color: #059669;">
+                🍦 <strong>รับฟรีทันที ${rewardDetails}</strong> - สแกนเพื่อรับสิทธิ์ได้ทันที!
+              </p>
             </td>
           </tr>
         </table>
         
-        <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 25px 0;">
-          มารับของขวัญวันเกิดได้ที่ Yens Thai Ice Cream ทุกสาขา! 🍨
-        </p>
+        <!-- Terms & Conditions -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f9fafb; border-radius: 12px; margin: 20px 0;">
+          <tr>
+            <td style="padding: 20px; text-align: left;">
+              <p style="margin: 0 0 10px; font-size: 14px; color: #7c3aed;">
+                ✨ <strong>เงื่อนไขการรับสิทธิ์</strong>
+              </p>
+              <ol style="margin: 0; padding-left: 18px; color: #6b7280; font-size: 12px; line-height: 1.7;">
+                <li>สิทธิ์นี้สำหรับ ลูกค้าที่มีวันเกิดตรงกับเดือนปัจจุบันเท่านั้น</li>
+                <li>แสดงบัตรประชาชน ต่อพนักงานก่อนชำระเงิน</li>
+                <li>สำหรับยอดสั่งซื้อตั้งแต่ 35 บาทขึ้นไป / ต่อ 1 ใบเสร็จ</li>
+                <li>เลือกรับของฟรีได้ 1 รายการเท่านั้น (ไอศกรีม หรือ ชามะลิ)</li>
+                <li>ไม่สามารถเปลี่ยนเป็นเงินสด / ส่วนลด / เมนูอื่นได้</li>
+                <li>สิทธิ์นี้ ใช้ได้ 1 คน / 1 สิทธิ์ / 1 ครั้ง / เดือน</li>
+                <li>ไม่สามารถใช้ร่วมกับโปรโมชั่นอื่นได้</li>
+                <li>ทางร้านขอสงวนสิทธิ์ในการเปลี่ยนสินค้าของแถม</li>
+              </ol>
+            </td>
+          </tr>
+        </table>
         
-        ${ctaButton('ดูรางวัลของฉัน', 'https://yens-rewards-leonard59.replit.app/customer', YENS_BLUE)}
+        ${ctaButton('ดูรางวัลของฉัน', 'https://app.yensthai.com/customer', YENS_BLUE)}
       </td>
     </tr>
   `;
