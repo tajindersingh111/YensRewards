@@ -127,7 +127,7 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
       
       toast({
         title: "Template Loaded",
-        description: `Loaded "${template.name}" template`,
+        description: `Loaded "${template.name}" template${template.htmlContent ? ' (with HTML)' : ''}`,
       });
     }
   };
