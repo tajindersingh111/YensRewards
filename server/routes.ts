@@ -3659,7 +3659,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let emailResult = null;
             if (template.channel === 'email' || template.channel === 'both') {
               if (customer.email && personalizedSubject) {
-                emailResult = await sendEmail(customer.email, personalizedSubject, personalizedMessage);
+                // Use HTML content if available, otherwise use plain text message
+                const emailContent = template.htmlContent 
+                  ? template.htmlContent
+                      .replace(/\{\{name\}\}/g, customer.name)
+                      .replace(/\{name\}/g, customer.name)
+                      .replace(/\{\{points\}\}/g, customer.points.toString())
+                      .replace(/\{points\}/g, customer.points.toString())
+                      .replace(/\{\{tier\}\}/g, customer.tier)
+                      .replace(/\{tier\}/g, customer.tier)
+                  : personalizedMessage;
+                
+                // Use sendHtmlEmail for HTML content, sendEmail for plain text
+                emailResult = template.htmlContent
+                  ? await sendHtmlEmail(customer.email, personalizedSubject, emailContent)
+                  : await sendEmail(customer.email, personalizedSubject, emailContent);
                 
                 // Log the email message
                 await storage.createMessageLog({
@@ -3668,7 +3682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   channel: 'email',
                   recipient: customer.email,
                   subject: personalizedSubject,
-                  message: personalizedMessage,
+                  message: emailContent,
                   status: emailResult.success ? 'sent' : 'failed',
                   externalId: emailResult.messageId || null,
                   errorMessage: emailResult.error || null,
