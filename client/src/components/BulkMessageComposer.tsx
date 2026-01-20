@@ -35,6 +35,7 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
   const [channel, setChannel] = useState<MessageChannel>("sms");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
   // Fetch birthday templates
@@ -43,7 +44,7 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
   });
 
   const sendBulkMessage = useMutation({
-    mutationFn: async (data: { customerIds: string[]; channel: MessageChannel; subject: string; message: string }) => {
+    mutationFn: async (data: { customerIds: string[]; channel: MessageChannel; subject: string; message: string; htmlContent?: string | null }) => {
       return await apiRequest('POST', '/api/admin/customers/bulk-message', data);
     },
     onSuccess: (result: any) => {
@@ -58,6 +59,7 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
       // Reset form
       setMessage("");
       setSubject("");
+      setHtmlContent(null);
       
       if (onSuccess) {
         onSuccess();
@@ -101,7 +103,7 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
     }
 
     const customerIds = selectedCustomers.map(c => c.id);
-    sendBulkMessage.mutate({ customerIds, channel, subject, message });
+    sendBulkMessage.mutate({ customerIds, channel, subject, message, htmlContent });
   };
 
   const insertPlaceholder = (placeholder: string) => {
@@ -112,6 +114,8 @@ export default function BulkMessageComposer({ selectedCustomers, onSuccess }: Bu
     const template = templates.find(t => t.id === templateId);
     if (template) {
       setMessage(template.message);
+      // Load HTML content for email templates
+      setHtmlContent(template.htmlContent || null);
       if (template.subject) {
         setSubject(template.subject);
       }

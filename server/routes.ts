@@ -2709,7 +2709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send bulk message to multiple customers
   app.post('/api/admin/customers/bulk-message', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { customerIds, message, subject, channel } = req.body;
+      const { customerIds, message, subject, channel, htmlContent } = req.body;
 
       if (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0) {
         return res.status(400).json({ message: "Customer IDs required" });
@@ -2746,14 +2746,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Replace placeholders in message
         const personalizedMessage = message
           .replace(/{name}/g, customer.name)
+          .replace(/\{\{name\}\}/g, customer.name)
           .replace(/{points}/g, customer.points.toString())
-          .replace(/{tier}/g, customer.tier);
+          .replace(/\{\{points\}\}/g, customer.points.toString())
+          .replace(/{tier}/g, customer.tier)
+          .replace(/\{\{tier\}\}/g, customer.tier);
+
+        // Replace placeholders in HTML content if present
+        const personalizedHtmlContent = htmlContent
+          ? htmlContent
+              .replace(/{name}/g, customer.name)
+              .replace(/\{\{name\}\}/g, customer.name)
+              .replace(/{points}/g, customer.points.toString())
+              .replace(/\{\{points\}\}/g, customer.points.toString())
+              .replace(/{tier}/g, customer.tier)
+              .replace(/\{\{tier\}\}/g, customer.tier)
+          : null;
 
         const personalizedSubject = subject
           ? subject
               .replace(/{name}/g, customer.name)
+              .replace(/\{\{name\}\}/g, customer.name)
               .replace(/{points}/g, customer.points.toString())
+              .replace(/\{\{points\}\}/g, customer.points.toString())
               .replace(/{tier}/g, customer.tier)
+              .replace(/\{\{tier\}\}/g, customer.tier)
           : 'Message from Yens Thai Ice Cream';
 
         // Send SMS if channel is sms or both
@@ -2787,11 +2804,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Send Email if channel is email or both
         if ((channel === 'email' || channel === 'both') && customer.email) {
           try {
-            const emailResult = await sendEmail(
-              customer.email,
-              personalizedSubject,
-              personalizedMessage
-            );
+            // Use sendHtmlEmail if HTML content is available, otherwise use plain text
+            const emailResult = personalizedHtmlContent
+              ? await sendHtmlEmail(customer.email, personalizedSubject, personalizedHtmlContent)
+              : await sendEmail(customer.email, personalizedSubject, personalizedMessage);
 
             if (emailResult.success) {
               emailsSent++;
@@ -2805,7 +2821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               channel: 'email',
               recipient: customer.email,
               subject: personalizedSubject,
-              message: personalizedMessage,
+              message: personalizedHtmlContent || personalizedMessage,
               status: emailResult.success ? 'sent' : 'failed',
               externalId: emailResult.messageId || null,
               errorMessage: emailResult.error || null,
