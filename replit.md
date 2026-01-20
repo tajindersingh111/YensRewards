@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.17.9** - **Email Designer State Fix**: Fixed issue where email design data was lost when switching between tabs in the visual email editor. The editor now stays mounted when switching to Preview/HTML tabs, preserving all design work.
+**Current Version: v3.17.10** - **Template Preview Fix**: Improved message template cards to show "(No name)" for unnamed templates, "📧 HTML Email" badge for visual editor templates, and "(No content)" for empty templates.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
