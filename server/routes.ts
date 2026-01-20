@@ -3662,6 +3662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Use HTML content if available, otherwise use plain text message
                 const emailContent = template.htmlContent 
                   ? template.htmlContent
+                      .replace(/\{\{customerName\}\}/g, customer.name)
                       .replace(/\{\{name\}\}/g, customer.name)
                       .replace(/\{name\}/g, customer.name)
                       .replace(/\{\{points\}\}/g, customer.points.toString())
