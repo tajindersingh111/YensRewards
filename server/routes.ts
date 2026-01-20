@@ -3469,6 +3469,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get templates by channel (email or line)
   app.get('/api/admin/message-templates/channel/:channel', isAuthenticated, isAdmin, async (req, res) => {
     try {
+      // Prevent caching to ensure fresh template data
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const templates = await storage.getMessageTemplatesByChannel(req.params.channel);
       res.json(templates);
     } catch (error) {
