@@ -98,14 +98,17 @@ export default function SendMessageForm() {
   // Fetch email templates from database (always get fresh data)
   // Cache-busting version: v3.17.14 - forces new fetch on deployment
   const { data: emailTemplates = [] } = useQuery<MessageTemplate[]>({
-    queryKey: ['/api/admin/message-templates/channel/email', 'v3.17.14'],
+    queryKey: ['/api/admin/message-templates/channel/email', 'v3.17.14', Date.now().toString().slice(0, -4)],
     enabled: channel === "email",
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
     queryFn: async () => {
-      // Add cache-buster timestamp to URL to bypass any CDN/browser caching
-      const response = await fetch(`/api/admin/message-templates/channel/email?v=3.17.14&t=${Date.now()}`);
+      // Add cache-buster parameters to URL to bypass any CDN/browser caching
+      // Use credentials: 'include' to maintain auth session
+      const response = await fetch(`/api/admin/message-templates/channel/email?v=3.17.14&t=${Date.now()}`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch templates');
       return response.json();
     },
