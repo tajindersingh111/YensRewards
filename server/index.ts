@@ -6,15 +6,16 @@ import { setEmailLogoUrl } from "./resend";
 import { startScheduler } from "./scheduler";
 import { storage } from "./storage";
 
-// v3.17.14 - Correct birthday email template content
-const CORRECT_BIRTHDAY_HTML = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+// v3.17.15 - Build birthday email template with dynamic image URL
+function buildBirthdayHtml(imageUrl: string): string {
+  return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="text-align: center; padding: 20px 0;">
     <h1 style="color: #1e40af; margin: 0;">🎂 สุขสันต์วันเกิด คุณ{{name}}! 🎂</h1>
     <p style="color: #4b5563; font-size: 16px;">Happy Birthday from Yens Thai Ice Cream!</p>
   </div>
   
   <div style="text-align: center; margin: 20px 0;">
-    <img src="https://storage.googleapis.com/yens-loyalty-bucket/birthday-graphic-2026.jpg" alt="Birthday" style="max-width: 100%; height: auto; border-radius: 12px;">
+    <img src="${imageUrl}" alt="Happy Birthday from Yens" style="max-width: 100%; height: auto; border-radius: 12px;">
   </div>
   
   <div style="background-color: #dcfce7; padding: 20px; border-radius: 12px; margin: 20px 0;">
@@ -43,27 +44,24 @@ const CORRECT_BIRTHDAY_HTML = `<div style="font-family: Arial, sans-serif; max-w
   
   <p style="text-align: center; color: #6b7280; font-size: 14px;">มารับของขวัญวันเกิดได้ที่ Yens Thai Ice Cream ทุกสาขา! 🎉</p>
 </div>`;
+}
 
-async function ensureCorrectBirthdayTemplate() {
+async function ensureCorrectBirthdayTemplate(imageUrl: string) {
   try {
     const templates = await storage.getMessageTemplatesByChannel('email');
     const birthdayTemplate = templates.find(t => t.type === 'birthday');
+    const correctHtml = buildBirthdayHtml(imageUrl);
     
     if (birthdayTemplate) {
-      const currentLength = birthdayTemplate.htmlContent?.length || 0;
-      // Only update if content is different (check by length as quick comparison)
-      if (currentLength !== CORRECT_BIRTHDAY_HTML.length) {
-        log('Updating birthday template: ' + currentLength + ' chars -> ' + CORRECT_BIRTHDAY_HTML.length + ' chars');
-        await storage.updateMessageTemplate(birthdayTemplate.id, {
-          htmlContent: CORRECT_BIRTHDAY_HTML,
-          message: CORRECT_BIRTHDAY_HTML,
-          subject: '🎂 สุขสันต์วันเกิด {{name}}! Happy Birthday from Yens',
-          name: 'HAPPY BIRTHDAY TO YOU!'
-        });
-        log('Birthday template updated successfully');
-      } else {
-        log('Birthday template already has correct content');
-      }
+      // Always update to ensure correct image URL
+      log('Updating birthday template with image: ' + imageUrl);
+      await storage.updateMessageTemplate(birthdayTemplate.id, {
+        htmlContent: correctHtml,
+        message: correctHtml,
+        subject: '🎂 สุขสันต์วันเกิด {{name}}! Happy Birthday from Yens',
+        name: 'HAPPY BIRTHDAY TO YOU!'
+      });
+      log('Birthday template updated successfully');
     } else {
       log('No birthday email template found');
     }
@@ -139,9 +137,10 @@ app.use((req, res, next) => {
     const server = await registerRoutes(app);
     log('Routes registered successfully');
     
-    // Initialize email logo from object storage
+    // Initialize email assets from object storage
+    const objectStorage = new ObjectStorageService();
+    
     try {
-      const objectStorage = new ObjectStorageService();
       const logoUrl = await objectStorage.ensureYensLogoUploaded();
       setEmailLogoUrl(logoUrl);
       log(`Email logo initialized: ${logoUrl}`);
@@ -150,8 +149,16 @@ app.use((req, res, next) => {
       console.error('Logo initialization error:', error);
     }
     
-    // v3.17.14: Ensure birthday template has correct content (fixes production database)
-    await ensureCorrectBirthdayTemplate();
+    // v3.17.15: Upload birthday graphic and update template with correct image URL
+    try {
+      const birthdayGraphicUrl = await objectStorage.ensureBirthdayGraphicUploaded();
+      // Use full URL for email clients (relative paths won't work in emails)
+      const fullImageUrl = 'https://app.yensthai.com' + birthdayGraphicUrl;
+      await ensureCorrectBirthdayTemplate(fullImageUrl);
+    } catch (error) {
+      log('Warning: Failed to initialize birthday graphic');
+      console.error('Birthday graphic initialization error:', error);
+    }
 
     // Global error handler - logs error but doesn't rethrow to prevent crashes
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

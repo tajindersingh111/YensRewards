@@ -372,6 +372,31 @@ export class ObjectStorageService {
       throw error;
     }
   }
+
+  // Upload the birthday graphic for birthday emails
+  async ensureBirthdayGraphicUploaded(): Promise<string> {
+    const graphicFilename = 'birthday-graphic-2026.jpeg';
+    const localGraphicPath = './attached_assets/WhatsApp_Image_2026-01-20_at_12.12.50_1768965601005.jpeg';
+    
+    try {
+      // Check if birthday graphic already exists in email-assets
+      const assets = await this.listEmailAssets();
+      const existingGraphic = assets.find(a => a.name === graphicFilename);
+      
+      if (existingGraphic) {
+        console.log(`✅ Birthday graphic already exists: ${existingGraphic.url}`);
+        return existingGraphic.url;
+      }
+      
+      // Upload the birthday graphic
+      console.log(`📤 Uploading birthday graphic: ${localGraphicPath}`);
+      const graphicUrl = await this.uploadLocalFileToEmailAssets(localGraphicPath, graphicFilename);
+      return graphicUrl;
+    } catch (error) {
+      console.error('Failed to upload birthday graphic:', error);
+      throw error;
+    }
+  }
 }
 
 function parseObjectPath(path: string): {
