@@ -336,66 +336,45 @@ export class ObjectStorageService {
         throw new Error(`Upload failed: ${uploadResponse.status}`);
       }
 
-      // Set ACL policy to make it public
       const publicPath = await this.setEmailAssetAclPolicy(uploadURL);
-      
-      console.log(`✅ Uploaded ${targetFilename} to email-assets: ${publicPath}`);
       return publicPath;
     } catch (error) {
-      console.error(`Failed to upload local file to email-assets:`, error);
+      console.error('Failed to upload local file to email-assets:', error);
       throw error;
     }
   }
 
-  // Check if logo exists in email-assets, upload if not
+  // Generic helper to ensure an email asset is uploaded
+  private async ensureEmailAssetUploaded(localPath: string, targetFilename: string): Promise<string> {
+    try {
+      const assets = await this.listEmailAssets();
+      const existing = assets.find(a => a.name === targetFilename);
+      
+      if (existing) {
+        return existing.url;
+      }
+      
+      return await this.uploadLocalFileToEmailAssets(localPath, targetFilename);
+    } catch (error) {
+      console.error(`Failed to ensure ${targetFilename} is uploaded:`, error);
+      throw error;
+    }
+  }
+
+  // Ensure Yens logo is uploaded
   async ensureYensLogoUploaded(): Promise<string> {
-    // Use the official high-resolution Yens logo with polar bear mascot
-    const logoFilename = 'yens-logo-official-hires.png';
-    const localLogoPath = './attached_assets/Yens_logo_high_res_1766925576641.png';
-    
-    try {
-      // Check if the official hi-res logo already exists in email-assets
-      const assets = await this.listEmailAssets();
-      const existingLogo = assets.find(a => a.name === logoFilename);
-      
-      if (existingLogo) {
-        console.log(`✅ Yens official hi-res logo already exists: ${existingLogo.url}`);
-        return existingLogo.url;
-      }
-      
-      // Upload the official high-resolution logo (593KB PNG with transparent background)
-      console.log(`📤 Uploading official Yens hi-res logo: ${localLogoPath}`);
-      const logoUrl = await this.uploadLocalFileToEmailAssets(localLogoPath, logoFilename);
-      return logoUrl;
-    } catch (error) {
-      console.error('Failed to ensure Yens logo is uploaded:', error);
-      throw error;
-    }
+    return this.ensureEmailAssetUploaded(
+      './attached_assets/Yens_logo_high_res_1766925576641.png',
+      'yens-logo-official-hires.png'
+    );
   }
 
-  // Upload the birthday graphic for birthday emails
+  // Ensure birthday graphic is uploaded
   async ensureBirthdayGraphicUploaded(): Promise<string> {
-    const graphicFilename = 'birthday-graphic-2026.jpeg';
-    const localGraphicPath = './attached_assets/WhatsApp_Image_2026-01-20_at_12.12.50_1768965601005.jpeg';
-    
-    try {
-      // Check if birthday graphic already exists in email-assets
-      const assets = await this.listEmailAssets();
-      const existingGraphic = assets.find(a => a.name === graphicFilename);
-      
-      if (existingGraphic) {
-        console.log(`✅ Birthday graphic already exists: ${existingGraphic.url}`);
-        return existingGraphic.url;
-      }
-      
-      // Upload the birthday graphic
-      console.log(`📤 Uploading birthday graphic: ${localGraphicPath}`);
-      const graphicUrl = await this.uploadLocalFileToEmailAssets(localGraphicPath, graphicFilename);
-      return graphicUrl;
-    } catch (error) {
-      console.error('Failed to upload birthday graphic:', error);
-      throw error;
-    }
+    return this.ensureEmailAssetUploaded(
+      './attached_assets/WhatsApp_Image_2026-01-20_at_12.12.50_1768965601005.jpeg',
+      'birthday-graphic-2026.jpeg'
+    );
   }
 }
 

@@ -53,20 +53,22 @@ async function ensureCorrectBirthdayTemplate(imageUrl: string) {
     const correctHtml = buildBirthdayHtml(imageUrl);
     
     if (birthdayTemplate) {
-      // Always update to ensure correct image URL
-      log('Updating birthday template with image: ' + imageUrl);
-      await storage.updateMessageTemplate(birthdayTemplate.id, {
-        htmlContent: correctHtml,
-        message: correctHtml,
-        subject: '🎂 สุขสันต์วันเกิด {{name}}! Happy Birthday from Yens',
-        name: 'HAPPY BIRTHDAY TO YOU!'
-      });
-      log('Birthday template updated successfully');
-    } else {
-      log('No birthday email template found');
+      // Only update if the image URL is different (avoid unnecessary writes)
+      const currentContent = birthdayTemplate.htmlContent || '';
+      const hasCorrectImage = currentContent.includes(imageUrl);
+      
+      if (!hasCorrectImage) {
+        log('Updating birthday template with new image URL');
+        await storage.updateMessageTemplate(birthdayTemplate.id, {
+          htmlContent: correctHtml,
+          message: correctHtml,
+          subject: 'สุขสันต์วันเกิด {{name}}! Happy Birthday from Yens',
+          name: 'HAPPY BIRTHDAY TO YOU!'
+        });
+        log('Birthday template updated');
+      }
     }
   } catch (error) {
-    log('Warning: Failed to update birthday template');
     console.error('Birthday template update error:', error);
   }
 }
