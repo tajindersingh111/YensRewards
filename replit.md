@@ -8,6 +8,13 @@ A multi-interface loyalty management system (Customer App, Barista App, Admin Da
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+### Publishing Workflow
+**IMPORTANT: Before every publish/deploy, always update the version number:**
+1. Increment version in `replit.md` (Current Version line)
+2. Update version in `client/src/i18n/locales/en.json` (common.version)
+3. Update version in `client/src/i18n/locales/th.json` (common.version)
+4. Then publish the app
+
 ## System Architecture
 
 ### UI/UX Decisions
