@@ -51,9 +51,6 @@ export async function sendEmail(
   try {
     const { client, fromEmail } = await getUncachableResendClient();
 
-    console.log(`📧 Sending email from: ${fromEmail} to: ${to}`);
-    console.log(`📧 Subject: ${subject}`);
-
     const result = await client.emails.send({
       from: fromEmail,
       to: [to],
@@ -61,25 +58,20 @@ export async function sendEmail(
       html: `<p>${message.replace(/\n/g, '<br>')}</p>`,
     });
 
-    // Log the full response for debugging
-    console.log(`📧 Full Resend API response:`, JSON.stringify(result, null, 2));
-
     if (result.error) {
-      console.error(`❌ Resend API error:`, result.error);
+      console.error('Resend API error:', result.error);
       return {
         success: false,
         error: result.error.message || 'Resend API error',
       };
     }
 
-    console.log(`✅ Email sent successfully. ID: ${result.data?.id}`);
-
     return {
       success: true,
       messageId: result.data?.id || undefined,
     };
   } catch (error: any) {
-    console.error('❌ Error sending email:', error);
+    console.error('Error sending email:', error);
     return {
       success: false,
       error: error.message || 'Failed to send email',
@@ -109,9 +101,6 @@ export async function sendTemplatedEmail(
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const { client, fromEmail } = await getUncachableResendClient();
-
-    console.log(`📧 Sending templated email (${templateType}) to ${to}`);
-
     const htmlContent = generateEmailTemplate(templateType, { ...params, subject });
 
     const result = await client.emails.send({
@@ -121,14 +110,12 @@ export async function sendTemplatedEmail(
       html: htmlContent,
     });
 
-    console.log(`✅ Templated email sent successfully. ID: ${result.data?.id}`);
-
     return {
       success: true,
       messageId: result.data?.id || undefined,
     };
   } catch (error: any) {
-    console.error('❌ Error sending templated email:', error);
+    console.error('Error sending templated email:', error);
     return {
       success: false,
       error: error.message || 'Failed to send templated email',
@@ -142,16 +129,13 @@ let YENS_LOGO_URL = ''; // Will be populated with the email-assets URL
 // Function to set the logo URL after upload
 export function setEmailLogoUrl(url: string) {
   // ALWAYS use the production domain for email assets so they're accessible to recipients
-  // The dev domain (workspace.*.repl.co) is not accessible externally
   const baseUrl = 'https://app.yensthai.com';
   
-  // If it's a relative URL, make it absolute
   if (url.startsWith('/')) {
     YENS_LOGO_URL = `${baseUrl}${url}`;
   } else {
     YENS_LOGO_URL = url;
   }
-  console.log(`📧 Email logo URL set to: ${YENS_LOGO_URL}`);
 }
 
 // Generate the standard email header with logo
@@ -208,40 +192,27 @@ const STANDARD_EMAIL_FOOTER = `
 `;
 
 // Strip legacy header elements - CONSERVATIVE approach to preserve email body content
-// Only removes specific legacy text elements, never removes based on colors alone
 function stripLegacyHeader(bodyContent: string): string {
-  // Only look for EXPLICIT legacy header text patterns
   const hasLegacyKeywords = 
     bodyContent.includes('ICE CREAM & DRINK') || 
     bodyContent.includes('Member Rewards');
   
   if (!hasLegacyKeywords) {
-    console.log('✅ [stripLegacyHeader] No legacy header keywords, preserving all content');
     return bodyContent.trim();
   }
   
-  console.log('🔧 [stripLegacyHeader] Found legacy keywords, removing specific text elements only...');
-  
-  // Wrap content to preserve fragment structure
   const wrappedContent = `<div id="__cheerio_root__">${bodyContent}</div>`;
   const $ = cheerio.load(wrappedContent, { xmlMode: false });
   const $root = $('#__cheerio_root__');
   
-  // ONLY remove elements with EXACT legacy header text - never based on colors
   $root.find('td, div, span, p').each(function() {
     const text = $(this).text().trim();
-    
-    // Only remove if text is EXACTLY the legacy header text
     if (text === 'ICE CREAM & DRINK' || text === 'Member Rewards') {
-      console.log(`🗑️ [stripLegacyHeader] Removing legacy text: "${text}"`);
       $(this).remove();
     }
   });
   
-  const result = $root.html() || '';
-  console.log('✅ [stripLegacyHeader] Legacy header stripping complete');
-  
-  return result.trim();
+  return ($root.html() || '').trim();
 }
 
 // Wrap HTML content in a complete email template structure if needed
@@ -254,8 +225,6 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
     // Extract body content from complete HTML document
     const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     let bodyContent = bodyMatch ? bodyMatch[1] : htmlContent;
-    
-    console.log('📧 Complete HTML detected - stripping old header, adding new header + footer');
     
     // Strip the old "Yens ICE CREAM & DRINK Member Rewards" header pattern
     // This is the blue badge + text header that appears in templates
@@ -359,10 +328,6 @@ export async function sendHtmlEmail(
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const { client, fromEmail } = await getUncachableResendClient();
-
-    console.log(`📧 Sending HTML email to ${to} with subject: ${subject}`);
-    
-    // Simple approach: wrap HTML in template (adds header for fragments, footer only for complete docs)
     const wrappedHtml = wrapHtmlInEmailTemplate(html, subject);
 
     const result = await client.emails.send({
@@ -372,14 +337,12 @@ export async function sendHtmlEmail(
       html: wrappedHtml,
     });
 
-    console.log(`✅ HTML email sent successfully. ID: ${result.data?.id}`);
-
     return {
       success: true,
       messageId: result.data?.id || undefined,
     };
   } catch (error: any) {
-    console.error('❌ Error sending HTML email:', error);
+    console.error('Error sending HTML email:', error);
     return {
       success: false,
       error: error.message || 'Failed to send HTML email',
