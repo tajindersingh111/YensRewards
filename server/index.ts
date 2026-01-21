@@ -4,6 +4,74 @@ import { setupVite, serveStatic, log } from "./vite";
 import { ObjectStorageService } from "./objectStorage";
 import { setEmailLogoUrl } from "./resend";
 import { startScheduler } from "./scheduler";
+import { storage } from "./storage";
+
+// v3.17.14 - Correct birthday email template content
+const CORRECT_BIRTHDAY_HTML = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="text-align: center; padding: 20px 0;">
+    <h1 style="color: #1e40af; margin: 0;">🎂 สุขสันต์วันเกิด คุณ{{name}}! 🎂</h1>
+    <p style="color: #4b5563; font-size: 16px;">Happy Birthday from Yens Thai Ice Cream!</p>
+  </div>
+  
+  <div style="text-align: center; margin: 20px 0;">
+    <img src="https://storage.googleapis.com/yens-loyalty-bucket/birthday-graphic-2026.jpg" alt="Birthday" style="max-width: 100%; height: auto; border-radius: 12px;">
+  </div>
+  
+  <div style="background-color: #dcfce7; padding: 20px; border-radius: 12px; margin: 20px 0;">
+    <h2 style="color: #166534; margin: 0 0 10px 0; text-align: center;">🎁 ของขวัญวันเกิดพิเศษ</h2>
+    <p style="color: #166534; text-align: center; margin: 0;">ซื้อครบ 35 บาท รับฟรี!</p>
+    <ul style="color: #166534; margin: 10px 0; padding-left: 20px;">
+      <li>ไอศกรีม 1 สกู๊ป หรือ</li>
+      <li>ชามะลิเย็น 1 แก้ว</li>
+    </ul>
+    <p style="color: #166534; text-align: center; font-size: 14px;">ใช้ได้ภายใน 7 วันนับจากวันเกิด</p>
+  </div>
+  
+  <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+    <h3 style="color: #374151; margin: 0 0 10px 0; font-size: 14px;">เงื่อนไขการใช้สิทธิ์:</h3>
+    <ol style="color: #6b7280; font-size: 12px; margin: 0; padding-left: 20px;">
+      <li>ใช้ได้เฉพาะวันเกิดและภายใน 7 วันหลังวันเกิดเท่านั้น</li>
+      <li>ต้องซื้อสินค้าขั้นต่ำ 35 บาท</li>
+      <li>เลือกรับไอศกรีม 1 สกู๊ป หรือ ชามะลิเย็น 1 แก้ว</li>
+      <li>ใช้ได้ 1 สิทธิ์ต่อ 1 วันเกิดเท่านั้น</li>
+      <li>ไม่สามารถใช้ร่วมกับโปรโมชันอื่นได้</li>
+      <li>กรุณาแสดงอีเมลนี้และบัตรประชาชนเพื่อยืนยันวันเกิด</li>
+      <li>สงวนสิทธิ์ในการเปลี่ยนแปลงเงื่อนไขโดยไม่ต้องแจ้งให้ทราบล่วงหน้า</li>
+      <li>ใช้ได้ที่ร้าน Yens Thai Ice Cream ทุกสาขา</li>
+    </ol>
+  </div>
+  
+  <p style="text-align: center; color: #6b7280; font-size: 14px;">มารับของขวัญวันเกิดได้ที่ Yens Thai Ice Cream ทุกสาขา! 🎉</p>
+</div>`;
+
+async function ensureCorrectBirthdayTemplate() {
+  try {
+    const templates = await storage.getMessageTemplatesByChannel('email');
+    const birthdayTemplate = templates.find(t => t.type === 'birthday');
+    
+    if (birthdayTemplate) {
+      const currentLength = birthdayTemplate.htmlContent?.length || 0;
+      // Only update if content is different (check by length as quick comparison)
+      if (currentLength !== CORRECT_BIRTHDAY_HTML.length) {
+        log('Updating birthday template: ' + currentLength + ' chars -> ' + CORRECT_BIRTHDAY_HTML.length + ' chars');
+        await storage.updateMessageTemplate(birthdayTemplate.id, {
+          htmlContent: CORRECT_BIRTHDAY_HTML,
+          message: CORRECT_BIRTHDAY_HTML,
+          subject: '🎂 สุขสันต์วันเกิด {{name}}! Happy Birthday from Yens',
+          name: 'HAPPY BIRTHDAY TO YOU!'
+        });
+        log('Birthday template updated successfully');
+      } else {
+        log('Birthday template already has correct content');
+      }
+    } else {
+      log('No birthday email template found');
+    }
+  } catch (error) {
+    log('Warning: Failed to update birthday template');
+    console.error('Birthday template update error:', error);
+  }
+}
 
 const app = express();
 
@@ -81,6 +149,9 @@ app.use((req, res, next) => {
       log('Warning: Failed to initialize email logo, using fallback text');
       console.error('Logo initialization error:', error);
     }
+    
+    // v3.17.14: Ensure birthday template has correct content (fixes production database)
+    await ensureCorrectBirthdayTemplate();
 
     // Global error handler - logs error but doesn't rethrow to prevent crashes
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
