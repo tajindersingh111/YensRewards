@@ -95,10 +95,13 @@ export default function SendMessageForm() {
     enabled: channel === "line",
   });
 
-  // Fetch email templates from database
+  // Fetch email templates from database (always get fresh data)
   const { data: emailTemplates = [] } = useQuery<MessageTemplate[]>({
     queryKey: ['/api/admin/message-templates/channel/email'],
     enabled: channel === "email",
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
   });
 
   // Schedule message mutation
