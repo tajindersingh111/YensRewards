@@ -53,12 +53,12 @@ async function ensureCorrectBirthdayTemplate(imageUrl: string) {
     const correctHtml = buildBirthdayHtml(imageUrl);
     
     if (birthdayTemplate) {
-      // Only update if the image URL is different (avoid unnecessary writes)
-      const currentContent = birthdayTemplate.htmlContent || '';
-      const hasCorrectImage = currentContent.includes(imageUrl);
+      // Compare full HTML content to detect any differences
+      const currentContent = (birthdayTemplate.htmlContent || '').trim();
+      const needsUpdate = currentContent !== correctHtml.trim();
       
-      if (!hasCorrectImage) {
-        log('Updating birthday template with new image URL');
+      if (needsUpdate) {
+        log('Updating birthday template');
         await storage.updateMessageTemplate(birthdayTemplate.id, {
           htmlContent: correctHtml,
           message: correctHtml,
