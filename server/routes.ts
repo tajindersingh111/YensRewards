@@ -6,7 +6,7 @@ import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema,
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
-import { sendEmail, sendHtmlEmail } from "./resend";
+import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially } from "./resend";
 import { sendLineMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
 import { eq, sql, and, gt, lt } from "drizzle-orm";
@@ -3631,98 +3631,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No birthday template found" });
       }
 
-      // Get customers and send messages
+      // Get customers
       const customers = await Promise.all(
         customerIds.map(id => storage.getCustomer(id))
       );
+      const validCustomers = customers.filter(customer => customer !== undefined);
 
-      const results = await Promise.all(
-        customers
-          .filter(customer => customer !== undefined)
-          .map(async (customer) => {
-            if (!customer) return null;
-            
-            // Replace placeholders in template
-            const personalizedMessage = template.message
+      // Send messages sequentially to avoid rate limiting
+      const results = [];
+      for (let i = 0; i < validCustomers.length; i++) {
+        const customer = validCustomers[i];
+        if (!customer) continue;
+        
+        // Add delay between messages to avoid rate limiting (250ms)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 250));
+        }
+        
+        // Replace placeholders in template
+        const personalizedMessage = template.message
+          .replace(/{name}/g, customer.name)
+          .replace(/{points}/g, customer.points.toString())
+          .replace(/{tier}/g, customer.tier);
+
+        const personalizedSubject = template.subject
+          ? template.subject
               .replace(/{name}/g, customer.name)
               .replace(/{points}/g, customer.points.toString())
-              .replace(/{tier}/g, customer.tier);
+              .replace(/{tier}/g, customer.tier)
+          : null;
 
-            const personalizedSubject = template.subject
-              ? template.subject
-                  .replace(/{name}/g, customer.name)
-                  .replace(/{points}/g, customer.points.toString())
-                  .replace(/{tier}/g, customer.tier)
-              : null;
-
-            // Send via SMS if channel includes SMS
-            let smsResult = null;
-            if (template.channel === 'sms' || template.channel === 'both') {
-              if (customer.phone) {
-                smsResult = await sendSMS(customer.phone, personalizedMessage);
-                
-                // Log the SMS message
-                await storage.createMessageLog({
-                  customerId: customer.id,
-                  templateId: template.id,
-                  channel: 'sms',
-                  recipient: customer.phone,
-                  subject: null,
-                  message: personalizedMessage,
-                  status: smsResult.success ? 'sent' : 'failed',
-                  externalId: smsResult.messageId || null,
-                  errorMessage: smsResult.error || null,
-                });
-              }
-            }
-
-            // Send via Email if channel includes Email
-            let emailResult = null;
-            if (template.channel === 'email' || template.channel === 'both') {
-              if (customer.email && personalizedSubject) {
-                // Use HTML content if available, otherwise use plain text message
-                const emailContent = template.htmlContent 
-                  ? template.htmlContent
-                      .replace(/\{\{customerName\}\}/g, customer.name)
-                      .replace(/\{\{name\}\}/g, customer.name)
-                      .replace(/\{name\}/g, customer.name)
-                      .replace(/\{\{points\}\}/g, customer.points.toString())
-                      .replace(/\{points\}/g, customer.points.toString())
-                      .replace(/\{\{tier\}\}/g, customer.tier)
-                      .replace(/\{tier\}/g, customer.tier)
-                  : personalizedMessage;
-                
-                // Use sendHtmlEmail for HTML content, sendEmail for plain text
-                emailResult = template.htmlContent
-                  ? await sendHtmlEmail(customer.email, personalizedSubject, emailContent)
-                  : await sendEmail(customer.email, personalizedSubject, emailContent);
-                
-                // Log the email message
-                await storage.createMessageLog({
-                  customerId: customer.id,
-                  templateId: template.id,
-                  channel: 'email',
-                  recipient: customer.email,
-                  subject: personalizedSubject,
-                  message: emailContent,
-                  status: emailResult.success ? 'sent' : 'failed',
-                  externalId: emailResult.messageId || null,
-                  errorMessage: emailResult.error || null,
-                });
-              }
-            }
-
-            return {
+        // Send via SMS if channel includes SMS
+        let smsResult = null;
+        if (template.channel === 'sms' || template.channel === 'both') {
+          if (customer.phone) {
+            smsResult = await sendSMS(customer.phone, personalizedMessage);
+            
+            await storage.createMessageLog({
               customerId: customer.id,
-              name: customer.name,
-              phone: customer.phone,
-              email: customer.email,
-              smsResult,
-              emailResult,
-              success: (smsResult?.success || template.channel !== 'sms') && (emailResult === null || template.channel !== 'email')
-            };
-          })
-      );
+              templateId: template.id,
+              channel: 'sms',
+              recipient: customer.phone,
+              subject: null,
+              message: personalizedMessage,
+              status: smsResult.success ? 'sent' : 'failed',
+              externalId: smsResult.messageId || null,
+              errorMessage: smsResult.error || null,
+            });
+          }
+        }
+
+        // Send via Email if channel includes Email
+        let emailResult = null;
+        if (template.channel === 'email' || template.channel === 'both') {
+          if (customer.email && personalizedSubject) {
+            const emailContent = template.htmlContent 
+              ? template.htmlContent
+                  .replace(/\{\{customerName\}\}/g, customer.name)
+                  .replace(/\{\{name\}\}/g, customer.name)
+                  .replace(/\{name\}/g, customer.name)
+                  .replace(/\{\{points\}\}/g, customer.points.toString())
+                  .replace(/\{points\}/g, customer.points.toString())
+                  .replace(/\{\{tier\}\}/g, customer.tier)
+                  .replace(/\{tier\}/g, customer.tier)
+              : personalizedMessage;
+            
+            emailResult = template.htmlContent
+              ? await sendHtmlEmail(customer.email, personalizedSubject, emailContent)
+              : await sendEmail(customer.email, personalizedSubject, emailContent);
+            
+            await storage.createMessageLog({
+              customerId: customer.id,
+              templateId: template.id,
+              channel: 'email',
+              recipient: customer.email,
+              subject: personalizedSubject,
+              message: emailContent,
+              status: emailResult.success ? 'sent' : 'failed',
+              externalId: emailResult.messageId || null,
+              errorMessage: emailResult.error || null,
+            });
+          }
+        }
+
+        results.push({
+          customerId: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+          email: customer.email,
+          smsResult,
+          emailResult,
+          success: (smsResult?.success || template.channel !== 'sms') && (emailResult?.success || template.channel !== 'email')
+        });
+      }
 
       const filteredResults = results.filter(r => r !== null);
       const successCount = filteredResults.filter(r => r.success).length;
@@ -3901,111 +3902,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No customers found matching criteria" });
       }
 
-      // Send messages to all target customers
-      const results = await Promise.all(
-        targetCustomers.map(async (customer) => {
-          if (!customer) return null;
+      // Send messages sequentially to avoid rate limiting
+      const results = [];
+      for (let i = 0; i < targetCustomers.length; i++) {
+        const customer = targetCustomers[i];
+        if (!customer) continue;
 
-          // Replace merge fields with customer data (support both {name} and {{name}} formats)
-          const personalizedMessage = message
-            .replace(/\{\{name\}\}/g, customer.name)
-            .replace(/\{\{points\}\}/g, customer.points.toString())
-            .replace(/\{\{tier\}\}/g, customer.tier)
-            .replace(/\{name\}/g, customer.name)
-            .replace(/\{points\}/g, customer.points.toString())
-            .replace(/\{tier\}/g, customer.tier);
+        // Add delay between messages to avoid rate limiting (250ms)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 250));
+        }
+
+        // Replace merge fields with customer data
+        const personalizedMessage = message
+          .replace(/\{\{name\}\}/g, customer.name)
+          .replace(/\{\{points\}\}/g, customer.points.toString())
+          .replace(/\{\{tier\}\}/g, customer.tier)
+          .replace(/\{name\}/g, customer.name)
+          .replace(/\{points\}/g, customer.points.toString())
+          .replace(/\{tier\}/g, customer.tier);
+        
+        const personalizedSubject = subject
+          ? subject
+              .replace(/\{\{name\}\}/g, customer.name)
+              .replace(/\{\{points\}\}/g, customer.points.toString())
+              .replace(/\{\{tier\}\}/g, customer.tier)
+              .replace(/\{name\}/g, customer.name)
+              .replace(/\{points\}/g, customer.points.toString())
+              .replace(/\{tier\}/g, customer.tier)
+          : null;
+
+        // For app channel, create notification
+        if (channel === 'app') {
+          const promotion = await storage.createPromotion({
+            title: personalizedSubject || 'Message',
+            message: personalizedMessage,
+            targetTier: tier || null,
+          });
+
+          await storage.createNotification({
+            customerId: customer.id,
+            promotionId: promotion.id,
+          });
+
+          await storage.createMessageLog({
+            customerId: customer.id,
+            templateId: null,
+            channel: 'app',
+            recipient: customer.phone,
+            subject: personalizedSubject || null,
+            message: personalizedMessage,
+            status: 'sent',
+            externalId: promotion.id,
+            errorMessage: null,
+          });
+
+          results.push({ success: true, channel: 'app', customer: customer.name });
+          continue;
+        }
+
+        // For SMS channel
+        if (channel === 'sms' && customer.phone) {
+          const smsResult = await sendSMS(customer.phone, personalizedMessage);
           
-          const personalizedSubject = subject
-            ? subject
-                .replace(/\{\{name\}\}/g, customer.name)
-                .replace(/\{\{points\}\}/g, customer.points.toString())
-                .replace(/\{\{tier\}\}/g, customer.tier)
-                .replace(/\{name\}/g, customer.name)
-                .replace(/\{points\}/g, customer.points.toString())
-                .replace(/\{tier\}/g, customer.tier)
-            : null;
+          await storage.createMessageLog({
+            customerId: customer.id,
+            templateId: null,
+            channel: 'sms',
+            recipient: customer.phone,
+            subject: null,
+            message: personalizedMessage,
+            status: smsResult.success ? 'sent' : 'failed',
+            externalId: smsResult.messageId || null,
+            errorMessage: smsResult.error || null,
+          });
 
-          // For app channel, create notification
-          if (channel === 'app') {
-            // Create a promotion to represent the app notification
-            const promotion = await storage.createPromotion({
-              title: personalizedSubject || 'Message',
-              message: personalizedMessage,
-              targetTier: tier || null,
-            });
+          results.push({ success: smsResult.success, channel: 'sms', customer: customer.name });
+          continue;
+        }
 
-            // Create customer notification
-            await storage.createNotification({
-              customerId: customer.id,
-              promotionId: promotion.id,
-            });
+        // For email channel
+        if (channel === 'email' && customer.email) {
+          const emailSubject = personalizedSubject || 'Message from Yens Thai Ice Cream';
+          
+          const isHtmlContent = personalizedMessage.trim().startsWith('<') || 
+            /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(personalizedMessage);
+          
+          const emailResult = isHtmlContent 
+            ? await sendHtmlEmail(customer.email, emailSubject, personalizedMessage)
+            : await sendEmail(customer.email, emailSubject, personalizedMessage);
+          
+          await storage.createMessageLog({
+            customerId: customer.id,
+            templateId: null,
+            channel: 'email',
+            recipient: customer.email,
+            subject: emailSubject,
+            message: personalizedMessage,
+            status: emailResult.success ? 'sent' : 'failed',
+            externalId: emailResult.messageId || null,
+            errorMessage: emailResult.error || null,
+          });
 
-            // Log the app message
-            await storage.createMessageLog({
-              customerId: customer.id,
-              templateId: null,
-              channel: 'app',
-              recipient: customer.phone,
-              subject: personalizedSubject || null,
-              message: personalizedMessage,
-              status: 'sent',
-              externalId: promotion.id,
-              errorMessage: null,
-            });
+          results.push({ success: emailResult.success, channel: 'email', customer: customer.name });
+          continue;
+        }
 
-            return { success: true, channel: 'app', customer: customer.name };
-          }
-
-          // For SMS channel
-          if (channel === 'sms' && customer.phone) {
-            const smsResult = await sendSMS(customer.phone, personalizedMessage);
-            
-            await storage.createMessageLog({
-              customerId: customer.id,
-              templateId: null,
-              channel: 'sms',
-              recipient: customer.phone,
-              subject: null,
-              message: personalizedMessage,
-              status: smsResult.success ? 'sent' : 'failed',
-              externalId: smsResult.messageId || null,
-              errorMessage: smsResult.error || null,
-            });
-
-            return { success: smsResult.success, channel: 'sms', customer: customer.name };
-          }
-
-          // For email channel
-          if (channel === 'email' && customer.email) {
-            const emailSubject = personalizedSubject || 'Message from Yens Thai Ice Cream';
-            
-            // Detect if message contains HTML (starts with HTML tag or contains common HTML elements)
-            const isHtmlContent = personalizedMessage.trim().startsWith('<') || 
-              /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(personalizedMessage);
-            
-            // Use appropriate email function based on content type
-            const emailResult = isHtmlContent 
-              ? await sendHtmlEmail(customer.email, emailSubject, personalizedMessage)
-              : await sendEmail(customer.email, emailSubject, personalizedMessage);
-            
-            await storage.createMessageLog({
-              customerId: customer.id,
-              templateId: null,
-              channel: 'email',
-              recipient: customer.email,
-              subject: emailSubject,
-              message: personalizedMessage,
-              status: emailResult.success ? 'sent' : 'failed',
-              externalId: emailResult.messageId || null,
-              errorMessage: emailResult.error || null,
-            });
-
-            return { success: emailResult.success, channel: 'email', customer: customer.name };
-          }
-
-          return { success: false, reason: 'No valid contact method' };
-        })
-      );
+        results.push({ success: false, reason: 'No valid contact method' });
+      }
 
       const successful = results.filter(r => r && r.success).length;
       const failed = results.filter(r => r && !r.success).length;

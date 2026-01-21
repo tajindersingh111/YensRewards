@@ -349,3 +349,32 @@ export async function sendHtmlEmail(
     };
   }
 }
+
+// Helper to add delay between API calls
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Send multiple HTML emails sequentially with rate limiting
+export async function sendHtmlEmailsSequentially(
+  emails: Array<{ to: string; subject: string; html: string }>
+): Promise<Array<{ to: string; success: boolean; messageId?: string; error?: string }>> {
+  const results: Array<{ to: string; success: boolean; messageId?: string; error?: string }> = [];
+  
+  for (let i = 0; i < emails.length; i++) {
+    const email = emails[i];
+    
+    // Add delay between emails to avoid rate limiting (250ms between each)
+    if (i > 0) {
+      await delay(250);
+    }
+    
+    const result = await sendHtmlEmail(email.to, email.subject, email.html);
+    results.push({
+      to: email.to,
+      ...result
+    });
+  }
+  
+  return results;
+}
