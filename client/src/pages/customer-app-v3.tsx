@@ -15,6 +15,7 @@ import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logoUrl from "@assets/yens logo_1760702216221.png";
+import heroImageUrl from "@assets/Gemini_Generated_Image_jbsq1ljbsq1ljbsq_1769519165998.png";
 
 export default function CustomerAppV3() {
   useAutoUpdate();
@@ -335,64 +336,52 @@ export default function CustomerAppV3() {
       {/* Main Content */}
       <main className="px-4 pt-4 space-y-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
         {/* Hero Banner */}
-        <Card className="relative overflow-hidden rounded-2xl border-0 shadow-lg bg-gradient-to-br from-orange-100 to-orange-200">
-          <div className="relative p-4">
-            {/* Today at Yen's badge */}
-            <div className="inline-block bg-yens-yellow/90 rounded-full px-4 py-1 mb-2">
-              <span className="text-sm font-semibold text-foreground">
-                {t('customer.todayAtYens')}
-              </span>
+        <Card className="relative overflow-hidden rounded-2xl border-0 shadow-lg bg-gradient-to-br from-amber-100 to-orange-100">
+          {/* Background Image */}
+          <div className="relative">
+            <img 
+              src={heroImageUrl} 
+              alt="Yen's Ice Cream" 
+              className="w-full h-auto object-cover"
+              style={{ maxHeight: "320px" }}
+            />
+            {/* Overlay content positioned on top of image */}
+            <div className="absolute top-4 right-4 text-right">
+              {/* Today at Yen's badge */}
+              <div className="inline-block bg-yens-yellow rounded-full px-4 py-1 mb-2 shadow-md">
+                <span className="text-sm font-semibold text-foreground">
+                  {t('customer.todayAtYens')}
+                </span>
+              </div>
+              
+              {/* Promo text */}
+              <h2 className="text-2xl font-bold text-foreground mb-1 drop-shadow-md">
+                {featuredPromotion?.title || t('customer.doublePointsToday')}
+              </h2>
+              <p className="text-sm text-foreground/80 mb-3">
+                {featuredPromotion?.message || "4:00 pm – 6:00 pm"}
+              </p>
+              
+              {/* Order Now button */}
+              <Button
+                className="bg-yens-yellow hover:bg-yens-yellow/90 text-foreground font-semibold rounded-full px-6 shadow-md"
+                onClick={() => setLocation("/menu")}
+                data-testid="button-order-now"
+              >
+                {t('customer.orderNow')}
+              </Button>
             </div>
-            
-            {/* Promo text */}
-            <h2 className="text-2xl font-bold text-foreground mb-1">
-              {featuredPromotion?.title || t('customer.doublePointsToday')}
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              {featuredPromotion?.message || "4:00 pm – 6:00 pm"}
-            </p>
-            
-            {/* Order Now button */}
-            <Button
-              className="bg-yens-yellow hover:bg-yens-yellow/90 text-foreground font-semibold rounded-full px-6"
-              onClick={() => setLocation("/menu")}
-              data-testid="button-order-now"
-            >
-              {t('customer.orderNow')}
-            </Button>
           </div>
-          
-          {/* Decorative ice cream image placeholder */}
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-orange-300/30 to-transparent" />
         </Card>
 
         {/* Points Progress Card */}
         <Card className="p-4 rounded-2xl border-0 shadow-md bg-white">
           <div className="flex items-center gap-4">
-            {/* Circular Progress */}
-            <div className="relative w-16 h-16 flex-shrink-0">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
-                  fill="none"
-                  stroke="#e5e7eb"
-                  strokeWidth="3"
-                />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
-                  fill="none"
-                  stroke="#22c55e"
-                  strokeWidth="3"
-                  strokeDasharray={`${progressPercent} 100`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-foreground">{currentPoints % 50}</span>
+            {/* Points Badge Icon */}
+            <div className="relative w-14 h-14 flex-shrink-0 bg-orange-100 rounded-xl flex items-center justify-center">
+              <span className="text-2xl font-bold text-orange-500">50</span>
+              <div className="absolute -top-1 -left-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center">
+                <span className="text-xs text-white font-bold">$</span>
               </div>
             </div>
             
