@@ -340,17 +340,20 @@ export default function CustomerAppV3() {
 
       {/* Main Content */}
       <main className="px-4 pt-4 space-y-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
-        {/* Hero Banner - Promotional image (clickable) */}
+        {/* Hero Banner - Promotional image (clickable), cropped to hide yellow banner at top */}
         <Card 
           className="relative overflow-hidden rounded-2xl border-0 shadow-lg cursor-pointer hover-elevate"
           onClick={() => window.open("https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2", "_blank")}
           data-testid="button-order-now"
         >
-          <img 
-            src={heroPromoUrl} 
-            alt="Yen's Ice Cream Promotion" 
-            className="w-full h-auto object-cover"
-          />
+          <div className="overflow-hidden">
+            <img 
+              src={heroPromoUrl} 
+              alt="Yen's Ice Cream Promotion" 
+              className="w-full h-auto object-cover"
+              style={{ marginTop: "-50px" }}
+            />
+          </div>
         </Card>
 
         {/* Points Progress Card */}
