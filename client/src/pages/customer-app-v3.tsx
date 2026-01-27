@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Home, User, RefreshCw, Gift, ChevronRight, IceCream } from "lucide-react";
+import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
@@ -367,6 +368,37 @@ export default function CustomerAppV3() {
               <p className="text-sm text-muted-foreground">
                 {t('customer.pointsUntilReward', { points: 50 })}
               </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* QR Code Card */}
+        <Card className="p-4 rounded-2xl border-0 shadow-md bg-white">
+          <div className="flex items-center gap-4">
+            {/* QR Code */}
+            <div className="w-20 h-20 flex-shrink-0 border-2 border-yens-yellow rounded-lg overflow-hidden flex items-center justify-center bg-white">
+              {customer?.id ? (
+                <QRCode value={customer.id} size={72} />
+              ) : (
+                <div className="w-full h-full bg-gray-100" />
+              )}
+            </div>
+            
+            {/* Customer Info */}
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-lg text-foreground truncate">
+                {customer?.name || "Guest"}
+              </h4>
+              <p className="text-xs text-muted-foreground truncate">
+                ID: {customer?.id?.substring(0, 20)}...
+              </p>
+              <button
+                onClick={() => setActiveTab("profile")}
+                className="text-sm text-yens-yellow font-medium mt-1"
+                data-testid="button-show-barista"
+              >
+                {t('customer.showToBarista')}
+              </button>
             </div>
           </div>
         </Card>
