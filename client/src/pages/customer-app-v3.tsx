@@ -338,7 +338,7 @@ export default function CustomerAppV3() {
         {/* Hero Banner - Full promotional image (clickable) */}
         <Card 
           className="relative overflow-hidden rounded-2xl border-0 shadow-lg cursor-pointer hover-elevate"
-          onClick={() => setLocation("/menu")}
+          onClick={() => window.open("https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2", "_blank")}
           data-testid="button-order-now"
         >
           <img 
