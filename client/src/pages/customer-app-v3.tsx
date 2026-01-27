@@ -16,7 +16,7 @@ import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logoUrl from "@assets/Yens_logo_high_res_1766925576641.png";
-import heroPromoUrl from "@assets/Screenshot_2026-01-27_at_22.41.34_1769521341373.png";
+import heroPromoUrl from "@assets/yens_promo_thaitea_vanilla.png";
 
 export default function CustomerAppV3() {
   useAutoUpdate();
