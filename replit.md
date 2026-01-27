@@ -8,6 +8,17 @@ A multi-interface loyalty management system (Customer App, Barista App, Admin Da
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+### Customer App V3 Design (January 27, 2026) - SAVED FOR REFERENCE
+Current design elements to preserve:
+- **Header**: Yellow banner with high-res Yen's polar bear logo, "Yen's" text, version number (v3.17.17), language switcher, refresh button
+- **Hero Image**: "Double Points Today!" promotional image (Screenshot_2026-01-27_at_22.41.34) showing chocolate/strawberry ice cream - links to Grab ordering URL
+- **Points Card**: Orange badge showing "50" with points progress message
+- **QR Code Card**: Customer QR code, name, ID, and "Show to barista" button
+- **Rewards List**: Product cards without header (removed "Available Rewards" and "View All")
+- **Bottom Navigation**: 4 tabs (Home, Menu, Rewards, Profile)
+- **Logo file**: Yens_logo_high_res_1766925576641.png (polar bear mascot)
+- **Grab URL**: https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2
+
 ### Publishing Workflow
 **IMPORTANT: Before every publish/deploy, always update the version number:**
 1. Increment version in `replit.md` (Current Version line)
