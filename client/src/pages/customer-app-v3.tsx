@@ -311,21 +311,43 @@ export default function CustomerAppV3() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100/50 pb-20">
-      {/* Hero Banner - Full promotional image at top (clickable) */}
-      <div 
-        className="cursor-pointer"
-        onClick={() => window.open("https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2", "_blank")}
-        data-testid="button-order-now"
-      >
-        <img 
-          src={heroPromoUrl} 
-          alt="Yen's Ice Cream Promotion" 
-          className="w-full h-auto object-cover"
-        />
-      </div>
+      {/* Header */}
+      <header className="bg-yens-yellow px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <img src={logoUrl} alt="Yens" className="w-10 h-10 rounded-full" />
+          <div>
+            <span className="text-lg font-bold text-foreground">Yen's</span>
+            <p className="text-xs text-muted-foreground">{t('common.version')}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={handleRefresh}
+            className="hover-elevate"
+            data-testid="button-refresh"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </Button>
+        </div>
+      </header>
 
       {/* Main Content */}
       <main className="px-4 pt-4 space-y-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
+        {/* Hero Banner - Promotional image (clickable) */}
+        <Card 
+          className="relative overflow-hidden rounded-2xl border-0 shadow-lg cursor-pointer hover-elevate"
+          onClick={() => window.open("https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2", "_blank")}
+          data-testid="button-order-now"
+        >
+          <img 
+            src={heroPromoUrl} 
+            alt="Yen's Ice Cream Promotion" 
+            className="w-full h-auto object-cover"
+          />
+        </Card>
 
         {/* Points Progress Card */}
         <Card className="p-4 rounded-2xl border-0 shadow-md bg-white">
