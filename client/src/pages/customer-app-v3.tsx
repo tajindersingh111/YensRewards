@@ -373,20 +373,22 @@ export default function CustomerAppV3() {
         </header>
       </div>
 
-      {/* Hero Banner - Sits tightly under header, cropped to hide yellow banner */}
-      <div 
-        className="overflow-hidden cursor-pointer px-4"
-        style={{ maxWidth: "480px", margin: "0 auto" }}
-        onClick={() => window.open("https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2", "_blank")}
-        data-testid="button-order-now"
-      >
-        <img 
-          src={heroPromoUrl} 
-          alt="Yen's Ice Cream Promotion" 
-          className="w-full h-auto object-cover rounded-2xl shadow-lg"
-          style={{ marginTop: "-85px" }}
-        />
-      </div>
+      {/* Hero Banner - Only show on Home tab */}
+      {activeTab === "home" && (
+        <div 
+          className="overflow-hidden cursor-pointer px-4"
+          style={{ maxWidth: "480px", margin: "0 auto" }}
+          onClick={() => window.open("https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2", "_blank")}
+          data-testid="button-order-now"
+        >
+          <img 
+            src={heroPromoUrl} 
+            alt="Yen's Ice Cream Promotion" 
+            className="w-full h-auto object-cover rounded-2xl shadow-lg"
+            style={{ marginTop: "-85px" }}
+          />
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="px-4 pt-4 space-y-4 pb-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
