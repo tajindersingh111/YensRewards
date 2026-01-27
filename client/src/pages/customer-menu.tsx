@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package, Star } from "lucide-react";
-import logoUrl from "@assets/yens logo_1760702216221.png";
+import { ArrowLeft, Package, Star, IceCream } from "lucide-react";
+import logoUrl from "@assets/Yens_logo_high_res_1766925576641.png";
 import type { Product } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -44,32 +44,32 @@ export default function CustomerMenu() {
   const featuredProducts = allProducts.filter(p => p.featured && p.available);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border p-4 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setLocationPath("/customer")}
-              variant="ghost"
-              size="icon"
-              className="hover-elevate"
-              data-testid="button-back"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{t('customer.menu.title')}</h1>
-              <p className="text-sm text-muted-foreground">{t('customer.menu.subtitle')}</p>
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100/50 pb-20">
+      {/* Header - Matching V3 Customer App */}
+      <div className="sticky top-0 z-50 px-4 pt-2" style={{ maxWidth: "480px", margin: "0 auto" }}>
+        <header className="bg-primary text-primary-foreground py-2 px-3 flex items-center justify-between gap-1">
+          <Button
+            onClick={() => setLocationPath("/customer")}
+            variant="ghost"
+            size="icon"
+            className="text-primary-foreground hover:bg-primary-foreground/20 w-8 h-8"
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-base font-bold truncate">{t('customer.menu.title')}</h1>
+              <span className="text-[10px] opacity-70">{t('customer.menu.subtitle')}</span>
             </div>
           </div>
           <LanguageSwitcher />
-        </div>
-      </header>
+        </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto p-4 pb-20">
+      {/* Main Content - Same width as V3 Customer App */}
+      <main className="px-4 pt-4 space-y-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
         {/* Yen's Recommend Section - Matching Website Style */}
         {featuredProducts.length > 0 && (
           <section className="mb-8">
@@ -151,11 +151,11 @@ function ProductCard({ product, featured }: ProductCardProps) {
 
   return (
     <Card 
-      className="overflow-hidden bg-card border-border hover-elevate transition-all"
+      className="overflow-hidden bg-white border-0 shadow-md rounded-xl hover-elevate transition-all"
       data-testid={`product-card-${product.id}`}
     >
       {product.imageUrl ? (
-        <div className="aspect-[4/5] w-full overflow-hidden bg-muted relative">
+        <div className="aspect-square w-full overflow-hidden bg-orange-50 relative">
           <img
             src={product.imageUrl}
             alt={product.name}
@@ -172,8 +172,8 @@ function ProductCard({ product, featured }: ProductCardProps) {
           )}
         </div>
       ) : (
-        <div className="aspect-[4/5] w-full bg-muted flex items-center justify-center relative">
-          <Package className="w-12 h-12 text-muted-foreground" />
+        <div className="aspect-square w-full bg-orange-50 flex items-center justify-center relative">
+          <IceCream className="w-12 h-12 text-orange-300" />
           {badgeStyle && (
             <Badge 
               className={`absolute top-2 right-2 ${badgeStyle.className} shadow-lg text-xs px-2 py-0.5`}
@@ -184,27 +184,18 @@ function ProductCard({ product, featured }: ProductCardProps) {
           )}
         </div>
       )}
-      <div className="p-3 space-y-2 text-center">
-        <div>
-          <h3 
-            className="font-bold text-foreground text-base leading-tight" 
-            data-testid={`text-product-name-${product.id}`}
-          >
-            {product.name}
-          </h3>
-          {product.description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-              {product.description}
-            </p>
-          )}
-        </div>
-        <div className="pt-1">
-          <div 
-            className="text-xl font-bold text-primary"
-            data-testid={`text-product-price-${product.id}`}
-          >
-            ฿{parseFloat(product.price.toString()).toFixed(0)}
-          </div>
+      <div className="p-3 space-y-1 text-center">
+        <h3 
+          className="font-bold text-foreground text-sm leading-tight truncate" 
+          data-testid={`text-product-name-${product.id}`}
+        >
+          {product.name}
+        </h3>
+        <div 
+          className="text-lg font-bold text-orange-500"
+          data-testid={`text-product-price-${product.id}`}
+        >
+          ฿{parseFloat(product.price.toString()).toFixed(0)}
         </div>
       </div>
     </Card>
