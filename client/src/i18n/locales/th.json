@@ -31,7 +31,9 @@
     "version": "v3.17.17",
     "saving": "กำลังบันทึก...",
     "deleting": "กำลังลบ...",
-    "optional": "ไม่บังคับ"
+    "optional": "ไม่บังคับ",
+    "viewAll": "ดูทั้งหมด",
+    "refreshed": "รีเฟรชแล้ว"
   },
   "home": {
     "title": "ระบบสะสมคะแนนเย็นส์",
@@ -97,6 +99,14 @@
     "birthday": "วันเกิด",
     "home": "หน้าแรก",
     "menuNav": "เมนู",
+    "rewards": "รางวัล",
+    "todayAtYens": "วันนี้ที่ Yen's",
+    "doublePointsToday": "คะแนนสองเท่าวันนี้!",
+    "orderNow": "สั่งเลย",
+    "pointsAway": "อีก {{points}} คะแนน!",
+    "pointsUntilReward": "{{points}} คะแนนสู่รางวัลถัดไป",
+    "availableRewards": "รางวัลที่ใช้ได้",
+    "dataUpdated": "อัพเดตข้อมูลแล้ว",
     "viewDetails": "ดูรายละเอียด",
     "menu": {
       "title": "เมนูของเรา",

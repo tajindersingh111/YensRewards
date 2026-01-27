@@ -31,7 +31,9 @@
     "version": "v3.17.17",
     "saving": "Saving...",
     "deleting": "Deleting...",
-    "optional": "optional"
+    "optional": "optional",
+    "viewAll": "View All",
+    "refreshed": "Refreshed"
   },
   "home": {
     "title": "Yen's Loyalty System",
@@ -97,6 +99,14 @@
     "birthday": "Birthday",
     "home": "Home",
     "menuNav": "Menu",
+    "rewards": "Rewards",
+    "todayAtYens": "Today at Yen's",
+    "doublePointsToday": "Double Points Today!",
+    "orderNow": "Order Now",
+    "pointsAway": "You're {{points}} points away!",
+    "pointsUntilReward": "{{points}} Points until your next reward",
+    "availableRewards": "Available Rewards",
+    "dataUpdated": "Data has been updated",
     "viewDetails": "View Details",
     "menu": {
       "title": "Our Menu",
