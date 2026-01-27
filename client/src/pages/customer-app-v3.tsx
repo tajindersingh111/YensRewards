@@ -556,7 +556,25 @@ export default function CustomerAppV3() {
               </div>
             </Card>
             
-            {/* LINE Connection Card */}
+            {/* Rate Us Card - Above LINE since LINE is one-time setup */}
+            <Card 
+              className="p-4 border-2 border-yens-yellow bg-yens-yellow/10 hover-elevate cursor-pointer"
+              onClick={() => setShowReviewPage(true)}
+              data-testid="card-rate-us"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-yens-yellow flex items-center justify-center">
+                  <Star className="w-7 h-7 text-yens-blue fill-yens-blue" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-foreground">{t('review.title')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('review.rateExperience')}</p>
+                </div>
+                <ExternalLink className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </Card>
+            
+            {/* LINE Connection Card - One-time setup, at bottom */}
             {customer?.lineUid ? (
               <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/10" data-testid="card-line-connected">
                 <div className="flex items-center gap-3">
@@ -619,24 +637,6 @@ export default function CustomerAppV3() {
                 )}
               </Card>
             )}
-            
-            {/* Rate Us Card */}
-            <Card 
-              className="p-4 border-2 border-yens-yellow bg-yens-yellow/10 hover-elevate cursor-pointer"
-              onClick={() => setShowReviewPage(true)}
-              data-testid="card-rate-us"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-yens-yellow flex items-center justify-center">
-                  <Star className="w-7 h-7 text-yens-blue fill-yens-blue" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-foreground">{t('review.title')}</h3>
-                  <p className="text-sm text-muted-foreground">{t('review.rateExperience')}</p>
-                </div>
-                <ExternalLink className="w-5 h-5 text-muted-foreground" />
-              </div>
-            </Card>
             
             {/* Transaction History */}
             {transactionsLoading ? (
