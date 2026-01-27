@@ -313,7 +313,7 @@ export default function CustomerAppV3() {
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100/50 pb-20">
       {/* Header - Compact yellow banner same width as content */}
       <div className="sticky top-0 z-50 px-4 pt-2" style={{ maxWidth: "480px", margin: "0 auto" }}>
-        <header className="bg-primary text-primary-foreground py-2 px-3 rounded-xl flex items-center justify-between gap-1">
+        <header className="bg-primary text-primary-foreground py-2 px-3 flex items-center justify-between gap-1">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
             <div className="flex flex-col min-w-0">
