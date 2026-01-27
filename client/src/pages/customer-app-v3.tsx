@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Home, User, RefreshCw, Gift, ChevronRight, IceCream } from "lucide-react";
+import { Home, User, RefreshCw, Gift, ChevronRight, IceCream, Check, Copy, ExternalLink, Star, LogOut } from "lucide-react";
+import { SiLine } from "react-icons/si";
+import TransactionList from "@/components/TransactionList";
+import CustomerReviewPage from "@/components/CustomerReviewPage";
 import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
@@ -36,6 +39,8 @@ export default function CustomerAppV3() {
   const [celebrationType, setCelebrationType] = useState<"points" | "tier-upgrade">("points");
   const previousDataRef = useRef<{ points: number; tier: string } | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [showReviewPage, setShowReviewPage] = useState(false);
+  const [linkCodeCopied, setLinkCodeCopied] = useState(false);
   const { toast } = useToast();
 
   const enableAudio = () => {
@@ -112,6 +117,36 @@ export default function CustomerAppV3() {
     queryKey: ['/api/customers', customer?.id, 'promotions'],
     enabled: !!customer?.id,
   });
+
+  // Transactions for profile
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery<any[]>({
+    queryKey: ['/api/customers', customer?.id, 'transactions'],
+    enabled: !!customer?.id,
+  });
+
+  // LINE link code
+  const { data: linkCodeData } = useQuery<{ linkCode: string }>({
+    queryKey: ['/api/customers', customer?.id, 'link-code'],
+    enabled: !!customer?.id,
+  });
+
+  // Format transactions for display
+  const formattedTransactions = transactions.map((tx: any) => ({
+    ...tx,
+    date: tx.createdAt || tx.date,
+  }));
+
+  const handleCopyLinkCode = () => {
+    if (linkCodeData?.linkCode) {
+      navigator.clipboard.writeText(linkCodeData.linkCode);
+      setLinkCodeCopied(true);
+      toast({
+        title: t('customer.linkCodeCopied'),
+        description: linkCodeData.linkCode,
+      });
+      setTimeout(() => setLinkCodeCopied(false), 2000);
+    }
+  };
 
   const loginMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
@@ -354,9 +389,12 @@ export default function CustomerAppV3() {
       </div>
 
       {/* Main Content */}
-      <main className="px-4 pt-4 space-y-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
+      <main className="px-4 pt-4 space-y-4 pb-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
 
-        {/* Points Progress Card */}
+        {/* HOME TAB */}
+        {activeTab === "home" && (
+          <>
+            {/* Points Progress Card */}
         <Card className="p-4 rounded-2xl border-0 shadow-md bg-white">
           <div className="flex items-center gap-4">
             {/* Points Badge Icon */}
@@ -455,6 +493,170 @@ export default function CustomerAppV3() {
             </Card>
           ))}
         </div>
+          </>
+        )}
+
+        {/* REWARDS TAB */}
+        {activeTab === "rewards" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-foreground">{t('customer.rewards')}</h2>
+            <div className="space-y-3">
+              {products.map((product) => (
+                <Card
+                  key={product.id}
+                  className="p-4 rounded-xl border-0 shadow-sm bg-white flex items-center gap-4"
+                  data-testid={`card-product-${product.id}`}
+                >
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-orange-100 flex-shrink-0">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <IceCream className="w-8 h-8 text-orange-300" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-foreground truncate">{product.name}</h4>
+                    <p className="text-sm text-muted-foreground">50 {t('customer.points')}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PROFILE TAB */}
+        {activeTab === "profile" && (
+          <div className="space-y-4">
+            <div className="text-center space-y-4">
+              {customer?.photo ? (
+                <img src={customer.photo} alt={customer.name} className="w-24 h-24 rounded-full mx-auto object-cover" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-4xl font-bold">
+                  {customer?.name?.charAt(0) || "?"}
+                </div>
+              )}
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">{customer?.name}</h2>
+                <p className="text-muted-foreground">{customer?.phone}</p>
+                {customer?.birthday && (
+                  <p className="text-sm text-muted-foreground mt-2">{t('customer.birthday')}: {customer.birthday}</p>
+                )}
+              </div>
+            </div>
+            
+            {/* Points Summary */}
+            <Card className="p-4 rounded-xl border-0 shadow-md bg-white">
+              <div className="text-center">
+                <p className="text-4xl font-bold text-orange-500">{currentPoints}</p>
+                <p className="text-muted-foreground">{t('customer.points')}</p>
+              </div>
+            </Card>
+            
+            {/* LINE Connection Card */}
+            {customer?.lineUid ? (
+              <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/10" data-testid="card-line-connected">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#06C755] flex items-center justify-center">
+                    <Check className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-foreground flex items-center gap-2">
+                      <SiLine className="w-5 h-5 text-[#06C755]" />
+                      {t('customer.lineConnected')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{t('customer.lineConnectedDesc')}</p>
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/5" data-testid="card-connect-line">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-[#06C755] flex items-center justify-center">
+                    <SiLine className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{t('customer.connectLine')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('customer.lineGetBonusPoints')}</p>
+                  </div>
+                </div>
+                
+                {linkCodeData?.linkCode && (
+                  <div className="space-y-3">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-2">{t('customer.lineLinkingCode')}</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="px-4 py-2 bg-white border-2 border-[#06C755] rounded-lg">
+                          <span className="text-xl font-mono font-bold text-[#06C755] tracking-wider">
+                            {linkCodeData.linkCode}
+                          </span>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="border-[#06C755] text-[#06C755] hover:bg-[#06C755]/10"
+                          onClick={handleCopyLinkCode}
+                          data-testid="button-copy-link-code"
+                        >
+                          {linkCodeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
+                      onClick={() => window.open('https://line.me/R/oaMessage/@752afsdq', '_blank')}
+                      data-testid="button-open-line-chat"
+                    >
+                      <SiLine className="w-5 h-5 mr-2" />
+                      {t('customer.lineOpenChat')}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            )}
+            
+            {/* Rate Us Card */}
+            <Card 
+              className="p-4 border-2 border-yens-yellow bg-yens-yellow/10 hover-elevate cursor-pointer"
+              onClick={() => setShowReviewPage(true)}
+              data-testid="card-rate-us"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-yens-yellow flex items-center justify-center">
+                  <Star className="w-7 h-7 text-yens-blue fill-yens-blue" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-foreground">{t('review.title')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('review.rateExperience')}</p>
+                </div>
+                <ExternalLink className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </Card>
+            
+            {/* Transaction History */}
+            {transactionsLoading ? (
+              <Card className="p-6 text-center">
+                <p className="text-muted-foreground">{t('common.loading')}</p>
+              </Card>
+            ) : (
+              <TransactionList transactions={formattedTransactions} />
+            )}
+            
+            {/* Logout Button */}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {t('customer.logout')}
+            </Button>
+          </div>
+        )}
       </main>
 
       {/* Bottom Navigation */}
@@ -511,6 +713,13 @@ export default function CustomerAppV3() {
         <Celebration
           type={celebrationType}
           onComplete={() => setShowCelebration(false)}
+        />
+      )}
+
+      {showReviewPage && customer && (
+        <CustomerReviewPage
+          customerId={customer.id}
+          onBack={() => setShowReviewPage(false)}
         />
       )}
     </div>
