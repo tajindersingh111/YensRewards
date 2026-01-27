@@ -405,22 +405,6 @@ export default function CustomerAppV3() {
 
         {/* Rewards List */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">
-              {t('customer.availableRewards')}
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveTab("rewards")}
-              className="text-primary"
-              data-testid="button-view-all-rewards"
-            >
-              {t('common.viewAll')}
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-
           {rewardProducts.map((product) => (
             <Card
               key={product.id}
