@@ -311,26 +311,30 @@ export default function CustomerAppV3() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100/50 pb-20">
-      {/* Header */}
-      <header className="bg-yens-yellow px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <img src={logoUrl} alt="Yens" className="w-10 h-10 rounded-full" />
-          <div>
-            <span className="text-lg font-bold text-foreground">Yen's</span>
-            <p className="text-xs text-muted-foreground">{t('common.version')}</p>
+      {/* Header - Compact yellow banner matching original Customer App */}
+      <header className="bg-primary text-primary-foreground py-2 px-2 sticky top-0 z-50">
+        <div className="mx-auto w-full flex items-center justify-between gap-1" style={{ maxWidth: "min(100vw, 400px)" }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-base font-bold truncate">{t('customer.yensRewards')}</h1>
+              <span className="text-[10px] opacity-70" data-testid="text-version">
+                {t('common.version')}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleRefresh}
-            className="hover-elevate"
-            data-testid="button-refresh"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <LanguageSwitcher />
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleRefresh}
+              className="text-primary-foreground hover:bg-primary-foreground/20 w-8 h-8"
+              data-testid="button-refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
