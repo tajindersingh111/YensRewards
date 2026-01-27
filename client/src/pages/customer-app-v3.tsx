@@ -312,8 +312,8 @@ export default function CustomerAppV3() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100/50 pb-20">
       {/* Header - Compact yellow banner matching original Customer App */}
-      <header className="bg-primary text-primary-foreground py-2 px-2 sticky top-0 z-50">
-        <div className="mx-auto w-full flex items-center justify-between gap-1" style={{ maxWidth: "min(100vw, 400px)" }}>
+      <header className="bg-primary text-primary-foreground py-2 sticky top-0 z-50">
+        <div className="mx-auto w-full flex items-center justify-between gap-1 px-4" style={{ maxWidth: "480px" }}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
             <div className="flex flex-col min-w-0">
