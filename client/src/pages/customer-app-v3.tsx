@@ -15,7 +15,7 @@ import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logoUrl from "@assets/Yens_logo_high_res_1766925576641.png";
-import heroPromoUrl from "@assets/WhatsApp_Image_2026-01-20_at_12.12.50_1768965601005.jpeg";
+import heroPromoUrl from "@assets/Screenshot_2026-01-27_at_22.41.34_1769521341373.png";
 
 export default function CustomerAppV3() {
   useAutoUpdate();
@@ -335,24 +335,17 @@ export default function CustomerAppV3() {
 
       {/* Main Content */}
       <main className="px-4 pt-4 space-y-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
-        {/* Hero Banner - Full promotional image */}
-        <Card className="relative overflow-hidden rounded-2xl border-0 shadow-lg">
+        {/* Hero Banner - Full promotional image (clickable) */}
+        <Card 
+          className="relative overflow-hidden rounded-2xl border-0 shadow-lg cursor-pointer hover-elevate"
+          onClick={() => setLocation("/menu")}
+          data-testid="button-order-now"
+        >
           <img 
             src={heroPromoUrl} 
             alt="Yen's Ice Cream Promotion" 
             className="w-full h-auto object-cover"
-            style={{ maxHeight: "280px" }}
           />
-          {/* Overlay button at bottom */}
-          <div className="absolute bottom-4 left-4 right-4 flex justify-center">
-            <Button
-              className="bg-yens-yellow hover:bg-yens-yellow/90 text-foreground font-semibold rounded-full px-8 py-2 shadow-lg"
-              onClick={() => setLocation("/menu")}
-              data-testid="button-order-now"
-            >
-              {t('customer.orderNow')}
-            </Button>
-          </div>
         </Card>
 
         {/* Points Progress Card */}
