@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Home, User, RefreshCw, IceCream, Gift, ChevronRight } from "lucide-react";
+import { Home, User, RefreshCw, Gift, ChevronRight, IceCream } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import logoUrl from "@assets/yens logo_1760702216221.png";
+import logoUrl from "@assets/Yens_logo_high_res_1766925576641.png";
+import heroPromoUrl from "@assets/WhatsApp_Image_2026-01-20_at_12.12.50_1768965601005.jpeg";
 
 export default function CustomerAppV3() {
   useAutoUpdate();
@@ -334,44 +335,23 @@ export default function CustomerAppV3() {
 
       {/* Main Content */}
       <main className="px-4 pt-4 space-y-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
-        {/* Hero Banner - Matching template layout */}
-        <Card className="relative overflow-hidden rounded-2xl border-0 shadow-lg bg-gradient-to-r from-amber-200 via-orange-100 to-amber-50" style={{ minHeight: "200px" }}>
-          <div className="flex h-full">
-            {/* Left side - Product image placeholder */}
-            <div className="w-2/5 relative flex items-end justify-center p-2">
-              {/* Placeholder for ice cream image - replace with actual product photo */}
-              <div className="flex flex-col items-center justify-end h-full">
-                <IceCream className="w-20 h-20 text-orange-400 mb-2" />
-                <span className="text-xs text-orange-500 text-center">Add your ice cream photo</span>
-              </div>
-            </div>
-            
-            {/* Right side - Promo content */}
-            <div className="w-3/5 p-4 flex flex-col justify-center">
-              {/* Today at Yen's badge */}
-              <div className="inline-block self-start bg-yens-yellow rounded-full px-3 py-1 mb-2 shadow-sm">
-                <span className="text-xs font-semibold text-foreground">
-                  {t('customer.todayAtYens')}
-                </span>
-              </div>
-              
-              {/* Promo text */}
-              <h2 className="text-xl font-bold text-foreground leading-tight mb-1">
-                {featuredPromotion?.title || t('customer.doublePointsToday')}
-              </h2>
-              <p className="text-sm text-foreground/70 mb-3">
-                {featuredPromotion?.message || "4:00 pm – 6:00 pm"}
-              </p>
-              
-              {/* Order Now button */}
-              <Button
-                className="bg-yens-yellow hover:bg-yens-yellow/90 text-foreground font-semibold rounded-full px-5 py-2 self-start shadow-sm"
-                onClick={() => setLocation("/menu")}
-                data-testid="button-order-now"
-              >
-                {t('customer.orderNow')}
-              </Button>
-            </div>
+        {/* Hero Banner - Full promotional image */}
+        <Card className="relative overflow-hidden rounded-2xl border-0 shadow-lg">
+          <img 
+            src={heroPromoUrl} 
+            alt="Yen's Ice Cream Promotion" 
+            className="w-full h-auto object-cover"
+            style={{ maxHeight: "280px" }}
+          />
+          {/* Overlay button at bottom */}
+          <div className="absolute bottom-4 left-4 right-4 flex justify-center">
+            <Button
+              className="bg-yens-yellow hover:bg-yens-yellow/90 text-foreground font-semibold rounded-full px-8 py-2 shadow-lg"
+              onClick={() => setLocation("/menu")}
+              data-testid="button-order-now"
+            >
+              {t('customer.orderNow')}
+            </Button>
           </div>
         </Card>
 
