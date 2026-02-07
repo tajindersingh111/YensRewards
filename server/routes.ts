@@ -3096,11 +3096,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // List all email assets
+  // List all email assets (deduplicated by default)
   app.get('/api/admin/email-assets', isAuthenticated, isAdmin, async (req, res) => {
     try {
+      const deduplicate = req.query.deduplicate !== 'false';
       const objectStorageService = new ObjectStorageService();
-      const assets = await objectStorageService.listEmailAssets();
+      const assets = await objectStorageService.listEmailAssets(deduplicate);
       res.json(assets);
     } catch (error) {
       console.error("Error listing email assets:", error);

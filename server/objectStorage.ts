@@ -191,7 +191,7 @@ export class ObjectStorageService {
     return `/email-assets/${filename}`;
   }
 
-  async listEmailAssets(): Promise<Array<{ name: string; url: string; size: number; created: string }>> {
+  async listEmailAssets(deduplicate: boolean = false): Promise<Array<{ name: string; url: string; size: number; created: string }>> {
     const publicSearchPaths = this.getPublicObjectSearchPaths();
     const publicPath = publicSearchPaths[0];
     
@@ -200,7 +200,7 @@ export class ObjectStorageService {
     
     try {
       const [files] = await bucket.getFiles({ prefix: objectName });
-      return files
+      const allAssets = files
         .filter(file => !file.name.endsWith('/'))
         .map(file => ({
           name: file.name.split('/').pop() || file.name,
@@ -208,6 +208,19 @@ export class ObjectStorageService {
           size: parseInt(file.metadata.size as string) || 0,
           created: file.metadata.timeCreated as string || new Date().toISOString(),
         }));
+
+      if (deduplicate) {
+        const seen = new Map<string, typeof allAssets[0]>();
+        for (const asset of allAssets) {
+          const key = `${asset.size}`;
+          if (!seen.has(key) || asset.created > seen.get(key)!.created) {
+            seen.set(key, asset);
+          }
+        }
+        return Array.from(seen.values()).sort((a, b) => b.created.localeCompare(a.created));
+      }
+
+      return allAssets;
     } catch (error) {
       console.error("Error listing email assets:", error);
       return [];

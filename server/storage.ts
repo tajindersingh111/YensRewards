@@ -1268,6 +1268,15 @@ export class DbStorage implements IStorage {
   }
 
   async getMessageTemplatesByChannel(channel: string): Promise<MessageTemplate[]> {
+    if (channel === 'email' || channel === 'sms') {
+      return await db
+        .select()
+        .from(messageTemplates)
+        .where(
+          sql`${messageTemplates.channel} = ${channel} OR ${messageTemplates.channel} = 'both'`
+        )
+        .orderBy(asc(messageTemplates.name));
+    }
     return await db
       .select()
       .from(messageTemplates)
