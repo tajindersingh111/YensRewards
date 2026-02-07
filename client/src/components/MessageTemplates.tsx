@@ -232,10 +232,10 @@ export default function MessageTemplates() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: isThaiLanguage ? "ไฟล์ใหญ่เกินไป" : "File too large",
-        description: isThaiLanguage ? "กรุณาใช้ไฟล์ขนาดไม่เกิน 1MB" : "Please use a file smaller than 1MB",
+        description: isThaiLanguage ? "กรุณาใช้ไฟล์ขนาดไม่เกิน 10MB" : "Please use a file smaller than 10MB",
         variant: "destructive",
       });
       return;

@@ -13,6 +13,8 @@ import { eq, sql, and, gt, lt } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import * as fs from "fs";
+import * as path from "path";
 
 // Helper function to normalize day of week names to canonical short form
 function normalizeDayOfWeek(day: string): string {
@@ -3070,6 +3072,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting email asset ACL:", error);
       res.status(500).json({ message: "Failed to set asset ACL" });
+    }
+  });
+
+  // Upload a local attached asset to email assets storage (restricted to attached_assets directory)
+  app.post('/api/admin/email-assets/upload-local', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { filename, targetFilename } = req.body;
+      if (!filename || !targetFilename) {
+        return res.status(400).json({ message: "filename and targetFilename are required" });
+      }
+      const sanitizedFilename = path.basename(filename);
+      const localPath = path.join('./attached_assets', sanitizedFilename);
+      if (!fs.existsSync(localPath)) {
+        return res.status(404).json({ message: "File not found in attached assets" });
+      }
+      const objectStorageService = new ObjectStorageService();
+      const publicUrl = await objectStorageService.uploadLocalFileToEmailAssets(localPath, targetFilename);
+      res.json({ url: publicUrl, filename: targetFilename });
+    } catch (error) {
+      console.error("Error uploading local file to email assets:", error);
+      res.status(500).json({ message: "Failed to upload file" });
     }
   });
 
