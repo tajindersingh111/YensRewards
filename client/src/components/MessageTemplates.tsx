@@ -122,8 +122,11 @@ export default function MessageTemplates() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAssetGalleryOpen, setIsAssetGalleryOpen] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
+  const [lineImageUrl, setLineImageUrl] = useState("");
+  const [isUploadingLineImage, setIsUploadingLineImage] = useState(false);
   const [emailEditorTab, setEmailEditorTab] = useState("visual");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lineImageInputRef = useRef<HTMLInputElement>(null);
   const isThaiLanguage = i18n.language === 'th';
 
   const form = useForm<InsertMessageTemplate>({
@@ -282,6 +285,46 @@ export default function MessageTemplates() {
     }
   };
 
+  const handleLineImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: isThaiLanguage ? "ไฟล์ใหญ่เกินไป" : "File too large",
+        description: isThaiLanguage ? "ขนาดไฟล์สูงสุด 10MB" : "Maximum file size is 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLineImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await apiRequest('POST', '/api/admin/email-assets/upload', formData);
+      const result = await res.json();
+      if (result.url) {
+        const fullUrl = `${window.location.origin}${result.url}`;
+        setLineImageUrl(fullUrl);
+        toast({
+          title: isThaiLanguage ? "อัพโหลดรูปสำเร็จ" : "Image uploaded",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: isThaiLanguage ? "อัพโหลดล้มเหลว" : "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLineImage(false);
+      if (lineImageInputRef.current) {
+        lineImageInputRef.current.value = '';
+      }
+    }
+  };
+
   const insertSnippet = (snippet: typeof EMAIL_SNIPPETS[0]) => {
     setHtmlContent(prev => prev + '\n' + snippet.html);
     toast({
@@ -293,12 +336,21 @@ export default function MessageTemplates() {
   const insertAssetImage = (asset: EmailAsset) => {
     const baseUrl = window.location.origin;
     const fullUrl = `${baseUrl}${asset.url}`;
-    const imgTag = `<img src="${fullUrl}" alt="${asset.name}" style="max-width: 100%; height: auto; border-radius: 8px;">`;
-    setHtmlContent(prev => prev + '\n' + imgTag);
-    setIsAssetGalleryOpen(false);
-    toast({
-      title: isThaiLanguage ? "เพิ่มรูปภาพแล้ว" : "Image inserted",
-    });
+    const currentChannel = form.watch("channel");
+    if (currentChannel === 'line') {
+      setLineImageUrl(fullUrl);
+      setIsAssetGalleryOpen(false);
+      toast({
+        title: isThaiLanguage ? "เลือกรูปภาพแล้ว" : "Image selected",
+      });
+    } else {
+      const imgTag = `<img src="${fullUrl}" alt="${asset.name}" style="max-width: 100%; height: auto; border-radius: 8px;">`;
+      setHtmlContent(prev => prev + '\n' + imgTag);
+      setIsAssetGalleryOpen(false);
+      toast({
+        title: isThaiLanguage ? "เพิ่มรูปภาพแล้ว" : "Image inserted",
+      });
+    }
   };
 
   const resetForm = () => {
@@ -313,6 +365,7 @@ export default function MessageTemplates() {
     setIsCreating(false);
     setEditingTemplate(null);
     setHtmlContent("");
+    setLineImageUrl("");
     setEmailEditorTab("visual");
   };
 
@@ -328,12 +381,19 @@ export default function MessageTemplates() {
     setEditingTemplate(template);
     setIsCreating(true);
     setHtmlContent(template.htmlContent || "");
+    try {
+      const jsonData = template.jsonContent ? JSON.parse(template.jsonContent) : {};
+      setLineImageUrl(jsonData.imageUrl || "");
+    } catch {
+      setLineImageUrl("");
+    }
   };
 
   const onSubmit = (data: InsertMessageTemplate) => {
     const submitData = {
       ...data,
       htmlContent: (data.channel === 'email' || data.channel === 'both') ? htmlContent : undefined,
+      jsonContent: (data.channel === 'line' && lineImageUrl) ? JSON.stringify({ imageUrl: lineImageUrl }) : undefined,
     };
     if (editingTemplate) {
       updateTemplateMutation.mutate({ id: editingTemplate.id, data: submitData });
@@ -424,18 +484,30 @@ export default function MessageTemplates() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t('admin.messages.templateType')}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-template-type">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="birthday">{t('admin.messages.birthday')}</SelectItem>
-                            <SelectItem value="promotion">{t('admin.messages.promotion')}</SelectItem>
-                            <SelectItem value="reminder">{t('admin.messages.reminder')}</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              placeholder={isThaiLanguage ? "เลือกหรือพิมพ์ประเภท..." : "Select or type custom..."}
+                              data-testid="input-template-type"
+                              list="template-type-options"
+                              {...field}
+                              value={field.value || ""}
+                            />
+                            <datalist id="template-type-options">
+                              <option value="birthday">{t('admin.messages.birthday')}</option>
+                              <option value="promotion">{t('admin.messages.promotion')}</option>
+                              <option value="reminder">{t('admin.messages.reminder')}</option>
+                              <option value="welcome">{isThaiLanguage ? "ต้อนรับ" : "Welcome"}</option>
+                              <option value="announcement">{isThaiLanguage ? "ประกาศ" : "Announcement"}</option>
+                              <option value="event">{isThaiLanguage ? "กิจกรรม" : "Event"}</option>
+                              <option value="seasonal">{isThaiLanguage ? "ตามฤดูกาล" : "Seasonal"}</option>
+                              <option value="thank_you">{isThaiLanguage ? "ขอบคุณ" : "Thank You"}</option>
+                            </datalist>
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          {isThaiLanguage ? "เลือกจากรายการหรือพิมพ์ประเภทใหม่" : "Pick from list or type a new custom type"}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -615,6 +687,83 @@ export default function MessageTemplates() {
                         </div>
                       </TabsContent>
                     </Tabs>
+                  </div>
+                )}
+
+                {form.watch("channel") === "line" && (
+                  <div className="space-y-3 border rounded-lg p-4 bg-green-50/50">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Image className="w-4 h-4" />
+                      {isThaiLanguage ? "รูปภาพ LINE (ไม่บังคับ)" : "LINE Image (Optional)"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {isThaiLanguage 
+                        ? "แนบรูปภาพเพื่อส่งพร้อมข้อความ LINE ของคุณ รูปจะแสดงก่อนข้อความ" 
+                        : "Attach an image to send with your LINE message. The image will appear before the text."}
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      <input
+                        ref={lineImageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLineImageUpload}
+                        className="hidden"
+                        data-testid="input-line-image-upload"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => lineImageInputRef.current?.click()}
+                        disabled={isUploadingLineImage}
+                        data-testid="button-upload-line-image"
+                      >
+                        {isUploadingLineImage ? (
+                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4 mr-1" />
+                        )}
+                        {isThaiLanguage ? "อัพโหลดรูป" : "Upload Image"}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsAssetGalleryOpen(true)}
+                        data-testid="button-line-image-gallery"
+                      >
+                        <Image className="w-4 h-4 mr-1" />
+                        {isThaiLanguage ? "เลือกจากคลัง" : "Choose from Gallery"}
+                      </Button>
+                      {lineImageUrl && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setLineImageUrl("")}
+                          data-testid="button-remove-line-image"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          {isThaiLanguage ? "ลบรูป" : "Remove"}
+                        </Button>
+                      )}
+                    </div>
+                    <Input
+                      placeholder={isThaiLanguage ? "หรือวาง URL รูปภาพที่นี่..." : "Or paste image URL here..."}
+                      value={lineImageUrl}
+                      onChange={(e) => setLineImageUrl(e.target.value)}
+                      data-testid="input-line-image-url"
+                    />
+                    {lineImageUrl && (
+                      <div className="mt-2 border rounded-lg overflow-hidden">
+                        <img 
+                          src={lineImageUrl} 
+                          alt="LINE message image preview" 
+                          className="max-h-48 w-auto mx-auto"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 

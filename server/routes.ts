@@ -7,7 +7,7 @@ import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
 import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially } from "./resend";
-import { sendLineMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
+import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
 import { eq, sql, and, gt, lt } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -4183,19 +4183,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send LINE messages (admin only)
   app.post('/api/admin/messages/send-line', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { recipientType, tier, customerIds, message } = req.body;
+      const { recipientType, tier, customerIds, message, imageUrl } = req.body;
 
       if (!message) {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Validate message length (LINE limit is 5,000 characters)
       if (message.length > 5000) {
         return res.status(400).json({ message: "Message exceeds LINE's 5,000 character limit" });
       }
 
-      // Get target customers based on recipient type
-      let targetCustomers = [];
+      let targetCustomers: any[] = [];
       
       if (recipientType === 'all') {
         targetCustomers = await storage.getAllCustomers();
@@ -4211,64 +4209,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid recipient configuration" });
       }
 
-      // Filter to only customers with LINE UIDs
       const customersWithLine = targetCustomers.filter(c => c && c.lineUid);
 
       if (customersWithLine.length === 0) {
         return res.status(400).json({ message: "No customers found with LINE accounts" });
       }
 
-      // Send LINE messages to all target customers with LINE UIDs
-      const results = [];
-      let skipped = 0;
-
-      for (const customer of customersWithLine) {
-        // Double-check customer has lineUid (defense in depth)
-        if (!customer || !customer.lineUid) {
-          console.warn(`Skipping customer ${customer?.id} - missing LINE UID`);
-          skipped++;
-          continue;
-        }
-
-        try {
-          const lineResult = await sendLineMessage(customer.lineUid, message);
-          
-          await storage.createMessageLog({
-            customerId: customer.id,
-            templateId: null,
-            channel: 'line',
-            recipient: customer.lineUid,
-            subject: null,
-            message: message,
-            status: lineResult.success ? 'sent' : 'failed',
-            externalId: lineResult.messageId || null,
-            errorMessage: lineResult.error || null,
-          });
-
-          results.push({ 
-            success: lineResult.success, 
-            channel: 'line', 
-            customer: customer.name 
-          });
-        } catch (error) {
-          console.error(`Error sending LINE message to ${customer.name}:`, error);
-          results.push({ 
-            success: false, 
-            channel: 'line', 
-            customer: customer.name 
-          });
-        }
-      }
-
-      const successful = results.filter(r => r.success).length;
-      const failed = results.filter(r => !r.success).length;
+      const totalToSend = customersWithLine.length;
 
       res.json({
         success: true,
-        sent: successful,
-        failed: failed,
-        skipped: skipped,
-        total: customersWithLine.length,
+        sent: 0,
+        failed: 0,
+        skipped: 0,
+        total: totalToSend,
+        processing: true,
+        message: `Sending ${totalToSend} LINE messages in the background. Check Message History for progress.`,
+      });
+
+      (async () => {
+        for (let i = 0; i < customersWithLine.length; i++) {
+          const customer = customersWithLine[i];
+          if (!customer || !customer.lineUid) continue;
+
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+
+          try {
+            const lineResult = imageUrl
+              ? await sendLineImageMessage(customer.lineUid, imageUrl, message)
+              : await sendLineMessage(customer.lineUid, message);
+            
+            await storage.createMessageLog({
+              customerId: customer.id,
+              templateId: null,
+              channel: 'line',
+              recipient: customer.lineUid,
+              subject: null,
+              message: imageUrl ? `[Image: ${imageUrl}] ${message}` : message,
+              status: lineResult.success ? 'sent' : 'failed',
+              externalId: lineResult.messageId || null,
+              errorMessage: lineResult.error || null,
+            });
+          } catch (error: any) {
+            console.error(`Error sending LINE message to ${customer.name}:`, error);
+            try {
+              await storage.createMessageLog({
+                customerId: customer.id,
+                templateId: null,
+                channel: 'line',
+                recipient: customer.lineUid,
+                subject: null,
+                message: message,
+                status: 'failed',
+                externalId: null,
+                errorMessage: error.message || 'Unknown error',
+              });
+            } catch (logErr) {
+              console.error(`Failed to log error for ${customer.name}:`, logErr);
+            }
+          }
+        }
+        console.log(`Mass LINE sending complete: ${customersWithLine.length} customers processed`);
+      })().catch(err => {
+        console.error("Background LINE message sending failed:", err);
       });
     } catch (error) {
       console.error("Error sending LINE messages:", error);

@@ -150,6 +150,47 @@ export interface LineWebhookBody {
   events: WebhookEvent[];
 }
 
+export async function sendLineImageMessage(
+  lineUserId: string,
+  imageUrl: string,
+  text?: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const client = await getLineClient();
+
+    const messages: any[] = [
+      {
+        type: 'image',
+        originalContentUrl: imageUrl,
+        previewImageUrl: imageUrl,
+      }
+    ];
+
+    if (text) {
+      messages.push({
+        type: 'text',
+        text: text,
+      });
+    }
+
+    await client.pushMessage({
+      to: lineUserId,
+      messages,
+    });
+
+    return {
+      success: true,
+      messageId: lineUserId,
+    };
+  } catch (error: any) {
+    console.error('Error sending LINE image message:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send LINE image message',
+    };
+  }
+}
+
 // Send Flex Message to a specific user
 export async function sendLineFlexMessage(
   lineUserId: string,

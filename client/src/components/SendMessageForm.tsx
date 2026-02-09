@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -70,6 +70,7 @@ export default function SendMessageForm() {
   const [lineSelectedTier, setLineSelectedTier] = useState<string>("");
   const [lineMessage, setLineMessage] = useState("");
   const [lineSelectedCustomers, setLineSelectedCustomers] = useState<string[]>([]);
+  const [lineImageUrl, setLineImageUrl] = useState("");
 
   // Fetch customers for individual selection
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -189,16 +190,26 @@ export default function SendMessageForm() {
   // Send LINE message mutation
   const sendLineMessage = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/admin/messages/send-line', data);
+      const res = await apiRequest('POST', '/api/admin/messages/send-line', data);
+      return await res.json();
     },
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
-      toast({
-        title: "LINE Messages Sent! 📱",
-        description: `Successfully sent ${result.sent || 0} messages. Failed: ${result.failed || 0}`,
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
+      if (result?.processing) {
+        toast({
+          title: "LINE Messages Sending",
+          description: result?.message || `Sending ${result?.total || 0} LINE messages in the background.`,
+        });
+      } else {
+        toast({
+          title: "LINE Messages Sent",
+          description: `Successfully sent ${result?.sent || 0} messages. Failed: ${result?.failed || 0}`,
+        });
+      }
       setLineMessage("");
       setLineSelectedCustomers([]);
+      setLineImageUrl("");
     },
     onError: (error: Error) => {
       toast({
@@ -718,6 +729,10 @@ export default function SendMessageForm() {
       message: lineMessage.trim(),
     };
 
+    if (lineImageUrl.trim()) {
+      data.imageUrl = lineImageUrl.trim();
+    }
+
     if (lineRecipientType === "tier" && lineSelectedTier) {
       data.tier = lineSelectedTier;
     } else if (lineRecipientType === "individual") {
@@ -847,9 +862,45 @@ export default function SendMessageForm() {
       )}
 
       <div className="space-y-2">
+        <Label>{t('admin.messages.lineImageOptional') || "Image URL (Optional)"}</Label>
+        <div className="flex gap-2">
+          <Input
+            placeholder="https://... or paste image URL"
+            value={lineImageUrl}
+            onChange={(e) => setLineImageUrl(e.target.value)}
+            data-testid="input-line-image-url-send"
+          />
+          {lineImageUrl && (
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={() => setLineImageUrl("")}
+              data-testid="button-clear-line-image-send"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+        {lineImageUrl && (
+          <div className="border rounded-lg overflow-hidden p-2 bg-muted/30">
+            <img 
+              src={lineImageUrl} 
+              alt="LINE image preview" 
+              className="max-h-32 w-auto mx-auto rounded"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {t('admin.messages.lineImageDesc') || "Image will be sent before the text message in LINE chat"}
+        </p>
+      </div>
+
+      <div className="space-y-2">
         <Label>Message (Max 5,000 characters)</Label>
         <Textarea
-          placeholder="Type your LINE message here... Much longer than SMS! 🎉"
+          placeholder="Type your LINE message here... Much longer than SMS!"
           value={lineMessage}
           onChange={(e) => setLineMessage(e.target.value)}
           rows={6}
