@@ -3926,123 +3926,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No customers found matching criteria" });
       }
 
-      // Send messages sequentially to avoid rate limiting
-      const results = [];
-      for (let i = 0; i < targetCustomers.length; i++) {
-        const customer = targetCustomers[i];
-        if (!customer) continue;
-
-        // Add delay between messages to avoid rate limiting (250ms)
-        if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, 250));
-        }
-
-        // Replace merge fields with customer data
-        const personalizedMessage = message
-          .replace(/\{\{name\}\}/g, customer.name)
-          .replace(/\{\{points\}\}/g, customer.points.toString())
-          .replace(/\{\{tier\}\}/g, customer.tier)
-          .replace(/\{name\}/g, customer.name)
-          .replace(/\{points\}/g, customer.points.toString())
-          .replace(/\{tier\}/g, customer.tier);
-        
-        const personalizedSubject = subject
-          ? subject
-              .replace(/\{\{name\}\}/g, customer.name)
-              .replace(/\{\{points\}\}/g, customer.points.toString())
-              .replace(/\{\{tier\}\}/g, customer.tier)
-              .replace(/\{name\}/g, customer.name)
-              .replace(/\{points\}/g, customer.points.toString())
-              .replace(/\{tier\}/g, customer.tier)
-          : null;
-
-        // For app channel, create notification
-        if (channel === 'app') {
-          const promotion = await storage.createPromotion({
-            title: personalizedSubject || 'Message',
-            message: personalizedMessage,
-            targetTier: tier || null,
-          });
-
-          await storage.createNotification({
-            customerId: customer.id,
-            promotionId: promotion.id,
-          });
-
-          await storage.createMessageLog({
-            customerId: customer.id,
-            templateId: null,
-            channel: 'app',
-            recipient: customer.phone,
-            subject: personalizedSubject || null,
-            message: personalizedMessage,
-            status: 'sent',
-            externalId: promotion.id,
-            errorMessage: null,
-          });
-
-          results.push({ success: true, channel: 'app', customer: customer.name });
-          continue;
-        }
-
-        // For SMS channel
-        if (channel === 'sms' && customer.phone) {
-          const smsResult = await sendSMS(customer.phone, personalizedMessage);
-          
-          await storage.createMessageLog({
-            customerId: customer.id,
-            templateId: null,
-            channel: 'sms',
-            recipient: customer.phone,
-            subject: null,
-            message: personalizedMessage,
-            status: smsResult.success ? 'sent' : 'failed',
-            externalId: smsResult.messageId || null,
-            errorMessage: smsResult.error || null,
-          });
-
-          results.push({ success: smsResult.success, channel: 'sms', customer: customer.name });
-          continue;
-        }
-
-        // For email channel
-        if (channel === 'email' && customer.email) {
-          const emailSubject = personalizedSubject || 'Message from Yens Thai Ice Cream';
-          
-          const isHtmlContent = personalizedMessage.trim().startsWith('<') || 
-            /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(personalizedMessage);
-          
-          const emailResult = isHtmlContent 
-            ? await sendHtmlEmail(customer.email, emailSubject, personalizedMessage)
-            : await sendEmail(customer.email, emailSubject, personalizedMessage);
-          
-          await storage.createMessageLog({
-            customerId: customer.id,
-            templateId: null,
-            channel: 'email',
-            recipient: customer.email,
-            subject: emailSubject,
-            message: personalizedMessage,
-            status: emailResult.success ? 'sent' : 'failed',
-            externalId: emailResult.messageId || null,
-            errorMessage: emailResult.error || null,
-          });
-
-          results.push({ success: emailResult.success, channel: 'email', customer: customer.name });
-          continue;
-        }
-
-        results.push({ success: false, reason: 'No valid contact method' });
-      }
-
-      const successful = results.filter(r => r && r.success).length;
-      const failed = results.filter(r => r && !r.success).length;
+      const totalCustomers = targetCustomers.length;
 
       res.json({
         success: true,
-        sent: successful,
-        failed: failed,
-        total: targetCustomers.length,
+        sent: 0,
+        failed: 0,
+        total: totalCustomers,
+        processing: true,
+        message: `Sending ${totalCustomers} messages in the background. Check Message History for progress.`,
+      });
+
+      (async () => {
+        const BATCH_SIZE = 50;
+        const DELAY_BETWEEN_MESSAGES = 200;
+        const DELAY_BETWEEN_BATCHES = 2000;
+
+        for (let batchStart = 0; batchStart < targetCustomers.length; batchStart += BATCH_SIZE) {
+          const batch = targetCustomers.slice(batchStart, batchStart + BATCH_SIZE);
+
+          if (batchStart > 0) {
+            await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+          }
+
+          for (let i = 0; i < batch.length; i++) {
+            const customer = batch[i];
+            if (!customer) continue;
+
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_MESSAGES));
+            }
+
+            try {
+              const personalizedMessage = message
+                .replace(/\{\{name\}\}/g, customer.name)
+                .replace(/\{\{points\}\}/g, customer.points.toString())
+                .replace(/\{\{tier\}\}/g, customer.tier)
+                .replace(/\{name\}/g, customer.name)
+                .replace(/\{points\}/g, customer.points.toString())
+                .replace(/\{tier\}/g, customer.tier);
+
+              const personalizedSubject = subject
+                ? subject
+                    .replace(/\{\{name\}\}/g, customer.name)
+                    .replace(/\{\{points\}\}/g, customer.points.toString())
+                    .replace(/\{\{tier\}\}/g, customer.tier)
+                    .replace(/\{name\}/g, customer.name)
+                    .replace(/\{points\}/g, customer.points.toString())
+                    .replace(/\{tier\}/g, customer.tier)
+                : null;
+
+              if (channel === 'app') {
+                const promotion = await storage.createPromotion({
+                  title: personalizedSubject || 'Message',
+                  message: personalizedMessage,
+                  targetTier: tier || null,
+                });
+
+                await storage.createNotification({
+                  customerId: customer.id,
+                  promotionId: promotion.id,
+                });
+
+                await storage.createMessageLog({
+                  customerId: customer.id,
+                  templateId: null,
+                  channel: 'app',
+                  recipient: customer.phone,
+                  subject: personalizedSubject || null,
+                  message: personalizedMessage,
+                  status: 'sent',
+                  externalId: promotion.id,
+                  errorMessage: null,
+                });
+                continue;
+              }
+
+              if (channel === 'sms' && customer.phone) {
+                const smsResult = await sendSMS(customer.phone, personalizedMessage);
+
+                await storage.createMessageLog({
+                  customerId: customer.id,
+                  templateId: null,
+                  channel: 'sms',
+                  recipient: customer.phone,
+                  subject: null,
+                  message: personalizedMessage,
+                  status: smsResult.success ? 'sent' : 'failed',
+                  externalId: smsResult.messageId || null,
+                  errorMessage: smsResult.error || null,
+                });
+                continue;
+              }
+
+              if (channel === 'email' && customer.email) {
+                const emailSubject = personalizedSubject || 'Message from Yens Thai Ice Cream';
+
+                const isHtmlContent = personalizedMessage.trim().startsWith('<') ||
+                  /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(personalizedMessage);
+
+                const emailResult = isHtmlContent
+                  ? await sendHtmlEmail(customer.email, emailSubject, personalizedMessage)
+                  : await sendEmail(customer.email, emailSubject, personalizedMessage);
+
+                await storage.createMessageLog({
+                  customerId: customer.id,
+                  templateId: null,
+                  channel: 'email',
+                  recipient: customer.email,
+                  subject: emailSubject,
+                  message: personalizedMessage,
+                  status: emailResult.success ? 'sent' : 'failed',
+                  externalId: emailResult.messageId || null,
+                  errorMessage: emailResult.error || null,
+                });
+                continue;
+              }
+
+              await storage.createMessageLog({
+                customerId: customer.id,
+                templateId: null,
+                channel: channel,
+                recipient: customer.email || customer.phone || 'unknown',
+                subject: personalizedSubject || null,
+                message: personalizedMessage,
+                status: 'failed',
+                externalId: null,
+                errorMessage: 'No valid contact method',
+              });
+            } catch (err) {
+              console.error(`Error sending ${channel} to ${customer.name}:`, err);
+              try {
+                await storage.createMessageLog({
+                  customerId: customer.id,
+                  templateId: null,
+                  channel: channel,
+                  recipient: customer.email || customer.phone || 'unknown',
+                  subject: null,
+                  message: message,
+                  status: 'failed',
+                  externalId: null,
+                  errorMessage: err instanceof Error ? err.message : 'Unknown error',
+                });
+              } catch (logErr) {
+                console.error(`Failed to log error for ${customer.name}:`, logErr);
+              }
+            }
+          }
+          console.log(`Batch ${Math.floor(batchStart / BATCH_SIZE) + 1} complete: sent ${Math.min(batchStart + BATCH_SIZE, targetCustomers.length)} of ${targetCustomers.length}`);
+        }
+        console.log(`Mass ${channel} sending complete: ${targetCustomers.length} customers processed`);
+      })().catch(err => {
+        console.error("Background message sending failed:", err);
       });
     } catch (error) {
       console.error("Error sending messages:", error);

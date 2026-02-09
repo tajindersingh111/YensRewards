@@ -1442,7 +1442,7 @@ export class DbStorage implements IStorage {
       .select()
       .from(messageLog)
       .orderBy(desc(messageLog.createdAt))
-      .limit(100);
+      .limit(1000);
   }
 
   async updateMessageLogStatus(

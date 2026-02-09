@@ -146,21 +146,30 @@ export default function SendMessageForm() {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/admin/messages/send', data);
+      const res = await apiRequest('POST', '/api/admin/messages/send', data);
+      return await res.json();
     },
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
-      const sentCount = result?.sent || 0;
-      const failedCount = result?.failed || 0;
       const totalCount = result?.total || 0;
-      const description = failedCount > 0 
-        ? t('messages.messageSentCountWithFailed', { sent: sentCount, total: totalCount, failed: failedCount })
-        : t('messages.messageSentCount', { sent: sentCount, total: totalCount });
-      toast({
-        title: t('messages.messageSent'),
-        description,
-      });
+      const isProcessing = result?.processing === true;
+      if (isProcessing) {
+        toast({
+          title: t('messages.messageSent'),
+          description: result?.message || `Sending ${totalCount} messages in the background. Check Message History for progress.`,
+        });
+      } else {
+        const sentCount = result?.sent || 0;
+        const failedCount = result?.failed || 0;
+        const description = failedCount > 0 
+          ? t('messages.messageSentCountWithFailed', { sent: sentCount, total: totalCount, failed: failedCount })
+          : t('messages.messageSentCount', { sent: sentCount, total: totalCount });
+        toast({
+          title: t('messages.messageSent'),
+          description,
+        });
+      }
       // Reset form completely to allow sending another message
       setMessage("");
       setSubject("");
