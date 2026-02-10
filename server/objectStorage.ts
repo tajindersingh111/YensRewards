@@ -207,20 +207,23 @@ export class ObjectStorageService {
           url: `/email-assets/${file.name.split('/').pop()}`,
           size: parseInt(file.metadata.size as string) || 0,
           created: file.metadata.timeCreated as string || new Date().toISOString(),
+          md5Hash: (file.metadata.md5Hash as string) || '',
         }));
 
       if (deduplicate) {
         const seen = new Map<string, typeof allAssets[0]>();
         for (const asset of allAssets) {
-          const key = `${asset.size}`;
+          const key = asset.md5Hash ? `hash:${asset.md5Hash}` : `size:${asset.size}:${asset.name}`;
           if (!seen.has(key) || asset.created > seen.get(key)!.created) {
             seen.set(key, asset);
           }
         }
-        return Array.from(seen.values()).sort((a, b) => b.created.localeCompare(a.created));
+        return Array.from(seen.values())
+          .map(({ md5Hash, ...rest }) => rest)
+          .sort((a, b) => b.created.localeCompare(a.created));
       }
 
-      return allAssets;
+      return allAssets.map(({ md5Hash, ...rest }) => rest);
     } catch (error) {
       console.error("Error listing email assets:", error);
       return [];
