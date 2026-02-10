@@ -300,17 +300,27 @@ export default function MessageTemplates() {
 
     setIsUploadingLineImage(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const res = await apiRequest('POST', '/api/admin/email-assets/upload', formData);
-      const result = await res.json();
-      if (result.url) {
-        const fullUrl = `${window.location.origin}${result.url}`;
-        setLineImageUrl(fullUrl);
-        toast({
-          title: isThaiLanguage ? "อัพโหลดรูปสำเร็จ" : "Image uploaded",
-        });
-      }
+      const response = await apiRequest('POST', '/api/admin/email-assets/upload-url', {
+        filename: file.name
+      });
+      const result = await response.json() as { uploadURL: string; assetPath: string };
+      const { uploadURL, assetPath } = result;
+
+      await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+
+      await apiRequest('POST', '/api/admin/email-assets/set-acl', { assetPath });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/email-assets'] });
+
+      const fullUrl = `${window.location.origin}${assetPath}`;
+      setLineImageUrl(fullUrl);
+      toast({
+        title: isThaiLanguage ? "อัพโหลดรูปสำเร็จ" : "Image uploaded",
+      });
     } catch (error: any) {
       toast({
         title: isThaiLanguage ? "อัพโหลดล้มเหลว" : "Upload failed",
@@ -393,7 +403,7 @@ export default function MessageTemplates() {
     const submitData = {
       ...data,
       htmlContent: (data.channel === 'email' || data.channel === 'both') ? htmlContent : undefined,
-      jsonContent: (data.channel === 'line' && lineImageUrl) ? JSON.stringify({ imageUrl: lineImageUrl }) : undefined,
+      jsonContent: ((data.channel === 'line' || data.channel === 'both') && lineImageUrl) ? JSON.stringify({ imageUrl: lineImageUrl }) : undefined,
     };
     if (editingTemplate) {
       updateTemplateMutation.mutate({ id: editingTemplate.id, data: submitData });
@@ -690,7 +700,7 @@ export default function MessageTemplates() {
                   </div>
                 )}
 
-                {form.watch("channel") === "line" && (
+                {(form.watch("channel") === "line" || form.watch("channel") === "both") && (
                   <div className="space-y-3 border rounded-lg p-4 bg-green-50/50">
                     <h4 className="font-semibold flex items-center gap-2">
                       <Image className="w-4 h-4" />

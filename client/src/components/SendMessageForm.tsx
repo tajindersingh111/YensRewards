@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar, X } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar, X, Upload } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -71,6 +71,8 @@ export default function SendMessageForm() {
   const [lineMessage, setLineMessage] = useState("");
   const [lineSelectedCustomers, setLineSelectedCustomers] = useState<string[]>([]);
   const [lineImageUrl, setLineImageUrl] = useState("");
+  const [isUploadingLineImage, setIsUploadingLineImage] = useState(false);
+  const lineImageInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch customers for individual selection
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -186,6 +188,54 @@ export default function SendMessageForm() {
       });
     },
   });
+
+  const handleLineImageUploadSend = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: t('common.error'),
+        description: "Maximum file size is 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLineImage(true);
+    try {
+      const response = await apiRequest('POST', '/api/admin/email-assets/upload-url', {
+        filename: file.name
+      });
+      const result = await response.json() as { uploadURL: string; assetPath: string };
+      const { uploadURL, assetPath } = result;
+
+      await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+
+      await apiRequest('POST', '/api/admin/email-assets/set-acl', { assetPath });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/email-assets'] });
+
+      const fullUrl = `${window.location.origin}${assetPath}`;
+      setLineImageUrl(fullUrl);
+      toast({ title: "Image uploaded" });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLineImage(false);
+      if (lineImageInputRef.current) {
+        lineImageInputRef.current.value = '';
+      }
+    }
+  };
 
   // Send LINE message mutation
   const sendLineMessage = useMutation({
@@ -862,26 +912,50 @@ export default function SendMessageForm() {
       )}
 
       <div className="space-y-2">
-        <Label>{t('admin.messages.lineImageOptional') || "Image URL (Optional)"}</Label>
-        <div className="flex gap-2">
-          <Input
-            placeholder="https://... or paste image URL"
-            value={lineImageUrl}
-            onChange={(e) => setLineImageUrl(e.target.value)}
-            data-testid="input-line-image-url-send"
+        <Label>{t('admin.messages.lineImageOptional') || "LINE Image (Optional)"}</Label>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            ref={lineImageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleLineImageUploadSend}
+            className="hidden"
+            data-testid="input-line-image-upload-send"
           />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => lineImageInputRef.current?.click()}
+            disabled={isUploadingLineImage}
+            data-testid="button-upload-line-image-send"
+          >
+            {isUploadingLineImage ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4 mr-1" />
+            )}
+            {isUploadingLineImage ? "Uploading..." : "Upload Image"}
+          </Button>
           {lineImageUrl && (
             <Button
               type="button"
-              size="icon"
+              size="sm"
               variant="outline"
               onClick={() => setLineImageUrl("")}
               data-testid="button-clear-line-image-send"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 mr-1" />
+              Remove
             </Button>
           )}
         </div>
+        <Input
+          placeholder="Or paste image URL here..."
+          value={lineImageUrl}
+          onChange={(e) => setLineImageUrl(e.target.value)}
+          data-testid="input-line-image-url-send"
+        />
         {lineImageUrl && (
           <div className="border rounded-lg overflow-hidden p-2 bg-muted/30">
             <img 
