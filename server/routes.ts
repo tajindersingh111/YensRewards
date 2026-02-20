@@ -16,6 +16,30 @@ import * as XLSX from "xlsx";
 import * as fs from "fs";
 import * as path from "path";
 
+// In-memory send job tracker for background mass sends
+interface SendJob {
+  id: string;
+  status: 'processing' | 'completed';
+  channel: string;
+  total: number;
+  sent: number;
+  failed: number;
+  skipped: number;
+  errorBreakdown: Record<string, number>;
+  startedAt: string;
+  completedAt?: string;
+  noEmailCount?: number;
+}
+const sendJobs = new Map<string, SendJob>();
+function cleanOldJobs() {
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  sendJobs.forEach((job, id) => {
+    if (new Date(job.startedAt).getTime() < oneHourAgo) {
+      sendJobs.delete(id);
+    }
+  });
+}
+
 // Helper function to normalize day of week names to canonical short form
 function normalizeDayOfWeek(day: string): string {
   const normalized = day.trim().toLowerCase();
@@ -3943,12 +3967,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const totalCustomers = targetCustomers.length;
 
+      cleanOldJobs();
+      const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const job: SendJob = {
+        id: jobId,
+        status: 'processing',
+        channel,
+        total: totalCustomers,
+        sent: 0,
+        failed: 0,
+        skipped: 0,
+        errorBreakdown: {},
+        startedAt: new Date().toISOString(),
+      };
+      sendJobs.set(jobId, job);
+
       res.json({
         success: true,
         sent: 0,
         failed: 0,
         total: totalCustomers,
         processing: true,
+        jobId,
         message: `Sending ${totalCustomers} messages in the background. Check Message History for progress.`,
       });
 
@@ -3995,8 +4035,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const batchResult = await sendBatchEmails(
             emailsToSend,
-            (sent, failed, total) => {
-              console.log(`Email progress: ${sent} sent, ${failed} failed, ${total} total`);
+            (sentCount, failedCount, total) => {
+              job.sent = sentCount;
+              job.failed = failedCount;
+              console.log(`Email progress: ${sentCount} sent, ${failedCount} failed, ${total} total`);
             }
           );
 
@@ -4021,9 +4063,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          // Log customers without email
+          // Count and log customers without email
+          let noEmailCount = 0;
           for (const customer of targetCustomers) {
             if (!customer || customer.email) continue;
+            noEmailCount++;
             try {
               await storage.createMessageLog({
                 customerId: customer.id,
@@ -4041,6 +4085,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
+          job.sent = batchResult.sent;
+          job.failed = batchResult.failed;
+          job.skipped = batchResult.skipped;
+          job.errorBreakdown = batchResult.errorBreakdown;
+          job.noEmailCount = noEmailCount;
+          job.status = 'completed';
+          job.completedAt = new Date().toISOString();
           console.log(`Mass email complete: ${batchResult.sent} sent, ${batchResult.failed} failed out of ${emailsToSend.length}`);
         } else {
           // Non-email channels (SMS, app, LINE) - process individually
@@ -4096,6 +4147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   externalId: promotion.id,
                   errorMessage: null,
                 });
+                job.sent++;
                 continue;
               }
 
@@ -4113,6 +4165,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   externalId: smsResult.messageId || null,
                   errorMessage: smsResult.error || null,
                 });
+                if (smsResult.success) {
+                  job.sent++;
+                } else {
+                  job.failed++;
+                  const errKey = smsResult.error || 'SMS send failed';
+                  job.errorBreakdown[errKey] = (job.errorBreakdown[errKey] || 0) + 1;
+                }
                 continue;
               }
 
@@ -4127,8 +4186,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 externalId: null,
                 errorMessage: 'No valid contact method',
               });
+              job.failed++;
+              job.errorBreakdown['No valid contact method'] = (job.errorBreakdown['No valid contact method'] || 0) + 1;
             } catch (err) {
               console.error(`Error sending ${channel} to ${customer.name}:`, err);
+              job.failed++;
+              const errMsg = err instanceof Error ? err.message : 'Unknown error';
+              job.errorBreakdown[errMsg] = (job.errorBreakdown[errMsg] || 0) + 1;
               try {
                 await storage.createMessageLog({
                   customerId: customer.id,
@@ -4139,7 +4203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   message: message,
                   status: 'failed',
                   externalId: null,
-                  errorMessage: err instanceof Error ? err.message : 'Unknown error',
+                  errorMessage: errMsg,
                 });
               } catch (logErr) {
                 console.error(`Failed to log error for ${customer.name}:`, logErr);
@@ -4148,13 +4212,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           console.log(`Mass ${channel} sending complete: ${targetCustomers.length} customers processed`);
         }
+
+        if (job.status !== 'completed') {
+          job.status = 'completed';
+          job.completedAt = new Date().toISOString();
+        }
       })().catch(err => {
         console.error("Background message sending failed:", err);
+        job.status = 'completed';
+        job.completedAt = new Date().toISOString();
+        job.errorBreakdown['Background send crashed: ' + (err instanceof Error ? err.message : 'Unknown')] = 1;
       });
     } catch (error) {
       console.error("Error sending messages:", error);
       res.status(500).json({ message: "Failed to send messages" });
     }
+  });
+
+  // Get send job status (admin only) - for polling after background sends
+  app.get('/api/admin/messages/send-job/:jobId', isAuthenticated, isAdmin, async (req, res) => {
+    const { jobId } = req.params;
+    const job = sendJobs.get(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+    res.json(job);
   });
 
   // Retry failed message (admin only)

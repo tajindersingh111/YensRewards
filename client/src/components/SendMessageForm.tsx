@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,11 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar, X, Upload } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar, X, Upload, BarChart3 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Customer = {
   id: string;
@@ -64,6 +65,45 @@ export default function SendMessageForm() {
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
+
+  // Send job tracking state
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [sendReport, setSendReport] = useState<any>(null);
+  const [showReport, setShowReport] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const pollJobStatus = useCallback(async (jobId: string) => {
+    try {
+      const res = await fetch(`/api/admin/messages/send-job/${jobId}`, { credentials: 'include' });
+      if (!res.ok) return;
+      const job = await res.json();
+      if (job.status === 'completed') {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+        setActiveJobId(null);
+        setSendReport(job);
+        setShowReport(true);
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
+      }
+    } catch (err) {
+      // Silently ignore polling errors
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeJobId) {
+      pollingRef.current = setInterval(() => pollJobStatus(activeJobId), 3000);
+      return () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      };
+    }
+  }, [activeJobId, pollJobStatus]);
 
   // LINE-specific state
   const [lineRecipientType, setLineRecipientType] = useState<"all" | "tier" | "individual" | "birthday_today" | "birthday_week">("all");
@@ -157,10 +197,11 @@ export default function SendMessageForm() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
       const totalCount = result?.total || 0;
       const isProcessing = result?.processing === true;
-      if (isProcessing) {
+      if (isProcessing && result?.jobId) {
+        setActiveJobId(result.jobId);
         toast({
           title: t('messages.messageSent'),
-          description: result?.message || `Sending ${totalCount} messages in the background. Check Message History for progress.`,
+          description: `Sending ${totalCount} messages... You'll see a report when complete.`,
         });
       } else {
         const sentCount = result?.sent || 0;
@@ -173,7 +214,6 @@ export default function SendMessageForm() {
           description,
         });
       }
-      // Reset form completely to allow sending another message
       setMessage("");
       setSubject("");
       setSelectedCustomers([]);
@@ -1084,6 +1124,98 @@ export default function SendMessageForm() {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      {activeJobId && (
+        <div className="border-t border-yellow-200 bg-yellow-50 px-6 py-3 flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-yellow-600" />
+          <span className="text-sm text-yellow-800 font-medium" data-testid="text-sending-progress">
+            Sending messages in progress...
+          </span>
+        </div>
+      )}
+
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2" data-testid="text-send-report-title">
+              <BarChart3 className="w-5 h-5 text-yellow-600" />
+              {sendReport?.channel === 'email' ? 'Email' : sendReport?.channel === 'sms' ? 'SMS' : sendReport?.channel === 'line' ? 'LINE' : 'Message'} Send Report
+            </DialogTitle>
+            <DialogDescription>
+              Summary of the mass {sendReport?.channel || 'message'} send
+            </DialogDescription>
+          </DialogHeader>
+          {sendReport && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-md p-3 text-center">
+                  <div className="text-2xl font-bold text-gray-900" data-testid="text-report-total">{sendReport.total}</div>
+                  <div className="text-xs text-gray-500">Total Recipients</div>
+                </div>
+                <div className="bg-green-50 rounded-md p-3 text-center">
+                  <div className="text-2xl font-bold text-green-600" data-testid="text-report-sent">{sendReport.sent}</div>
+                  <div className="text-xs text-green-700">Sent</div>
+                </div>
+                <div className="bg-red-50 rounded-md p-3 text-center">
+                  <div className="text-2xl font-bold text-red-600" data-testid="text-report-failed">{sendReport.failed}</div>
+                  <div className="text-xs text-red-700">Failed</div>
+                </div>
+                <div className="bg-yellow-50 rounded-md p-3 text-center">
+                  <div className="text-2xl font-bold text-yellow-600" data-testid="text-report-skipped">{sendReport.skipped + (sendReport.noEmailCount || 0)}</div>
+                  <div className="text-xs text-yellow-700">Skipped</div>
+                </div>
+              </div>
+
+              {(sendReport.sent > 0 || sendReport.failed > 0) && (() => {
+                const attempted = sendReport.sent + sendReport.failed;
+                const rate = attempted > 0 ? ((sendReport.sent / attempted) * 100).toFixed(1) : '0.0';
+                return (
+                  <div className={`${sendReport.sent > 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border rounded-md p-3 flex items-center gap-2`}>
+                    {sendReport.sent > 0 ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                    )}
+                    <span className={`text-sm ${sendReport.sent > 0 ? 'text-green-800' : 'text-red-800'}`} data-testid="text-report-success-rate">
+                      Success rate: {rate}% ({sendReport.sent} of {attempted} attempted)
+                    </span>
+                  </div>
+                );
+              })()}
+
+              {sendReport.errorBreakdown && Object.keys(sendReport.errorBreakdown).length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm font-medium text-gray-700">Errors:</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {Object.entries(sendReport.errorBreakdown).map(([error, count]: [string, any]) => (
+                      <div key={error} className="bg-red-50 border border-red-100 rounded px-3 py-2 text-xs text-red-700" data-testid="text-report-error">
+                        <span className="font-medium">{count}x</span> - {error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {sendReport.completedAt && (
+                <div className="text-xs text-gray-400 text-center" data-testid="text-report-time">
+                  Completed: {new Date(sendReport.completedAt).toLocaleString()}
+                </div>
+              )}
+
+              <Button
+                className="w-full bg-yellow-400 hover-elevate text-gray-900"
+                onClick={() => setShowReport(false)}
+                data-testid="button-close-report"
+              >
+                Close
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
