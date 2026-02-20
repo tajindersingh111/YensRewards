@@ -3,8 +3,14 @@ import { generateEmailTemplate, EmailTemplateType } from './email-templates';
 import * as cheerio from 'cheerio';
 
 let connectionSettings: any;
+let cachedCredentials: { apiKey: string; fromEmail: string; cachedAt: number } | null = null;
+const CREDENTIAL_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-async function getCredentials() {
+async function getCredentials(useCache: boolean = false) {
+  if (useCache && cachedCredentials && (Date.now() - cachedCredentials.cachedAt) < CREDENTIAL_CACHE_TTL) {
+    return { apiKey: cachedCredentials.apiKey, fromEmail: cachedCredentials.fromEmail };
+  }
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -29,17 +35,27 @@ async function getCredentials() {
   if (!connectionSettings || (!connectionSettings.settings.api_key)) {
     throw new Error('Resend not connected');
   }
-  return { apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email };
+
+  const creds = { apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email };
+  cachedCredentials = { ...creds, cachedAt: Date.now() };
+  return creds;
 }
 
-// WARNING: Never cache this client.
-// Access tokens expire, so a new client must be created each time.
-// Always call this function again to get a fresh client.
+// For single sends - always gets fresh credentials
 export async function getUncachableResendClient() {
-  const credentials = await getCredentials();
+  const credentials = await getCredentials(false);
   return {
     client: new Resend(credentials.apiKey),
-    fromEmail: connectionSettings.settings.from_email
+    fromEmail: credentials.fromEmail
+  };
+}
+
+// For batch sends - caches credentials for 5 minutes to avoid hammering the connector
+export async function getCachedResendClient() {
+  const credentials = await getCredentials(true);
+  return {
+    client: new Resend(credentials.apiKey),
+    fromEmail: credentials.fromEmail
   };
 }
 
@@ -364,7 +380,6 @@ export async function sendHtmlEmailsSequentially(
   for (let i = 0; i < emails.length; i++) {
     const email = emails[i];
     
-    // Add delay between emails to avoid rate limiting (250ms between each)
     if (i > 0) {
       await delay(250);
     }
@@ -377,4 +392,129 @@ export async function sendHtmlEmailsSequentially(
   }
   
   return results;
+}
+
+// Send a single email using a pre-fetched client (for batch operations)
+async function sendSingleEmailWithClient(
+  client: Resend,
+  fromEmail: string,
+  to: string,
+  subject: string,
+  html: string,
+  maxRetries: number = 3
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await client.emails.send({
+        from: fromEmail,
+        to: [to],
+        subject: subject,
+        html: html,
+      });
+
+      if (result.error) {
+        const errorMsg = result.error.message || 'Resend API error';
+        if (attempt < maxRetries && (errorMsg.includes('rate') || errorMsg.includes('429') || errorMsg.includes('timeout'))) {
+          console.log(`Resend rate limited for ${to}, retry ${attempt}/${maxRetries} after ${attempt * 2}s`);
+          await delay(attempt * 2000);
+          continue;
+        }
+        return { success: false, error: errorMsg };
+      }
+
+      return { success: true, messageId: result.data?.id || undefined };
+    } catch (error: any) {
+      const errorMsg = error.message || 'Failed to send email';
+      if (attempt < maxRetries && (errorMsg.includes('rate') || errorMsg.includes('429') || errorMsg.includes('timeout') || errorMsg.includes('fetch') || errorMsg.includes('ECONNRESET'))) {
+        console.log(`Email send error for ${to}, retry ${attempt}/${maxRetries}: ${errorMsg}`);
+        await delay(attempt * 2000);
+        continue;
+      }
+      return { success: false, error: errorMsg };
+    }
+  }
+  return { success: false, error: 'Max retries exceeded' };
+}
+
+// Batch email sender - gets credentials once, reuses for all emails, with retry logic
+export async function sendBatchEmails(
+  emails: Array<{ to: string; subject: string; html: string; isHtml: boolean }>,
+  onProgress?: (sent: number, failed: number, total: number) => void
+): Promise<{ sent: number; failed: number; results: Array<{ to: string; success: boolean; error?: string }> }> {
+  let sent = 0;
+  let failed = 0;
+  const results: Array<{ to: string; success: boolean; error?: string }> = [];
+  const BATCH_SIZE = 50;
+  const DELAY_BETWEEN_EMAILS = 350; // slightly more conservative
+  const DELAY_BETWEEN_BATCHES = 3000;
+
+  // Get client ONCE for the entire batch - use let so we can refresh
+  let currentClient = await getCachedResendClient();
+
+  for (let batchStart = 0; batchStart < emails.length; batchStart += BATCH_SIZE) {
+    const batch = emails.slice(batchStart, batchStart + BATCH_SIZE);
+
+    if (batchStart > 0) {
+      await delay(DELAY_BETWEEN_BATCHES);
+      // Refresh credentials every 200 emails in case token is expiring
+      if (batchStart % 200 === 0) {
+        try {
+          cachedCredentials = null; // Force fresh fetch
+          currentClient = await getCachedResendClient();
+          console.log(`Refreshed Resend credentials at email ${batchStart}`);
+        } catch (e) {
+          console.log('Credential refresh failed, continuing with existing client');
+        }
+      }
+    }
+
+    for (let i = 0; i < batch.length; i++) {
+      const email = batch[i];
+      if (i > 0) {
+        await delay(DELAY_BETWEEN_EMAILS);
+      }
+
+      let htmlContent: string;
+      if (email.isHtml) {
+        htmlContent = wrapHtmlInEmailTemplate(email.html, email.subject);
+      } else {
+        htmlContent = wrapHtmlInEmailTemplate(`<p>${email.html.replace(/\n/g, '<br>')}</p>`, email.subject);
+      }
+
+      const result = await sendSingleEmailWithClient(currentClient.client, currentClient.fromEmail, email.to, email.subject, htmlContent);
+      
+      // If auth error, try refreshing credentials and retrying once
+      if (!result.success && result.error && (result.error.includes('auth') || result.error.includes('401') || result.error.includes('403') || result.error.includes('API key'))) {
+        console.log(`Auth error detected, refreshing credentials and retrying for ${email.to}`);
+        try {
+          cachedCredentials = null;
+          currentClient = await getCachedResendClient();
+          const retryResult = await sendSingleEmailWithClient(currentClient.client, currentClient.fromEmail, email.to, email.subject, htmlContent);
+          results.push({ to: email.to, success: retryResult.success, error: retryResult.error });
+          if (retryResult.success) { sent++; } else { failed++; console.error(`Failed after auth refresh for ${email.to}: ${retryResult.error}`); }
+          continue;
+        } catch (refreshErr) {
+          console.error(`Credential refresh failed:`, refreshErr);
+        }
+      }
+
+      results.push({ to: email.to, success: result.success, error: result.error });
+
+      if (result.success) {
+        sent++;
+      } else {
+        failed++;
+        console.error(`Failed to send email to ${email.to}: ${result.error}`);
+      }
+    }
+
+    const processed = Math.min(batchStart + BATCH_SIZE, emails.length);
+    console.log(`Email batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: ${processed}/${emails.length} processed (${sent} sent, ${failed} failed)`);
+    if (onProgress) {
+      onProgress(sent, failed, emails.length);
+    }
+  }
+
+  console.log(`Mass email complete: ${sent} sent, ${failed} failed out of ${emails.length} total`);
+  return { sent, failed, results };
 }

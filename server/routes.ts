@@ -6,7 +6,7 @@ import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema,
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS } from "./twilio";
-import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially } from "./resend";
+import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially, sendBatchEmails } from "./resend";
 import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
 import { eq, sql, and, gt, lt } from "drizzle-orm";
@@ -2741,42 +2741,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let emailsSent = 0;
       let emailFailures = 0;
 
-      // Send messages to each customer
-      for (const customer of validCustomers) {
-        if (!customer) continue;
+      // Prepare emails for batch sending
+      if (channel === 'email' || channel === 'both') {
+        const emailsToSend: Array<{ to: string; subject: string; html: string; isHtml: boolean; customerId: string }> = [];
 
-        // Replace placeholders in message
-        const personalizedMessage = message
-          .replace(/{name}/g, customer.name)
-          .replace(/\{\{name\}\}/g, customer.name)
-          .replace(/{points}/g, customer.points.toString())
-          .replace(/\{\{points\}\}/g, customer.points.toString())
-          .replace(/{tier}/g, customer.tier)
-          .replace(/\{\{tier\}\}/g, customer.tier);
+        for (const customer of validCustomers) {
+          if (!customer || !customer.email) continue;
 
-        // Replace placeholders in HTML content if present
-        const personalizedHtmlContent = htmlContent
-          ? htmlContent
-              .replace(/{name}/g, customer.name)
-              .replace(/\{\{name\}\}/g, customer.name)
-              .replace(/{points}/g, customer.points.toString())
-              .replace(/\{\{points\}\}/g, customer.points.toString())
-              .replace(/{tier}/g, customer.tier)
-              .replace(/\{\{tier\}\}/g, customer.tier)
-          : null;
+          const personalizedMessage = message
+            .replace(/{name}/g, customer.name)
+            .replace(/\{\{name\}\}/g, customer.name)
+            .replace(/{points}/g, customer.points.toString())
+            .replace(/\{\{points\}\}/g, customer.points.toString())
+            .replace(/{tier}/g, customer.tier)
+            .replace(/\{\{tier\}\}/g, customer.tier);
 
-        const personalizedSubject = subject
-          ? subject
-              .replace(/{name}/g, customer.name)
-              .replace(/\{\{name\}\}/g, customer.name)
-              .replace(/{points}/g, customer.points.toString())
-              .replace(/\{\{points\}\}/g, customer.points.toString())
-              .replace(/{tier}/g, customer.tier)
-              .replace(/\{\{tier\}\}/g, customer.tier)
-          : 'Message from Yens Thai Ice Cream';
+          const personalizedHtmlContent = htmlContent
+            ? htmlContent
+                .replace(/{name}/g, customer.name)
+                .replace(/\{\{name\}\}/g, customer.name)
+                .replace(/{points}/g, customer.points.toString())
+                .replace(/\{\{points\}\}/g, customer.points.toString())
+                .replace(/{tier}/g, customer.tier)
+                .replace(/\{\{tier\}\}/g, customer.tier)
+            : null;
 
-        // Send SMS if channel is sms or both
-        if ((channel === 'sms' || channel === 'both') && customer.phone) {
+          const personalizedSubject = subject
+            ? subject
+                .replace(/{name}/g, customer.name)
+                .replace(/\{\{name\}\}/g, customer.name)
+                .replace(/{points}/g, customer.points.toString())
+                .replace(/\{\{points\}\}/g, customer.points.toString())
+                .replace(/{tier}/g, customer.tier)
+                .replace(/\{\{tier\}\}/g, customer.tier)
+            : 'Message from Yens Thai Ice Cream';
+
+          emailsToSend.push({
+            to: customer.email,
+            subject: personalizedSubject,
+            html: personalizedHtmlContent || personalizedMessage,
+            isHtml: !!personalizedHtmlContent,
+            customerId: customer.id,
+          });
+        }
+
+        if (emailsToSend.length > 0) {
+          const batchResult = await sendBatchEmails(emailsToSend);
+          emailsSent = batchResult.sent;
+          emailFailures = batchResult.failed;
+
+          for (let idx = 0; idx < emailsToSend.length; idx++) {
+            const email = emailsToSend[idx];
+            const result = batchResult.results[idx];
+            try {
+              await storage.createMessageLog({
+                customerId: email.customerId,
+                channel: 'email',
+                recipient: email.to,
+                subject: email.subject,
+                message: email.html,
+                status: result?.success ? 'sent' : 'failed',
+                externalId: null,
+                errorMessage: result?.error || null,
+              });
+            } catch (logErr) {
+              console.error(`Failed to log email result:`, logErr);
+            }
+          }
+        }
+      }
+
+      // Send SMS if channel is sms or both
+      if (channel === 'sms' || channel === 'both') {
+        for (const customer of validCustomers) {
+          if (!customer || !customer.phone) continue;
+
+          const personalizedMessage = message
+            .replace(/{name}/g, customer.name)
+            .replace(/\{\{name\}\}/g, customer.name)
+            .replace(/{points}/g, customer.points.toString())
+            .replace(/\{\{points\}\}/g, customer.points.toString())
+            .replace(/{tier}/g, customer.tier)
+            .replace(/\{\{tier\}\}/g, customer.tier);
+
           try {
             const smsResult = await sendSMS(customer.phone, personalizedMessage);
             
@@ -2786,7 +2833,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               smsFailures++;
             }
 
-            // Log SMS message
             await storage.createMessageLog({
               customerId: customer.id,
               channel: 'sms',
@@ -2800,37 +2846,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (error: any) {
             console.error(`Error sending SMS to ${customer.phone}:`, error);
             smsFailures++;
-          }
-        }
-
-        // Send Email if channel is email or both
-        if ((channel === 'email' || channel === 'both') && customer.email) {
-          try {
-            // Use sendHtmlEmail if HTML content is available, otherwise use plain text
-            const emailResult = personalizedHtmlContent
-              ? await sendHtmlEmail(customer.email, personalizedSubject, personalizedHtmlContent)
-              : await sendEmail(customer.email, personalizedSubject, personalizedMessage);
-
-            if (emailResult.success) {
-              emailsSent++;
-            } else {
-              emailFailures++;
-            }
-
-            // Log email message
-            await storage.createMessageLog({
-              customerId: customer.id,
-              channel: 'email',
-              recipient: customer.email,
-              subject: personalizedSubject,
-              message: personalizedHtmlContent || personalizedMessage,
-              status: emailResult.success ? 'sent' : 'failed',
-              externalId: emailResult.messageId || null,
-              errorMessage: emailResult.error || null,
-            });
-          } catch (error: any) {
-            console.error(`Error sending email to ${customer.email}:`, error);
-            emailFailures++;
           }
         }
       }
@@ -3938,19 +3953,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       (async () => {
-        const BATCH_SIZE = 50;
-        const DELAY_BETWEEN_MESSAGES = 200;
-        const DELAY_BETWEEN_BATCHES = 2000;
+        if (channel === 'email') {
+          // Use optimized batch email sender - gets credentials once, retries on failure
+          const emailsToSend: Array<{ to: string; subject: string; html: string; isHtml: boolean; customerId: string; customerName: string }> = [];
 
-        for (let batchStart = 0; batchStart < targetCustomers.length; batchStart += BATCH_SIZE) {
-          const batch = targetCustomers.slice(batchStart, batchStart + BATCH_SIZE);
+          for (const customer of targetCustomers) {
+            if (!customer || !customer.email) continue;
 
-          if (batchStart > 0) {
-            await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+            const personalizedMessage = message
+              .replace(/\{\{name\}\}/g, customer.name)
+              .replace(/\{\{points\}\}/g, customer.points.toString())
+              .replace(/\{\{tier\}\}/g, customer.tier)
+              .replace(/\{name\}/g, customer.name)
+              .replace(/\{points\}/g, customer.points.toString())
+              .replace(/\{tier\}/g, customer.tier);
+
+            const personalizedSubject = subject
+              ? subject
+                  .replace(/\{\{name\}\}/g, customer.name)
+                  .replace(/\{\{points\}\}/g, customer.points.toString())
+                  .replace(/\{\{tier\}\}/g, customer.tier)
+                  .replace(/\{name\}/g, customer.name)
+                  .replace(/\{points\}/g, customer.points.toString())
+                  .replace(/\{tier\}/g, customer.tier)
+              : 'Message from Yens Thai Ice Cream';
+
+            const isHtmlContent = personalizedMessage.trim().startsWith('<') ||
+              /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(personalizedMessage);
+
+            emailsToSend.push({
+              to: customer.email,
+              subject: personalizedSubject,
+              html: personalizedMessage,
+              isHtml: isHtmlContent,
+              customerId: customer.id,
+              customerName: customer.name,
+            });
           }
 
-          for (let i = 0; i < batch.length; i++) {
-            const customer = batch[i];
+          console.log(`Starting batch email send: ${emailsToSend.length} emails to send`);
+
+          const batchResult = await sendBatchEmails(
+            emailsToSend,
+            (sent, failed, total) => {
+              console.log(`Email progress: ${sent} sent, ${failed} failed, ${total} total`);
+            }
+          );
+
+          // Log results to message_logs
+          for (let idx = 0; idx < emailsToSend.length; idx++) {
+            const email = emailsToSend[idx];
+            const result = batchResult.results[idx];
+            try {
+              await storage.createMessageLog({
+                customerId: email.customerId,
+                templateId: null,
+                channel: 'email',
+                recipient: email.to,
+                subject: email.subject,
+                message: email.html,
+                status: result?.success ? 'sent' : 'failed',
+                externalId: null,
+                errorMessage: result?.error || null,
+              });
+            } catch (logErr) {
+              console.error(`Failed to log result for ${email.customerName}:`, logErr);
+            }
+          }
+
+          // Log customers without email
+          for (const customer of targetCustomers) {
+            if (!customer || customer.email) continue;
+            try {
+              await storage.createMessageLog({
+                customerId: customer.id,
+                templateId: null,
+                channel: 'email',
+                recipient: customer.phone || 'unknown',
+                subject: null,
+                message: message,
+                status: 'failed',
+                externalId: null,
+                errorMessage: 'No email address',
+              });
+            } catch (logErr) {
+              console.error(`Failed to log no-email for ${customer.name}:`, logErr);
+            }
+          }
+
+          console.log(`Mass email complete: ${batchResult.sent} sent, ${batchResult.failed} failed out of ${emailsToSend.length}`);
+        } else {
+          // Non-email channels (SMS, app, LINE) - process individually
+          const DELAY_BETWEEN_MESSAGES = 200;
+
+          for (let i = 0; i < targetCustomers.length; i++) {
+            const customer = targetCustomers[i];
             if (!customer) continue;
 
             if (i > 0) {
@@ -4019,30 +4116,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 continue;
               }
 
-              if (channel === 'email' && customer.email) {
-                const emailSubject = personalizedSubject || 'Message from Yens Thai Ice Cream';
-
-                const isHtmlContent = personalizedMessage.trim().startsWith('<') ||
-                  /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(personalizedMessage);
-
-                const emailResult = isHtmlContent
-                  ? await sendHtmlEmail(customer.email, emailSubject, personalizedMessage)
-                  : await sendEmail(customer.email, emailSubject, personalizedMessage);
-
-                await storage.createMessageLog({
-                  customerId: customer.id,
-                  templateId: null,
-                  channel: 'email',
-                  recipient: customer.email,
-                  subject: emailSubject,
-                  message: personalizedMessage,
-                  status: emailResult.success ? 'sent' : 'failed',
-                  externalId: emailResult.messageId || null,
-                  errorMessage: emailResult.error || null,
-                });
-                continue;
-              }
-
               await storage.createMessageLog({
                 customerId: customer.id,
                 templateId: null,
@@ -4073,9 +4146,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
           }
-          console.log(`Batch ${Math.floor(batchStart / BATCH_SIZE) + 1} complete: sent ${Math.min(batchStart + BATCH_SIZE, targetCustomers.length)} of ${targetCustomers.length}`);
+          console.log(`Mass ${channel} sending complete: ${targetCustomers.length} customers processed`);
         }
-        console.log(`Mass ${channel} sending complete: ${targetCustomers.length} customers processed`);
       })().catch(err => {
         console.error("Background message sending failed:", err);
       });
