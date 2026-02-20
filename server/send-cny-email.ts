@@ -16,17 +16,24 @@ async function main() {
     .from(customers)
     .where(sql`${customers.email} IS NOT NULL AND ${customers.email} != ''`);
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const uniqueEmails = new Map<string, string>();
+  let skipped = 0;
   for (const c of customerList) {
     if (c.email) {
       const emailLower = c.email.toLowerCase().trim();
+      if (!emailRegex.test(emailLower)) {
+        console.log(`Skipping invalid email: "${c.email}" (${c.name})`);
+        skipped++;
+        continue;
+      }
       if (!uniqueEmails.has(emailLower)) {
         uniqueEmails.set(emailLower, c.name || "Customer");
       }
     }
   }
 
-  console.log(`Found ${customerList.length} customers with emails, ${uniqueEmails.size} unique emails`);
+  console.log(`Found ${customerList.length} customers with emails, ${uniqueEmails.size} valid unique emails, ${skipped} skipped (invalid)`);
 
   const emails = Array.from(uniqueEmails.entries()).map(([email, name]) => ({
     to: email,

@@ -445,14 +445,30 @@ export async function sendBatchEmails(
   let failed = 0;
   const results: Array<{ to: string; success: boolean; error?: string }> = [];
   const BATCH_SIZE = 50;
-  const DELAY_BETWEEN_EMAILS = 350; // slightly more conservative
+  const DELAY_BETWEEN_EMAILS = 350;
   const DELAY_BETWEEN_BATCHES = 3000;
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const validEmails = emails.filter(e => {
+    if (!emailRegex.test(e.to.trim())) {
+      console.log(`Skipping invalid email address: "${e.to}"`);
+      results.push({ to: e.to, success: false, error: 'Invalid email address format' });
+      failed++;
+      return false;
+    }
+    return true;
+  });
+
+  if (validEmails.length === 0) {
+    console.log('No valid emails to send');
+    return { sent: 0, failed, results };
+  }
 
   // Get client ONCE for the entire batch - use let so we can refresh
   let currentClient = await getCachedResendClient();
 
-  for (let batchStart = 0; batchStart < emails.length; batchStart += BATCH_SIZE) {
-    const batch = emails.slice(batchStart, batchStart + BATCH_SIZE);
+  for (let batchStart = 0; batchStart < validEmails.length; batchStart += BATCH_SIZE) {
+    const batch = validEmails.slice(batchStart, batchStart + BATCH_SIZE);
 
     if (batchStart > 0) {
       await delay(DELAY_BETWEEN_BATCHES);
@@ -508,13 +524,13 @@ export async function sendBatchEmails(
       }
     }
 
-    const processed = Math.min(batchStart + BATCH_SIZE, emails.length);
-    console.log(`Email batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: ${processed}/${emails.length} processed (${sent} sent, ${failed} failed)`);
+    const processed = Math.min(batchStart + BATCH_SIZE, validEmails.length);
+    console.log(`Email batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: ${processed}/${validEmails.length} processed (${sent} sent, ${failed} failed)`);
     if (onProgress) {
       onProgress(sent, failed, emails.length);
     }
   }
 
-  console.log(`Mass email complete: ${sent} sent, ${failed} failed out of ${emails.length} total`);
+  console.log(`Mass email complete: ${sent} sent, ${failed} failed out of ${emails.length} total (${validEmails.length} valid, ${emails.length - validEmails.length} skipped)`);
   return { sent, failed, results };
 }
