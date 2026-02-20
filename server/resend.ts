@@ -440,7 +440,7 @@ async function sendSingleEmailWithClient(
 export async function sendBatchEmails(
   emails: Array<{ to: string; subject: string; html: string; isHtml: boolean }>,
   onProgress?: (sent: number, failed: number, total: number) => void
-): Promise<{ sent: number; failed: number; results: Array<{ to: string; success: boolean; error?: string }> }> {
+): Promise<{ sent: number; failed: number; skipped: number; results: Array<{ to: string; success: boolean; error?: string }>; errorBreakdown: Record<string, number> }> {
   let sent = 0;
   let failed = 0;
   const results: Array<{ to: string; success: boolean; error?: string }> = [];
@@ -461,7 +461,7 @@ export async function sendBatchEmails(
 
   if (validEmails.length === 0) {
     console.log('No valid emails to send');
-    return { sent: 0, failed, results };
+    return { sent: 0, failed, skipped: emails.length - validEmails.length, results, errorBreakdown: {} };
   }
 
   // Get client ONCE for the entire batch - use let so we can refresh
@@ -531,6 +531,32 @@ export async function sendBatchEmails(
     }
   }
 
-  console.log(`Mass email complete: ${sent} sent, ${failed} failed out of ${emails.length} total (${validEmails.length} valid, ${emails.length - validEmails.length} skipped)`);
-  return { sent, failed, results };
+  const skippedCount = emails.length - validEmails.length;
+  const errorBreakdown: Record<string, number> = {};
+  for (const r of results) {
+    if (!r.success && r.error) {
+      const key = r.error.length > 80 ? r.error.substring(0, 80) + '...' : r.error;
+      errorBreakdown[key] = (errorBreakdown[key] || 0) + 1;
+    }
+  }
+
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`  EMAIL SEND REPORT`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`  Total requested:    ${emails.length}`);
+  console.log(`  Invalid (skipped):  ${skippedCount}`);
+  console.log(`  Attempted:          ${validEmails.length}`);
+  console.log(`  Sent successfully:  ${sent}`);
+  console.log(`  Failed:             ${failed}`);
+  console.log(`  Success rate:       ${validEmails.length > 0 ? ((sent / validEmails.length) * 100).toFixed(1) : 0}%`);
+  if (Object.keys(errorBreakdown).length > 0) {
+    console.log(`${'─'.repeat(60)}`);
+    console.log(`  ERRORS:`);
+    for (const [error, count] of Object.entries(errorBreakdown).sort((a, b) => b[1] - a[1])) {
+      console.log(`    ${count}x - ${error}`);
+    }
+  }
+  console.log(`${'='.repeat(60)}\n`);
+
+  return { sent, failed, skipped: skippedCount, results, errorBreakdown };
 }
