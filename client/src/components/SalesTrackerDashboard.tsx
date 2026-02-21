@@ -198,7 +198,7 @@ export default function SalesTrackerDashboard() {
     // Filter sales from current week only (date >= startOfWeek)
     const filtered = allSales.filter(sale => sale.date >= startOfWeek);
     
-    return filtered.slice(0, 10);
+    return filtered;
   }, [allSales]);
 
   // Add sale mutation

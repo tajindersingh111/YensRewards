@@ -1799,7 +1799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sales = await db.select()
         .from(dailySales)
         .orderBy(sql`${dailySales.date} DESC, ${dailySales.orderChannel}`)
-        .limit(50);
+        .limit(200);
       
       res.json(sales);
     } catch (error) {
