@@ -28,6 +28,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 
@@ -386,6 +387,13 @@ export default function AnalyticsDashboard() {
                     ]}
                   />
                   <Legend />
+                  <ReferenceLine
+                    y={145000}
+                    stroke="#EF4444"
+                    strokeWidth={2}
+                    strokeDasharray="8 4"
+                    label={{ value: "Break Even ฿145k", position: "right", fill: "#EF4444", fontSize: 12, fontWeight: 600 }}
+                  />
                   <Line
                     type="monotone"
                     dataKey="currentYearSales"
