@@ -376,7 +376,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/promote-admin', isAuthenticated, async (req: any, res) => {
     try {
       const { secret } = req.body;
-      const ADMIN_SECRET = process.env.ADMIN_PROMOTION_SECRET || 'yens-admin-2025';
+      const ADMIN_SECRET = process.env.ADMIN_PROMOTION_SECRET;
+      
+      if (!ADMIN_SECRET) {
+        return res.status(403).json({ message: "Admin promotion is not configured. Set ADMIN_PROMOTION_SECRET environment variable." });
+      }
       
       if (secret !== ADMIN_SECRET) {
         return res.status(403).json({ message: "Invalid secret" });

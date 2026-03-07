@@ -16,7 +16,7 @@ import CustomersComparison from "@/pages/customers-comparison";
 import OverviewComparison from "@/pages/overview-comparison";
 import InsightsOld from "@/pages/insights-old";
 import AdminLogin from "@/pages/admin-login";
-import PromoteAdmin from "@/pages/promote-admin";
+
 import MessageTest from "@/pages/message-test";
 import MessagingTroubleshoot from "@/pages/messaging-troubleshoot";
 import QRDisplay from "@/pages/qr-display";
@@ -42,7 +42,7 @@ function Router() {
       <Route path="/overview-old" component={OverviewComparison} />
       <Route path="/insights-old" component={InsightsOld} />
       <Route path="/admin/login" component={AdminLogin} />
-      <Route path="/promote-admin" component={PromoteAdmin} />
+
       <Route path="/test-messages" component={MessageTest} />
       <Route path="/messaging-troubleshoot" component={MessagingTroubleshoot} />
       <Route path="/qr/:appType" component={QRDisplay} />

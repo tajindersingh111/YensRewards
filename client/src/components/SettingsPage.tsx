@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp, Wrench, CheckCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp, Wrench, CheckCircle, UserPlus, Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -25,6 +25,7 @@ export default function SettingsPage() {
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
+  const [adminSecret, setAdminSecret] = useState("");
 
   const { data: userStatus } = useQuery<{ hasPassword: boolean; twoFactorEnabled: boolean; qrCode?: string }>({
     queryKey: ['/api/auth/account-status'],
@@ -111,6 +112,25 @@ export default function SettingsPage() {
       toast({
         title: t('common.error'),
         description: error.message || t('admin.settings.twoFactorFailed'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const promoteAdminMutation = useMutation({
+    mutationFn: async (secret: string) => {
+      return await apiRequest('POST', '/api/auth/promote-admin', { secret });
+    },
+    onSuccess: () => {
+      toast({
+        title: t('common.success'),
+        description: "Successfully promoted to admin! You now have full admin access.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message || "Failed to promote to admin. Please check the secret code.",
         variant: "destructive",
       });
     },
@@ -375,6 +395,65 @@ export default function SettingsPage() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <UserPlus className="h-5 w-5" />
+                Admin User Setup
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Promote a signed-in user to admin role (requires secret code)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="admin-secret" className="text-xs">Secret Code</Label>
+                <Input
+                  id="admin-secret"
+                  type="password"
+                  value={adminSecret}
+                  onChange={(e) => setAdminSecret(e.target.value)}
+                  placeholder="Enter secret code"
+                  data-testid="input-admin-secret"
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={() => promoteAdminMutation.mutate(adminSecret)}
+                disabled={promoteAdminMutation.isPending}
+                data-testid="button-promote-admin"
+              >
+                {promoteAdminMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Promoting...
+                  </>
+                ) : (
+                  "Promote to Admin"
+                )}
+              </Button>
+              {promoteAdminMutation.isSuccess && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Successfully promoted to admin!
+                  </AlertDescription>
+                </Alert>
+              )}
+              {promoteAdminMutation.isError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {(promoteAdminMutation.error as any)?.message || "Failed to promote. Check the secret code."}
+                  </AlertDescription>
+                </Alert>
+              )}
+              <p className="text-xs text-muted-foreground">
+                This is for initial setup only. After promotion, manage users from the Users tab.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
