@@ -280,6 +280,7 @@ export const dailySales = pgTable("daily_sales", {
   orderChannel: text("order_channel").notNull(), // Shop, Supalai, Balloon, Box, River, Army, Lamp, etc.
   netSales: decimal("net_sales", { precision: 10, scale: 2 }).notNull(), // Sales before fees
   otherSales: decimal("other_sales", { precision: 10, scale: 2 }).default("0"), // Other revenue (e.g., tips, delivery)
+  otherSalesNote: text("other_sales_note"), // Optional note/reference for other sales (e.g., "Catering", "Tips")
   grabFee: decimal("grab_fee", { precision: 10, scale: 2 }).default("0"), // Delivery platform fees
   totalSales: decimal("total_sales", { precision: 10, scale: 2 }).notNull(), // Total sales
   importedBy: varchar("imported_by").references(() => users.id), // Admin who imported

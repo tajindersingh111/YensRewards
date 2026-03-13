@@ -82,6 +82,7 @@ interface SalesFormData {
   orderChannel: string;
   netSales: string;
   otherSales: string;
+  otherSalesNote: string;
   grabFee: string;
 }
 
@@ -94,6 +95,7 @@ export default function SalesTrackerDashboard() {
     orderChannel: "",
     netSales: "",
     otherSales: "0",
+    otherSalesNote: "",
     grabFee: "0",
   });
   
@@ -107,6 +109,7 @@ export default function SalesTrackerDashboard() {
     orderChannel: "",
     netSales: "",
     otherSales: "0",
+    otherSalesNote: "",
     grabFee: "0",
   });
 
@@ -226,6 +229,7 @@ export default function SalesTrackerDashboard() {
         orderChannel: "",
         netSales: "",
         otherSales: "0",
+        otherSalesNote: "",
         grabFee: "0",
       });
     },
@@ -355,6 +359,7 @@ export default function SalesTrackerDashboard() {
       orderChannel: sale.orderChannel,
       netSales: sale.netSales,
       otherSales: sale.otherSales || "0",
+      otherSalesNote: (sale as any).otherSalesNote || "",
       grabFee: sale.grabFee || "0",
     });
     setIsEditDialogOpen(true);
@@ -959,6 +964,23 @@ export default function SalesTrackerDashboard() {
                 />
               </div>
 
+              {/* Other Sales Reference */}
+              <div className="space-y-2">
+                <Label htmlFor="otherSalesNote" className="flex items-center gap-1.5">
+                  Other Sales Reference
+                  <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <Input
+                  id="otherSalesNote"
+                  type="text"
+                  value={formData.otherSalesNote}
+                  onChange={(e) => setFormData(prev => ({ ...prev, otherSalesNote: e.target.value }))}
+                  placeholder="e.g. Catering, Tips, Event, Delivery"
+                  className="rounded-lg"
+                  data-testid="input-other-sales-note"
+                />
+              </div>
+
               {/* Grab Fee */}
               <div className="space-y-2">
                 <Label htmlFor="grabFee">Grab Fee (฿)</Label>
@@ -1140,6 +1162,36 @@ export default function SalesTrackerDashboard() {
                 placeholder="0.00"
                 className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
                 data-testid="input-edit-net-sales"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-otherSales">Other Sales (฿)</Label>
+              <Input
+                id="edit-otherSales"
+                type="number"
+                step="0.01"
+                value={editFormData.otherSales}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, otherSales: e.target.value }))}
+                placeholder="0.00"
+                className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
+                data-testid="input-edit-other-sales"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-otherSalesNote" className="flex items-center gap-1.5">
+                Other Sales Reference
+                <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Input
+                id="edit-otherSalesNote"
+                type="text"
+                value={editFormData.otherSalesNote}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, otherSalesNote: e.target.value }))}
+                placeholder="e.g. Catering, Tips, Event, Delivery"
+                className="rounded-lg"
+                data-testid="input-edit-other-sales-note"
               />
             </div>
 

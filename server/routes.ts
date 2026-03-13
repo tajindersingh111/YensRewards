@@ -2297,6 +2297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [newSale] = await db.insert(dailySales).values({
         ...validatedData,
         otherSales: otherSales.toFixed(2),
+        otherSalesNote: validatedData.otherSalesNote || null,
         grabFee: grabFee.toFixed(2),
         totalSales,
         dayOfWeek,
@@ -2306,6 +2307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         set: {
           netSales: validatedData.netSales,
           otherSales: otherSales.toFixed(2),
+          otherSalesNote: validatedData.otherSalesNote || null,
           grabFee: grabFee.toFixed(2),
           totalSales,
           importedAt: sql`CURRENT_TIMESTAMP`,
@@ -2346,6 +2348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderChannel: validatedData.orderChannel,
           netSales: netSales.toFixed(2),
           otherSales: otherSales.toFixed(2),
+          otherSalesNote: validatedData.otherSalesNote || null,
           grabFee: grabFee.toFixed(2),
           totalSales: totalSales.toFixed(2),
           dayOfWeek,
