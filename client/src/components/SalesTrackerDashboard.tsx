@@ -72,6 +72,7 @@ interface SalesReport {
     channel: string;
     netSales: number;
     otherSales: number;
+    otherSalesNote?: string | null;
     totalSales: number;
     dayOfWeek: string;
   }[];
@@ -1068,6 +1069,11 @@ export default function SalesTrackerDashboard() {
                     <p className="text-sm text-gray-700 mt-1">
                       Net Sales: ฿{parseFloat(sale.netSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
+                    {(sale as any).otherSalesNote && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Ref: {(sale as any).otherSalesNote}
+                      </p>
+                    )}
                   </div>
                 ))
               )}
@@ -1364,6 +1370,7 @@ export default function SalesTrackerDashboard() {
                         <th className="px-3 py-2 text-left font-medium">Channel</th>
                         <th className="px-3 py-2 text-right font-medium">Net Sales</th>
                         <th className="px-3 py-2 text-right font-medium">Other</th>
+                        <th className="px-3 py-2 text-left font-medium">Ref</th>
                         <th className="px-3 py-2 text-right font-medium">Total</th>
                       </tr>
                     </thead>
@@ -1377,6 +1384,7 @@ export default function SalesTrackerDashboard() {
                           </td>
                           <td className="px-3 py-1.5 text-right">฿{t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                           <td className="px-3 py-1.5 text-right">฿{t.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-1.5 text-xs text-muted-foreground">{t.otherSalesNote || '-'}</td>
                           <td className="px-3 py-1.5 text-right font-medium">฿{t.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                         </tr>
                       ))}

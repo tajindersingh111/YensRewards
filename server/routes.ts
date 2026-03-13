@@ -2467,6 +2467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           channel: s.orderChannel,
           netSales: parseFloat(s.netSales),
           otherSales: parseFloat(s.otherSales || '0'),
+          otherSalesNote: s.otherSalesNote || null,
           totalSales: parseFloat(s.totalSales),
           dayOfWeek: s.dayOfWeek,
         })),
