@@ -1037,7 +1037,7 @@ export default function SalesTrackerDashboard() {
                       </Badge>
                       <div className="flex items-center gap-2">
                         <p className="text-xl font-bold text-gray-900">
-                          ฿{parseFloat(sale.netSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ฿{parseFloat(sale.totalSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                         <Button
                           size="icon"
