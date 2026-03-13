@@ -2280,7 +2280,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertDailySalesSchema.parse(req.body);
       const userId = (req.user as any).claims.sub;
-      console.log('✅ Validated sale data:', JSON.stringify(validatedData));
+
+      // Recalculate totalSales server-side to ensure otherSales is always included
+      const netSales = parseFloat(validatedData.netSales);
+      const otherSales = validatedData.otherSales ? parseFloat(validatedData.otherSales) : 0;
+      const grabFee = validatedData.grabFee ? parseFloat(validatedData.grabFee) : 0;
+      const totalSales = (netSales + otherSales).toFixed(2);
+
+      console.log('✅ Validated sale data:', JSON.stringify({ ...validatedData, totalSales }));
 
       // Calculate day of week from date
       const date = new Date(validatedData.date);
@@ -2289,14 +2296,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [newSale] = await db.insert(dailySales).values({
         ...validatedData,
+        otherSales: otherSales.toFixed(2),
+        grabFee: grabFee.toFixed(2),
+        totalSales,
         dayOfWeek,
         importedBy: userId,
       }).onConflictDoUpdate({
         target: [dailySales.date, dailySales.orderChannel],
         set: {
           netSales: validatedData.netSales,
-          grabFee: validatedData.grabFee,
-          totalSales: validatedData.totalSales,
+          otherSales: otherSales.toFixed(2),
+          grabFee: grabFee.toFixed(2),
+          totalSales,
           importedAt: sql`CURRENT_TIMESTAMP`,
         }
       }).returning();

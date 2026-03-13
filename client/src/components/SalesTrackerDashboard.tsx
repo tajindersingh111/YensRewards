@@ -204,11 +204,14 @@ export default function SalesTrackerDashboard() {
   // Add sale mutation
   const addSaleMutation = useMutation({
     mutationFn: async (data: SalesFormData) => {
+      const netSales = parseFloat(data.netSales) || 0;
+      const otherSales = parseFloat(data.otherSales || "0") || 0;
       return await apiRequest('POST', '/api/admin/sales', {
         ...data,
-        netSales: parseFloat(data.netSales).toFixed(2),
+        netSales: netSales.toFixed(2),
+        otherSales: otherSales.toFixed(2),
         grabFee: parseFloat(data.grabFee || "0").toFixed(2),
-        totalSales: parseFloat(data.netSales).toFixed(2),
+        totalSales: (netSales + otherSales).toFixed(2),
       });
     },
     onSuccess: () => {
@@ -238,11 +241,14 @@ export default function SalesTrackerDashboard() {
   // Update sale mutation
   const updateSaleMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: SalesFormData }) => {
+      const netSales = parseFloat(data.netSales) || 0;
+      const otherSales = parseFloat(data.otherSales || "0") || 0;
       return await apiRequest('PATCH', `/api/admin/sales/${id}`, {
         ...data,
-        netSales: parseFloat(data.netSales).toFixed(2),
+        netSales: netSales.toFixed(2),
+        otherSales: otherSales.toFixed(2),
         grabFee: parseFloat(data.grabFee || "0").toFixed(2),
-        totalSales: parseFloat(data.netSales).toFixed(2),
+        totalSales: (netSales + otherSales).toFixed(2),
       });
     },
     onSuccess: () => {
