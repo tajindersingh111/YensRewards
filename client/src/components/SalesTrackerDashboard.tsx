@@ -37,7 +37,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Download, X } from "lucide-react";
+import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Download, X, Loader2, RefreshCw } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 import jsPDF from "jspdf";
@@ -121,6 +121,14 @@ export default function SalesTrackerDashboard() {
   const [reportData, setReportData] = useState<SalesReport | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  // Week lookup state
+  const [lookupDate, setLookupDate] = useState(today);
+  const [lookupData, setLookupData] = useState<SalesReport | null>(null);
+  const [isLookupDialogOpen, setIsLookupDialogOpen] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupRangeStart, setLookupRangeStart] = useState("");
+  const [lookupRangeEnd, setLookupRangeEnd] = useState("");
 
   // Fetch sales metrics
   const { data: metrics } = useQuery<{
@@ -265,6 +273,10 @@ export default function SalesTrackerDashboard() {
       });
       setIsEditDialogOpen(false);
       setEditingSale(null);
+      if (isLookupDialogOpen && lookupRangeStart && lookupRangeEnd) {
+        fetch(`/api/admin/sales/report?startDate=${lookupRangeStart}&endDate=${lookupRangeEnd}`, { credentials: 'include' })
+          .then(r => r.json()).then(d => setLookupData(d)).catch(() => {});
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -289,6 +301,10 @@ export default function SalesTrackerDashboard() {
       });
       setIsDeleteDialogOpen(false);
       setDeletingSaleId(null);
+      if (isLookupDialogOpen && lookupRangeStart && lookupRangeEnd) {
+        fetch(`/api/admin/sales/report?startDate=${lookupRangeStart}&endDate=${lookupRangeEnd}`, { credentials: 'include' })
+          .then(r => r.json()).then(d => setLookupData(d)).catch(() => {});
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -388,6 +404,71 @@ export default function SalesTrackerDashboard() {
     if (deletingSaleId) {
       deleteSaleMutation.mutate(deletingSaleId);
     }
+  };
+
+  // Week lookup helpers
+  const getWeekRange = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00');
+    const day = date.getDay(); // 0=Sun, 1=Mon...
+    const diffToMon = (day === 0 ? -6 : 1 - day);
+    const mon = new Date(date);
+    mon.setDate(date.getDate() + diffToMon);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    const fmt = (d: Date) => d.toISOString().split('T')[0];
+    return { startDate: fmt(mon), endDate: fmt(sun) };
+  };
+
+  const handleWeekLookup = async () => {
+    if (!lookupDate) return;
+    const { startDate, endDate } = getWeekRange(lookupDate);
+    setLookupRangeStart(startDate);
+    setLookupRangeEnd(endDate);
+    setIsLookingUp(true);
+    try {
+      const res = await fetch(`/api/admin/sales/report?startDate=${startDate}&endDate=${endDate}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setLookupData(data);
+      setIsLookupDialogOpen(true);
+    } catch {
+      toast({ title: "Lookup failed", description: "Could not fetch sales for that week.", variant: "destructive" });
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
+  const refreshLookup = async () => {
+    if (!lookupRangeStart || !lookupRangeEnd) return;
+    setIsLookingUp(true);
+    try {
+      const res = await fetch(`/api/admin/sales/report?startDate=${lookupRangeStart}&endDate=${lookupRangeEnd}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setLookupData(data);
+    } catch {
+      // silently fail on refresh
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
+  const handleEditFromLookup = (t: SalesReport['transactions'][0]) => {
+    // Convert report transaction shape → DailySales shape for the edit dialog
+    const asSale = {
+      id: t.id,
+      date: t.date,
+      orderChannel: t.channel,
+      netSales: String(t.netSales),
+      otherSales: String(t.otherSales),
+      otherSalesNote: t.otherSalesNote || "",
+      grabFee: "0",
+      totalSales: String(t.totalSales),
+      dayOfWeek: t.dayOfWeek,
+      importedBy: "",
+      importedAt: "",
+    } as unknown as DailySales;
+    handleEditSale(asSale);
   };
 
   const getChannelColor = (channel: string) => {
@@ -1082,10 +1163,11 @@ export default function SalesTrackerDashboard() {
         </Card>
       </div>
 
-      {/* Import Excel Section - Moved to bottom */}
-      <div className="px-6 pb-6">
+      {/* Bottom row: Import Excel + Week Lookup */}
+      <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Import Excel */}
         <Card className="bg-white rounded-xl">
-          <CardContent className="p-6 flex items-center justify-between">
+          <CardContent className="p-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <FileSpreadsheet className="w-6 h-6 text-yellow-600" />
@@ -1112,6 +1194,40 @@ export default function SalesTrackerDashboard() {
               className="hidden"
               data-testid="input-excel-file"
             />
+          </CardContent>
+        </Card>
+
+        {/* Week Lookup */}
+        <Card className="bg-white rounded-xl">
+          <CardContent className="p-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Search className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">Look Up Week</h3>
+                <p className="text-sm text-gray-600 mb-2">Pick any date to edit that week's sales</p>
+                <Input
+                  type="date"
+                  value={lookupDate}
+                  onChange={(e) => setLookupDate(e.target.value)}
+                  className="bg-blue-50/50 border-blue-200 rounded-lg text-sm"
+                  data-testid="input-lookup-date"
+                />
+              </div>
+            </div>
+            <Button
+              onClick={handleWeekLookup}
+              disabled={isLookingUp || !lookupDate}
+              className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg shrink-0"
+              data-testid="button-lookup-week"
+            >
+              {isLookingUp ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading...</>
+              ) : (
+                <><Search className="w-4 h-4 mr-2" />Look Up</>
+              )}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -1408,6 +1524,109 @@ export default function SalesTrackerDashboard() {
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Week Lookup Dialog */}
+      <Dialog open={isLookupDialogOpen} onOpenChange={setIsLookupDialogOpen}>
+        <DialogContent className="sm:max-w-[680px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <Search className="w-5 h-5 text-blue-600" />
+                  Week: {lookupRangeStart ? formatDateDDMMYY(lookupRangeStart) : ''} – {lookupRangeEnd ? formatDateDDMMYY(lookupRangeEnd) : ''}
+                </DialogTitle>
+                <DialogDescription>
+                  {lookupData?.summary.transactionCount ?? 0} record{lookupData?.summary.transactionCount !== 1 ? 's' : ''} — click Edit or Delete to make changes
+                </DialogDescription>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={refreshLookup}
+                disabled={isLookingUp}
+                data-testid="button-refresh-lookup"
+                title="Refresh"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLookingUp ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          {lookupData && (
+            <div className="space-y-4">
+              {/* Summary strip */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-green-50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-green-700">Total Sales</p>
+                  <p className="text-lg font-bold text-green-800">฿{lookupData.summary.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-blue-700">Transactions</p>
+                  <p className="text-lg font-bold text-blue-800">{lookupData.summary.transactionCount}</p>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-purple-700">Other Sales</p>
+                  <p className="text-lg font-bold text-purple-800">฿{lookupData.summary.totalOtherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                </div>
+              </div>
+
+              {/* Records list */}
+              {lookupData.transactions.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No sales recorded for this week</p>
+              ) : (
+                <div className="space-y-2">
+                  {lookupData.transactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center gap-3 bg-yellow-50/50 border border-yellow-100 rounded-lg px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <Badge className={`${getChannelColor(tx.channel)} text-white text-xs`}>{tx.channel}</Badge>
+                          <span className="text-xs text-gray-500">{formatDateDDMMYY(tx.date)} ({tx.dayOfWeek || '—'})</span>
+                        </div>
+                        <div className="flex items-baseline gap-3">
+                          <span className="font-bold text-gray-900">฿{tx.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-xs text-gray-500">Net ฿{tx.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          {tx.otherSales > 0 && (
+                            <span className="text-xs text-gray-500">Other ฿{tx.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          )}
+                        </div>
+                        {tx.otherSalesNote && (
+                          <p className="text-xs text-muted-foreground mt-0.5">Ref: {tx.otherSalesNote}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleEditFromLookup(tx)}
+                          data-testid={`button-lookup-edit-${tx.id}`}
+                        >
+                          <Pencil className="h-4 w-4 text-blue-600" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleDeleteSale(tx.id)}
+                          data-testid={`button-lookup-delete-${tx.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 border-t">
+                <Button variant="outline" onClick={() => setIsLookupDialogOpen(false)}>
+                  Close
                 </Button>
               </div>
             </div>
