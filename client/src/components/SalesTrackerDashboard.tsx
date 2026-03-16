@@ -415,7 +415,13 @@ export default function SalesTrackerDashboard() {
     mon.setDate(date.getDate() + diffToMon);
     const sun = new Date(mon);
     sun.setDate(mon.getDate() + 6);
-    const fmt = (d: Date) => d.toISOString().split('T')[0];
+    // Use local date parts to avoid UTC timezone shift
+    const fmt = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    };
     return { startDate: fmt(mon), endDate: fmt(sun) };
   };
 
