@@ -488,9 +488,9 @@ export default function SendMessageForm() {
             type="button"
             onClick={() => {
               if (channel === 'sms') {
-                // English only — Thai unicode SMS is filtered by carriers until sender ID is registered
+                // Thai opt-in message — short enough for 2 UCS-2 segments
                 setMessage(
-                  `Yen's Rewards: Hi {{name}}! Get 50 FREE bonus points - Follow our LINE for exclusive deals & updates: https://line.me/R/ti/p/@752afsdq`
+                  `เย็นส์: สวัสดี {{name}}! รับ 50 คะแนนโบนัสฟรี กด Follow LINE ได้เลย: https://line.me/R/ti/p/@752afsdq`
                 );
               } else if (channel === 'email') {
                 setMessage(

@@ -11,7 +11,10 @@
  */
 
 const VONAGE_API_URL = 'https://rest.nexmo.com/sms/json';
-const VONAGE_SENDER  = 'YensThai';   // Max 11 chars, alphanumeric
+// If a virtual number is purchased from Vonage dashboard, set VONAGE_FROM_NUMBER env var
+// (e.g. "447700900000") — numbers bypass alphanumeric sender registration requirements.
+// Falls back to alphanumeric "YensThai" while awaiting sender ID approval.
+const VONAGE_SENDER = process.env.VONAGE_FROM_NUMBER || 'YensThai';
 
 export function isVonageConfigured(): boolean {
   return !!(process.env.VONAGE_API_KEY && process.env.VONAGE_API_SECRET);
