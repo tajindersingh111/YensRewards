@@ -47,17 +47,35 @@ export async function getTwilioFromPhoneNumber() {
   return phoneNumber;
 }
 
+/**
+ * Normalize a phone number to strict E.164 format.
+ * Removes a leading 0 that sometimes follows the country code when
+ * users store the full local format (e.g. +660651158955 → +66651158955).
+ */
+function normalizeE164(phone: string): string {
+  if (!phone) return phone;
+  // Strip all spaces/dashes first
+  let normalized = phone.replace(/[\s\-]/g, '');
+  // Ensure it starts with +
+  if (!normalized.startsWith('+')) return normalized;
+  // Remove the leading 0 that follows the country code:
+  // +XX0XXXXXXX → +XXXXXXXXX  (matches +1-3 digits then a 0 before the subscriber number)
+  normalized = normalized.replace(/^(\+\d{1,3})0(\d)/, '$1$2');
+  return normalized;
+}
+
 export async function sendSMS(to: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const client = await getTwilioClient();
     const fromPhone = await getTwilioFromPhoneNumber();
 
-    console.log(`Sending SMS to ${to}: ${message}`);
+    const toNormalized = normalizeE164(to);
+    console.log(`Sending SMS to ${toNormalized} (original: ${to})`);
     
     const result = await client.messages.create({
       body: message,
       from: fromPhone,
-      to: to
+      to: toNormalized
     });
 
     console.log(`SMS sent successfully. SID: ${result.sid}`);
