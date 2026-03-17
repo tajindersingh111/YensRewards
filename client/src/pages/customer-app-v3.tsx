@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Home, User, RefreshCw, Gift, ChevronRight, IceCream, Check, Copy, ExternalLink, Star, LogOut } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Home, User, RefreshCw, Gift, ChevronRight, IceCream, Check, Copy, ExternalLink, Star, LogOut, X } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import TransactionList from "@/components/TransactionList";
 import CustomerReviewPage from "@/components/CustomerReviewPage";
@@ -20,6 +21,9 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logoUrl from "@assets/Yens_logo_high_res_1766925576641.png";
 import heroPromoUrl from "@assets/Screenshot_2026-01-27_at_22.41.34_1769521341373.png";
+
+const LINE_FOLLOW_URL = "https://line.me/R/ti/p/@752afsdq";
+const LINE_ID = "@752afsdq";
 
 export default function CustomerAppV3() {
   useAutoUpdate();
@@ -41,6 +45,7 @@ export default function CustomerAppV3() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [linkCodeCopied, setLinkCodeCopied] = useState(false);
+  const [showLinePrompt, setShowLinePrompt] = useState(false);
   const { toast } = useToast();
 
   const enableAudio = () => {
@@ -135,6 +140,23 @@ export default function CustomerAppV3() {
     ...tx,
     date: tx.createdAt || tx.date,
   }));
+
+  // Show LINE follow prompt once per phone if not yet connected
+  useEffect(() => {
+    if (!customer || customer.lineUid) return;
+    const dismissedKey = `line_prompt_dismissed_${customer.phone}`;
+    if (!localStorage.getItem(dismissedKey)) {
+      const timer = setTimeout(() => setShowLinePrompt(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [customer?.id, customer?.lineUid]);
+
+  const dismissLinePrompt = (permanent = false) => {
+    setShowLinePrompt(false);
+    if (permanent && customer?.phone) {
+      localStorage.setItem(`line_prompt_dismissed_${customer.phone}`, "1");
+    }
+  };
 
   const handleCopyLinkCode = () => {
     if (linkCodeData?.linkCode) {
@@ -717,6 +739,66 @@ export default function CustomerAppV3() {
           onComplete={() => setShowCelebration(false)}
         />
       )}
+
+      {/* LINE Follow Prompt */}
+      <Dialog open={showLinePrompt} onOpenChange={() => dismissLinePrompt(false)}>
+        <DialogContent className="max-w-sm mx-auto p-0 overflow-hidden rounded-2xl" data-testid="dialog-line-prompt">
+          {/* Green header */}
+          <div className="bg-[#06C755] px-6 pt-6 pb-8 text-center relative">
+            <button
+              className="absolute top-3 right-3 text-white/70 hover:text-white"
+              onClick={() => dismissLinePrompt(false)}
+              data-testid="button-close-line-prompt"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3">
+              <SiLine className="w-10 h-10 text-[#06C755]" />
+            </div>
+            <h2 className="text-white text-xl font-bold mb-1">Follow us on LINE!</h2>
+            <p className="text-white/90 text-sm">ติดตามเราบน LINE</p>
+          </div>
+
+          {/* Bonus points badge overlapping */}
+          <div className="flex justify-center -mt-5 mb-4">
+            <div className="bg-yens-yellow text-foreground font-bold px-5 py-2 rounded-full shadow-md text-sm">
+              🎁 รับ 50 คะแนนโบนัส / Get 50 Bonus Points!
+            </div>
+          </div>
+
+          <div className="px-6 pb-6 space-y-4 text-center">
+            <p className="text-muted-foreground text-sm">
+              Scan the QR code or tap below to follow Yen's on LINE and receive exclusive deals, birthday rewards & updates.
+            </p>
+
+            {/* QR Code */}
+            <div className="flex justify-center">
+              <div className="p-3 border-2 border-[#06C755] rounded-xl inline-block bg-white">
+                <QRCode value={LINE_FOLLOW_URL} size={130} level="H" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">หรือค้นหา / Search: <span className="font-mono font-bold text-foreground">{LINE_ID}</span></p>
+
+            <Button
+              className="w-full bg-[#06C755] text-white font-semibold"
+              onClick={() => { window.open(LINE_FOLLOW_URL, '_blank'); dismissLinePrompt(false); }}
+              data-testid="button-follow-line-prompt"
+            >
+              <SiLine className="w-5 h-5 mr-2" />
+              {t('customer.addLineFriend')}
+              <ExternalLink className="w-4 h-4 ml-2" />
+            </Button>
+
+            <button
+              className="text-xs text-muted-foreground underline underline-offset-2"
+              onClick={() => dismissLinePrompt(true)}
+              data-testid="button-dismiss-line-prompt"
+            >
+              Maybe later / ไว้ทีหลัง
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {showReviewPage && customer && (
         <CustomerReviewPage
