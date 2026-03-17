@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.17.47** - **Emoji Picker**: Added emoji picker button to message composer (all channels) with 4 categories: Ice Cream & Food, Stars & Celebrate, Hearts & Smiles, Actions & Info. Cursor-aware insertion. SMS segment counter shows how many SMS messages your text will cost. SMS opt-in template now includes 🍦 and ⭐ emoji.
+**Current Version: v3.17.48** - **Emoji Picker + Brand Section**: Emoji picker now has a dedicated "Yen's Brand" first row (🐻‍❄️ polar bear + on-brand picks) with the Yen's logo shown next to the label and amber highlight. Cursor-aware emoji insertion, SMS segment counter, and 5 emoji categories total.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

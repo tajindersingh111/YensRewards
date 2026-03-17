@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import yensLogoUrl from "@assets/Yens_logo_high_res_1766925576641.png";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -39,10 +40,11 @@ type MessageTemplate = {
 };
 
 const EMOJI_GROUPS = [
-  { label: 'Ice Cream & Food', emojis: ['🍦', '🍧', '🧁', '🍰', '🍫', '🍬', '🧊', '🥤', '🍵', '☕'] },
-  { label: 'Stars & Celebrate', emojis: ['⭐', '🌟', '✨', '🎉', '🎊', '🎁', '🏆', '👑', '💎', '🔥'] },
-  { label: 'Hearts & Smiles', emojis: ['❤️', '💛', '💚', '💙', '🧡', '💖', '😊', '😍', '🤩', '🥰'] },
-  { label: 'Actions & Info', emojis: ['📱', '💬', '📲', '👉', '✅', '🔔', '📣', '💰', '🎯', '⚡'] },
+  { label: "Yen's Brand 🐻‍❄️", emojis: ['🐻‍❄️', '🍦', '🧊', '❄️', '🌈', '🐾', '💛', '⭐', '✨', '🎉'] },
+  { label: 'Ice Cream & Food', emojis: ['🍧', '🧁', '🍰', '🍫', '🍬', '🥤', '🍵', '☕', '🧇', '🍓'] },
+  { label: 'Stars & Celebrate', emojis: ['🌟', '🎊', '🎁', '🏆', '👑', '💎', '🔥', '🎯', '💰', '🥇'] },
+  { label: 'Hearts & Smiles', emojis: ['❤️', '💚', '💙', '🧡', '💖', '😊', '😍', '🤩', '🥰', '🙏'] },
+  { label: 'Actions & Info', emojis: ['📱', '💬', '📲', '👉', '✅', '🔔', '📣', '🎶', '🛵', '⚡'] },
 ];
 
 const MERGE_FIELDS = [
@@ -779,17 +781,24 @@ export default function SendMessageForm() {
 
         {/* Emoji Picker Panel */}
         {showEmojiPicker && !showPreview && (
-          <div className="border rounded-md bg-muted/30 p-3 space-y-2" data-testid="panel-emoji-picker">
-            {EMOJI_GROUPS.map((group) => (
+          <div className="border rounded-md bg-muted/30 p-3 space-y-3" data-testid="panel-emoji-picker">
+            {EMOJI_GROUPS.map((group, idx) => (
               <div key={group.label}>
-                <p className="text-xs text-muted-foreground mb-1">{group.label}</p>
+                {idx === 0 ? (
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <img src={yensLogoUrl} alt="Yen's" className="w-4 h-4 rounded-full object-cover" />
+                    <p className="text-xs font-medium text-amber-700">Yen's Brand</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mb-1">{group.label}</p>
+                )}
                 <div className="flex flex-wrap gap-1">
                   {group.emojis.map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
                       onClick={() => insertEmoji(emoji)}
-                      className="text-xl leading-none w-8 h-8 flex items-center justify-center rounded hover-elevate active-elevate-2 cursor-pointer"
+                      className={`text-xl leading-none w-8 h-8 flex items-center justify-center rounded hover-elevate active-elevate-2 cursor-pointer ${idx === 0 ? 'bg-amber-50' : ''}`}
                       data-testid={`button-emoji-${emoji}`}
                       title={emoji}
                     >
