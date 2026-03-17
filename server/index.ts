@@ -80,6 +80,8 @@ log(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
 log(`REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT || 'not set'}`);
 log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
 log(`SESSION_SECRET: ${process.env.SESSION_SECRET ? 'set' : 'not set'}`);
+log(`VONAGE_API_KEY: ${process.env.VONAGE_API_KEY ? 'set' : 'NOT SET'}`);
+log(`VONAGE_API_SECRET: ${process.env.VONAGE_API_SECRET ? 'set' : 'NOT SET'}`);
 
 // Extend Request type to include rawBody
 declare global {

@@ -45,3 +45,7 @@ integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_object_storag
 [userenv]
 
 [userenv.shared]
+VONAGE_API_KEY = "8cbe2e67"
+VONAGE_API_SECRET = "FPu3mKFMVqzarAA7"
+
+[userenv.production]
