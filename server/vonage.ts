@@ -44,6 +44,7 @@ export async function sendVonageSMS(
         from:       VONAGE_SENDER,
         to:         toNormalized,
         text:       message,
+        type:       'unicode',   // Required for Thai characters (UCS-2 encoding)
       }),
     });
 
