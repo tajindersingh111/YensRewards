@@ -6,6 +6,7 @@ import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema,
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS, normalizeE164 } from "./twilio";
+import { sendVonageSMS, isVonageConfigured } from "./vonage";
 import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially, sendBatchEmails } from "./resend";
 import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
@@ -4177,26 +4178,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (channel === 'sms' && customer.phone) {
                 const normalizedPhone = normalizeE164(customer.phone);
 
-                // Thai numbers (+66) cannot receive SMS from international providers.
-                // Skip them and recommend LINE instead.
+                // Thai numbers (+66): route through Vonage if configured,
+                // otherwise skip with a helpful note.
                 if (normalizedPhone.startsWith('+66')) {
-                  job.skipped++;
-                  const skipReason = customer.lineUid
-                    ? 'Thai number — send via LINE (customer is connected)'
-                    : 'Thai number — send via LINE instead of SMS';
-                  await storage.createMessageLog({
-                    customerId: customer.id,
-                    templateId: null,
-                    channel: 'sms',
-                    recipient: customer.phone,
-                    subject: null,
-                    message: personalizedMessage,
-                    status: 'skipped',
-                    externalId: null,
-                    errorMessage: skipReason,
-                  });
-                  const skipKey = 'Thai number (+66) — use LINE';
-                  job.errorBreakdown[skipKey] = (job.errorBreakdown[skipKey] || 0) + 1;
+                  if (isVonageConfigured()) {
+                    const vonageResult = await sendVonageSMS(normalizedPhone, personalizedMessage);
+                    await storage.createMessageLog({
+                      customerId: customer.id,
+                      templateId: null,
+                      channel: 'sms',
+                      recipient: customer.phone,
+                      subject: null,
+                      message: personalizedMessage,
+                      status: vonageResult.success ? 'sent' : 'failed',
+                      externalId: vonageResult.messageId || null,
+                      errorMessage: vonageResult.error || null,
+                    });
+                    if (vonageResult.success) {
+                      job.sent++;
+                    } else {
+                      job.failed++;
+                      const errKey = vonageResult.error || 'Vonage send failed';
+                      job.errorBreakdown[errKey] = (job.errorBreakdown[errKey] || 0) + 1;
+                    }
+                  } else {
+                    job.skipped++;
+                    const skipReason = customer.lineUid
+                      ? 'Thai number — send via LINE (customer is connected)'
+                      : 'Thai number — Vonage not configured, use LINE instead';
+                    await storage.createMessageLog({
+                      customerId: customer.id,
+                      templateId: null,
+                      channel: 'sms',
+                      recipient: customer.phone,
+                      subject: null,
+                      message: personalizedMessage,
+                      status: 'skipped',
+                      externalId: null,
+                      errorMessage: skipReason,
+                    });
+                    const skipKey = 'Thai number (+66) — Vonage not set up';
+                    job.errorBreakdown[skipKey] = (job.errorBreakdown[skipKey] || 0) + 1;
+                  }
                   continue;
                 }
 
