@@ -1224,6 +1224,24 @@ export default function SendMessageForm() {
                 </div>
               )}
 
+              {sendReport.channel === 'sms' &&
+                sendReport.errorBreakdown &&
+                Object.keys(sendReport.errorBreakdown).some(k => k.includes('Thai number')) && (
+                  <Button
+                    className="w-full bg-green-500 text-white hover-elevate"
+                    onClick={() => {
+                      setLineMessage(message);
+                      setLineRecipientType("all");
+                      setChannel("line");
+                      setShowReport(false);
+                    }}
+                    data-testid="button-switch-to-line"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Reach Thai customers via LINE
+                  </Button>
+                )}
+
               <Button
                 className="w-full bg-yellow-400 hover-elevate text-gray-900"
                 onClick={() => setShowReport(false)}
