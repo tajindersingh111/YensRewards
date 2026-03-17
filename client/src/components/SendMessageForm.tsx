@@ -461,10 +461,10 @@ export default function SendMessageForm() {
             type="button"
             onClick={() => {
               setMessage(
-                `Hi {{name}}, join Yen's Thai Ice Cream on LINE to instantly earn 50 BONUS POINTS and get exclusive member offers!\n\nFollow us here: https://line.me/R/ti/p/@752afsdq\n\nYour current points: {{points}}\n- Yen's Thai Ice Cream Team`
+                `สวัสดี {{name}}\n\nรับ 50 คะแนนโบนัส ฟรี! เพียงกด Follow LINE ของเย็นส์ Thai Ice Cream รับโปรโมชั่นพิเศษสำหรับสมาชิก LINE ก่อนใคร!\n\nติดตามเราได้เลยที่: https://line.me/R/ti/p/@752afsdq\n\nคะแนนสะสมปัจจุบันของคุณ: {{points}} คะแนน\n- ทีมงาน Yen's Thai Ice Cream`
               );
               if (channel === 'email' && !subject) {
-                setSubject("Join us on LINE — get 50 bonus points!");
+                setSubject("รับ 50 คะแนนโบนัส — ติดตามเราบน LINE ได้เลย!");
               }
             }}
             className="w-full rounded-md border border-green-300 bg-white px-4 py-2.5 text-sm text-green-800 text-left hover-elevate"
