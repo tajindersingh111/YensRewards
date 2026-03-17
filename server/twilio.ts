@@ -49,19 +49,35 @@ export async function getTwilioFromPhoneNumber() {
 
 /**
  * Normalize a phone number to strict E.164 format.
- * Removes a leading 0 that sometimes follows the country code when
- * users store the full local format (e.g. +660651158955 → +66651158955).
+ *
+ * Handles several common storage formats:
+ *  1. Already valid E.164:        +66651158955   → +66651158955 (unchanged)
+ *  2. Extra 0 after country code: +660651158955  → +66651158955
+ *  3. Local Thai format (10 dig): 0651158955     → +66651158955
+ *  4. Local Thai format (no +):   0864929XXX     → +66864929XXX
+ *  5. Strips spaces/dashes from any of the above
  */
 function normalizeE164(phone: string): string {
   if (!phone) return phone;
-  // Strip all spaces/dashes first
-  let normalized = phone.replace(/[\s\-]/g, '');
-  // Ensure it starts with +
-  if (!normalized.startsWith('+')) return normalized;
-  // Remove the leading 0 that follows the country code:
-  // +XX0XXXXXXX → +XXXXXXXXX  (matches +1-3 digits then a 0 before the subscriber number)
-  normalized = normalized.replace(/^(\+\d{1,3})0(\d)/, '$1$2');
-  return normalized;
+
+  // Strip spaces, dashes and parentheses
+  let n = phone.replace(/[\s\-().]/g, '');
+
+  if (n.startsWith('+')) {
+    // Already has country code — just remove any stray leading 0 after the code
+    // e.g. +660651158955 → +66651158955
+    n = n.replace(/^(\+\d{1,3})0(\d)/, '$1$2');
+    return n;
+  }
+
+  // No leading + — treat as local Thai number if it starts with 0
+  if (n.startsWith('0') && n.length >= 9) {
+    // Strip leading 0, prepend Thailand country code
+    return '+66' + n.slice(1);
+  }
+
+  // Unknown format — return as-is and let Twilio report the error
+  return n;
 }
 
 export async function sendSMS(to: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
