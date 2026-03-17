@@ -52,7 +52,7 @@ export default function SendMessageForm() {
   const { toast } = useToast();
   
   const [channel, setChannel] = useState<"sms" | "email" | "app" | "line">("app");
-  const [recipientType, setRecipientType] = useState<"all" | "tier" | "individual" | "birthday_today" | "birthday_week">("all");
+  const [recipientType, setRecipientType] = useState<"all" | "tier" | "individual" | "birthday_today" | "birthday_week" | "no_line">("all");
   const [selectedTier, setSelectedTier] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
@@ -132,11 +132,13 @@ export default function SendMessageForm() {
     enabled: recipientType === "birthday_week" || lineRecipientType === "birthday_week",
   });
 
-  // Fetch all customers for LINE (need lineUid)
+  // Fetch all customers for LINE tab and no_line filter
   const { data: allCustomers = [], isLoading: loadingAllCustomers } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers/all'],
-    enabled: channel === "line",
+    enabled: channel === "line" || recipientType === "no_line",
   });
+
+  const noLineCount = allCustomers.filter(c => !c.lineUid).length;
 
   // Fetch email templates from database (always get fresh data)
   // Cache-busting version: v3.17.14 - forces new fetch on deployment
@@ -435,10 +437,44 @@ export default function SendMessageForm() {
                 {t('messages.birthdayThisWeek')}
               </div>
             </SelectItem>
+            <SelectItem value="no_line">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-green-600" />
+                Not connected to LINE yet
+              </div>
+            </SelectItem>
             <SelectItem value="individual">{t('messages.selectIndividual')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      {/* LINE Opt-in Campaign Info */}
+      {recipientType === "no_line" && (
+        <div className="space-y-3">
+          <Alert className="border-green-200 bg-green-50">
+            <MessageCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-900">
+              <strong>{loadingAllCustomers ? '...' : noLineCount}</strong> customer{noLineCount !== 1 ? 's' : ''} haven't connected LINE yet — perfect audience for an opt-in invite.
+            </AlertDescription>
+          </Alert>
+          <button
+            type="button"
+            onClick={() => {
+              setMessage(
+                `Hi {{name}}, join Yen's Thai Ice Cream on LINE to instantly earn 50 BONUS POINTS and get exclusive member offers!\n\nFollow us here: https://line.me/R/ti/p/@752afsdq\n\nYour current points: {{points}}\n- Yen's Thai Ice Cream Team`
+              );
+              if (channel === 'email' && !subject) {
+                setSubject("Join us on LINE — get 50 bonus points!");
+              }
+            }}
+            className="w-full rounded-md border border-green-300 bg-white px-4 py-2.5 text-sm text-green-800 text-left hover-elevate"
+            data-testid="button-line-optin-template"
+          >
+            <span className="font-medium">Use LINE Opt-in Template</span>
+            <span className="block text-xs text-green-600 mt-0.5">Pre-fills a ready-to-send invite with your LINE link + 50 points offer</span>
+          </button>
+        </div>
+      )}
 
       {/* Birthday Customer Info */}
       {recipientType === "birthday_today" && (

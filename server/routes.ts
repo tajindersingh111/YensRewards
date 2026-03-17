@@ -3976,6 +3976,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return false;
           }
         });
+      } else if (recipientType === 'no_line') {
+        // Customers who have NOT connected LINE yet — ideal for opt-in campaigns
+        const allCustomers = await storage.getAllCustomers();
+        targetCustomers = allCustomers.filter(c => !c.lineUid);
       } else {
         return res.status(400).json({ message: "Invalid recipient configuration" });
       }
