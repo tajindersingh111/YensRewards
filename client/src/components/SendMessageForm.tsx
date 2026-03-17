@@ -38,6 +38,13 @@ type MessageTemplate = {
   htmlContent?: string | null;
 };
 
+const EMOJI_GROUPS = [
+  { label: 'Ice Cream & Food', emojis: ['🍦', '🍧', '🧁', '🍰', '🍫', '🍬', '🧊', '🥤', '🍵', '☕'] },
+  { label: 'Stars & Celebrate', emojis: ['⭐', '🌟', '✨', '🎉', '🎊', '🎁', '🏆', '👑', '💎', '🔥'] },
+  { label: 'Hearts & Smiles', emojis: ['❤️', '💛', '💚', '💙', '🧡', '💖', '😊', '😍', '🤩', '🥰'] },
+  { label: 'Actions & Info', emojis: ['📱', '💬', '📲', '👉', '✅', '🔔', '📣', '💰', '🎯', '⚡'] },
+];
+
 const MERGE_FIELDS = [
   { key: '{{customerName}}', label: 'Customer Name', thLabel: 'ชื่อลูกค้า' },
   { key: '{{customerPhone}}', label: 'Phone Number', thLabel: 'เบอร์โทรศัพท์' },
@@ -60,6 +67,8 @@ export default function SendMessageForm() {
   const [message, setMessage] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Scheduling state
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
@@ -312,6 +321,22 @@ export default function SendMessageForm() {
     },
   });
 
+  const insertEmoji = (emoji: string) => {
+    const ta = messageTextareaRef.current;
+    if (ta) {
+      const start = ta.selectionStart ?? message.length;
+      const end = ta.selectionEnd ?? message.length;
+      const next = message.slice(0, start) + emoji + message.slice(end);
+      setMessage(next);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(start + emoji.length, start + emoji.length);
+      });
+    } else {
+      setMessage(prev => prev + emoji);
+    }
+  };
+
   const handleSend = () => {
     if (!message.trim()) {
       toast({
@@ -463,7 +488,7 @@ export default function SendMessageForm() {
               if (channel === 'sms') {
                 // SMS: Thai UCS-2 encoding = 70 chars/segment — keep well under 140 (2 segments)
                 setMessage(
-                  `เย็นส์: สวัสดี {{name}}! รับ 50 คะแนนโบนัสฟรี กด Follow LINE ได้เลย: https://line.me/R/ti/p/@752afsdq`
+                  `🍦 เย็นส์: สวัสดี {{name}}! รับ 50 คะแนนโบนัสฟรี ⭐ กด Follow LINE ได้เลย: https://line.me/R/ti/p/@752afsdq`
                 );
               } else if (channel === 'email') {
                 setMessage(
@@ -736,8 +761,46 @@ export default function SendMessageForm() {
                 </SelectContent>
               </Select>
             )}
+            {!showPreview && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEmojiPicker(v => !v)}
+                className={`h-7 text-sm px-2 ${showEmojiPicker ? 'bg-yellow-50 border-yellow-300' : ''}`}
+                data-testid="button-emoji-picker"
+                title="Insert emoji"
+              >
+                🙂
+              </Button>
+            )}
           </div>
         </div>
+
+        {/* Emoji Picker Panel */}
+        {showEmojiPicker && !showPreview && (
+          <div className="border rounded-md bg-muted/30 p-3 space-y-2" data-testid="panel-emoji-picker">
+            {EMOJI_GROUPS.map((group) => (
+              <div key={group.label}>
+                <p className="text-xs text-muted-foreground mb-1">{group.label}</p>
+                <div className="flex flex-wrap gap-1">
+                  {group.emojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => insertEmoji(emoji)}
+                      className="text-xl leading-none w-8 h-8 flex items-center justify-center rounded hover-elevate active-elevate-2 cursor-pointer"
+                      data-testid={`button-emoji-${emoji}`}
+                      title={emoji}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         
         {/* Show either Preview or Edit mode */}
         {showPreview && channel === "email" ? (
@@ -755,6 +818,7 @@ export default function SendMessageForm() {
         ) : (
           <Textarea
             id="message"
+            ref={messageTextareaRef}
             placeholder={t('messages.messagePlaceholder')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -764,7 +828,20 @@ export default function SendMessageForm() {
         )}
         
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{t('messages.charactersCount', { count: message.length })}</span>
+          {channel === 'sms' ? (
+            <span>
+              {message.length} chars
+              {' · '}
+              {(() => {
+                const segSize = /[^\u0000-\u007F]/.test(message) ? 70 : 160;
+                const multiSeg = segSize === 70 ? 67 : 153;
+                const segs = message.length === 0 ? 0 : message.length <= segSize ? 1 : Math.ceil(message.length / multiSeg);
+                return `${segs} SMS segment${segs !== 1 ? 's' : ''}`;
+              })()}
+            </span>
+          ) : (
+            <span>{t('messages.charactersCount', { count: message.length })}</span>
+          )}
           <span className="text-muted-foreground">{t('messages.mergeFieldsHint')}</span>
         </div>
       </div>
