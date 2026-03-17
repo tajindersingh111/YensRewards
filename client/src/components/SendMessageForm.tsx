@@ -460,18 +460,34 @@ export default function SendMessageForm() {
           <button
             type="button"
             onClick={() => {
-              setMessage(
-                `สวัสดี {{name}}\n\nรับ 50 คะแนนโบนัส ฟรี! เพียงกด Follow LINE ของเย็นส์ Thai Ice Cream รับโปรโมชั่นพิเศษสำหรับสมาชิก LINE ก่อนใคร!\n\nติดตามเราได้เลยที่: https://line.me/R/ti/p/@752afsdq\n\nคะแนนสะสมปัจจุบันของคุณ: {{points}} คะแนน\n- ทีมงาน Yen's Thai Ice Cream`
-              );
-              if (channel === 'email' && !subject) {
-                setSubject("รับ 50 คะแนนโบนัส — ติดตามเราบน LINE ได้เลย!");
+              if (channel === 'sms') {
+                // SMS: Thai UCS-2 encoding = 70 chars/segment — keep well under 140 (2 segments)
+                setMessage(
+                  `เย็นส์: สวัสดี {{name}}! รับ 50 คะแนนโบนัสฟรี กด Follow LINE ได้เลย: https://line.me/R/ti/p/@752afsdq`
+                );
+              } else if (channel === 'email') {
+                setMessage(
+                  `สวัสดี {{name}}\n\nรับ 50 คะแนนโบนัส ฟรี! เพียงกด Follow LINE ของเย็นส์ Thai Ice Cream รับโปรโมชั่นพิเศษสำหรับสมาชิก LINE ก่อนใคร!\n\nติดตามเราได้เลยที่: https://line.me/R/ti/p/@752afsdq\n\nคะแนนสะสมปัจจุบันของคุณ: {{points}} คะแนน\n- ทีมงาน Yen's Thai Ice Cream`
+                );
+                if (!subject) setSubject("รับ 50 คะแนนโบนัส — ติดตามเราบน LINE ได้เลย!");
+              } else {
+                // App notification
+                setMessage(
+                  `สวัสดี {{name}} รับ 50 คะแนนโบนัสฟรี เมื่อ Follow LINE ของเย็นส์! กดลิงก์: https://line.me/R/ti/p/@752afsdq`
+                );
               }
             }}
             className="w-full rounded-md border border-green-300 bg-white px-4 py-2.5 text-sm text-green-800 text-left hover-elevate"
             data-testid="button-line-optin-template"
           >
             <span className="font-medium">Use LINE Opt-in Template</span>
-            <span className="block text-xs text-green-600 mt-0.5">Pre-fills a ready-to-send invite with your LINE link + 50 points offer</span>
+            <span className="block text-xs text-green-600 mt-0.5">
+              {channel === 'sms'
+                ? 'Short Thai message optimised for SMS (fits in 2 segments)'
+                : channel === 'email'
+                ? 'Full Thai message with formatting for email'
+                : 'Thai message with LINE link for app notification'}
+            </span>
           </button>
         </div>
       )}
