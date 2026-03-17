@@ -488,9 +488,9 @@ export default function SendMessageForm() {
             type="button"
             onClick={() => {
               if (channel === 'sms') {
-                // SMS: Thai UCS-2 encoding = 70 chars/segment — keep well under 140 (2 segments)
+                // English only — Thai unicode SMS is filtered by carriers until sender ID is registered
                 setMessage(
-                  `🍦 เย็นส์: สวัสดี {{name}}! รับ 50 คะแนนโบนัสฟรี ⭐ กด Follow LINE ได้เลย: https://line.me/R/ti/p/@752afsdq`
+                  `Yen's Rewards: Hi {{name}}! Get 50 FREE bonus points - Follow our LINE for exclusive deals & updates: https://line.me/R/ti/p/@752afsdq`
                 );
               } else if (channel === 'email') {
                 setMessage(
@@ -510,7 +510,7 @@ export default function SendMessageForm() {
             <span className="font-medium">Use LINE Opt-in Template</span>
             <span className="block text-xs text-green-600 mt-0.5">
               {channel === 'sms'
-                ? 'Short Thai message optimised for SMS (fits in 2 segments)'
+                ? 'English message — arrives reliably on all Thai networks right now'
                 : channel === 'email'
                 ? 'Full Thai message with formatting for email'
                 : 'Thai message with LINE link for app notification'}

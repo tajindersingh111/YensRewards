@@ -35,6 +35,10 @@ export async function sendVonageSMS(
   const toNormalized = to.startsWith('+') ? to.slice(1) : to;
 
   try {
+    // Only use unicode encoding if message contains non-ASCII characters (Thai, etc.)
+    // Thai carriers filter unicode SMS from unregistered senders — English arrives fine
+    const needsUnicode = /[^\u0000-\u007F]/.test(message);
+
     const response = await fetch(VONAGE_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,7 +48,7 @@ export async function sendVonageSMS(
         from:       VONAGE_SENDER,
         to:         toNormalized,
         text:       message,
-        type:       'unicode',   // Required for Thai characters (UCS-2 encoding)
+        ...(needsUnicode ? { type: 'unicode' } : {}),
       }),
     });
 
