@@ -57,7 +57,7 @@ export async function getTwilioFromPhoneNumber() {
  *  4. Local Thai format (no +):   0864929XXX     → +66864929XXX
  *  5. Strips spaces/dashes from any of the above
  */
-function normalizeE164(phone: string): string {
+export function normalizeE164(phone: string): string {
   if (!phone) return phone;
 
   // Strip spaces, dashes and parentheses
@@ -83,19 +83,35 @@ function normalizeE164(phone: string): string {
 export async function sendSMS(to: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const client = await getTwilioClient();
-    const fromPhone = await getTwilioFromPhoneNumber();
-
     const toNormalized = normalizeE164(to);
-    console.log(`Sending SMS to ${toNormalized} (original: ${to})`);
-    
-    const result = await client.messages.create({
-      body: message,
-      from: fromPhone,
-      to: toNormalized
-    });
 
+    // Check for a Messaging Service SID (preferred for international delivery)
+    const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+
+    let messageParams: any;
+
+    if (messagingServiceSid) {
+      // Use Messaging Service — best routing for international numbers (Thailand, UK, etc.)
+      console.log(`Sending SMS to ${toNormalized} via Messaging Service ${messagingServiceSid}`);
+      messageParams = {
+        body: message,
+        messagingServiceSid,
+        to: toNormalized
+      };
+    } else {
+      // Fall back to direct phone number
+      const fromPhone = await getTwilioFromPhoneNumber();
+      console.log(`Sending SMS to ${toNormalized} from ${fromPhone} (original: ${to})`);
+      messageParams = {
+        body: message,
+        from: fromPhone,
+        to: toNormalized
+      };
+    }
+
+    const result = await client.messages.create(messageParams);
     console.log(`SMS sent successfully. SID: ${result.sid}`);
-    
+
     return {
       success: true,
       messageId: result.sid
