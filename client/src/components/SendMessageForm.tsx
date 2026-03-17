@@ -1183,21 +1183,40 @@ export default function SendMessageForm() {
                 );
               })()}
 
-              {sendReport.errorBreakdown && Object.keys(sendReport.errorBreakdown).length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <AlertCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-sm font-medium text-gray-700">Errors:</span>
-                  </div>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                    {Object.entries(sendReport.errorBreakdown).map(([error, count]: [string, any]) => (
-                      <div key={error} className="bg-red-50 border border-red-100 rounded px-3 py-2 text-xs text-red-700" data-testid="text-report-error">
-                        <span className="font-medium">{count}x</span> - {error}
+              {sendReport.errorBreakdown && Object.keys(sendReport.errorBreakdown).length > 0 && (() => {
+                const entries = Object.entries(sendReport.errorBreakdown);
+                const skipEntries = entries.filter(([k]) => k.includes('Thai number') || k.includes('use LINE'));
+                const errorEntries = entries.filter(([k]) => !k.includes('Thai number') && !k.includes('use LINE'));
+                return (
+                  <div className="space-y-2">
+                    {skipEntries.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium text-yellow-700">Skipped (use LINE for Thai customers):</span>
+                        </div>
+                        {skipEntries.map(([msg, count]: [string, any]) => (
+                          <div key={msg} className="bg-yellow-50 border border-yellow-200 rounded px-3 py-2 text-xs text-yellow-800" data-testid="text-report-skip">
+                            <span className="font-medium">{count}x</span> — {msg}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                    {errorEntries.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4 text-red-500" />
+                          <span className="text-sm font-medium text-gray-700">Errors:</span>
+                        </div>
+                        {errorEntries.map(([error, count]: [string, any]) => (
+                          <div key={error} className="bg-red-50 border border-red-100 rounded px-3 py-2 text-xs text-red-700" data-testid="text-report-error">
+                            <span className="font-medium">{count}x</span> - {error}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {sendReport.completedAt && (
                 <div className="text-xs text-gray-400 text-center" data-testid="text-report-time">

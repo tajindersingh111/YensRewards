@@ -5,7 +5,7 @@ import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
-import { sendSMS } from "./twilio";
+import { sendSMS, normalizeE164 } from "./twilio";
 import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially, sendBatchEmails } from "./resend";
 import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
@@ -4171,6 +4171,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
 
               if (channel === 'sms' && customer.phone) {
+                const normalizedPhone = normalizeE164(customer.phone);
+
+                // Thai numbers (+66) cannot receive SMS from international providers.
+                // Skip them and recommend LINE instead.
+                if (normalizedPhone.startsWith('+66')) {
+                  job.skipped++;
+                  const skipReason = customer.lineUid
+                    ? 'Thai number — send via LINE (customer is connected)'
+                    : 'Thai number — send via LINE instead of SMS';
+                  await storage.createMessageLog({
+                    customerId: customer.id,
+                    templateId: null,
+                    channel: 'sms',
+                    recipient: customer.phone,
+                    subject: null,
+                    message: personalizedMessage,
+                    status: 'skipped',
+                    externalId: null,
+                    errorMessage: skipReason,
+                  });
+                  const skipKey = 'Thai number (+66) — use LINE';
+                  job.errorBreakdown[skipKey] = (job.errorBreakdown[skipKey] || 0) + 1;
+                  continue;
+                }
+
                 const smsResult = await sendSMS(customer.phone, personalizedMessage);
 
                 await storage.createMessageLog({
