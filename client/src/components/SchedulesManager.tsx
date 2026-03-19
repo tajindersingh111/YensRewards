@@ -183,8 +183,8 @@ export function SchedulesManager() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">{t('admin.schedules.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('admin.schedules.subtitle')}</p>
+          <h2 className="text-base font-semibold text-foreground">{t('admin.schedules.title')}</h2>
+          <p className="text-xs text-muted-foreground">{t('admin.schedules.subtitle')}</p>
         </div>
         <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} data-testid="button-add-schedule">
           <Plus className="w-4 h-4 mr-2" />

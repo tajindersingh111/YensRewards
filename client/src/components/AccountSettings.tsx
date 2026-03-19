@@ -161,8 +161,8 @@ export default function AccountSettings() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h2 className="text-2xl font-bold">{t('admin.settings.account')}</h2>
-        <p className="text-muted-foreground">{t('admin.settings.accountSubtitle')}</p>
+        <h2 className="text-base font-semibold text-foreground">{t('admin.settings.account')}</h2>
+        <p className="text-xs text-muted-foreground">{t('admin.settings.accountSubtitle')}</p>
       </div>
 
       {/* Data Downloads Section */}

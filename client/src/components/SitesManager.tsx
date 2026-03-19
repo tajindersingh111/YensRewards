@@ -207,8 +207,8 @@ export default function SitesManager() {
     <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">{t('sites.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('sites.subtitle')}</p>
+          <h2 className="text-base font-semibold text-foreground">{t('sites.title')}</h2>
+          <p className="text-xs text-muted-foreground">{t('sites.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           {sites.length < 5 && (

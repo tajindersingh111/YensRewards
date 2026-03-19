@@ -197,8 +197,8 @@ export default function ProductManager() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">{t('products.title')}</h2>
-          <p className="text-muted-foreground">{t('products.subtitle')}</p>
+          <h2 className="text-base font-semibold text-foreground">{t('products.title')}</h2>
+          <p className="text-xs text-muted-foreground">{t('products.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           {products.length > 0 && (

@@ -218,8 +218,8 @@ export default function WeeklySpecialsManager() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">{t("admin.specials.title")}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{t("admin.specials.description")}</p>
+          <h2 className="text-base font-semibold text-foreground">{t("admin.specials.title")}</h2>
+          <p className="text-xs text-muted-foreground">{t("admin.specials.description")}</p>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} data-testid="button-add-special">
           <Plus className="w-4 h-4 mr-2" />

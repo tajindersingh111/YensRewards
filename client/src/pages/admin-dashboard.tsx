@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, TrendingUp, BarChart3, Users, Package, Tag, Star, MessageSquare, UserCog, MapPin, Calendar, Settings2 } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { Customer } from "@shared/schema";
 
@@ -142,30 +142,29 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border p-4 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="bg-card border-b border-border px-4 py-3 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <Button
               onClick={() => setLocation("/")}
               variant="ghost"
               size="icon"
-              className="hover-elevate"
               data-testid="button-back-home"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
             </Button>
-            <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-foreground">{t('admin.title')}</h1>
-                <Badge variant="outline" className="text-xs" data-testid="badge-version">{t('common.version')}</Badge>
+            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-sm font-semibold text-foreground">{t('admin.title')}</h1>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0" data-testid="badge-version">{t('common.version')}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground truncate hidden sm:block">
                 {t('admin.overview.loggedInAs')} {user?.email || user?.firstName || t('common.admin')}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <LanguageSwitcher />
             <Button
               onClick={handleLogout}
@@ -173,107 +172,61 @@ export default function AdminDashboard() {
               size="sm"
               data-testid="button-logout"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              {t('auth.logout')}
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline ml-1.5">{t('auth.logout')}</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content with Tabs */}
-      <main className="max-w-7xl mx-auto p-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="flex flex-wrap gap-2 mb-6 bg-transparent h-auto p-0">
-            <TabsTrigger 
-              value="salesTracker" 
-              data-testid="tab-sales-tracker"
-              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.salesTracker')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="analytics" 
-              data-testid="tab-analytics"
-              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.analytics')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="customers" 
-              data-testid="tab-customers"
-              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.customers')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="products" 
-              data-testid="tab-products"
-              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.products')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="promotions" 
-              data-testid="tab-promotions"
-              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.promotions')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="specials" 
-              data-testid="tab-specials"
-              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.specials')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="messages" 
-              data-testid="tab-messages"
-              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.messages')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="users" 
-              data-testid="tab-users"
-              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.users')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="sites" 
-              data-testid="tab-sites"
-              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.sites')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="schedules" 
-              data-testid="tab-schedules"
-              className="bg-yellow-200 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.schedules')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              data-testid="tab-settings"
-              className="bg-yellow-300 hover-elevate active-elevate-2 rounded-lg px-4 py-2 data-[state=active]:bg-yellow-400 data-[state=active]:shadow-md"
-            >
-              {t('admin.tabs.settings')}
-            </TabsTrigger>
-          </TabsList>
+          {/* Navigation bar */}
+          <div className="border-b border-border -mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto scrollbar-none sticky top-[53px] bg-background z-40">
+            <TabsList className="flex w-max min-w-full bg-transparent p-0 h-auto gap-0">
+              {[
+                { value: 'salesTracker', label: t('admin.tabs.salesTracker'), icon: TrendingUp, testId: 'tab-sales-tracker' },
+                { value: 'analytics', label: t('admin.tabs.analytics'), icon: BarChart3, testId: 'tab-analytics' },
+                { value: 'customers', label: t('admin.tabs.customers'), icon: Users, testId: 'tab-customers' },
+                { value: 'products', label: t('admin.tabs.products'), icon: Package, testId: 'tab-products' },
+                { value: 'promotions', label: t('admin.tabs.promotions'), icon: Tag, testId: 'tab-promotions' },
+                { value: 'specials', label: t('admin.tabs.specials'), icon: Star, testId: 'tab-specials' },
+                { value: 'messages', label: t('admin.tabs.messages'), icon: MessageSquare, testId: 'tab-messages' },
+                { value: 'users', label: t('admin.tabs.users'), icon: UserCog, testId: 'tab-users' },
+                { value: 'sites', label: t('admin.tabs.sites'), icon: MapPin, testId: 'tab-sites' },
+                { value: 'schedules', label: t('admin.tabs.schedules'), icon: Calendar, testId: 'tab-schedules' },
+                { value: 'settings', label: t('admin.tabs.settings'), icon: Settings2, testId: 'tab-settings' },
+              ].map(({ value, label, icon: Icon, testId }) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  data-testid={testId}
+                  className="flex items-center gap-1.5 px-3 py-3 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground rounded-none border-b-2 border-transparent data-[state=active]:border-amber-400 data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent transition-colors shrink-0"
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">{label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+
+          <div className="mt-6">
 
           <TabsContent value="salesTracker" className="mt-0">
             <SalesTrackerDashboard />
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
+          <TabsContent value="analytics" className="mt-0">
             <AnalyticsDashboard />
           </TabsContent>
 
-          <TabsContent value="customers" className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">{t('admin.customers.title')}</h2>
+          <TabsContent value="customers" className="mt-0 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">{t('admin.customers.title')}</h2>
+                <p className="text-xs text-muted-foreground">{t('admin.customers.manage', 'Manage your loyalty members')}</p>
+              </div>
               <CustomerCSVImport showTrigger={true} />
             </div>
             
@@ -339,9 +292,11 @@ export default function AdminDashboard() {
             <SchedulesManager />
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
+          <TabsContent value="settings" className="mt-0 space-y-6">
             <SettingsPage />
           </TabsContent>
+
+          </div>
         </Tabs>
       </main>
 

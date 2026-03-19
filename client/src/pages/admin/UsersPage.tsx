@@ -374,8 +374,8 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{t("admin.users.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("admin.users.subtitle")}</p>
+          <h1 className="text-base font-semibold text-foreground">{t("admin.users.title")}</h1>
+          <p className="text-xs text-muted-foreground">{t("admin.users.subtitle")}</p>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
