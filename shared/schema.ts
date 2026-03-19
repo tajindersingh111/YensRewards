@@ -165,6 +165,39 @@ export const scheduledMessages = pgTable("scheduled_messages", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Automations table - automated message rules triggered by schedule or events
+export const automations = pgTable("automations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  triggerType: text("trigger_type").notNull(), // 'recurring_daily', 'recurring_weekly', 'recurring_monthly', 'one_time'
+  triggerConfig: jsonb("trigger_config").notNull().$type<{ time?: string; dayOfWeek?: string; dayOfMonth?: number; date?: string }>(),
+  customerFilter: text("customer_filter").notNull().default("all"), // 'all', 'tier_bronze', 'tier_silver', 'tier_gold', 'tier_platinum', 'birthday_today', 'inactive_30d', 'inactive_60d'
+  channel: text("channel").notNull(), // 'email', 'sms', 'line', 'app'
+  templateId: varchar("template_id").references(() => messageTemplates.id),
+  subject: text("subject"),
+  message: text("message").notNull(),
+  nextRunAt: timestamp("next_run_at"),
+  lastRunAt: timestamp("last_run_at"),
+  runCount: integer("run_count").notNull().default(0),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Automation Runs table - execution history log for each automation
+export const automationRuns = pgTable("automation_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  automationId: varchar("automation_id").notNull().references(() => automations.id, { onDelete: 'cascade' }),
+  triggeredAt: timestamp("triggered_at").notNull().defaultNow(),
+  status: text("status").notNull().default("running"), // 'running', 'completed', 'failed'
+  sentCount: integer("sent_count").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  errorMessage: text("error_message"),
+  completedAt: timestamp("completed_at"),
+});
+
 // Sites table - physical locations/stalls where Yens products are sold
 export const sites = pgTable("sites", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -521,3 +554,23 @@ export const lineLinkingCodes = pgTable("line_linking_codes", {
 export const insertLineLinkingCodeSchema = createInsertSchema(lineLinkingCodes).omit({ createdAt: true });
 export type LineLinkingCode = typeof lineLinkingCodes.$inferSelect;
 export type InsertLineLinkingCode = z.infer<typeof insertLineLinkingCodeSchema>;
+
+export const insertAutomationSchema = createInsertSchema(automations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  nextRunAt: true,
+  lastRunAt: true,
+  runCount: true,
+});
+
+export const insertAutomationRunSchema = createInsertSchema(automationRuns).omit({
+  id: true,
+  triggeredAt: true,
+  completedAt: true,
+});
+
+export type Automation = typeof automations.$inferSelect;
+export type InsertAutomation = z.infer<typeof insertAutomationSchema>;
+export type AutomationRun = typeof automationRuns.$inferSelect;
+export type InsertAutomationRun = z.infer<typeof insertAutomationRunSchema>;

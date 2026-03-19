@@ -32,9 +32,12 @@ import {
   type InsertWeeklySpecial,
   type BaristaPerformance,
   type InsertBaristaPerformance,
+  type Automation,
+  type InsertAutomation,
+  type AutomationRun,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -235,6 +238,18 @@ export interface IStorage {
   cancelScheduledMessage(id: string): Promise<ScheduledMessage | undefined>;
   markScheduledMessageProcessing(id: string): Promise<ScheduledMessage | undefined>;
   completeScheduledMessage(id: string, sentCount: number, failedCount: number, errorMessage?: string): Promise<ScheduledMessage | undefined>;
+
+  // Automation methods
+  getAutomations(): Promise<Automation[]>;
+  getAutomation(id: string): Promise<Automation | undefined>;
+  createAutomation(data: InsertAutomation & { nextRunAt?: Date | null }): Promise<Automation>;
+  updateAutomation(id: string, updates: Partial<Automation>): Promise<Automation | undefined>;
+  deleteAutomation(id: string): Promise<void>;
+  toggleAutomation(id: string, isActive: boolean): Promise<Automation | undefined>;
+  getDueAutomations(): Promise<Automation[]>;
+  createAutomationRun(data: { automationId: string; status?: string }): Promise<AutomationRun>;
+  completeAutomationRun(id: string, sentCount: number, failedCount: number, errorMessage?: string): Promise<AutomationRun | undefined>;
+  getAutomationRuns(automationId: string, limit?: number): Promise<AutomationRun[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -2003,6 +2018,79 @@ export class DbStorage implements IStorage {
       .where(eq(scheduledMessages.id, id))
       .returning();
     return result[0];
+  }
+
+  // ── Automation methods ────────────────────────────────────────────────────
+
+  async getAutomations(): Promise<Automation[]> {
+    return db.select().from(automations).orderBy(desc(automations.createdAt));
+  }
+
+  async getAutomation(id: string): Promise<Automation | undefined> {
+    const result = await db.select().from(automations).where(eq(automations.id, id));
+    return result[0];
+  }
+
+  async createAutomation(data: InsertAutomation & { nextRunAt?: Date | null }): Promise<Automation> {
+    const result = await db.insert(automations).values(data as any).returning();
+    return result[0];
+  }
+
+  async updateAutomation(id: string, updates: Partial<Automation>): Promise<Automation | undefined> {
+    const result = await db
+      .update(automations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(automations.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAutomation(id: string): Promise<void> {
+    await db.delete(automations).where(eq(automations.id, id));
+  }
+
+  async toggleAutomation(id: string, isActive: boolean): Promise<Automation | undefined> {
+    const result = await db
+      .update(automations)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(automations.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getDueAutomations(): Promise<Automation[]> {
+    const now = new Date();
+    return db
+      .select()
+      .from(automations)
+      .where(and(eq(automations.isActive, true), lte(automations.nextRunAt, now)));
+  }
+
+  async createAutomationRun(data: { automationId: string; status?: string }): Promise<AutomationRun> {
+    const result = await db
+      .insert(automationRuns)
+      .values({ ...data, status: data.status ?? 'running' })
+      .returning();
+    return result[0];
+  }
+
+  async completeAutomationRun(id: string, sentCount: number, failedCount: number, errorMessage?: string): Promise<AutomationRun | undefined> {
+    const status = failedCount > 0 && sentCount === 0 ? 'failed' : 'completed';
+    const result = await db
+      .update(automationRuns)
+      .set({ status, sentCount, failedCount, errorMessage, completedAt: new Date() })
+      .where(eq(automationRuns.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getAutomationRuns(automationId: string, limit = 20): Promise<AutomationRun[]> {
+    return db
+      .select()
+      .from(automationRuns)
+      .where(eq(automationRuns.automationId, automationId))
+      .orderBy(desc(automationRuns.triggeredAt))
+      .limit(limit);
   }
 }
 

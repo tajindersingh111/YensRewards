@@ -21,6 +21,7 @@ import UsersPage from "@/pages/admin/UsersPage";
 import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
 import WeeklySpecialsManager from "@/pages/admin/WeeklySpecialsManager";
+import AutomationsManager from "@/components/AutomationsManager";
 import SettingsPage from "@/components/SettingsPage";
 import MessageTemplates from "@/components/MessageTemplates";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -70,6 +71,7 @@ const NAV_GROUPS = [
       { id: 'messages', label: 'Messages', testId: 'tab-messages' },
       { id: 'promotions', label: 'Promotions', testId: 'tab-promotions' },
       { id: 'specials', label: 'Weekly Specials', testId: 'tab-specials' },
+      { id: 'automations', label: 'Automations', testId: 'tab-automations' },
     ],
   },
   {
@@ -575,6 +577,8 @@ export default function AdminDashboard() {
           )}
 
           {activeTab === 'specials' && <WeeklySpecialsManager key="specials" />}
+
+          {activeTab === 'automations' && <AutomationsManager key="automations" />}
 
           {activeTab === 'products' && <ProductManager key="products" />}
 

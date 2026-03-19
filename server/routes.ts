@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema } from "@shared/schema";
+import { calculateNextRunAt } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS, normalizeE164 } from "./twilio";
@@ -4595,6 +4596,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error cancelling scheduled message:", error);
       res.status(500).json({ message: "Failed to cancel scheduled message" });
+    }
+  });
+
+  // ============================================
+  // Automations - rule-based scheduled messaging
+  // ============================================
+
+  // List all automations
+  app.get('/api/admin/automations', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const items = await storage.getAutomations();
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching automations:", error);
+      res.status(500).json({ message: "Failed to fetch automations" });
+    }
+  });
+
+  // Get single automation with run history
+  app.get('/api/admin/automations/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const item = await storage.getAutomation(req.params.id);
+      if (!item) return res.status(404).json({ message: "Automation not found" });
+      const runs = await storage.getAutomationRuns(req.params.id);
+      res.json({ ...item, runs });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch automation" });
+    }
+  });
+
+  // Create automation
+  app.post('/api/admin/automations', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const parsed = insertAutomationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: fromError(parsed.error).toString() });
+      }
+      const data = parsed.data;
+      const nextRunAt = calculateNextRunAt(data.triggerType, data.triggerConfig as any);
+      const created = await storage.createAutomation({ ...data, nextRunAt });
+      res.status(201).json(created);
+    } catch (error) {
+      console.error("Error creating automation:", error);
+      res.status(500).json({ message: "Failed to create automation" });
+    }
+  });
+
+  // Update automation
+  app.put('/api/admin/automations/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const existing = await storage.getAutomation(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Automation not found" });
+      const parsed = insertAutomationSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: fromError(parsed.error).toString() });
+      }
+      const data = parsed.data;
+      // Recalculate nextRunAt if trigger changed
+      const triggerType = data.triggerType ?? existing.triggerType;
+      const triggerConfig = (data.triggerConfig ?? existing.triggerConfig) as any;
+      const nextRunAt = calculateNextRunAt(triggerType, triggerConfig);
+      const updated = await storage.updateAutomation(req.params.id, { ...data, nextRunAt });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating automation:", error);
+      res.status(500).json({ message: "Failed to update automation" });
+    }
+  });
+
+  // Toggle automation active/inactive
+  app.patch('/api/admin/automations/:id/toggle', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean" });
+      }
+      const existing = await storage.getAutomation(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Automation not found" });
+
+      // When re-enabling, recalculate nextRunAt
+      let nextRunAt = existing.nextRunAt;
+      if (isActive && !existing.nextRunAt) {
+        nextRunAt = calculateNextRunAt(existing.triggerType, existing.triggerConfig as any);
+        await storage.updateAutomation(req.params.id, { nextRunAt });
+      }
+      const updated = await storage.toggleAutomation(req.params.id, isActive);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to toggle automation" });
+    }
+  });
+
+  // Delete automation
+  app.delete('/api/admin/automations/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const existing = await storage.getAutomation(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Automation not found" });
+      await storage.deleteAutomation(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete automation" });
+    }
+  });
+
+  // Get run history for an automation
+  app.get('/api/admin/automations/:id/runs', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const runs = await storage.getAutomationRuns(req.params.id);
+      res.json(runs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch automation runs" });
     }
   });
 
