@@ -1,28 +1,37 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import { SectionHeader } from "@/components/SectionHeader";
 import {
-  Zap, Plus, Pencil, Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle, Clock,
-  Mail, MessageSquare, Smartphone, Hash, Calendar, RefreshCw, Users, RotateCcw, AlertCircle
+  Zap, Plus, Pencil, Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
+  Clock, Mail, MessageSquare, Smartphone, Hash, FlaskConical, Search,
+  Filter, Calendar, RotateCcw, Cake, Layers,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface TriggerConfig {
+  time?: string;
+  dayOfWeek?: string;
+  dayOfMonth?: number;
+  date?: string;
+}
 
 interface Automation {
   id: string;
@@ -30,7 +39,7 @@ interface Automation {
   description?: string | null;
   isActive: boolean;
   triggerType: string;
-  triggerConfig: { time?: string; dayOfWeek?: string; dayOfMonth?: number; date?: string };
+  triggerConfig: TriggerConfig;
   customerFilter: string;
   channel: string;
   templateId?: string | null;
@@ -53,101 +62,288 @@ interface AutomationRun {
   completedAt?: string | null;
 }
 
-// ── Form schema ──────────────────────────────────────────────────────────────
-
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  triggerType: z.enum(["recurring_daily", "recurring_weekly", "recurring_monthly", "one_time"]),
-  triggerTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time").default("09:00"),
-  triggerDayOfWeek: z.string().optional(),
-  triggerDayOfMonth: z.coerce.number().min(1).max(31).optional(),
-  triggerDate: z.string().optional(),
-  customerFilter: z.string().min(1, "Customer filter is required"),
-  channel: z.enum(["app", "line", "sms", "email"]),
-  subject: z.string().optional(),
-  message: z.string().min(1, "Message is required"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-const TRIGGER_LABELS: Record<string, string> = {
-  recurring_daily: "Every Day",
-  recurring_weekly: "Every Week",
-  recurring_monthly: "Every Month",
-  one_time: "One-Time",
-};
-
-const FILTER_LABELS: Record<string, string> = {
-  all: "All Customers",
-  tier_bronze: "Bronze Tier",
-  tier_silver: "Silver Tier",
-  tier_gold: "Gold Tier",
-  tier_platinum: "Platinum Tier",
-  birthday_today: "Birthday Today",
-  inactive_30d: "Inactive 30+ Days",
-  inactive_60d: "Inactive 60+ Days",
-};
-
-const CHANNEL_LABELS: Record<string, string> = {
-  app: "App",
-  line: "LINE",
-  sms: "SMS",
-  email: "Email",
-};
-
-const CHANNEL_COLORS: Record<string, string> = {
-  app: "bg-purple-100 text-purple-700",
-  line: "bg-green-100 text-green-700",
-  sms: "bg-blue-100 text-blue-700",
-  email: "bg-amber-100 text-amber-700",
-};
-
-const DAY_OPTIONS = [
-  { value: "monday", label: "Monday" },
-  { value: "tuesday", label: "Tuesday" },
-  { value: "wednesday", label: "Wednesday" },
-  { value: "thursday", label: "Thursday" },
-  { value: "friday", label: "Friday" },
-  { value: "saturday", label: "Saturday" },
-  { value: "sunday", label: "Sunday" },
-];
-
-function triggerSummary(a: Automation): string {
-  const { triggerType, triggerConfig } = a;
-  const time = triggerConfig.time || "09:00";
-  if (triggerType === "recurring_daily") return `Daily at ${time} (Bangkok)`;
-  if (triggerType === "recurring_weekly") {
-    const day = triggerConfig.dayOfWeek
-      ? triggerConfig.dayOfWeek.charAt(0).toUpperCase() + triggerConfig.dayOfWeek.slice(1)
-      : "Monday";
-    return `Every ${day} at ${time} (Bangkok)`;
-  }
-  if (triggerType === "recurring_monthly") {
-    return `Monthly on day ${triggerConfig.dayOfMonth ?? 1} at ${time} (Bangkok)`;
-  }
-  if (triggerType === "one_time" && triggerConfig.date) {
-    return `Once on ${triggerConfig.date} at ${time} (Bangkok)`;
-  }
-  return TRIGGER_LABELS[triggerType] ?? triggerType;
+interface MessageTemplate {
+  id: string;
+  name: string;
+  type: string;
+  channel: string;
+  subject?: string | null;
+  message: string;
+  isActive: boolean;
 }
 
-function ChannelIcon({ channel }: { channel: string }) {
-  if (channel === "email") return <Mail className="w-3 h-3" />;
-  if (channel === "sms") return <Hash className="w-3 h-3" />;
-  if (channel === "line") return <MessageSquare className="w-3 h-3" />;
-  return <Smartphone className="w-3 h-3" />;
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const TRIGGER_OPTIONS = [
+  { value: "recurring_daily",   label: "Every Day" },
+  { value: "recurring_weekly",  label: "Every Week" },
+  { value: "recurring_monthly", label: "Every Month" },
+  { value: "one_time",          label: "One-Time" },
+] as const;
+
+const CHANNEL_OPTIONS = [
+  { value: "app",   label: "App",   icon: Smartphone,   cls: "bg-purple-50 text-purple-700 border-purple-200" },
+  { value: "line",  label: "LINE",  icon: MessageSquare, cls: "bg-green-50 text-green-700 border-green-200" },
+  { value: "sms",   label: "SMS",   icon: Hash,          cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "email", label: "Email", icon: Mail,          cls: "bg-amber-50 text-amber-700 border-amber-200" },
+] as const;
+
+const FILTER_OPTIONS = [
+  { value: "all",             label: "All Customers" },
+  { value: "tier_bronze",     label: "Bronze Tier" },
+  { value: "tier_silver",     label: "Silver Tier" },
+  { value: "tier_gold",       label: "Gold Tier" },
+  { value: "tier_platinum",   label: "Platinum Tier" },
+  { value: "birthday_today",  label: "Birthday Today" },
+  { value: "inactive_30d",    label: "Inactive 30+ Days" },
+  { value: "inactive_60d",    label: "Inactive 60+ Days" },
+] as const;
+
+const DAY_OPTIONS = [
+  { value: "monday",    label: "Monday" },
+  { value: "tuesday",   label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday",  label: "Thursday" },
+  { value: "friday",    label: "Friday" },
+  { value: "saturday",  label: "Saturday" },
+  { value: "sunday",    label: "Sunday" },
+] as const;
+
+// ── Quickstart templates ───────────────────────────────────────────────────────
+
+const QUICKSTART_TEMPLATES = [
+  {
+    key: "birthday_email",
+    icon: Cake,
+    label: "Birthday Email",
+    description: "Send a birthday greeting email to customers on their birthday",
+    defaults: {
+      name: "Birthday Greeting",
+      description: "Automatically sends a birthday email to customers on their special day",
+      triggerType: "recurring_daily" as const,
+      triggerTime: "09:00",
+      customerFilter: "birthday_today",
+      channel: "email" as const,
+      subject: "Happy Birthday from Yen's! 🎂",
+      message: "Dear {{name}},\n\nHappy Birthday from everyone at Yen's Thai Ice Cream!\n\nTo celebrate your special day, we'd love to treat you to something sweet. Come visit us and show this message to receive a special birthday treat on us.\n\nYour loyalty points: {{points}}\nMembership tier: {{tier}}\n\nWe hope to see you soon!\n\nWith love,\nThe Yen's Team",
+    },
+  },
+  {
+    key: "inactive_winback",
+    icon: RotateCcw,
+    label: "Win-Back Campaign",
+    description: "Re-engage customers who haven't visited in 30 days",
+    defaults: {
+      name: "30-Day Win-Back",
+      description: "Sends a friendly re-engagement message to customers who haven't visited recently",
+      triggerType: "recurring_weekly" as const,
+      triggerTime: "11:00",
+      triggerDayOfWeek: "monday",
+      customerFilter: "inactive_30d",
+      channel: "line" as const,
+      subject: "",
+      message: "Hi {{name}}! We miss you at Yen's Thai Ice Cream 🍦\n\nIt's been a while since your last visit. Come back and enjoy your favourite treats — your {{points}} points are waiting for you!\n\nSee you soon!",
+    },
+  },
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function channelMeta(channel: string) {
+  return CHANNEL_OPTIONS.find(c => c.value === channel) ?? CHANNEL_OPTIONS[0];
+}
+
+function triggerLabel(t: string) {
+  return TRIGGER_OPTIONS.find(o => o.value === t)?.label ?? t;
+}
+
+function filterLabel(f: string) {
+  return FILTER_OPTIONS.find(o => o.value === f)?.label ?? f;
+}
+
+function triggerSummary(a: Automation): string {
+  const { triggerType: t, triggerConfig: c } = a;
+  const time = c.time ?? "09:00";
+  if (t === "recurring_daily")   return `Daily at ${time}`;
+  if (t === "recurring_weekly")  return `Every ${c.dayOfWeek ?? "Monday"} at ${time}`;
+  if (t === "recurring_monthly") return `Monthly on day ${c.dayOfMonth ?? 1} at ${time}`;
+  if (t === "one_time" && c.date) return `Once on ${c.date} at ${time}`;
+  return triggerLabel(t);
+}
+
+function recipientLabel(channel: string): string {
+  if (channel === "email") return "Test email address";
+  if (channel === "sms")   return "Test phone number (e.g. +66812345678)";
+  if (channel === "line")  return "Test LINE User ID (Uxxxxxxxxxx)";
+  return "";
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function ChannelBadge({ channel }: { channel: string }) {
+  const meta = channelMeta(channel);
+  const Icon = meta.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${meta.cls}`}>
+      <Icon className="w-3 h-3" />
+      {meta.label}
+    </span>
+  );
 }
 
 function StatusIcon({ status }: { status: string }) {
-  if (status === "completed") return <CheckCircle className="w-4 h-4 text-green-600" />;
-  if (status === "failed") return <XCircle className="w-4 h-4 text-red-500" />;
-  return <Clock className="w-4 h-4 text-amber-500" />;
+  if (status === "completed") return <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />;
+  if (status === "failed")    return <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />;
+  return <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
 }
 
-// ── Automation card ──────────────────────────────────────────────────────────
+// ── Run History Panel ─────────────────────────────────────────────────────────
+
+function RunHistoryPanel({ automationId }: { automationId: string }) {
+  const { data: runs = [], isLoading } = useQuery<AutomationRun[]>({
+    queryKey: ["/api/admin/automations", automationId, "runs"],
+    queryFn: () =>
+      fetch(`/api/admin/automations/${automationId}/runs`, { credentials: "include" }).then(r => r.json()),
+  });
+
+  if (isLoading) return <p className="text-xs text-muted-foreground py-2">Loading history…</p>;
+  if (runs.length === 0) return <p className="text-xs text-muted-foreground py-2">No runs yet</p>;
+
+  return (
+    <div className="divide-y">
+      {runs.map(run => (
+        <div key={run.id} className="flex items-center gap-3 py-2 text-xs">
+          <StatusIcon status={run.status} />
+          <span className="text-muted-foreground w-32 shrink-0">
+            {format(new Date(run.triggeredAt), "dd MMM yy, HH:mm")}
+          </span>
+          <span className="font-medium text-green-700">{run.sentCount} sent</span>
+          {run.failedCount > 0 && (
+            <span className="font-medium text-red-500">{run.failedCount} failed</span>
+          )}
+          {run.status === "running" && (
+            <Badge variant="outline" className="text-xs py-0">Running</Badge>
+          )}
+          {run.errorMessage && (
+            <span className="text-muted-foreground truncate max-w-[200px]" title={run.errorMessage}>
+              {run.errorMessage}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Test Send Dialog ──────────────────────────────────────────────────────────
+
+function TestSendDialog({
+  automation,
+  open,
+  onOpenChange,
+}: {
+  automation: Automation;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { toast } = useToast();
+  const [recipient, setRecipient] = useState("");
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
+  const needsRecipient = automation.channel !== "app";
+
+  async function handleSend() {
+    setSending(true);
+    setResult(null);
+    try {
+      const res = await fetch(`/api/admin/automations/${automation.id}/test`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ testRecipient: recipient || undefined }),
+      });
+      const json = await res.json();
+      setResult(json);
+      if (json.success) {
+        toast({ title: "Test sent successfully" });
+      }
+    } catch {
+      setResult({ success: false, error: "Network error" });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setRecipient(""); setResult(null); } }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-amber-500" />
+            Test Send
+          </DialogTitle>
+          <DialogDescription>
+            Send a test version of <strong>{automation.name}</strong> to a single recipient. The message will be prefixed with [TEST].
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Message preview */}
+          <div className="rounded-md bg-muted/40 p-3 space-y-1">
+            <div className="flex items-center gap-2 mb-1">
+              <ChannelBadge channel={automation.channel} />
+              {automation.subject && (
+                <span className="text-xs text-muted-foreground truncate">Subject: {automation.subject}</span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-4">{automation.message}</p>
+          </div>
+
+          {/* Recipient input */}
+          {needsRecipient ? (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{recipientLabel(automation.channel)}</label>
+              <Input
+                value={recipient}
+                onChange={e => setRecipient(e.target.value)}
+                placeholder={
+                  automation.channel === "email" ? "you@example.com" :
+                  automation.channel === "sms"   ? "+66812345678" :
+                  "Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                }
+                data-testid="input-test-recipient"
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">App notifications don't require a recipient — the test will be logged only.</p>
+          )}
+
+          {/* Result */}
+          {result && (
+            <div className={`rounded-md p-3 text-sm flex items-center gap-2 ${result.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+              {result.success ? <CheckCircle className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+              {result.success ? "Message sent successfully" : (result.error ?? "Send failed")}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button
+            onClick={handleSend}
+            disabled={sending || (needsRecipient && !recipient.trim())}
+            data-testid="button-send-test"
+          >
+            <FlaskConical className="w-4 h-4 mr-2" />
+            {sending ? "Sending…" : "Send Test"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Automation Card ───────────────────────────────────────────────────────────
 
 function AutomationCard({
   automation,
@@ -158,61 +354,75 @@ function AutomationCard({
   automation: Automation;
   onEdit: (a: Automation) => void;
   onDelete: (a: Automation) => void;
-  onToggle: (a: Automation, active: boolean) => void;
+  onToggle: (id: string, active: boolean) => void;
 }) {
   const [showHistory, setShowHistory] = useState(false);
-
-  const { data: runs } = useQuery<AutomationRun[]>({
-    queryKey: ["/api/admin/automations", automation.id, "runs"],
-    queryFn: () => fetch(`/api/admin/automations/${automation.id}/runs`, { credentials: "include" }).then(r => r.json()),
-    enabled: showHistory,
-  });
+  const [testOpen, setTestOpen] = useState(false);
 
   return (
-    <Card data-testid={`card-automation-${automation.id}`} className={`transition-opacity ${automation.isActive ? "" : "opacity-60"}`}>
+    <Card
+      data-testid={`card-automation-${automation.id}`}
+      className={`transition-opacity duration-150 ${automation.isActive ? "" : "opacity-60"}`}
+    >
       <CardContent className="p-5 space-y-4">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-3">
+        {/* Row 1: name + badges + actions */}
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm truncate">{automation.name}</span>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${CHANNEL_COLORS[automation.channel] ?? "bg-gray-100 text-gray-700"}`}>
-                <ChannelIcon channel={automation.channel} />
-                {CHANNEL_LABELS[automation.channel] ?? automation.channel}
-              </span>
+              <span className="font-semibold text-sm">{automation.name}</span>
+              <ChannelBadge channel={automation.channel} />
               {!automation.isActive && (
-                <Badge variant="outline" className="text-xs">Paused</Badge>
+                <Badge variant="outline" className="text-xs text-muted-foreground">Paused</Badge>
+              )}
+              {automation.triggerType === "one_time" && (
+                <Badge variant="outline" className="text-xs">One-time</Badge>
               )}
             </div>
             {automation.description && (
-              <p className="text-xs text-muted-foreground mt-1">{automation.description}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{automation.description}</p>
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <Switch
               checked={automation.isActive}
-              onCheckedChange={(v) => onToggle(automation, v)}
+              onCheckedChange={v => onToggle(automation.id, v)}
               data-testid={`toggle-automation-${automation.id}`}
             />
-            <Button size="icon" variant="ghost" onClick={() => onEdit(automation)} data-testid={`button-edit-automation-${automation.id}`}>
+            <Button
+              size="icon" variant="ghost"
+              onClick={() => setTestOpen(true)}
+              title="Send test"
+              data-testid={`button-test-automation-${automation.id}`}
+            >
+              <FlaskConical className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon" variant="ghost"
+              onClick={() => onEdit(automation)}
+              data-testid={`button-edit-automation-${automation.id}`}
+            >
               <Pencil className="w-4 h-4" />
             </Button>
-            <Button size="icon" variant="ghost" onClick={() => onDelete(automation)} data-testid={`button-delete-automation-${automation.id}`}>
+            <Button
+              size="icon" variant="ghost"
+              onClick={() => onDelete(automation)}
+              data-testid={`button-delete-automation-${automation.id}`}
+            >
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Metadata row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        {/* Row 2: metadata grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs">
           <div>
-            <p className="text-muted-foreground mb-0.5">Trigger</p>
-            <p className="font-medium">{triggerSummary(automation)}</p>
+            <p className="text-muted-foreground mb-0.5">Schedule</p>
+            <p className="font-medium">{triggerSummary(automation)} <span className="text-muted-foreground font-normal">(BKK)</span></p>
           </div>
           <div>
             <p className="text-muted-foreground mb-0.5">Audience</p>
-            <p className="font-medium">{FILTER_LABELS[automation.customerFilter] ?? automation.customerFilter}</p>
+            <p className="font-medium">{filterLabel(automation.customerFilter)}</p>
           </div>
           <div>
             <p className="text-muted-foreground mb-0.5">Next run</p>
@@ -223,115 +433,153 @@ function AutomationCard({
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground mb-0.5">Runs</p>
-            <p className="font-medium">{automation.runCount} total</p>
+            <p className="text-muted-foreground mb-0.5">Runs / Last</p>
+            <p className="font-medium">
+              {automation.runCount}
+              {automation.lastRunAt && (
+                <span className="text-muted-foreground font-normal">
+                  {" "}· {formatDistanceToNow(new Date(automation.lastRunAt), { addSuffix: true })}
+                </span>
+              )}
+            </p>
           </div>
         </div>
 
-        {/* Message preview */}
-        <div className="bg-muted/40 rounded-md p-3">
+        {/* Row 3: message preview */}
+        <div className="rounded-md bg-muted/30 border border-border/50 p-3">
           {automation.subject && (
-            <p className="text-xs font-medium mb-1 text-muted-foreground">Subject: {automation.subject}</p>
+            <p className="text-xs font-medium text-muted-foreground mb-1">
+              Subject: {automation.subject}
+            </p>
           )}
-          <p className="text-xs text-muted-foreground line-clamp-2">{automation.message}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-line">{automation.message}</p>
         </div>
 
-        {/* Run history toggle */}
+        {/* Row 4: history toggle */}
+        <Separator />
         <button
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           onClick={() => setShowHistory(v => !v)}
           data-testid={`button-history-automation-${automation.id}`}
         >
           {showHistory ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
           Run history
+          {automation.runCount > 0 && (
+            <span className="ml-1 text-muted-foreground">({automation.runCount} total)</span>
+          )}
         </button>
 
-        {showHistory && (
-          <div className="space-y-2">
-            {!runs ? (
-              <p className="text-xs text-muted-foreground">Loading...</p>
-            ) : runs.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No runs yet</p>
-            ) : (
-              runs.map(run => (
-                <div key={run.id} className="flex items-center gap-3 py-1.5 border-t text-xs">
-                  <StatusIcon status={run.status} />
-                  <span className="text-muted-foreground min-w-[120px]">
-                    {format(new Date(run.triggeredAt), "dd MMM yyyy HH:mm")}
-                  </span>
-                  <span className="text-green-600 font-medium">{run.sentCount} sent</span>
-                  {run.failedCount > 0 && (
-                    <span className="text-red-500 font-medium">{run.failedCount} failed</span>
-                  )}
-                  {run.errorMessage && (
-                    <span className="text-red-500 truncate max-w-[200px]" title={run.errorMessage}>
-                      {run.errorMessage}
-                    </span>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        )}
+        {showHistory && <RunHistoryPanel automationId={automation.id} />}
       </CardContent>
+
+      {testOpen && (
+        <TestSendDialog
+          automation={automation}
+          open={testOpen}
+          onOpenChange={setTestOpen}
+        />
+      )}
     </Card>
   );
 }
 
-// ── Create / Edit dialog ─────────────────────────────────────────────────────
+// ── Form schema ───────────────────────────────────────────────────────────────
+
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  triggerType: z.enum(["recurring_daily", "recurring_weekly", "recurring_monthly", "one_time"]),
+  triggerTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format").default("09:00"),
+  triggerDayOfWeek: z.string().optional(),
+  triggerDayOfMonth: z.coerce.number().min(1).max(31).optional(),
+  triggerDate: z.string().optional(),
+  customerFilter: z.string().min(1, "Select an audience"),
+  channel: z.enum(["app", "line", "sms", "email"]),
+  templateId: z.string().optional(),
+  subject: z.string().optional(),
+  message: z.string().min(1, "Message content is required"),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+// ── Automation Dialog (Create / Edit) ─────────────────────────────────────────
 
 function AutomationDialog({
   open,
   onOpenChange,
   editing,
+  prefill,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing?: Automation | null;
+  prefill?: Partial<FormValues> | null;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: editing
-      ? {
-          name: editing.name,
-          description: editing.description ?? "",
-          triggerType: editing.triggerType as FormValues["triggerType"],
-          triggerTime: editing.triggerConfig.time ?? "09:00",
-          triggerDayOfWeek: editing.triggerConfig.dayOfWeek ?? "monday",
-          triggerDayOfMonth: editing.triggerConfig.dayOfMonth ?? 1,
-          triggerDate: editing.triggerConfig.date ?? "",
-          customerFilter: editing.customerFilter,
-          channel: editing.channel as FormValues["channel"],
-          subject: editing.subject ?? "",
-          message: editing.message,
-        }
-      : {
-          name: "",
-          description: "",
-          triggerType: "recurring_daily",
-          triggerTime: "09:00",
-          triggerDayOfWeek: "monday",
-          triggerDayOfMonth: 1,
-          triggerDate: "",
-          customerFilter: "all",
-          channel: "line",
-          subject: "",
-          message: "",
-        },
+  const { data: templates = [] } = useQuery<MessageTemplate[]>({
+    queryKey: ["/api/admin/message-templates"],
   });
 
+  const activeTemplates = templates.filter(t => t.isActive);
+
+  const defaultValues: FormValues = editing
+    ? {
+        name: editing.name,
+        description: editing.description ?? "",
+        triggerType: editing.triggerType as FormValues["triggerType"],
+        triggerTime: editing.triggerConfig.time ?? "09:00",
+        triggerDayOfWeek: editing.triggerConfig.dayOfWeek ?? "monday",
+        triggerDayOfMonth: editing.triggerConfig.dayOfMonth ?? 1,
+        triggerDate: editing.triggerConfig.date ?? "",
+        customerFilter: editing.customerFilter,
+        channel: editing.channel as FormValues["channel"],
+        templateId: editing.templateId ?? "",
+        subject: editing.subject ?? "",
+        message: editing.message,
+      }
+    : {
+        name: prefill?.name ?? "",
+        description: prefill?.description ?? "",
+        triggerType: prefill?.triggerType ?? "recurring_daily",
+        triggerTime: prefill?.triggerTime ?? "09:00",
+        triggerDayOfWeek: (prefill as any)?.triggerDayOfWeek ?? "monday",
+        triggerDayOfMonth: (prefill as any)?.triggerDayOfMonth ?? 1,
+        triggerDate: prefill?.triggerDate ?? "",
+        customerFilter: prefill?.customerFilter ?? "all",
+        channel: prefill?.channel ?? "line",
+        templateId: "",
+        subject: prefill?.subject ?? "",
+        message: prefill?.message ?? "",
+      };
+
+  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues });
+
   const triggerType = form.watch("triggerType");
-  const channel = form.watch("channel");
+  const channel     = form.watch("channel");
+  const templateId  = form.watch("templateId");
+
+  const TEMPLATE_NONE = "__none__";
+
+  // Auto-fill from template when selected
+  const onTemplateChange = (tid: string) => {
+    const realId = tid === TEMPLATE_NONE ? "" : tid;
+    form.setValue("templateId", realId);
+    if (!realId) return;
+    const tmpl = activeTemplates.find(t => t.id === realId);
+    if (!tmpl) return;
+    if (tmpl.message) form.setValue("message", tmpl.message);
+    if (tmpl.subject) form.setValue("subject", tmpl.subject);
+    if (tmpl.channel) form.setValue("channel", tmpl.channel as FormValues["channel"]);
+  };
 
   const save = useMutation({
     mutationFn: async (values: FormValues) => {
-      const triggerConfig: Record<string, any> = { time: values.triggerTime };
-      if (values.triggerType === "recurring_weekly") triggerConfig.dayOfWeek = values.triggerDayOfWeek;
+      const triggerConfig: TriggerConfig = { time: values.triggerTime };
+      if (values.triggerType === "recurring_weekly")  triggerConfig.dayOfWeek  = values.triggerDayOfWeek;
       if (values.triggerType === "recurring_monthly") triggerConfig.dayOfMonth = values.triggerDayOfMonth;
-      if (values.triggerType === "one_time") triggerConfig.date = values.triggerDate;
+      if (values.triggerType === "one_time")          triggerConfig.date        = values.triggerDate;
 
       const payload = {
         name: values.name,
@@ -340,6 +588,7 @@ function AutomationDialog({
         triggerConfig,
         customerFilter: values.customerFilter,
         channel: values.channel,
+        templateId: values.templateId || null,
         subject: values.subject || null,
         message: values.message,
         isActive: editing?.isActive ?? true,
@@ -354,11 +603,9 @@ function AutomationDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/admin/automations"] });
       toast({ title: editing ? "Automation updated" : "Automation created" });
       onOpenChange(false);
-      form.reset();
     },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    },
+    onError: (err: any) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   return (
@@ -366,175 +613,231 @@ function AutomationDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editing ? "Edit Automation" : "New Automation"}</DialogTitle>
+          <DialogDescription>
+            {editing
+              ? "Update the automation settings below."
+              : "Configure a rule-based message that sends automatically."}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(v => save.mutate(v))} className="space-y-5">
-            {/* Name */}
-            <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl><Input placeholder="e.g. Birthday Greeting" {...field} data-testid="input-automation-name" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            {/* ── Section: Identity ── */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Details</p>
 
-            {/* Description */}
-            <FormField control={form.control} name="description" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
-                <FormControl><Input placeholder="Short note about this automation" {...field} /></FormControl>
-              </FormItem>
-            )} />
-
-            {/* Trigger type */}
-            <FormField control={form.control} name="triggerType" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Trigger</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <SelectTrigger data-testid="select-trigger-type">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <Input placeholder="e.g. Birthday Greeting" {...field} data-testid="input-automation-name" />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="recurring_daily">Every Day</SelectItem>
-                    <SelectItem value="recurring_weekly">Every Week</SelectItem>
-                    <SelectItem value="recurring_monthly">Every Month</SelectItem>
-                    <SelectItem value="one_time">One-Time (specific date)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-            {/* Trigger-specific config */}
-            <div className="grid grid-cols-2 gap-3">
-              {triggerType === "recurring_weekly" && (
-                <FormField control={form.control} name="triggerDayOfWeek" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Day of week</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {DAY_OPTIONS.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+              <FormField control={form.control} name="description" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Description
+                    <span className="ml-1 text-muted-foreground font-normal text-xs">(optional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Short note about this automation" {...field} />
+                  </FormControl>
+                </FormItem>
+              )} />
+            </div>
+
+            <Separator />
+
+            {/* ── Section: Schedule ── */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Schedule</p>
+
+              <FormField control={form.control} name="triggerType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Repeats</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-trigger-type"><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TRIGGER_OPTIONS.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <div className="grid grid-cols-2 gap-3">
+                {triggerType === "recurring_weekly" && (
+                  <FormField control={form.control} name="triggerDayOfWeek" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Day of week</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {DAY_OPTIONS.map(d => (
+                            <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
+
+                {triggerType === "recurring_monthly" && (
+                  <FormField control={form.control} name="triggerDayOfMonth" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Day of month</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} max={31} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
+
+                {triggerType === "one_time" && (
+                  <FormField control={form.control} name="triggerDate" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl><Input type="date" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
+
+                <FormField control={form.control} name="triggerTime" render={({ field }) => (
+                  <FormItem className={triggerType === "recurring_daily" ? "col-span-2" : ""}>
+                    <FormLabel>Time</FormLabel>
+                    <FormControl><Input type="time" {...field} /></FormControl>
+                    <FormDescription className="text-xs">Bangkok time (UTC+7)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
-              )}
+              </div>
+            </div>
 
-              {triggerType === "recurring_monthly" && (
-                <FormField control={form.control} name="triggerDayOfMonth" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Day of month</FormLabel>
-                    <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              )}
+            <Separator />
 
-              {triggerType === "one_time" && (
-                <FormField control={form.control} name="triggerDate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date</FormLabel>
-                    <FormControl><Input type="date" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              )}
+            {/* ── Section: Audience ── */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Audience</p>
 
-              <FormField control={form.control} name="triggerTime" render={({ field }) => (
-                <FormItem className={triggerType === "recurring_daily" ? "col-span-2" : ""}>
-                  <FormLabel>Time (Bangkok)</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormDescription className="text-xs">Asia/Bangkok (UTC+7)</FormDescription>
+              <FormField control={form.control} name="customerFilter" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Send to</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-customer-filter"><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {FILTER_OPTIONS.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />
             </div>
 
-            {/* Customer filter */}
-            <FormField control={form.control} name="customerFilter" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Audience</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger data-testid="select-customer-filter">
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="all">All Customers</SelectItem>
-                    <SelectItem value="tier_bronze">Bronze Tier</SelectItem>
-                    <SelectItem value="tier_silver">Silver Tier</SelectItem>
-                    <SelectItem value="tier_gold">Gold Tier</SelectItem>
-                    <SelectItem value="tier_platinum">Platinum Tier</SelectItem>
-                    <SelectItem value="birthday_today">Birthday Today</SelectItem>
-                    <SelectItem value="inactive_30d">Inactive 30+ Days</SelectItem>
-                    <SelectItem value="inactive_60d">Inactive 60+ Days</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <Separator />
 
-            {/* Channel */}
-            <FormField control={form.control} name="channel" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Channel</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger data-testid="select-channel">
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="app">App Notification</SelectItem>
-                    <SelectItem value="line">LINE</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            {/* ── Section: Message ── */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Message</p>
 
-            {/* Subject (email only) */}
-            {channel === "email" && (
-              <FormField control={form.control} name="subject" render={({ field }) => (
+              {/* Channel */}
+              <FormField control={form.control} name="channel" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Subject</FormLabel>
-                  <FormControl><Input placeholder="Subject line" {...field} /></FormControl>
+                  <FormLabel>Channel</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-channel"><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {CHANNEL_OPTIONS.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />
-            )}
 
-            {/* Message */}
-            <FormField control={form.control} name="message" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Message</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Type your message here. Use {{name}}, {{points}}, {{tier}} as placeholders."
-                    rows={4}
-                    {...field}
-                    data-testid="textarea-automation-message"
-                  />
-                </FormControl>
-                <FormDescription className="text-xs">
-                  Available placeholders: {"{{name}}"}, {"{{points}}"}, {"{{tier}}"}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+              {/* Template picker */}
+              {activeTemplates.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                    Load from template
+                    <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                  </label>
+                  <Select value={templateId || TEMPLATE_NONE} onValueChange={onTemplateChange}>
+                    <SelectTrigger data-testid="select-template">
+                      <SelectValue placeholder="Choose a template to auto-fill…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={TEMPLATE_NONE}>— None —</SelectItem>
+                      {activeTemplates.map(t => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                          <span className="ml-2 text-muted-foreground text-xs capitalize">({t.channel})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {templateId && templateId !== TEMPLATE_NONE && (
+                    <p className="text-xs text-amber-600">Template loaded — you can still edit the message below.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Subject (email only) */}
+              {channel === "email" && (
+                <FormField control={form.control} name="subject" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email subject</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Subject line" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+
+              {/* Message body */}
+              <FormField control={form.control} name="message" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message content</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      rows={5}
+                      placeholder="Type your message here…"
+                      {...field}
+                      data-testid="textarea-automation-message"
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs">
+                    Placeholders: {"{{name}}"} · {"{{points}}"} · {"{{tier}}"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={save.isPending} data-testid="button-save-automation">
-                {save.isPending ? "Saving..." : editing ? "Save Changes" : "Create Automation"}
+                {save.isPending ? "Saving…" : editing ? "Save Changes" : "Create Automation"}
               </Button>
             </DialogFooter>
           </form>
@@ -544,25 +847,172 @@ function AutomationDialog({
   );
 }
 
-// ── Main page ────────────────────────────────────────────────────────────────
+// ── Quickstart Card ───────────────────────────────────────────────────────────
+
+function QuickstartCard({
+  template,
+  onSelect,
+}: {
+  template: typeof QUICKSTART_TEMPLATES[number];
+  onSelect: (defaults: Partial<FormValues>) => void;
+}) {
+  const Icon = template.icon;
+  return (
+    <button
+      className="text-left w-full rounded-lg border border-dashed border-border/80 p-4 hover-elevate transition-all"
+      onClick={() => onSelect(template.defaults as unknown as Partial<FormValues>)}
+      data-testid={`button-quickstart-${template.key}`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-md bg-amber-50 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-amber-600" />
+        </div>
+        <div>
+          <p className="font-medium text-sm">{template.label}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ── Filter Bar ────────────────────────────────────────────────────────────────
+
+interface Filters {
+  status: "all" | "active" | "paused";
+  channel: string;
+  triggerType: string;
+  search: string;
+}
+
+function FilterBar({
+  filters,
+  onChange,
+  counts,
+}: {
+  filters: Filters;
+  onChange: (f: Filters) => void;
+  counts: { total: number; active: number; paused: number };
+}) {
+  const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch });
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {/* Search */}
+      <div className="relative flex-1 min-w-[180px]">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+        <Input
+          value={filters.search}
+          onChange={e => set({ search: e.target.value })}
+          placeholder="Search automations…"
+          className="pl-8 h-8 text-sm"
+          data-testid="input-filter-search"
+        />
+      </div>
+
+      {/* Status */}
+      <div className="flex rounded-md border overflow-hidden text-xs">
+        {(["all", "active", "paused"] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => set({ status: s })}
+            className={`px-3 py-1.5 capitalize transition-colors ${
+              filters.status === s
+                ? "bg-foreground text-background font-medium"
+                : "hover:bg-muted text-muted-foreground"
+            }`}
+            data-testid={`filter-status-${s}`}
+          >
+            {s === "all" ? `All (${counts.total})` : s === "active" ? `Active (${counts.active})` : `Paused (${counts.paused})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Channel */}
+      <Select value={filters.channel} onValueChange={v => set({ channel: v })}>
+        <SelectTrigger className="h-8 text-xs w-32" data-testid="filter-channel">
+          <SelectValue placeholder="Channel" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All channels</SelectItem>
+          {CHANNEL_OPTIONS.map(c => (
+            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Type */}
+      <Select value={filters.triggerType} onValueChange={v => set({ triggerType: v })}>
+        <SelectTrigger className="h-8 text-xs w-36" data-testid="filter-type">
+          <SelectValue placeholder="Type" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All types</SelectItem>
+          {TRIGGER_OPTIONS.map(o => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AutomationsManager() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
-  const [deletingAutomation, setDeletingAutomation] = useState<Automation | null>(null);
+  const [dialogOpen, setDialogOpen]     = useState(false);
+  const [editing, setEditing]           = useState<Automation | null>(null);
+  const [prefill, setPrefill]           = useState<Partial<FormValues> | null>(null);
+  const [deleting, setDeleting]         = useState<Automation | null>(null);
+
+  const [filters, setFilters] = useState<Filters>({
+    status: "all", channel: "all", triggerType: "all", search: "",
+  });
 
   const { data: automations = [], isLoading } = useQuery<Automation[]>({
     queryKey: ["/api/admin/automations"],
   });
 
+  // Counts (before search filter, for badge display)
+  const counts = useMemo(() => ({
+    total:  automations.length,
+    active: automations.filter(a => a.isActive).length,
+    paused: automations.filter(a => !a.isActive).length,
+  }), [automations]);
+
+  // Apply filters
+  const filtered = useMemo(() => {
+    let list = [...automations];
+    if (filters.status !== "all") {
+      const want = filters.status === "active";
+      list = list.filter(a => a.isActive === want);
+    }
+    if (filters.channel !== "all") {
+      list = list.filter(a => a.channel === filters.channel);
+    }
+    if (filters.triggerType !== "all") {
+      list = list.filter(a => a.triggerType === filters.triggerType);
+    }
+    if (filters.search.trim()) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(a =>
+        a.name.toLowerCase().includes(q) ||
+        (a.description ?? "").toLowerCase().includes(q) ||
+        a.message.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [automations, filters]);
+
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       apiRequest("PATCH", `/api/admin/automations/${id}/toggle`, { isActive }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/automations"] }),
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: any) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -570,30 +1020,39 @@ export default function AutomationsManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/automations"] });
       toast({ title: "Automation deleted" });
-      setDeletingAutomation(null);
+      setDeleting(null);
     },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: any) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   function openCreate() {
-    setEditingAutomation(null);
+    setEditing(null);
+    setPrefill(null);
+    setDialogOpen(true);
+  }
+
+  function openQuickstart(defaults: Partial<FormValues>) {
+    setEditing(null);
+    setPrefill(defaults);
     setDialogOpen(true);
   }
 
   function openEdit(a: Automation) {
-    setEditingAutomation(a);
+    setEditing(a);
+    setPrefill(null);
     setDialogOpen(true);
   }
 
-  const active = automations.filter(a => a.isActive);
-  const paused = automations.filter(a => !a.isActive);
+  const isFiltered = filters.status !== "all" || filters.channel !== "all" ||
+                     filters.triggerType !== "all" || filters.search.trim() !== "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <SectionHeader
         icon={<Zap className="w-5 h-5" />}
         title="Automations"
-        subtitle="Rules-based messages sent automatically on schedule or by event"
+        subtitle="Schedule rule-based messages that send automatically to the right customers"
         action={
           <Button onClick={openCreate} data-testid="button-create-automation">
             <Plus className="w-4 h-4 mr-2" />
@@ -602,64 +1061,72 @@ export default function AutomationsManager() {
         }
       />
 
-      {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="py-3 px-4">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-2xl font-bold">{automations.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-3 px-4">
-            <p className="text-xs text-muted-foreground">Active</p>
-            <p className="text-2xl font-bold text-green-600">{active.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-3 px-4">
-            <p className="text-xs text-muted-foreground">Paused</p>
-            <p className="text-2xl font-bold text-muted-foreground">{paused.length}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Filter bar — only show when there are automations */}
+      {automations.length > 0 && (
+        <FilterBar filters={filters} onChange={setFilters} counts={counts} />
+      )}
 
-      {/* List */}
+      {/* Loading */}
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <Card key={i}><CardContent className="h-24 animate-pulse bg-muted/30" /></Card>
+          {[1, 2].map(i => (
+            <Card key={i}><CardContent className="h-28 animate-pulse bg-muted/20 m-0 p-0 rounded-lg" /></Card>
           ))}
         </div>
       ) : automations.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 flex flex-col items-center gap-3 text-center">
-            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
+        /* ── Empty state with quickstart ── */
+        <div className="space-y-4">
+          <div className="rounded-lg border border-dashed border-border p-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-3">
               <Zap className="w-6 h-6 text-amber-500" />
             </div>
-            <div>
-              <p className="font-medium">No automations yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Create your first automation to start sending messages automatically.
-              </p>
-            </div>
-            <Button onClick={openCreate} data-testid="button-create-automation-empty">
+            <p className="font-semibold mb-1">No automations yet</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Start with one of these ready-made automations, or build your own from scratch.
+            </p>
+            <Button onClick={openCreate} variant="outline" data-testid="button-create-automation-empty">
               <Plus className="w-4 h-4 mr-2" />
-              Create Automation
+              Build from scratch
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1">
+              Quickstart templates
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {QUICKSTART_TEMPLATES.map(t => (
+                <QuickstartCard key={t.key} template={t} onSelect={openQuickstart} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
+        /* ── No results after filtering ── */
+        <div className="rounded-lg border border-dashed border-border p-8 text-center">
+          <Filter className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+          <p className="font-medium mb-1">No automations match your filters</p>
+          <p className="text-sm text-muted-foreground">
+            Try adjusting the search or filter options above.
+          </p>
+        </div>
       ) : (
+        /* ── List ── */
         <div className="space-y-3">
-          {automations.map(automation => (
+          {filtered.map(a => (
             <AutomationCard
-              key={automation.id}
-              automation={automation}
+              key={a.id}
+              automation={a}
               onEdit={openEdit}
-              onDelete={setDeletingAutomation}
-              onToggle={(a, v) => toggleMutation.mutate({ id: a.id, isActive: v })}
+              onDelete={setDeleting}
+              onToggle={(id, v) => toggleMutation.mutate({ id, isActive: v })}
             />
           ))}
+          {isFiltered && (
+            <p className="text-xs text-center text-muted-foreground pt-1">
+              Showing {filtered.length} of {automations.length} automations
+            </p>
+          )}
         </div>
       )}
 
@@ -667,24 +1134,26 @@ export default function AutomationsManager() {
       {dialogOpen && (
         <AutomationDialog
           open={dialogOpen}
-          onOpenChange={(v) => { setDialogOpen(v); if (!v) setEditingAutomation(null); }}
-          editing={editingAutomation}
+          onOpenChange={v => { setDialogOpen(v); if (!v) { setEditing(null); setPrefill(null); } }}
+          editing={editing}
+          prefill={prefill}
         />
       )}
 
       {/* Delete confirmation */}
-      <AlertDialog open={!!deletingAutomation} onOpenChange={v => !v && setDeletingAutomation(null)}>
+      <AlertDialog open={!!deleting} onOpenChange={v => !v && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Automation?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{deletingAutomation?.name}" will be permanently deleted along with all its run history. This cannot be undone.
+              <strong>"{deleting?.name}"</strong> will be permanently deleted along with all run history.
+              This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingAutomation && deleteMutation.mutate(deletingAutomation.id)}
+              onClick={() => deleting && deleteMutation.mutate(deleting.id)}
               className="bg-red-600 hover:bg-red-700"
               data-testid="button-confirm-delete-automation"
             >

@@ -4710,6 +4710,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test send an automation to a single recipient
+  app.post('/api/admin/automations/:id/test', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const automation = await storage.getAutomation(req.params.id);
+      if (!automation) return res.status(404).json({ message: "Automation not found" });
+
+      const { testRecipient } = req.body;
+      const msg = automation.message;
+      const subj = automation.subject || `[TEST] ${automation.name}`;
+
+      if (automation.channel === 'email') {
+        if (!testRecipient) return res.status(400).json({ message: "Email address required for test" });
+        const result = await sendHtmlEmail(testRecipient, `[TEST] ${subj}`, msg);
+        return res.json({ success: result.success, error: result.error });
+      }
+      if (automation.channel === 'sms') {
+        if (!testRecipient) return res.status(400).json({ message: "Phone number required for test" });
+        const result = await sendSMS(testRecipient, `[TEST] ${msg}`);
+        return res.json({ success: result.success, error: result.error });
+      }
+      if (automation.channel === 'line') {
+        if (!testRecipient) return res.status(400).json({ message: "LINE UID required for test" });
+        const result = await sendLineMessage(testRecipient, `[TEST] ${msg}`);
+        return res.json({ success: result.success, error: result.error });
+      }
+      if (automation.channel === 'app') {
+        // App notifications are stored in message_log only — count as success
+        return res.json({ success: true, note: "App notification test logged" });
+      }
+      return res.status(400).json({ message: "Unknown channel" });
+    } catch (error) {
+      console.error("Error sending test automation:", error);
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed to send test" });
+    }
+  });
+
   // ============================================
   // LINE Webhook - Customer auto-linking
   // ============================================

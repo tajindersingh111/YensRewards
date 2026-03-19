@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar, X, Upload, BarChart3 } from "lucide-react";
+import { Send, Mail, MessageSquare, Users, Search, MessageCircle, Loader2, AlertCircle, CheckCircle2, Cake, FileText, Eye, Code, Clock, Calendar, X, Upload, BarChart3, TrendingUp } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -79,6 +80,7 @@ export default function SendMessageForm() {
 
   // Send job tracking state
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [activeJobData, setActiveJobData] = useState<any>(null);
   const [sendReport, setSendReport] = useState<any>(null);
   const [showReport, setShowReport] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -88,12 +90,15 @@ export default function SendMessageForm() {
       const res = await fetch(`/api/admin/messages/send-job/${jobId}`, { credentials: 'include' });
       if (!res.ok) return;
       const job = await res.json();
+      // Always update live progress
+      setActiveJobData(job);
       if (job.status === 'completed') {
         if (pollingRef.current) {
           clearInterval(pollingRef.current);
           pollingRef.current = null;
         }
         setActiveJobId(null);
+        setActiveJobData(null);
         setSendReport(job);
         setShowReport(true);
         queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
@@ -299,7 +304,13 @@ export default function SendMessageForm() {
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/messages/stats'] });
-      if (result?.processing) {
+      if (result?.processing && result?.jobId) {
+        setActiveJobId(result.jobId);
+        toast({
+          title: "LINE Messages Sending",
+          description: `Sending ${result?.total || 0} LINE messages — you'll see a report when done.`,
+        });
+      } else if (result?.processing) {
         toast({
           title: "LINE Messages Sending",
           description: result?.message || `Sending ${result?.total || 0} LINE messages in the background.`,
@@ -1264,11 +1275,32 @@ export default function SendMessageForm() {
       </CardContent>
 
       {activeJobId && (
-        <div className="border-t border-yellow-200 bg-yellow-50 px-6 py-3 flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin text-yellow-600" />
-          <span className="text-sm text-yellow-800 font-medium" data-testid="text-sending-progress">
-            Sending messages in progress...
-          </span>
+        <div className="border-t border-amber-200 bg-amber-50 px-6 py-4 space-y-2" data-testid="panel-send-progress">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
+              <span className="text-sm font-medium text-amber-900" data-testid="text-sending-progress">
+                {activeJobData
+                  ? `Sending ${activeJobData.channel?.toUpperCase() ?? ''} messages…`
+                  : "Preparing send…"}
+              </span>
+            </div>
+            {activeJobData?.total > 0 && (
+              <span className="text-xs font-mono text-amber-700 shrink-0" data-testid="text-progress-count">
+                {activeJobData.sent} / {activeJobData.total} sent
+                {activeJobData.failed > 0 && (
+                  <span className="ml-1 text-red-600">· {activeJobData.failed} failed</span>
+                )}
+              </span>
+            )}
+          </div>
+          {activeJobData?.total > 0 && (
+            <Progress
+              value={Math.round(((activeJobData.sent + activeJobData.failed) / activeJobData.total) * 100)}
+              className="h-1.5 bg-amber-100"
+              data-testid="progress-send-bar"
+            />
+          )}
         </div>
       )}
 
