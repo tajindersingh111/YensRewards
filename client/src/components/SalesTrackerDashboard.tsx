@@ -962,7 +962,7 @@ export default function SalesTrackerDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Add New Sale Form */}
         <Card className="bg-white rounded-xl">
           <CardContent className="p-6">
