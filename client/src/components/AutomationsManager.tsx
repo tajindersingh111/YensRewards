@@ -445,14 +445,30 @@ function AutomationCard({
           </div>
         </div>
 
-        {/* Row 3: message preview */}
+        {/* Row 3: message preview — strip HTML tags for readable display */}
         <div className="rounded-md bg-muted/30 border border-border/50 p-3">
-          {automation.subject && (
-            <p className="text-xs font-medium text-muted-foreground mb-1">
-              Subject: {automation.subject}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-line">{automation.message}</p>
+          <div className="flex items-center gap-2 mb-1">
+            {automation.subject && (
+              <p className="text-xs font-medium text-muted-foreground truncate flex-1">
+                Subject: {automation.subject}
+              </p>
+            )}
+            {/<[a-z][\s\S]*>/i.test(automation.message) && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 shrink-0 font-medium">
+                HTML email
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {automation.message
+              .replace(/<[^>]*>/g, " ")
+              .replace(/&nbsp;/g, " ")
+              .replace(/&amp;/g, "&")
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">")
+              .replace(/\s+/g, " ")
+              .trim()}
+          </p>
         </div>
 
         {/* Row 4: history toggle */}
