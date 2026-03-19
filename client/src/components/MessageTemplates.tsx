@@ -13,7 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { Plus, Edit2, Trash2, Eye, Star, Sparkles, Upload, Image, Layout, Loader2, X, Paintbrush } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, Star, Sparkles, Upload, Image, Layout, Loader2, X, Paintbrush, Search, Mail, FileText, ArrowUpDown } from "lucide-react";
 import EmailVisualEditor from "./EmailVisualEditor";
 import { insertMessageTemplateSchema, type MessageTemplate, type InsertMessageTemplate } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -128,6 +128,12 @@ export default function MessageTemplates() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lineImageInputRef = useRef<HTMLInputElement>(null);
   const isThaiLanguage = i18n.language === 'th';
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterChannel, setFilterChannel] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [previewTemplate, setPreviewTemplate] = useState<MessageTemplate | null>(null);
 
   const form = useForm<InsertMessageTemplate>({
     resolver: zodResolver(insertMessageTemplateSchema),
@@ -426,38 +432,106 @@ export default function MessageTemplates() {
       .replace(/{points}/g, previewData.points);
   };
 
+  const filteredTemplates = templates
+    .filter(tmpl => {
+      if (
+        searchQuery &&
+        !tmpl.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !(tmpl.subject || '').toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !tmpl.message.toLowerCase().includes(searchQuery.toLowerCase())
+      ) return false;
+      if (filterChannel !== "all" && tmpl.channel !== filterChannel) return false;
+      if (filterType !== "all" && tmpl.type !== filterType) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "type") return a.type.localeCompare(b.type);
+      return 0;
+    });
+
   if (isLoading) {
-    return <div className="text-center py-8">{t('common.loading')}</div>;
+    return <div className="text-center py-8 text-muted-foreground text-sm">{t('common.loading')}</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold">{t('admin.messages.templates')}</h2>
-          <p className="text-muted-foreground">{t('admin.messages.manageTemplates')}</p>
+          <h2 className="text-base font-semibold text-foreground">{t('admin.messages.templates')}</h2>
+          <p className="text-xs text-muted-foreground">{t('admin.messages.manageTemplates')}</p>
         </div>
         <div className="flex gap-2">
           {templates.length === 0 && !isCreating && (
-            <Button 
+            <Button
               onClick={() => seedDefaultsMutation.mutate()}
               variant="outline"
+              size="sm"
               disabled={seedDefaultsMutation.isPending}
               data-testid="button-seed-defaults"
-              className="bg-yellow-50 border-yellow-400 hover:bg-yellow-100"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {seedDefaultsMutation.isPending ? "Creating..." : "Create Default Templates"}
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              {seedDefaultsMutation.isPending ? "Creating..." : "Create Defaults"}
             </Button>
           )}
           {!isCreating && (
-            <Button onClick={() => setIsCreating(true)} data-testid="button-create-template">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button onClick={() => setIsCreating(true)} size="sm" data-testid="button-create-template">
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
               {t('admin.messages.addTemplate')}
             </Button>
           )}
         </div>
       </div>
+
+      {!isCreating && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder={isThaiLanguage ? "ค้นหาเทมเพลต..." : "Search templates..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 text-sm"
+              data-testid="input-search-templates"
+            />
+          </div>
+          <Select value={filterChannel} onValueChange={setFilterChannel}>
+            <SelectTrigger className="w-full sm:w-36 text-sm" data-testid="select-filter-channel">
+              <SelectValue placeholder={isThaiLanguage ? "ช่องทาง" : "Channel"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isThaiLanguage ? "ทุกช่องทาง" : "All channels"}</SelectItem>
+              <SelectItem value="sms">SMS</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="line">LINE</SelectItem>
+              <SelectItem value="both">SMS + Email</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-full sm:w-36 text-sm" data-testid="select-filter-type">
+              <SelectValue placeholder={isThaiLanguage ? "ประเภท" : "Type"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isThaiLanguage ? "ทุกประเภท" : "All types"}</SelectItem>
+              <SelectItem value="birthday">{t('admin.messages.birthday')}</SelectItem>
+              <SelectItem value="promotion">{t('admin.messages.promotion')}</SelectItem>
+              <SelectItem value="reminder">{t('admin.messages.reminder')}</SelectItem>
+              <SelectItem value="welcome">{isThaiLanguage ? "ต้อนรับ" : "Welcome"}</SelectItem>
+              <SelectItem value="announcement">{isThaiLanguage ? "ประกาศ" : "Announcement"}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-36 text-sm" data-testid="select-sort-templates">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">{isThaiLanguage ? "ล่าสุด" : "Newest"}</SelectItem>
+              <SelectItem value="name">{isThaiLanguage ? "ชื่อ A–Z" : "Name A–Z"}</SelectItem>
+              <SelectItem value="type">{isThaiLanguage ? "ประเภท" : "Type"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {isCreating && (
         <Card>
@@ -892,122 +966,224 @@ export default function MessageTemplates() {
         </Card>
       )}
 
-      {/* Only show template list when NOT editing/creating */}
+      {/* Template card grid */}
       {!isCreating && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {templates.map((template) => (
-            <Card key={template.id} data-testid={`template-card-${template.id}`} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="flex items-center gap-2 flex-wrap">
-                      <span className="truncate">{template.name || (isThaiLanguage ? "(ไม่มีชื่อ)" : "(No name)")}</span>
+        <>
+          {filteredTemplates.length === 0 && templates.length > 0 && (
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                {isThaiLanguage ? "ไม่พบเทมเพลตที่ตรงกับการค้นหา" : "No templates match your search"}
+              </p>
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(""); setFilterChannel("all"); setFilterType("all"); }}
+                className="text-sm text-amber-600 mt-1 underline"
+                data-testid="button-clear-filters"
+              >
+                {isThaiLanguage ? "ล้างตัวกรอง" : "Clear filters"}
+              </button>
+            </div>
+          )}
+
+          {templates.length === 0 && (
+            <Card>
+              <CardContent className="py-14 text-center">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">{t('admin.messages.noTemplates')}</p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {isThaiLanguage ? "สร้างเทมเพลตแรกของคุณเพื่อเริ่มต้น" : "Create your first template to get started"}
+                </p>
+                <Button onClick={() => setIsCreating(true)} size="sm" data-testid="button-create-first-template">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  {t('admin.messages.addTemplate')}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredTemplates.map((template) => {
+              const channelConfig: Record<string, { label: string; className: string }> = {
+                sms: { label: "SMS", className: "bg-sky-50 text-sky-700 border-sky-200" },
+                email: { label: "Email", className: "bg-violet-50 text-violet-700 border-violet-200" },
+                line: { label: "LINE", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                both: { label: "SMS + Email", className: "bg-slate-50 text-slate-600 border-slate-200" },
+              };
+              const ch = channelConfig[template.channel] || channelConfig.sms;
+
+              return (
+                <Card
+                  key={template.id}
+                  data-testid={`template-card-${template.id}`}
+                  className="flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                      <Badge variant="outline" className={`text-xs font-medium ${ch.className}`}>
+                        {ch.label}
+                      </Badge>
                       {template.isDefault && (
-                        <Badge variant="default" className="bg-[#FCD34D] text-gray-900 shrink-0">
-                          <Star className="w-3 h-3 mr-1" />
+                        <Badge className="text-xs font-medium bg-amber-400 text-amber-950 border-0 no-default-hover-elevate">
+                          <Star className="w-2.5 h-2.5 mr-1 fill-amber-950" />
                           {t('admin.messages.defaultTemplate')}
                         </Badge>
                       )}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <span className="capitalize">{t(`messages.${template.type}`)}</span>
-                      <span>•</span>
-                      <Badge variant="outline" className="capitalize">{t(`messages.${template.channel}`)}</Badge>
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    {!template.isDefault && (
+                    </div>
+                    <h3 className="font-semibold text-sm text-foreground leading-snug truncate">
+                      {template.name || (isThaiLanguage ? "(ไม่มีชื่อ)" : "(No name)")}
+                    </h3>
+                    <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                      {t(`messages.${template.type}`, template.type)}
+                    </p>
+                  </CardHeader>
+
+                  <CardContent className="flex-1 px-4 pb-3 pt-1">
+                    {template.subject && (
+                      <div className="mb-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
+                          {t('admin.messages.templateSubject')}
+                        </p>
+                        <p className="text-xs truncate text-foreground/80">{template.subject}</p>
+                      </div>
+                    )}
+
+                    {template.htmlContent ? (
+                      <div className="rounded-md border bg-white overflow-hidden">
+                        <div className="h-28 overflow-hidden relative">
+                          <div
+                            className="transform scale-[0.45] origin-top-left w-[222%] pointer-events-none"
+                            dangerouslySetInnerHTML={{ __html: template.htmlContent }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white pointer-events-none" />
+                        </div>
+                        <div className="px-3 py-1.5 bg-gray-50/80 border-t flex items-center gap-1.5">
+                          <Mail className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">HTML Email</span>
+                        </div>
+                      </div>
+                    ) : template.message ? (
+                      <div className="rounded-md bg-muted/40 border border-muted p-3">
+                        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                          {template.message}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-md bg-muted/30 border border-muted p-3">
+                        <p className="text-xs text-muted-foreground italic">
+                          {isThaiLanguage ? "(ไม่มีเนื้อหา)" : "No content"}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+
+                  <div className="px-3 py-2.5 border-t bg-muted/20 flex items-center justify-between gap-2">
+                    {!template.isDefault ? (
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          updateTemplateMutation.mutate({
-                            id: template.id,
-                            data: { isDefault: true }
-                          });
-                        }}
+                        variant="ghost"
+                        onClick={() => updateTemplateMutation.mutate({ id: template.id, data: { isDefault: true } })}
                         data-testid={`button-set-default-${template.id}`}
-                        className="text-xs"
+                        className="h-7 px-2 text-xs text-muted-foreground"
                       >
                         <Star className="w-3 h-3 mr-1" />
-                        {isThaiLanguage ? "ตั้งเป็นค่าเริ่มต้น" : "Set Default"}
+                        {isThaiLanguage ? "ตั้งเป็นค่าเริ่มต้น" : "Set default"}
                       </Button>
+                    ) : (
+                      <div />
                     )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleEdit(template)}
-                      data-testid={`button-edit-${template.id}`}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(template.id)}
-                      disabled={template.isDefault}
-                      data-testid={`button-delete-${template.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-2">
-                {template.subject && (
-                  <div className="mb-2">
-                    <p className="text-xs font-semibold text-muted-foreground">{t('admin.messages.templateSubject')}:</p>
-                    <p className="text-sm truncate">{template.subject}</p>
-                  </div>
-                )}
-                {template.htmlContent ? (
-                  <div className="border rounded-md overflow-hidden bg-white">
-                    <div className="max-h-32 overflow-hidden relative">
-                      <div 
-                        className="transform scale-50 origin-top-left w-[200%]"
-                        dangerouslySetInnerHTML={{ __html: template.htmlContent }} 
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
-                    </div>
-                    <div className="p-2 bg-gray-50 border-t flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">
-                        {isThaiLanguage ? "📧 HTML Email" : "📧 HTML Email"}
-                      </Badge>
-                      <Button size="sm" variant="ghost" onClick={() => handleEdit(template)}>
-                        <Eye className="w-3 h-3 mr-1" />
-                        {isThaiLanguage ? "ดู" : "View"}
+                    <div className="flex items-center gap-0.5">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setPreviewTemplate(template)}
+                        data-testid={`button-preview-${template.id}`}
+                        title={isThaiLanguage ? "ดูตัวอย่าง" : "Preview"}
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleEdit(template)}
+                        data-testid={`button-edit-${template.id}`}
+                        title={isThaiLanguage ? "แก้ไข" : "Edit"}
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDelete(template.id)}
+                        disabled={template.isDefault}
+                        data-testid={`button-delete-${template.id}`}
+                        title={isThaiLanguage ? "ลบ" : "Delete"}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   </div>
-                ) : template.message ? (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-1">{t('admin.messages.templateMessage')}:</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">
-                      {template.message}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    {isThaiLanguage ? "(ไม่มีเนื้อหา)" : "(No content)"}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
       )}
 
-      {templates.length === 0 && !isCreating && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">{t('admin.messages.noTemplates')}</p>
-            <Button onClick={() => setIsCreating(true)} data-testid="button-create-first-template">
-              <Plus className="w-4 h-4 mr-2" />
-              {t('admin.messages.addTemplate')}
+      {/* Quick Preview Modal */}
+      <Dialog open={!!previewTemplate} onOpenChange={(open) => { if (!open) setPreviewTemplate(null); }}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              {previewTemplate?.name || (isThaiLanguage ? "ตัวอย่างเทมเพลต" : "Template Preview")}
+            </DialogTitle>
+            {previewTemplate?.subject && (
+              <DialogDescription className="text-xs">
+                {t('admin.messages.templateSubject')}: {previewTemplate.subject}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <ScrollArea className="flex-1 mt-2">
+            {previewTemplate?.htmlContent ? (
+              <div className="border rounded-md overflow-hidden bg-white">
+                <iframe
+                  srcDoc={previewTemplate.htmlContent}
+                  className="w-full h-80 border-0"
+                  sandbox="allow-same-origin"
+                  title="Template Preview"
+                />
+              </div>
+            ) : previewTemplate?.message ? (
+              <div className="bg-muted/40 rounded-md p-4 border">
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {previewTemplate.message
+                    .replace(/{name}/g, "Test Customer")
+                    .replace(/{points}/g, "150")
+                    .replace(/{tier}/g, "gold")}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic text-center py-8">
+                {isThaiLanguage ? "ไม่มีเนื้อหา" : "No content to preview"}
+              </p>
+            )}
+          </ScrollArea>
+          <DialogFooter className="mt-3">
+            <Button variant="outline" size="sm" onClick={() => setPreviewTemplate(null)}>
+              {isThaiLanguage ? "ปิด" : "Close"}
             </Button>
-          </CardContent>
-        </Card>
-      )}
+            {previewTemplate && (
+              <Button size="sm" onClick={() => { handleEdit(previewTemplate); setPreviewTemplate(null); }}>
+                <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                {isThaiLanguage ? "แก้ไข" : "Edit Template"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isAssetGalleryOpen} onOpenChange={setIsAssetGalleryOpen}>
         <DialogContent className="max-w-lg">
