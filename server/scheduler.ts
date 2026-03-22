@@ -323,7 +323,7 @@ async function filterCustomers(customerFilter: string): Promise<any[]> {
   return all;
 }
 
-async function processAutomation(automation: any) {
+export async function processAutomation(automation: any) {
   console.log(`🤖 Processing automation "${automation.name}" (${automation.id})`);
   const run = await storage.createAutomationRun({ automationId: automation.id });
 

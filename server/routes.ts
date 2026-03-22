@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema } from "@shared/schema";
-import { calculateNextRunAt } from "./scheduler";
+import { calculateNextRunAt, processAutomation } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS, normalizeE164 } from "./twilio";
@@ -4743,6 +4743,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error sending test automation:", error);
       res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed to send test" });
+    }
+  });
+
+  // Manually trigger an automation immediately (run now)
+  app.post('/api/admin/automations/:id/run', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const automation = await storage.getAutomation(req.params.id);
+      if (!automation) return res.status(404).json({ message: "Automation not found" });
+      // Fire and respond immediately; processAutomation updates run history itself
+      res.json({ success: true, message: `Running "${automation.name}" now…` });
+      await processAutomation(automation);
+    } catch (error) {
+      console.error("Error running automation:", error);
+      // Response already sent, just log
     }
   });
 

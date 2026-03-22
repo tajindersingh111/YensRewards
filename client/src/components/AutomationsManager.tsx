@@ -20,7 +20,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import {
   Zap, Plus, Pencil, Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
   Clock, Mail, MessageSquare, Smartphone, Hash, FlaskConical, Search,
-  Filter, Calendar, RotateCcw, Cake, Layers,
+  Filter, Calendar, RotateCcw, Cake, Layers, Play,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -356,8 +356,32 @@ function AutomationCard({
   onDelete: (a: Automation) => void;
   onToggle: (id: string, active: boolean) => void;
 }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [showHistory, setShowHistory] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
+
+  const runNow = useMutation({
+    mutationFn: () =>
+      fetch(`/api/admin/automations/${automation.id}/run`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      }).then(r => r.json()),
+    onSuccess: () => {
+      toast({
+        title: "Automation running",
+        description: `"${automation.name}" is sending to matching customers now. Check Run history in a moment.`,
+      });
+      // Refresh history after a short delay to pick up the new run
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/automations", automation.id, "runs"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/automations"] });
+        setShowHistory(true);
+      }, 3000);
+    },
+    onError: () => toast({ title: "Failed to run automation", variant: "destructive" }),
+  });
 
   return (
     <Card
@@ -391,8 +415,20 @@ function AutomationCard({
             />
             <Button
               size="icon" variant="ghost"
+              onClick={() => runNow.mutate()}
+              disabled={runNow.isPending}
+              title="Run now — send to all matching customers immediately"
+              data-testid={`button-run-automation-${automation.id}`}
+            >
+              {runNow.isPending
+                ? <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                : <Play className="w-4 h-4 text-amber-600" />
+              }
+            </Button>
+            <Button
+              size="icon" variant="ghost"
               onClick={() => setTestOpen(true)}
-              title="Send test"
+              title="Send test to single recipient"
               data-testid={`button-test-automation-${automation.id}`}
             >
               <FlaskConical className="w-4 h-4" />
