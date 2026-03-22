@@ -336,8 +336,23 @@ async function processAutomation(automation: any) {
     for (const customer of customers) {
       if (!customer) continue;
       try {
-        const msg: string = automation.message;
-        const subj: string = automation.subject || 'Message from Yens';
+        // Personalise message — support both {{name}} and {name} placeholder formats
+        const personalise = (text: string) => text
+          .replace(/\{\{name\}\}/g, customer.name || '')
+          .replace(/\{name\}/g, customer.name || '')
+          .replace(/\{\{customerName\}\}/g, customer.name || '')
+          .replace(/\{customerName\}/g, customer.name || '')
+          .replace(/\{\{points\}\}/g, (customer.points ?? 0).toString())
+          .replace(/\{points\}/g, (customer.points ?? 0).toString())
+          .replace(/\{\{customerPoints\}\}/g, (customer.points ?? 0).toString())
+          .replace(/\{customerPoints\}/g, (customer.points ?? 0).toString())
+          .replace(/\{\{tier\}\}/g, customer.tier || '')
+          .replace(/\{tier\}/g, customer.tier || '')
+          .replace(/\{\{customerTier\}\}/g, customer.tier || '')
+          .replace(/\{customerTier\}/g, customer.tier || '');
+
+        const msg: string = personalise(automation.message);
+        const subj: string = personalise(automation.subject || 'Message from Yens');
 
         if (automation.channel === 'email') {
           if (!customer.email) { failedCount++; continue; }

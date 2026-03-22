@@ -184,7 +184,7 @@ const STANDARD_EMAIL_FOOTER = `
             <td align="center" style="padding: 20px;">
               <p style="margin: 0; color: #2E7D32; font-size: 14px; font-weight: 600;">📱 เชื่อมต่อกับเราผ่าน LINE!</p>
               <p style="margin: 8px 0 12px 0; color: #555555; font-size: 13px;">รับโปรโมชั่นพิเศษและอัพเดทข่าวสารก่อนใคร</p>
-              <a href="https://lin.ee/yensthai" target="_blank" style="display: inline-block; padding: 10px 24px; background-color: #06C755; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 24px;">
+              <a href="https://line.me/R/ti/p/@752afsdq" target="_blank" style="display: inline-block; padding: 10px 24px; background-color: #06C755; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 24px;">
                 ➕ เพิ่มเพื่อน LINE @752afsdq
               </a>
             </td>
