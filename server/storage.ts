@@ -38,7 +38,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns } from "@shared/schema";
-import { eq, desc, sql, and, asc, gte, lte } from "drizzle-orm";
+import { eq, desc, sql, and, asc, gte, lte, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Auth methods (required for Replit Auth)
@@ -651,7 +651,7 @@ export class DbStorage implements IStorage {
 
     // Tier filter
     if (filters.tier && filters.tier.length > 0) {
-      conditions.push(sql`${customers.tier} IN (${sql.join(filters.tier.map(t => sql.raw(`'${t}'`)), sql`, `)})`);
+      conditions.push(inArray(customers.tier, filters.tier));
     }
 
     // Spend range filter
@@ -717,7 +717,7 @@ export class DbStorage implements IStorage {
 
     // Tags filter
     if (filter.tags && filter.tags.length > 0) {
-      conditions.push(sql`${customers.tag} IN (${sql.join(filter.tags.map(t => sql.raw(`'${t}'`)), sql`, `)})`);
+      conditions.push(inArray(customers.tag, filter.tags));
     }
 
     // Zero totals filter
@@ -740,12 +740,12 @@ export class DbStorage implements IStorage {
 
     // Delete related data (transactions, notifications, message logs)
     // These will cascade delete due to foreign key constraints
-    await db.delete(transactions).where(sql`${transactions.customerId} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
-    await db.delete(customerNotifications).where(sql`${customerNotifications.customerId} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
-    await db.delete(messageLog).where(sql`${messageLog.customerId} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
+    await db.delete(transactions).where(inArray(transactions.customerId, customerIds));
+    await db.delete(customerNotifications).where(inArray(customerNotifications.customerId, customerIds));
+    await db.delete(messageLog).where(inArray(messageLog.customerId, customerIds));
 
     // Delete customers
-    await db.delete(customers).where(sql`${customers.id} IN (${sql.join(customerIds.map(id => sql.raw(`'${id}'`)), sql`, `)})`);
+    await db.delete(customers).where(inArray(customers.id, customerIds));
 
     return {
       deletedCount: customerIds.length,

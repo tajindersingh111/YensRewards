@@ -971,7 +971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set({ password: hashedPassword })
         .where(eq(users.id, userId));
 
-      console.log(`✅ Password ${user.password ? 'updated' : 'set'} for user ${userId}`);
+      console.log(`✅ Password operation completed for user ${userId}`);
       res.json({ success: true, message: "Password updated successfully" });
     } catch (error: any) {
       console.error("Error setting password:", error);
@@ -3234,7 +3234,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "filename and targetFilename are required" });
       }
       const sanitizedFilename = path.basename(filename);
-      const localPath = path.join('./attached_assets', sanitizedFilename);
+      const allowedDir = path.resolve('./attached_assets');
+      const localPath = path.resolve(allowedDir, sanitizedFilename);
+      if (!localPath.startsWith(allowedDir + path.sep) && localPath !== allowedDir) {
+        return res.status(400).json({ message: "Invalid filename" });
+      }
       if (!fs.existsSync(localPath)) {
         return res.status(404).json({ message: "File not found in attached assets" });
       }
