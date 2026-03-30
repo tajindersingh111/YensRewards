@@ -14,9 +14,48 @@ import { db } from "./db";
 import { eq, sql, and, gt, lt } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import * as fs from "fs";
 import * as path from "path";
+
+// Helper to convert an ExcelJS worksheet to a JSON array, replicating SheetJS sheet_to_json behaviour.
+// The first row is treated as headers. Empty header cells get names like __EMPTY, __EMPTY_1, __EMPTY_2, …
+async function worksheetToJson(worksheet: ExcelJS.Worksheet, defval: any = ""): Promise<Record<string, any>[]> {
+  const allRows: ExcelJS.Row[] = [];
+  worksheet.eachRow((row) => { allRows.push(row); });
+  if (allRows.length === 0) return [];
+
+  // Build header map from the first row
+  const headers: string[] = [];
+  let emptyCount = 0;
+  (allRows[0].values as any[]).forEach((val: any, idx: number) => {
+    if (idx === 0) return; // exceljs row.values is 1-based (index 0 is undefined)
+    const colIdx = idx - 1; // convert to 0-based for headers array
+    if (val === null || val === undefined || val === '') {
+      headers[colIdx] = emptyCount === 0 ? '__EMPTY' : `__EMPTY_${emptyCount}`;
+      emptyCount++;
+    } else {
+      headers[colIdx] = String(val);
+    }
+  });
+
+  // Convert data rows
+  const rows: Record<string, any>[] = [];
+  for (let i = 1; i < allRows.length; i++) {
+    const row = allRows[i];
+    const obj: Record<string, any> = {};
+    (row.values as any[]).forEach((val: any, idx: number) => {
+      if (idx === 0) return;
+      const header = headers[idx - 1];
+      if (header === undefined) return;
+      // Unwrap formula cells to their computed result
+      if (val !== null && typeof val === 'object' && 'result' in val) val = val.result;
+      obj[header] = (val === null || val === undefined) ? defval : val;
+    });
+    rows.push(obj);
+  }
+  return rows;
+}
 
 // In-memory send job tracker for background mass sends
 interface SendJob {
@@ -2680,18 +2719,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return 0;
       };
 
-      // Parse Excel file  
-      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      // Parse Excel file
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(req.file.buffer);
       let totalImported = 0;
       let totalSkipped = 0;
       const errors: string[] = [];
 
+      // Collect sheet names in order
+      const sheetNames: string[] = [];
+      workbook.eachSheet((ws) => { sheetNames.push(ws.name); });
+
       // Process each sheet (month)
-      for (const sheetName of workbook.SheetNames) {
+      for (const sheetName of sheetNames) {
         console.log(`📄 Processing sheet: ${sheetName}`);
-        const worksheet = workbook.Sheets[sheetName];
-        // Keep raw: true (default) to preserve Excel serial dates as numbers
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        const worksheet = workbook.getWorksheet(sheetName)!;
+        const jsonData = await worksheetToJson(worksheet, "");
         console.log(`📊 Found ${jsonData.length} rows in sheet ${sheetName}`);
 
         for (const rawRow of jsonData as any[]) {
@@ -2710,16 +2753,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const rawDayOfWeek = (rawRow['Day'] || rawRow['day'] || rawRow['__EMPTY'] || rawRow[''] || '').toString().trim();
             
             // Skip weekly total rows (they don't have a date in proper format)
-            if (!dateValue || typeof dateValue !== 'number') {
+            // ExcelJS parses date cells as Date objects; fall back to serial-number handling for safety.
+            if (!dateValue || (typeof dateValue !== 'number' && !(dateValue instanceof Date))) {
               console.log(`⏭️  Skipping row - invalid date:`, { dateValue, orderChannel });
               continue;
             }
 
-            // Convert Excel serial date to YYYY-MM-DD
-            // Excel dates are stored as days since 1900-01-01 (with a leap year bug at 1900)
-            const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
-            const jsDate = new Date(excelEpoch.getTime() + (dateValue * 86400000));
-            const date = jsDate.toISOString().split('T')[0];
+            // Convert date value to YYYY-MM-DD string
+            let date: string;
+            if (dateValue instanceof Date) {
+              date = dateValue.toISOString().split('T')[0];
+            } else {
+              // Fallback: treat as Excel serial date (days since Dec 30 1899)
+              const excelEpoch = new Date(1899, 11, 30);
+              const jsDate = new Date(excelEpoch.getTime() + (dateValue * 86400000));
+              date = jsDate.toISOString().split('T')[0];
+            }
             
             // Extract data - handle both __EMPTY columns and named columns
             const dayOfWeek = normalizeDayOfWeek(rawDayOfWeek);
@@ -2773,8 +2822,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         imported: totalImported,
         skipped: totalSkipped,
-        sheetsProcessed: workbook.SheetNames.length,
-        message: `Successfully imported ${totalImported} sales records from ${workbook.SheetNames.length} months`,
+        sheetsProcessed: sheetNames.length,
+        message: `Successfully imported ${totalImported} sales records from ${sheetNames.length} months`,
         errors: errors.length > 0 ? errors : undefined
       });
     } catch (error) {
