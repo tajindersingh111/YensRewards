@@ -37,7 +37,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Download, X, Loader2, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Download, X, Loader2, RefreshCw, ShieldCheck, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 import jsPDF from "jspdf";
@@ -129,6 +129,25 @@ export default function SalesTrackerDashboard() {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupRangeStart, setLookupRangeStart] = useState("");
   const [lookupRangeEnd, setLookupRangeEnd] = useState("");
+
+  // Data validation state
+  type ValidationCheck = { name: string; description: string; passed: boolean; detail: string; errors?: any[] };
+  type ValidationResult = { isValid: boolean; totalRecords: number; ytdTotal: number; checks: ValidationCheck[]; message: string };
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleValidate = async () => {
+    setIsValidating(true);
+    try {
+      const res = await fetch('/api/admin/sales/validate-totals', { credentials: 'include' });
+      const data = await res.json();
+      setValidationResult(data);
+      setShowValidation(true);
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   // Fetch sales metrics
   const { data: metrics } = useQuery<{
@@ -959,6 +978,74 @@ export default function SalesTrackerDashboard() {
             </Card>
           </div>
         </div>
+      </div>
+
+      {/* Data Validation Panel */}
+      <div className="px-6 mb-4">
+        <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleValidate}
+            disabled={isValidating}
+            data-testid="button-validate-data"
+            className="gap-2 text-xs"
+          >
+            {isValidating
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <ShieldCheck className="w-3.5 h-3.5" />
+            }
+            {isValidating ? 'Checking…' : 'Validate Data'}
+          </Button>
+          {validationResult && (
+            <button
+              onClick={() => setShowValidation(v => !v)}
+              className="text-xs text-muted-foreground underline underline-offset-2"
+            >
+              {showValidation ? 'Hide results' : 'Show results'}
+            </button>
+          )}
+        </div>
+
+        {showValidation && validationResult && (
+          <div className={`mt-3 rounded-lg border p-4 ${validationResult.isValid ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+            <div className="flex items-center gap-2 mb-3">
+              {validationResult.isValid
+                ? <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                : <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              }
+              <span className={`text-sm font-semibold ${validationResult.isValid ? 'text-green-800' : 'text-amber-800'}`}>
+                {validationResult.isValid ? 'All checks passed' : 'Issues found'}
+              </span>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {validationResult.totalRecords} records · YTD ฿{validationResult.ytdTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {validationResult.checks?.map((check, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  {check.passed
+                    ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                    : <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+                  }
+                  <div>
+                    <span className="text-xs font-medium text-gray-800">{check.name}</span>
+                    <span className="text-xs text-muted-foreground"> — {check.detail}</span>
+                    {check.errors && check.errors.length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {check.errors.map((err: any, j: number) => (
+                          <p key={j} className="text-xs text-red-600 ml-0">
+                            {err.date}: stored ฿{err.actual?.toLocaleString()} but net+other = ฿{err.expected?.toLocaleString()} (diff ฿{err.diff})
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content Grid */}

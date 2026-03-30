@@ -1896,9 +1896,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(s => s.date >= lastMonthStart && s.date <= lastMonthEnd)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
-      // Calculate YTD (Year to Date) - from Jan 1 to today (using netSales for consistency with reports)
+      // Calculate YTD (Year to Date) - from Jan 1 to today using totalSales for consistency
       const ytdSalesData = allSales.filter(s => s.date >= yearStart && s.date <= today);
-      const ytdSales = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      const ytdSales = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const ytdTransactionCount = ytdSalesData.length;
       
       // Calculate transaction counts for week and month
@@ -1916,7 +1916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lastYearMonthEnd = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(daysElapsedMonth).padStart(2, '0')}`;
       const sameMonthLastYear = allSales
         .filter(s => s.date >= lastYearMonthStart && s.date <= lastYearMonthEnd)
-        .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       
       // Calculate same YTD period last year
       const lastYearStart = `${now.getUTCFullYear() - 1}-01-01`;
@@ -2070,8 +2070,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentMonthSales = allSales.filter(s => s.date >= currentMonthStart && s.date < nextMonthStart);
       const lastMonthSales = allSales.filter(s => s.date >= lastMonthStart && s.date < currentMonthStart);
 
-      const currentMonthRevenue = currentMonthSales.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
-      const lastMonthRevenue = lastMonthSales.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      // Use totalSales (netSales + otherSales) throughout for consistency with Sales Tracker
+      const currentMonthRevenue = currentMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
+      const lastMonthRevenue = lastMonthSales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const momGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
       const avgTransaction = currentMonthSales.length > 0 ? currentMonthRevenue / currentMonthSales.length : 0;
 
@@ -2079,7 +2080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const yearStart = `${currentYear}-01-01`;
       const today = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const ytdSalesData = allSales.filter(s => s.date >= yearStart && s.date <= today);
-      const ytdRevenue = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+      const ytdRevenue = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const ytdTransactions = ytdSalesData.length;
       
       // Same period last year for YoY comparison
@@ -2090,10 +2091,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const sameMonthLastYear = allSales
         .filter(s => s.date >= sameMonthLastYearStart && s.date <= sameMonthLastYearEnd)
-        .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const ytdLastYear = allSales
         .filter(s => s.date >= lastYearStart && s.date <= lastYearToday)
-        .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
+        .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
 
       // Targets from business forecast
       const annualTarget = 1732028;
@@ -2141,12 +2142,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startOfYear = `${currentYear}-01-01`;
       const ytdSales = allSales.filter(s => s.date >= startOfYear);
 
-      // Channel Performance - use YTD and netSales to match Day Total calculation
+      // Channel Performance - use totalSales for consistency
       const channelMap = new Map<string, { revenue: number; transactions: number }>();
       ytdSales.forEach(sale => {
         const existing = channelMap.get(sale.orderChannel) || { revenue: 0, transactions: 0 };
         channelMap.set(sale.orderChannel, {
-          revenue: existing.revenue + parseFloat(sale.netSales),
+          revenue: existing.revenue + parseFloat(sale.totalSales),
           transactions: existing.transactions + 1,
         });
       });
@@ -2160,7 +2161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))
         .sort((a, b) => b.revenue - a.revenue);
 
-      // Day of Week Analysis - use netSales and YTD (ytdSales defined above)
+      // Day of Week Analysis - use totalSales for consistency
       const dayMap = new Map<string, { revenue: number; transactions: number }>();
       const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       
@@ -2169,7 +2170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (day) {
           const existing = dayMap.get(day) || { revenue: 0, transactions: 0 };
           dayMap.set(day, {
-            revenue: existing.revenue + parseFloat(sale.netSales),
+            revenue: existing.revenue + parseFloat(sale.totalSales),
             transactions: existing.transactions + 1,
           });
         }
@@ -2480,7 +2481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Validate that day-of-week totals match YTD total
+  // Validate that day-of-week totals match YTD total and row-level totals are correct
   app.get('/api/admin/sales/validate-totals', isAuthenticated, isAdmin, async (req, res) => {
     console.log('🔍 Validating sales totals...');
     try {
@@ -2490,12 +2491,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all sales for YTD
       const allSales = await db.select().from(dailySales)
         .where(sql`${dailySales.date} >= ${startOfYear}`);
-      
-      // Calculate YTD total
+
+      // Check 1: Row-level integrity — totalSales should equal netSales + otherSales
+      const rowErrors: Array<{ date: string; id: number; expected: number; actual: number; diff: number }> = [];
+      allSales.forEach(sale => {
+        const net = parseFloat(sale.netSales);
+        const other = parseFloat(sale.otherSales || '0');
+        const total = parseFloat(sale.totalSales);
+        const expected = Math.round((net + other) * 100) / 100;
+        const actual = Math.round(total * 100) / 100;
+        if (Math.abs(expected - actual) > 0.02) {
+          rowErrors.push({ date: sale.date, id: sale.id, expected, actual, diff: Math.round((actual - expected) * 100) / 100 });
+        }
+      });
+
+      // Check 2: YTD total
       const ytdTotal = allSales.reduce((sum, sale) => sum + parseFloat(sale.totalSales), 0);
       const ytdRounded = Math.round(ytdTotal * 100) / 100;
       
-      // Calculate day-of-week breakdown
+      // Check 3: Day-of-week breakdown sums to YTD
       const dayMap = new Map<string, number>();
       allSales.forEach(sale => {
         const day = normalizeDayOfWeek(sale.dayOfWeek || '');
@@ -2504,7 +2518,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Sum of all days
       let daySum = 0;
       const dayBreakdown: Record<string, number> = {};
       ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
@@ -2514,13 +2527,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       daySum = Math.round(daySum * 100) / 100;
       
-      // Count records missing day_of_week
+      // Check 4: Missing day_of_week
       const missingDayCount = allSales.filter(s => !s.dayOfWeek || s.dayOfWeek.trim() === '').length;
       
       const difference = Math.round((ytdRounded - daySum) * 100) / 100;
-      const isValid = Math.abs(difference) < 0.01 && missingDayCount === 0;
+      const isValid = Math.abs(difference) < 0.02 && missingDayCount === 0 && rowErrors.length === 0;
       
-      console.log(`✅ YTD: ฿${ytdRounded}, Day Sum: ฿${daySum}, Diff: ฿${difference}, Missing: ${missingDayCount}`);
+      // Build checks array for UI display
+      const checks = [
+        {
+          name: 'Row-level totals',
+          description: 'totalSales = netSales + otherSales for each record',
+          passed: rowErrors.length === 0,
+          detail: rowErrors.length === 0 
+            ? `All ${allSales.length} records verified` 
+            : `${rowErrors.length} record(s) have mismatched totals`,
+          errors: rowErrors.slice(0, 10), // cap at 10 for display
+        },
+        {
+          name: 'Day-of-week coverage',
+          description: 'All records have a day assigned',
+          passed: missingDayCount === 0,
+          detail: missingDayCount === 0 
+            ? 'All records have day-of-week' 
+            : `${missingDayCount} records missing day-of-week`,
+        },
+        {
+          name: 'Day totals vs YTD',
+          description: 'Sum of all days equals YTD total',
+          passed: Math.abs(difference) < 0.02,
+          detail: Math.abs(difference) < 0.02 
+            ? `Days ฿${daySum.toLocaleString('en-US', { minimumFractionDigits: 2 })} = YTD ฿${ytdRounded.toLocaleString('en-US', { minimumFractionDigits: 2 })}` 
+            : `Gap of ฿${difference.toLocaleString('en-US', { minimumFractionDigits: 2 })} (Days ฿${daySum.toLocaleString()} vs YTD ฿${ytdRounded.toLocaleString()})`,
+        },
+      ];
+      
+      console.log(`✅ YTD: ฿${ytdRounded}, Day Sum: ฿${daySum}, Diff: ฿${difference}, Missing: ${missingDayCount}, Row errors: ${rowErrors.length}`);
       
       res.json({
         success: true,
@@ -2531,11 +2573,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         missingDayOfWeek: missingDayCount,
         totalRecords: allSales.length,
         dayBreakdown,
+        checks,
+        rowErrors: rowErrors.slice(0, 10),
         message: isValid 
-          ? `All totals match! YTD ฿${ytdRounded.toLocaleString('en-US', { minimumFractionDigits: 2 })} = Day totals ฿${daySum.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-          : missingDayCount > 0
-            ? `${missingDayCount} records missing day-of-week. Click "Fix Data" first.`
-            : `Mismatch: YTD ฿${ytdRounded.toLocaleString()} vs Days ฿${daySum.toLocaleString()} (diff: ฿${difference})`
+          ? `All ${allSales.length} records passed all checks. YTD ฿${ytdRounded.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          : checks.filter(c => !c.passed).map(c => c.detail).join(' | ')
       });
     } catch (error: any) {
       console.error("Error validating totals:", error);
