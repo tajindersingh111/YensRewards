@@ -5,6 +5,41 @@ import { ObjectStorageService } from "./objectStorage";
 import { setEmailLogoUrl } from "./resend";
 import { startScheduler } from "./scheduler";
 import { storage } from "./storage";
+import fs from "fs";
+import path from "path";
+
+// Ensure the post-commit git hook for GitHub auto-sync is always installed.
+// The hook is written to .git/hooks/post-commit every startup so it survives
+// any Replit environment resets. Token is read at hook-run time from GITHUB_TOKEN.
+function ensureGitHubSyncHook() {
+  try {
+    const hooksDir = path.resolve(process.cwd(), ".git", "hooks");
+    const hookPath = path.join(hooksDir, "post-commit");
+    const hookContent = `#!/bin/bash
+# Auto-sync to GitHub after every Replit checkpoint commit
+# Token is read from the GITHUB_TOKEN Replit secret at runtime.
+if [ -z "$GITHUB_TOKEN" ]; then
+  exit 0
+fi
+REMOTE_URL="https://Leonardfraser:\${GITHUB_TOKEN}@github.com/Leonardfraser/YensRewards.git"
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "main")
+git push "$REMOTE_URL" "\${BRANCH}:main" --quiet 2>&1 | sed "s/\${GITHUB_TOKEN}/***REDACTED***/g" || true
+`;
+    if (!fs.existsSync(hooksDir)) {
+      log("GitHub sync hook: .git/hooks directory not found, skipping");
+      return;
+    }
+    const existing = fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf8") : "";
+    if (existing !== hookContent) {
+      fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
+      log("GitHub sync hook installed (post-commit → YensRewards)");
+    } else {
+      log("GitHub sync hook already up to date");
+    }
+  } catch (err) {
+    log(`GitHub sync hook setup warning: ${err instanceof Error ? err.message : err}`);
+  }
+}
 
 // v3.17.15 - Build birthday email template with dynamic image URL
 function buildBirthdayHtml(imageUrl: string): string {
@@ -201,6 +236,9 @@ app.use((req, res, next) => {
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
     const port = parseInt(process.env.PORT || '5000', 10);
+    // Ensure GitHub auto-sync hook is always present
+    ensureGitHubSyncHook();
+
     server.listen({
       port,
       host: "0.0.0.0",
