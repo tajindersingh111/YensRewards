@@ -1,6 +1,43 @@
-node_modules
-dist
-.DS_Store
-server/public
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+server/public/
+
+# Environment & secrets — NEVER commit these
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+*.env
+
+# Replit internal
+.replit.nix
 vite.config.ts.*
+.upm/
+.cache/
+.local/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary / archive files
 *.tar.gz
+*.zip
+tmp/
+temp/
+
+# Uploaded / generated assets that should not be in version control
+attached_assets/
