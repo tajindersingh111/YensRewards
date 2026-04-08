@@ -42,7 +42,7 @@ export default function EnhancedMessaging() {
     queryKey: ['/api/admin/customers/filter', filters],
     queryFn: async () => {
       const response = await apiRequest('POST', '/api/admin/customers/filter', filters);
-      return response;
+      return response as unknown as Customer[];
     },
   });
 

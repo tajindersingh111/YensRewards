@@ -1579,7 +1579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Get unique customer IDs
-      const customerIds = [...new Set(birthdayMessagesSentToday.map(log => log.customerId))];
+      const customerIds = Array.from(new Set(birthdayMessagesSentToday.map(log => log.customerId)));
       
       res.json({ customerIds });
     } catch (error) {
@@ -2532,7 +2532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(sql`${dailySales.date} >= ${startOfYear}`);
 
       // Check 1: Row-level integrity — totalSales should equal netSales + otherSales
-      const rowErrors: Array<{ date: string; id: number; expected: number; actual: number; diff: number }> = [];
+      const rowErrors: Array<{ date: string; id: string | number; expected: number; actual: number; diff: number }> = [];
       allSales.forEach(sale => {
         const net = parseFloat(sale.netSales);
         const other = parseFloat(sale.otherSales || '0');
@@ -4620,7 +4620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a scheduled message
   app.post('/api/admin/messages/schedule', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.claims?.sub;
       const { channel, recipientType, tier, customerIds, subject, message, scheduledFor, timezone } = req.body;
 
       if (!channel || !recipientType || !message || !scheduledFor) {
@@ -4752,7 +4752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const triggerType = data.triggerType ?? existing.triggerType;
       const triggerConfig = (data.triggerConfig ?? existing.triggerConfig) as any;
       const nextRunAt = calculateNextRunAt(triggerType, triggerConfig);
-      const updated = await storage.updateAutomation(req.params.id, { ...data, nextRunAt });
+      const updated = await storage.updateAutomation(req.params.id, { ...(data as any), nextRunAt });
       res.json(updated);
     } catch (error) {
       console.error("Error updating automation:", error);
@@ -5787,11 +5787,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Insert the review into the database
       const [newReview] = await db.insert(customerReviews).values({
-        customerId: reviewData.customerId || null,
+        customerId: reviewData.customerId,
         rating: reviewData.rating,
         feedbackTags: reviewData.feedbackTags || [],
         comment: reviewData.comment || null,
-        siteId: reviewData.siteId || null,
         googlePlaceId: reviewData.googlePlaceId || null,
       }).returning();
       

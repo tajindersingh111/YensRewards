@@ -72,7 +72,7 @@ export function SchedulesManager() {
     mutationFn: async (data: any) => {
       return await apiRequest('POST', '/api/admin/work-schedules', data);
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/work-schedules'] });
       if (response.mode === 'weekly') {
         toast({ title: t('admin.schedules.weeklyCreated', { count: response.schedulesCreated }) });

@@ -604,7 +604,7 @@ export default function AdminDashboard() {
 
       {messagingCustomer && (
         <CustomerMessageDialog
-          customer={messagingCustomer}
+          customer={messagingCustomer as any}
           open={isMessageDialogOpen}
           onOpenChange={(open) => { setIsMessageDialogOpen(open); if (!open) setMessagingCustomer(null); }}
         />
