@@ -144,7 +144,10 @@
     "axios": "^1.15.2",
     "fast-xml-parser": "^5.7.2",
     "follow-redirects": "^1.16.0",
-    "esbuild": "^0.25.0",
-    "uuid": "^14.0.0"
+    "uuid": "^14.0.0",
+    "@tootallnate/once": "^3.0.1",
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.0"
+    }
   }
 }
