@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const CURRENT_VERSION = 'v92';
+const CURRENT_VERSION = 'v93';
 
 export function useAutoUpdate() {
   // Auto-update completely disabled

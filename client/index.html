@@ -29,10 +29,12 @@
           viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
         }
         
-        // Additional Android-specific fix
-        if (/android/i.test(navigator.userAgent)) {
+        // Additional Android-specific fix - phones only (tablets need normal scroll)
+        const isAndroidPhone = /android/i.test(navigator.userAgent) && window.innerWidth < 768;
+        if (isAndroidPhone) {
           document.documentElement.style.width = '100%';
-          document.documentElement.style.overflow = 'hidden';
+          document.documentElement.style.overflowX = 'hidden';
+          // Never set overflow:hidden (y-axis) - it blocks vertical scrolling
         }
       })();
     </script>
