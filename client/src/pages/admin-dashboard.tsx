@@ -20,6 +20,7 @@ import BulkMessageComposer from "@/components/BulkMessageComposer";
 import UsersPage from "@/pages/admin/UsersPage";
 import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
+import BaristaManager from "@/components/BaristaManager";
 import WeeklySpecialsManager from "@/pages/admin/WeeklySpecialsManager";
 import AutomationsManager from "@/components/AutomationsManager";
 import SettingsPage from "@/components/SettingsPage";
@@ -82,6 +83,7 @@ const NAV_GROUPS = [
       { id: 'products', label: 'Products', testId: 'tab-products' },
       { id: 'sites', label: 'Sites', testId: 'tab-sites' },
       { id: 'schedules', label: 'Schedules', testId: 'tab-schedules' },
+      { id: 'barista', label: 'Barista', testId: 'tab-barista' },
     ],
   },
   {
@@ -585,6 +587,8 @@ export default function AdminDashboard() {
           {activeTab === 'sites' && <SitesManager key="sites" />}
 
           {activeTab === 'schedules' && <SchedulesManager key="schedules" />}
+
+          {activeTab === 'barista' && <BaristaManager key="barista" />}
 
           {activeTab === 'users' && <UsersPage key="users" />}
 

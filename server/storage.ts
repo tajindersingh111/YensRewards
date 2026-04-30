@@ -196,6 +196,7 @@ export interface IStorage {
   clockIn(userId: string, siteId: string, date: string): Promise<TimeEntry>;
   clockOut(timeEntryId: string): Promise<TimeEntry | undefined>;
   getTimeEntries(userId: string, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
+  getAllTimeEntries(startDate?: string, endDate?: string, userId?: string): Promise<TimeEntry[]>;
   
   // Work Schedule methods
   getAllWorkSchedules(): Promise<WorkSchedule[]>;
@@ -228,6 +229,7 @@ export interface IStorage {
   getWeeklyLeaderboard(weekStart: string, limit?: number): Promise<Array<BaristaPerformance & { user: User }>>;
   updateBaristaPerformance(performance: InsertBaristaPerformance): Promise<BaristaPerformance>;
   getUserPerformanceHistory(userId: string, limit?: number): Promise<BaristaPerformance[]>;
+  getAllBaristaPerformanceSummary(weekStart: string): Promise<Array<BaristaPerformance & { user: User }>>;
   
   // Scheduled Message methods
   createScheduledMessage(message: InsertScheduledMessage): Promise<ScheduledMessage>;
@@ -1627,6 +1629,18 @@ export class DbStorage implements IStorage {
       .orderBy(desc(timeEntries.date), desc(timeEntries.clockInTime));
   }
 
+  async getAllTimeEntries(startDate?: string, endDate?: string, userId?: string): Promise<TimeEntry[]> {
+    const conditions: any[] = [];
+    if (userId) conditions.push(eq(timeEntries.userId, userId));
+    if (startDate) conditions.push(gte(timeEntries.date, startDate));
+    if (endDate) conditions.push(lte(timeEntries.date, endDate));
+    return await db
+      .select()
+      .from(timeEntries)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(timeEntries.date), desc(timeEntries.clockInTime));
+  }
+
   // Work Schedule methods
   async getAllWorkSchedules(): Promise<WorkSchedule[]> {
     return await db
@@ -1936,6 +1950,18 @@ export class DbStorage implements IStorage {
       .where(eq(baristaPerformance.userId, userId))
       .orderBy(desc(baristaPerformance.weekStart))
       .limit(limit);
+  }
+
+  async getAllBaristaPerformanceSummary(weekStart: string): Promise<Array<BaristaPerformance & { user: User }>> {
+    const results = await db
+      .select()
+      .from(baristaPerformance)
+      .leftJoin(users, eq(baristaPerformance.userId, users.id))
+      .where(eq(baristaPerformance.weekStart, weekStart))
+      .orderBy(asc(baristaPerformance.weeklyRank));
+    return results
+      .filter(r => r.users !== null)
+      .map(r => ({ ...r.barista_performance, user: r.users as User }));
   }
 
   // Scheduled Message methods

@@ -5404,6 +5404,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ Admin Work Schedule Routes ============
   
   // Get all work schedules
+  // Admin: all time entries (clock in/out log)
+  app.get('/api/admin/time-entries', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { startDate, endDate, userId } = req.query;
+      const entries = await storage.getAllTimeEntries(
+        startDate as string | undefined,
+        endDate as string | undefined,
+        userId as string | undefined
+      );
+      res.json(entries);
+    } catch (error) {
+      console.error("Error getting all time entries:", error);
+      res.status(500).json({ message: "Failed to get time entries" });
+    }
+  });
+
+  // Admin: barista performance summary for a given week
+  app.get('/api/admin/barista-performance/summary', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { weekStart } = req.query;
+      if (!weekStart) return res.status(400).json({ message: "weekStart required" });
+      const data = await storage.getAllBaristaPerformanceSummary(weekStart as string);
+      res.json(data);
+    } catch (error) {
+      console.error("Error getting barista performance summary:", error);
+      res.status(500).json({ message: "Failed to get performance summary" });
+    }
+  });
+
   app.get('/api/admin/work-schedules', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const schedules = await storage.getAllWorkSchedules();
