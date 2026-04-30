@@ -369,7 +369,7 @@ export default function CustomerAppV3() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100/50 pb-20">
       {/* Header - Compact yellow banner same width as content */}
-      <div className="sticky top-0 z-50 px-4 pt-2" style={{ maxWidth: "480px", margin: "0 auto" }}>
+      <div className="sticky top-0 z-50 px-4 pt-2 max-w-[480px] md:max-w-[680px] mx-auto">
         <header className="bg-primary text-primary-foreground py-2 px-3 flex items-center justify-between gap-1">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
@@ -398,8 +398,7 @@ export default function CustomerAppV3() {
       {/* Hero Banner - Only show on Home tab */}
       {activeTab === "home" && (
         <div 
-          className="overflow-hidden cursor-pointer px-4"
-          style={{ maxWidth: "480px", margin: "0 auto" }}
+          className="overflow-hidden cursor-pointer px-4 max-w-[480px] md:max-w-[680px] mx-auto"
           onClick={() => window.open("https://r.grab.com/g/6-20260118_164808_8EB3D56733EB46359E49369E57E74885_MEXMPS-3-C6UCJBMJGYDXA2", "_blank")}
           data-testid="button-order-now"
         >
@@ -413,7 +412,7 @@ export default function CustomerAppV3() {
       )}
 
       {/* Main Content */}
-      <main className="px-4 pt-4 space-y-4 pb-4" style={{ maxWidth: "480px", margin: "0 auto" }}>
+      <main className="px-4 pt-4 space-y-4 pb-4 max-w-[480px] md:max-w-[680px] mx-auto">
 
         {/* HOME TAB */}
         {activeTab === "home" && (
@@ -685,7 +684,7 @@ export default function CustomerAppV3() {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border bottom-nav-safe" style={{ zIndex: 9999 }}>
-        <div className="mx-auto w-full grid grid-cols-4 py-2" style={{ maxWidth: "480px" }}>
+        <div className="mx-auto w-full grid grid-cols-4 py-2 max-w-[480px] md:max-w-[680px]">
           <button
             onClick={() => { enableAudio(); setActiveTab("home"); }}
             className={`flex flex-col items-center justify-center gap-1 py-2 hover-elevate active-elevate-2 ${

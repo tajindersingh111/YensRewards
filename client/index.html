@@ -98,14 +98,20 @@
           console.log('🔍 Using legacy UA detection');
         }
         
-        // Apply 50% scaling for ALL Android devices
-        if (isAndroid) {
+        // Apply 50% scaling for Android PHONES only (not tablets)
+        // Tablets (viewport >= 768px) use standard 16px like desktop
+        const isPhone = viewportWidth < 768;
+        if (isAndroid && isPhone) {
           document.documentElement.style.fontSize = '24px';
           document.documentElement.classList.add('android-scale');
-          console.log('✅ Android detected - Applying 24px font-size (50% boost)');
+          console.log('✅ Android phone detected - Applying 24px font-size (50% boost)');
         } else {
           document.documentElement.style.fontSize = '16px';
-          console.log('📱 iOS/Desktop - Using 16px font-size');
+          if (isAndroid) {
+            console.log('📱 Android tablet detected - Using standard 16px font-size');
+          } else {
+            console.log('📱 iOS/Desktop - Using 16px font-size');
+          }
         }
         
         // Debug output

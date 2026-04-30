@@ -175,7 +175,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
   return (
     <div className="min-h-screen bg-gradient-to-br from-chart-1 to-chart-2">
       <header className="bg-gradient-to-r from-chart-1 to-chart-2 text-white p-4 shadow-lg">
-        <div className="max-w-md mx-auto flex items-center justify-between">
+        <div className="max-w-md md:max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 object-cover rounded-full" />
             <div>
@@ -187,7 +187,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
         </div>
       </header>
 
-      <main className="max-w-md mx-auto p-4 pt-12">
+      <main className="max-w-md md:max-w-xl mx-auto p-4 pt-12">
         <Card className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-chart-1/10 mb-4">
@@ -758,7 +758,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-chart-1 text-white p-4 sticky top-0 z-50">
-        <div className="max-w-md mx-auto flex items-center justify-between">
+        <div className="max-w-md md:max-w-3xl mx-auto flex items-center justify-between">
           <Button
             onClick={() => setLocationPath("/")}
             variant="ghost"
@@ -827,7 +827,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-md mx-auto p-4">
+      <main className="max-w-md md:max-w-3xl mx-auto p-4">
         {/* Sites Loading/Error States */}
         {sitesLoading && (
           <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
