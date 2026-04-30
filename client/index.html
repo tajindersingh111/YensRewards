@@ -81,43 +81,32 @@
         // Store viewport width for debugging
         document.documentElement.dataset.vw = viewportWidth;
         
-        // LAYERED ANDROID DETECTION
-        // 1. Modern API (works even with desktop UA spoofing)
-        let isAndroid = false;
+        // ANDROID DETECTION - always trust the UA string as ground truth
+        // Xiaomi/HyperOS, Samsung, and other tablets all contain "Android" in UA
+        const ua = navigator.userAgent;
+        const isAndroid = /android/i.test(ua);
         
-        if (navigator.userAgentData) {
-          // Modern User-Agent Client Hints API
-          // Android reports as "Linux" or "Android", and mobile flag is unreliable
-          const platform = navigator.userAgentData.platform;
-          isAndroid = platform === 'Android' || 
-                     platform === 'Linux' ||  // Android often reports as Linux
-                     (navigator.userAgentData.mobile && /android/i.test(navigator.userAgent));
-          console.log('🔍 Using userAgentData:', platform, 'Mobile:', navigator.userAgentData.mobile, 'Detected Android:', isAndroid);
-        } else {
-          // Fallback to legacy detection
-          isAndroid = /android/i.test(navigator.userAgent) || 
-                     /android/i.test(navigator.platform || '');
-          console.log('🔍 Using legacy UA detection');
-        }
+        // Determine phone vs tablet purely by viewport width
+        // Xiaomi Pad 6S Pro: ~800px portrait / ~1280px landscape (both > 768)
+        // Standard Android phones: 360-430px CSS width
+        const isTablet = viewportWidth >= 768;
         
-        // Apply 50% scaling for Android PHONES only (not tablets)
-        // Tablets (viewport >= 768px) use standard 16px like desktop
-        const isPhone = viewportWidth < 768;
-        if (isAndroid && isPhone) {
+        console.log('📱 Device:', isAndroid ? 'Android' : 'iOS/Desktop', '| Tablet:', isTablet, '| Viewport:', viewportWidth, 'px');
+        console.log('UA:', ua.substring(0, 120));
+        
+        if (isAndroid && !isTablet) {
+          // Android PHONE only — apply 50% font boost for small-screen scaling
           document.documentElement.style.fontSize = '24px';
           document.documentElement.classList.add('android-scale');
-          console.log('✅ Android phone detected - Applying 24px font-size (50% boost)');
+          console.log('✅ Android phone — applying 24px font boost');
         } else {
+          // Tablets and non-Android devices — standard 16px
           document.documentElement.style.fontSize = '16px';
-          if (isAndroid) {
-            console.log('📱 Android tablet detected - Using standard 16px font-size');
-          } else {
-            console.log('📱 iOS/Desktop - Using 16px font-size');
-          }
+          console.log('✅ Standard 16px — no scaling boost needed');
         }
         
-        // Debug output
-        console.log('Viewport:', viewportWidth, 'UA:', navigator.userAgent.substring(0, 100));
+        // Store detected type for CSS use
+        if (isTablet) document.documentElement.classList.add('is-tablet');
       })();
     </script>
     
