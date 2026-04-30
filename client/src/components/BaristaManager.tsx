@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfWeek, endOfWeek, parseISO, differenceInMinutes, addDays, subDays } from "date-fns";
-import { Calendar, Clock, Users, TrendingUp, Download, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Timer, Star, ShoppingCart, UserPlus, Award } from "lucide-react";
+import { format, startOfWeek, endOfWeek, parseISO, differenceInMinutes, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, addWeeks, subWeeks, isSameDay } from "date-fns";
+import { Calendar, Clock, Users, TrendingUp, Download, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Timer, Star, ShoppingCart, UserPlus, Award, CalendarDays } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -523,6 +523,199 @@ function PerformanceTab({ users }: { users: User[] }) {
   );
 }
 
+// ─── Staff Calendar Tab ───────────────────────────────────────────────────────
+
+const BARISTA_COLORS = [
+  "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+  "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+  "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
+  "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
+  "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400",
+  "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
+];
+
+const BARISTA_BORDER_COLORS = [
+  "border-blue-300 dark:border-blue-700",
+  "border-purple-300 dark:border-purple-700",
+  "border-orange-300 dark:border-orange-700",
+  "border-teal-300 dark:border-teal-700",
+  "border-pink-300 dark:border-pink-700",
+  "border-yellow-300 dark:border-yellow-700",
+  "border-red-300 dark:border-red-700",
+  "border-indigo-300 dark:border-indigo-700",
+];
+
+function StaffCalendarTab({ users, schedules, sites }: {
+  users: User[];
+  schedules: WorkSchedule[];
+  sites: Site[];
+}) {
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
+  const [anchor, setAnchor] = useState(new Date());
+
+  const baristas = users.filter(u => u.role !== "admin");
+  const colorMap = Object.fromEntries(baristas.map((u, i) => [u.id, i % BARISTA_COLORS.length]));
+  const siteName = (id: string) => sites.find(s => s.id === id)?.name ?? "";
+
+  // ── Week helpers ────────────────────────────────────────────────────────────
+  const weekStart = startOfWeek(anchor, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // ── Month helpers ───────────────────────────────────────────────────────────
+  const monthStart = startOfMonth(anchor);
+  const monthEnd = endOfMonth(anchor);
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const calDays = eachDayOfInterval({ start: calStart, end: calEnd });
+
+  function getShifts(day: Date) {
+    const d = format(day, "yyyy-MM-dd");
+    return schedules.filter(s => s.scheduledDate === d);
+  }
+
+  // ── Legend ──────────────────────────────────────────────────────────────────
+  const legend = (
+    <div className="flex flex-wrap gap-2">
+      {baristas.map((u, i) => (
+        <div key={u.id} className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-md border ${BARISTA_COLORS[i % BARISTA_COLORS.length]} ${BARISTA_BORDER_COLORS[i % BARISTA_BORDER_COLORS.length]}`}>
+          <span className="font-medium">{userName(u)}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── Week View ────────────────────────────────────────────────────────────────
+  const weekView = (
+    <div className="overflow-x-auto">
+      <div className="min-w-[600px]">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {weekDays.map(day => (
+            <div key={day.toISOString()} className={`text-center py-2 rounded-md text-sm font-medium ${isToday(day) ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+              <div className="text-xs font-semibold uppercase tracking-wide">{format(day, "EEE")}</div>
+              <div className={`text-lg font-bold leading-tight ${isToday(day) ? "" : "text-foreground"}`}>{format(day, "d")}</div>
+              <div className="text-[10px] opacity-70">{format(day, "MMM")}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Shift cells */}
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map(day => {
+            const shifts = getShifts(day);
+            return (
+              <div key={day.toISOString()} className={`min-h-[120px] rounded-md border p-1.5 space-y-1 ${isToday(day) ? "border-primary/40 bg-primary/5" : "bg-muted/20"}`} data-testid={`cal-day-${format(day, "yyyy-MM-dd")}`}>
+                {shifts.length === 0 && (
+                  <div className="h-full flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground/50">—</span>
+                  </div>
+                )}
+                {shifts.map(s => {
+                  const u = users.find(u => u.id === s.userId);
+                  if (!u) return null;
+                  const ci = colorMap[u.id] ?? 0;
+                  return (
+                    <div key={s.id} className={`rounded px-1.5 py-1 text-[11px] leading-tight border ${BARISTA_COLORS[ci]} ${BARISTA_BORDER_COLORS[ci]}`} data-testid={`shift-${s.id}`}>
+                      <div className="font-semibold truncate">{userName(u)}</div>
+                      <div className="opacity-80">{s.startTime}–{s.endTime}</div>
+                      {siteName(s.siteId) && <div className="opacity-60 truncate">{siteName(s.siteId)}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Month View ────────────────────────────────────────────────────────────────
+  const dayHeaders = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const monthView = (
+    <div>
+      {/* Day-of-week header row */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {dayHeaders.map(d => (
+          <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1 uppercase tracking-wide">{d}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {calDays.map(day => {
+          const shifts = getShifts(day);
+          const inMonth = isSameMonth(day, anchor);
+          const today = isToday(day);
+          return (
+            <div key={day.toISOString()} className={`rounded-md border p-1 min-h-[80px] ${today ? "border-primary/60 bg-primary/5" : inMonth ? "bg-background" : "bg-muted/10 opacity-50"}`} data-testid={`cal-month-day-${format(day, "yyyy-MM-dd")}`}>
+              <div className={`text-xs font-semibold mb-1 w-5 h-5 flex items-center justify-center rounded-full ${today ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+                {format(day, "d")}
+              </div>
+              <div className="space-y-0.5">
+                {shifts.slice(0, 3).map(s => {
+                  const u = users.find(u => u.id === s.userId);
+                  if (!u) return null;
+                  const ci = colorMap[u.id] ?? 0;
+                  return (
+                    <div key={s.id} className={`rounded px-1 py-0.5 text-[10px] leading-tight truncate border ${BARISTA_COLORS[ci]} ${BARISTA_BORDER_COLORS[ci]}`} title={`${userName(u)} · ${s.startTime}–${s.endTime}`} data-testid={`month-shift-${s.id}`}>
+                      <span className="font-medium">{u.firstName ?? userName(u).split(" ")[0]}</span>
+                      <span className="opacity-70 ml-1">{s.startTime}</span>
+                    </div>
+                  );
+                })}
+                {shifts.length > 3 && (
+                  <div className="text-[10px] text-muted-foreground px-1">+{shifts.length - 3} more</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Button size="icon" variant="outline" onClick={() => setAnchor(a => viewMode === "week" ? subWeeks(a, 1) : subMonths(a, 1))} data-testid="button-cal-prev">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-semibold min-w-[180px] text-center" data-testid="text-cal-period">
+            {viewMode === "week"
+              ? `${format(weekStart, "d MMM")} – ${format(addDays(weekStart, 6), "d MMM yyyy")}`
+              : format(anchor, "MMMM yyyy")}
+          </span>
+          <Button size="icon" variant="outline" onClick={() => setAnchor(a => viewMode === "week" ? addWeeks(a, 1) : addMonths(a, 1))} data-testid="button-cal-next">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setAnchor(new Date())} data-testid="button-cal-today">Today</Button>
+        </div>
+        <div className="flex rounded-md border overflow-hidden">
+          <button onClick={() => setViewMode("week")} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === "week" ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted"}`} data-testid="button-view-week">Week</button>
+          <button onClick={() => setViewMode("month")} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === "month" ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted"}`} data-testid="button-view-month">Month</button>
+        </div>
+      </div>
+
+      {/* Legend */}
+      {baristas.length > 0 && legend}
+
+      {/* Calendar */}
+      {viewMode === "week" ? weekView : monthView}
+
+      {schedules.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground text-sm">
+          No schedules found. Add shifts in the Schedules tab.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BaristaManager() {
@@ -578,8 +771,11 @@ export default function BaristaManager() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="calendar">
         <TabsList className="mb-2" data-testid="tabs-barista-manager">
+          <TabsTrigger value="calendar" data-testid="tab-calendar">
+            <CalendarDays className="h-4 w-4 mr-1.5" />Calendar
+          </TabsTrigger>
           <TabsTrigger value="overview" data-testid="tab-overview">
             <Users className="h-4 w-4 mr-1.5" />Overview
           </TabsTrigger>
@@ -593,6 +789,19 @@ export default function BaristaManager() {
             <TrendingUp className="h-4 w-4 mr-1.5" />Performance
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="calendar">
+          {schedulesLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
+              </div>
+            </div>
+          ) : (
+            <StaffCalendarTab users={users} schedules={schedules} sites={sites} />
+          )}
+        </TabsContent>
 
         <TabsContent value="overview">
           {isLoading ? (
