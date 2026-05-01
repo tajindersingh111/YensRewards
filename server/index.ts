@@ -352,6 +352,311 @@ async function restoreMissingPdfSalesData() {
   }
 }
 
+// ONE-TIME: Restore missing 2025 sales — Oct 2025 (entirely absent), Nov 22-30, Dec 1-28
+// Source: Annual PDF (01/01/25–25/12/25) + December monthly PDF (01/12/25–31/12/25)
+async function restoreMissing2025SalesData() {
+  try {
+    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2025-01-01' AND date < '2026-01-01'`);
+    const existing = parseInt((check.rows[0] as any).c || '0');
+    if (existing >= 560) {
+      log(`2025 sales check: already have ${existing} rows for 2025, skipping`);
+      return;
+    }
+    log(`2025 sales check: found ${existing} rows for 2025, restoring missing Oct/Nov/Dec data...`);
+
+    const admins = await db.execute(drizzleSql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
+    const adminId = (admins.rows[0] as any)?.id || 'KZ-L18';
+
+    const txns: { date: string; day: string; channel: string; net: number }[] = [
+      // ── October 2025 (entirely missing from DB) ──
+      { date: '2025-10-01', day: 'Wed', channel: 'SHOP', net: 1000.00 },
+      { date: '2025-10-01', day: 'Wed', channel: 'Shop', net: 2199.00 },
+      { date: '2025-10-02', day: 'Thu', channel: 'Shop', net: 1788.00 },
+      { date: '2025-10-03', day: 'Fri', channel: 'Shop', net: 1890.00 },
+      { date: '2025-10-04', day: 'Sat', channel: 'Shop', net: 1279.00 },
+      { date: '2025-10-05', day: 'Sun', channel: 'Shop', net: 1673.00 },
+      { date: '2025-10-06', day: 'Mon', channel: 'Shop', net: 1009.00 },
+      { date: '2025-10-07', day: 'Tue', channel: 'Shop', net: 2143.00 },
+      { date: '2025-10-08', day: 'Wed', channel: 'Shop', net: 1549.00 },
+      { date: '2025-10-09', day: 'Thu', channel: 'Shop', net: 1937.00 },
+      { date: '2025-10-10', day: 'Fri', channel: 'Shop', net: 1961.00 },
+      { date: '2025-10-11', day: 'Sat', channel: 'Shop', net: 1251.00 },
+      { date: '2025-10-12', day: 'Sun', channel: 'Shop', net: 1905.00 },
+      { date: '2025-10-13', day: 'Mon', channel: 'Shop', net: 1508.00 },
+      { date: '2025-10-14', day: 'Tue', channel: 'Shop', net: 1143.00 },
+      { date: '2025-10-15', day: 'Wed', channel: 'Shop', net: 1859.00 },
+      { date: '2025-10-16', day: 'Thu', channel: 'Shop', net: 1879.00 },
+      { date: '2025-10-17', day: 'Fri', channel: 'Shop', net: 1681.00 },
+      { date: '2025-10-18', day: 'Sat', channel: 'Shop', net: 1444.00 },
+      { date: '2025-10-19', day: 'Sun', channel: 'Shop', net: 1910.00 },
+      { date: '2025-10-20', day: 'Mon', channel: 'Shop', net: 1168.00 },
+      { date: '2025-10-21', day: 'Tue', channel: 'Shop', net: 1919.00 },
+      { date: '2025-10-22', day: 'Wed', channel: 'Shop', net: 1915.00 },
+      { date: '2025-10-23', day: 'Thu', channel: 'Shop', net: 2243.00 },
+      { date: '2025-10-24', day: 'Fri', channel: 'Shop', net: 1044.00 },
+      { date: '2025-10-25', day: 'Sat', channel: 'Shop', net: 1014.00 },
+      { date: '2025-10-26', day: 'Sun', channel: 'Shop', net: 0.00 },
+      { date: '2025-10-27', day: 'Mon', channel: 'Shop', net: 0.00 },
+      { date: '2025-10-28', day: 'Tue', channel: 'Shop', net: 1576.00 },
+      { date: '2025-10-29', day: 'Wed', channel: 'Shop', net: 1673.00 },
+      { date: '2025-10-30', day: 'Thu', channel: 'Shop', net: 2370.00 },
+      { date: '2025-10-31', day: 'Fri', channel: 'Shop', net: 2015.00 },
+      // ── November 22–30 2025 (missing from DB) ──
+      { date: '2025-11-22', day: 'Sat', channel: 'River',     net: 1412.00 },
+      { date: '2025-11-22', day: 'Sat', channel: 'Shop',      net: 1309.00 },
+      { date: '2025-11-23', day: 'Sun', channel: 'BOX',       net: 1615.00 },
+      { date: '2025-11-23', day: 'Sun', channel: 'Shop',      net: 1765.00 },
+      { date: '2025-11-24', day: 'Mon', channel: 'BOX',       net: 1075.00 },
+      { date: '2025-11-24', day: 'Mon', channel: 'Shop',      net: 1214.00 },
+      { date: '2025-11-25', day: 'Tue', channel: 'RIVERBOAT', net: 4639.00 },
+      { date: '2025-11-25', day: 'Tue', channel: 'Shop',      net: 1420.00 },
+      { date: '2025-11-26', day: 'Wed', channel: 'Shop',      net: 1104.00 },
+      { date: '2025-11-26', day: 'Wed', channel: 'RIVERBOAT', net: 3949.00 },
+      { date: '2025-11-27', day: 'Thu', channel: 'FOOD',      net: 5000.00 },
+      { date: '2025-11-27', day: 'Thu', channel: 'Shop',      net: 1616.00 },
+      { date: '2025-11-27', day: 'Thu', channel: 'RIVERBOAT', net: 2925.00 },
+      { date: '2025-11-28', day: 'Fri', channel: 'Shop',      net:  823.00 },
+      { date: '2025-11-28', day: 'Fri', channel: 'RIVERBOAT', net: 3746.00 },
+      { date: '2025-11-28', day: 'Fri', channel: 'FOOD',      net: 1600.00 },
+      { date: '2025-11-29', day: 'Sat', channel: 'RIVERBOAT', net: 3612.00 },
+      { date: '2025-11-29', day: 'Sat', channel: 'SUCHADA',   net: 2925.00 },
+      { date: '2025-11-30', day: 'Sun', channel: 'RIVERBOAT', net: 3192.00 },
+      { date: '2025-11-30', day: 'Sun', channel: 'SUCHADA',   net: 3596.00 },
+      // ── December 1–28 2025 (missing from DB; Dec 29-31 already restored) ──
+      { date: '2025-12-01', day: 'Mon', channel: 'Shop',             net: 1390.00 },
+      { date: '2025-12-02', day: 'Tue', channel: 'Shop',             net: 3499.00 },
+      { date: '2025-12-03', day: 'Wed', channel: 'Shop',             net:  980.00 },
+      { date: '2025-12-04', day: 'Thu', channel: 'Shop',             net: 1682.00 },
+      { date: '2025-12-04', day: 'Thu', channel: 'CHUM SEANT EVENT', net: 2501.00 },
+      { date: '2025-12-05', day: 'Fri', channel: 'Shop',             net: 1731.00 },
+      { date: '2025-12-05', day: 'Fri', channel: 'LATYAO',           net: 3526.00 },
+      { date: '2025-12-06', day: 'Sat', channel: 'Shop',             net: 1334.00 },
+      { date: '2025-12-06', day: 'Sat', channel: 'LATYAO',           net: 3447.00 },
+      { date: '2025-12-07', day: 'Sun', channel: 'Shop',             net: 2030.00 },
+      { date: '2025-12-07', day: 'Sun', channel: 'LATYAO',           net: 1452.00 },
+      { date: '2025-12-07', day: 'Sun', channel: 'UNIVERSITY',       net: 8666.00 },
+      { date: '2025-12-08', day: 'Mon', channel: 'Shop',             net: 1215.00 },
+      { date: '2025-12-09', day: 'Tue', channel: 'Shop',             net: 1139.00 },
+      { date: '2025-12-09', day: 'Tue', channel: 'LATYAO',           net: 2453.00 },
+      { date: '2025-12-10', day: 'Wed', channel: 'Shop',             net: 1318.00 },
+      { date: '2025-12-11', day: 'Thu', channel: 'Shop',             net:  685.00 },
+      { date: '2025-12-12', day: 'Fri', channel: 'Shop',             net: 1589.00 },
+      { date: '2025-12-12', day: 'Fri', channel: 'RIVER',            net: 2741.00 },
+      { date: '2025-12-13', day: 'Sat', channel: 'Shop',             net: 1095.00 },
+      { date: '2025-12-13', day: 'Sat', channel: 'RIVER',            net: 2274.00 },
+      { date: '2025-12-15', day: 'Mon', channel: 'Shop',             net:  844.00 },
+      { date: '2025-12-16', day: 'Tue', channel: 'Shop',             net: 1453.00 },
+      { date: '2025-12-17', day: 'Wed', channel: 'Shop',             net: 1500.00 },
+      { date: '2025-12-18', day: 'Thu', channel: 'Shop',             net: 1189.00 },
+      { date: '2025-12-19', day: 'Fri', channel: 'Shop',             net: 1265.00 },
+      { date: '2025-12-19', day: 'Fri', channel: 'RIVER',            net: 2125.00 },
+      { date: '2025-12-20', day: 'Sat', channel: 'Shop',             net: 1409.00 },
+      { date: '2025-12-20', day: 'Sat', channel: 'SUCHADA',          net: 3645.00 },
+      { date: '2025-12-23', day: 'Tue', channel: 'Shop',             net:  888.00 },
+      { date: '2025-12-23', day: 'Tue', channel: 'LIGHTFESTIVAL',    net: 9070.00 },
+      { date: '2025-12-25', day: 'Thu', channel: 'LIGHTFESTIVAL',    net: 7105.00 },
+      { date: '2025-12-25', day: 'Thu', channel: 'UNIVERSITY',       net: 1377.00 },
+      { date: '2025-12-26', day: 'Fri', channel: 'LIGHTFESTIVAL',    net: 8880.00 },
+      { date: '2025-12-26', day: 'Fri', channel: 'SHOP',             net: 1724.00 },
+      { date: '2025-12-27', day: 'Sat', channel: 'LIGHTFESTIVAL',    net: 8518.00 },
+      { date: '2025-12-27', day: 'Sat', channel: 'SHOP',             net: 1669.00 },
+      { date: '2025-12-28', day: 'Sun', channel: 'LIGHTFESTIVAL',    net: 6005.00 },
+      { date: '2025-12-28', day: 'Sun', channel: 'SHOP',             net: 1032.00 },
+    ];
+
+    let inserted = 0;
+    for (const tx of txns) {
+      const id = uuidv4();
+      await db.execute(drizzleSql`
+        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
+        VALUES (${id}, ${tx.date}, ${tx.day}, ${tx.channel}, ${tx.net}, 0, ${tx.net}, 0, ${adminId}, NOW(), NOW())
+        ON CONFLICT (date, order_channel) DO NOTHING
+      `);
+      inserted++;
+    }
+
+    const afterCount = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2025-01-01' AND date < '2026-01-01'`);
+    log(`2025 sales restoration: attempted ${inserted} records. 2025 total now: ${(afterCount.rows[0] as any).c}`);
+  } catch (err) {
+    log(`2025 sales restoration warning: ${err instanceof Error ? err.message : err}`);
+    console.error('2025 sales restoration error:', err);
+  }
+}
+
+// ONE-TIME: Import 2024 sales data from Excel (Jul–Nov 2024)
+// Shop channel: daily POS aggregates from Consolidated Data sheet
+// Market channels (W/J/D/M/แข่งเรือ): from MARKET sheet — event-based revenue
+async function restore2024SalesData() {
+  try {
+    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2024-07-01' AND date < '2024-12-01'`);
+    const existing = parseInt((check.rows[0] as any).c || '0');
+    if (existing >= 100) {
+      log(`2024 sales check: already have ${existing} Jul–Nov 2024 rows, skipping`);
+      return;
+    }
+    log(`2024 sales check: found ${existing} Jul–Nov 2024 rows, importing Excel data...`);
+
+    const admins = await db.execute(drizzleSql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
+    const adminId = (admins.rows[0] as any)?.id || 'KZ-L18';
+
+    // Daily Shop aggregates from Consolidated Data sheet (Jul 24 – Nov 30 2024)
+    const shopData: { date: string; day: string; net: number }[] = [
+      { date: '2024-07-24', day: 'Wed', net: 5221.00 }, { date: '2024-07-25', day: 'Thu', net: 1912.00 },
+      { date: '2024-07-26', day: 'Fri', net: 3853.00 }, { date: '2024-07-27', day: 'Sat', net: 1356.00 },
+      { date: '2024-07-28', day: 'Sun', net: 5018.00 }, { date: '2024-07-29', day: 'Mon', net: 2931.00 },
+      { date: '2024-07-30', day: 'Tue', net: 2401.00 }, { date: '2024-07-31', day: 'Wed', net: 2779.00 },
+      { date: '2024-08-01', day: 'Thu', net: 1583.00 }, { date: '2024-08-02', day: 'Fri', net: 1986.00 },
+      { date: '2024-08-03', day: 'Sat', net: 2716.00 }, { date: '2024-08-04', day: 'Sun', net: 4404.00 },
+      { date: '2024-08-05', day: 'Mon', net: 2552.00 }, { date: '2024-08-06', day: 'Tue', net: 2671.00 },
+      { date: '2024-08-07', day: 'Wed', net: 2440.00 }, { date: '2024-08-08', day: 'Thu', net: 2587.00 },
+      { date: '2024-08-09', day: 'Fri', net: 2484.00 }, { date: '2024-08-10', day: 'Sat', net: 2435.00 },
+      { date: '2024-08-11', day: 'Sun', net: 4431.00 }, { date: '2024-08-12', day: 'Mon', net: 4355.00 },
+      { date: '2024-08-13', day: 'Tue', net: 2997.00 }, { date: '2024-08-14', day: 'Wed', net: 1587.00 },
+      { date: '2024-08-15', day: 'Thu', net: 2858.00 }, { date: '2024-08-16', day: 'Fri', net: 3004.00 },
+      { date: '2024-08-17', day: 'Sat', net: 3072.00 }, { date: '2024-08-18', day: 'Sun', net: 3639.00 },
+      { date: '2024-08-19', day: 'Mon', net: 2893.00 }, { date: '2024-08-20', day: 'Tue', net: 3505.00 },
+      { date: '2024-08-21', day: 'Wed', net: 1869.00 }, { date: '2024-08-22', day: 'Thu', net: 3413.00 },
+      { date: '2024-08-23', day: 'Fri', net: 2720.00 }, { date: '2024-08-24', day: 'Sat', net: 2998.00 },
+      { date: '2024-08-25', day: 'Sun', net: 2878.00 }, { date: '2024-08-26', day: 'Mon', net: 2978.00 },
+      { date: '2024-08-27', day: 'Tue', net: 1103.00 }, { date: '2024-08-28', day: 'Wed', net: 2564.00 },
+      { date: '2024-08-29', day: 'Thu', net: 3841.00 }, { date: '2024-08-30', day: 'Fri', net: 6223.00 },
+      { date: '2024-08-31', day: 'Sat', net: 5406.00 }, { date: '2024-09-01', day: 'Sun', net: 4121.00 },
+      { date: '2024-09-02', day: 'Mon', net: 3648.00 }, { date: '2024-09-03', day: 'Tue', net: 3638.00 },
+      { date: '2024-09-04', day: 'Wed', net: 3129.00 }, { date: '2024-09-05', day: 'Thu', net: 3196.00 },
+      { date: '2024-09-06', day: 'Fri', net: 4170.00 }, { date: '2024-09-07', day: 'Sat', net: 3195.00 },
+      { date: '2024-09-08', day: 'Sun', net: 4044.00 }, { date: '2024-09-09', day: 'Mon', net: 2987.00 },
+      { date: '2024-09-10', day: 'Tue', net: 2390.00 }, { date: '2024-09-11', day: 'Wed', net: 2023.00 },
+      { date: '2024-09-12', day: 'Thu', net: 2483.00 }, { date: '2024-09-13', day: 'Fri', net: 2074.00 },
+      { date: '2024-09-14', day: 'Sat', net: 2874.00 }, { date: '2024-09-15', day: 'Sun', net: 2396.00 },
+      { date: '2024-09-16', day: 'Mon', net: 4176.00 }, { date: '2024-09-17', day: 'Tue', net: 2062.00 },
+      { date: '2024-09-18', day: 'Wed', net: 3338.00 }, { date: '2024-09-19', day: 'Thu', net: 2987.00 },
+      { date: '2024-09-20', day: 'Fri', net: 2793.00 }, { date: '2024-09-21', day: 'Sat', net: 1965.00 },
+      { date: '2024-09-22', day: 'Sun', net: 1668.00 }, { date: '2024-09-23', day: 'Mon', net: 2089.00 },
+      { date: '2024-09-24', day: 'Tue', net: 2328.00 }, { date: '2024-09-25', day: 'Wed', net: 2565.00 },
+      { date: '2024-09-26', day: 'Thu', net: 1444.00 }, { date: '2024-09-27', day: 'Fri', net: 1752.00 },
+      { date: '2024-09-28', day: 'Sat', net: 2912.00 }, { date: '2024-09-29', day: 'Sun', net: 2948.00 },
+      { date: '2024-09-30', day: 'Mon', net: 1203.00 }, { date: '2024-10-01', day: 'Tue', net: 2496.00 },
+      { date: '2024-10-02', day: 'Wed', net: 1528.00 }, { date: '2024-10-03', day: 'Thu', net: 2258.00 },
+      { date: '2024-10-04', day: 'Fri', net: 2362.00 }, { date: '2024-10-05', day: 'Sat', net: 2368.00 },
+      { date: '2024-10-06', day: 'Sun', net: 2174.00 }, { date: '2024-10-07', day: 'Mon', net: 2654.00 },
+      { date: '2024-10-08', day: 'Tue', net: 1565.00 }, { date: '2024-10-09', day: 'Wed', net: 3212.00 },
+      { date: '2024-10-10', day: 'Thu', net: 3066.00 }, { date: '2024-10-11', day: 'Fri', net: 3529.00 },
+      { date: '2024-10-12', day: 'Sat', net: 1732.00 }, { date: '2024-10-13', day: 'Sun', net: 1893.00 },
+      { date: '2024-10-14', day: 'Mon', net: 2167.00 }, { date: '2024-10-15', day: 'Tue', net: 1995.00 },
+      { date: '2024-10-16', day: 'Wed', net: 1950.00 }, { date: '2024-10-17', day: 'Thu', net: 2286.00 },
+      { date: '2024-10-18', day: 'Fri', net: 2000.00 }, { date: '2024-10-19', day: 'Sat', net: 1313.00 },
+      { date: '2024-10-20', day: 'Sun', net: 2019.00 }, { date: '2024-10-21', day: 'Mon', net: 1656.00 },
+      { date: '2024-10-22', day: 'Tue', net: 2211.00 }, { date: '2024-10-23', day: 'Wed', net: 1788.00 },
+      { date: '2024-10-24', day: 'Thu', net: 1483.00 }, { date: '2024-10-25', day: 'Fri', net: 1430.00 },
+      { date: '2024-10-28', day: 'Mon', net: 1680.00 }, { date: '2024-10-29', day: 'Tue', net: 1530.00 },
+      { date: '2024-10-30', day: 'Wed', net: 1149.00 }, { date: '2024-10-31', day: 'Thu', net: 1121.00 },
+      { date: '2024-11-01', day: 'Fri', net: 1695.00 }, { date: '2024-11-02', day: 'Sat', net: 1927.00 },
+      { date: '2024-11-03', day: 'Sun', net: 2003.00 }, { date: '2024-11-04', day: 'Mon', net: 1322.00 },
+      { date: '2024-11-05', day: 'Tue', net:  983.00 }, { date: '2024-11-06', day: 'Wed', net: 1927.00 },
+      { date: '2024-11-07', day: 'Thu', net: 1654.00 }, { date: '2024-11-08', day: 'Fri', net: 1372.00 },
+      { date: '2024-11-09', day: 'Sat', net: 1761.00 }, { date: '2024-11-10', day: 'Sun', net: 1546.00 },
+      { date: '2024-11-11', day: 'Mon', net: 2212.00 }, { date: '2024-11-12', day: 'Tue', net: 1917.00 },
+      { date: '2024-11-13', day: 'Wed', net: 2160.00 }, { date: '2024-11-14', day: 'Thu', net: 1248.00 },
+      { date: '2024-11-15', day: 'Fri', net: 1594.00 }, { date: '2024-11-16', day: 'Sat', net: 1592.00 },
+      { date: '2024-11-17', day: 'Sun', net: 2545.00 }, { date: '2024-11-18', day: 'Mon', net: 1399.00 },
+      { date: '2024-11-19', day: 'Tue', net: 1514.00 }, { date: '2024-11-20', day: 'Wed', net: 2198.00 },
+      { date: '2024-11-21', day: 'Thu', net: 2008.00 }, { date: '2024-11-22', day: 'Fri', net: 2253.00 },
+      { date: '2024-11-23', day: 'Sat', net: 2088.00 }, { date: '2024-11-24', day: 'Sun', net: 3203.00 },
+      { date: '2024-11-25', day: 'Mon', net: 1833.00 }, { date: '2024-11-26', day: 'Tue', net: 2038.00 },
+      { date: '2024-11-27', day: 'Wed', net: 1896.00 }, { date: '2024-11-28', day: 'Thu', net: 2357.00 },
+      { date: '2024-11-29', day: 'Fri', net: 3969.00 }, { date: '2024-11-30', day: 'Sat', net: 1606.00 },
+    ];
+
+    // Market event data from MARKET sheet (channel codes: W, J, D, M, แข่งเรือ)
+    const marketData: { date: string; day: string; channel: string; net: number }[] = [
+      { date: '2024-08-16', day: 'Fri', channel: 'W', net: 1770 },
+      { date: '2024-08-17', day: 'Sat', channel: 'W', net: 3990 },
+      { date: '2024-08-31', day: 'Sat', channel: 'J', net: 3815 },
+      { date: '2024-08-31', day: 'Sat', channel: 'W', net: 4760 },
+      { date: '2024-09-01', day: 'Sun', channel: 'J', net: 5270 },
+      { date: '2024-09-06', day: 'Fri', channel: 'W', net: 5867 },
+      { date: '2024-09-07', day: 'Sat', channel: 'J', net: 3550 },
+      { date: '2024-09-07', day: 'Sat', channel: 'W', net: 4210 },
+      { date: '2024-09-08', day: 'Sun', channel: 'J', net: 6714 },
+      { date: '2024-09-13', day: 'Fri', channel: 'W', net: 1120 },
+      { date: '2024-09-14', day: 'Sat', channel: 'J', net: 5510 },
+      { date: '2024-09-14', day: 'Sat', channel: 'W', net: 4250 },
+      { date: '2024-09-15', day: 'Sun', channel: 'J', net: 5460 },
+      { date: '2024-09-20', day: 'Fri', channel: 'W', net: 3330 },
+      { date: '2024-09-21', day: 'Sat', channel: 'J', net: 6790 },
+      { date: '2024-09-21', day: 'Sat', channel: 'W', net:  190 },
+      { date: '2024-09-22', day: 'Sun', channel: 'J', net: 5535 },
+      { date: '2024-10-04', day: 'Fri', channel: 'W', net: 4290 },
+      { date: '2024-10-05', day: 'Sat', channel: 'J', net: 5815 },
+      { date: '2024-10-05', day: 'Sat', channel: 'W', net: 6205 },
+      { date: '2024-10-07', day: 'Mon', channel: 'D', net: 4386 },
+      { date: '2024-10-11', day: 'Fri', channel: 'W', net: 3980 },
+      { date: '2024-10-12', day: 'Sat', channel: 'J', net: 2990 },
+      { date: '2024-10-12', day: 'Sat', channel: 'W', net: 4930 },
+      { date: '2024-10-13', day: 'Sun', channel: 'J', net: 2910 },
+      { date: '2024-10-14', day: 'Mon', channel: 'D', net: 7455 },
+      { date: '2024-10-18', day: 'Fri', channel: 'W', net: 1260 },
+      { date: '2024-10-19', day: 'Sat', channel: 'J', net: 4165 },
+      { date: '2024-10-20', day: 'Sun', channel: 'J', net: 2690 },
+      { date: '2024-10-21', day: 'Mon', channel: 'D', net: 4080 },
+      { date: '2024-10-24', day: 'Thu', channel: 'แข่งเรือ', net: 4745 },
+      { date: '2024-10-25', day: 'Fri', channel: 'แข่งเรือ', net: 8589 },
+      { date: '2024-10-26', day: 'Sat', channel: 'แข่งเรือ', net: 7440 },
+      { date: '2024-10-27', day: 'Sun', channel: 'แข่งเรือ', net: 6982 },
+      { date: '2024-10-28', day: 'Mon', channel: 'D', net: 5850 },
+      { date: '2024-11-01', day: 'Fri', channel: 'W', net: 4341 },
+      { date: '2024-11-02', day: 'Sat', channel: 'J', net: 4820 },
+      { date: '2024-11-02', day: 'Sat', channel: 'W', net: 4306 },
+      { date: '2024-11-03', day: 'Sun', channel: 'J', net: 6068 },
+      { date: '2024-11-04', day: 'Mon', channel: 'D', net: 5268 },
+      { date: '2024-11-08', day: 'Fri', channel: 'W', net: 5263 },
+      { date: '2024-11-09', day: 'Sat', channel: 'J', net: 5080 },
+      { date: '2024-11-09', day: 'Sat', channel: 'W', net: 6270 },
+      { date: '2024-11-10', day: 'Sun', channel: 'J', net: 5197 },
+      { date: '2024-11-11', day: 'Mon', channel: 'D', net: 5556 },
+      { date: '2024-11-15', day: 'Fri', channel: 'W', net: 4719 },
+      { date: '2024-11-16', day: 'Sat', channel: 'J', net: 1592 },
+      { date: '2024-11-16', day: 'Sat', channel: 'W', net: 4664 },
+      { date: '2024-11-17', day: 'Sun', channel: 'J', net: 2508 },
+      { date: '2024-11-18', day: 'Mon', channel: 'D', net: 4408 },
+      { date: '2024-11-22', day: 'Fri', channel: 'W', net: 4627 },
+      { date: '2024-11-23', day: 'Sat', channel: 'W', net: 2404 },
+      { date: '2024-11-23', day: 'Sat', channel: 'J', net: 4888 },
+      { date: '2024-11-24', day: 'Sun', channel: 'M', net:    0 },
+      { date: '2024-11-25', day: 'Mon', channel: 'D', net: 5609 },
+      { date: '2024-11-29', day: 'Fri', channel: 'W', net: 3188 },
+      { date: '2024-11-30', day: 'Sat', channel: 'M', net: 2578 },
+      { date: '2024-11-30', day: 'Sat', channel: 'W', net: 3692 },
+    ];
+
+    let inserted = 0;
+    for (const s of shopData) {
+      const id = uuidv4();
+      await db.execute(drizzleSql`
+        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
+        VALUES (${id}, ${s.date}, ${s.day}, ${'Shop'}, ${s.net}, 0, ${s.net}, 0, ${adminId}, NOW(), NOW())
+        ON CONFLICT (date, order_channel) DO NOTHING
+      `);
+      inserted++;
+    }
+    for (const m of marketData) {
+      const id = uuidv4();
+      await db.execute(drizzleSql`
+        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
+        VALUES (${id}, ${m.date}, ${m.day}, ${m.channel}, ${m.net}, 0, ${m.net}, 0, ${adminId}, NOW(), NOW())
+        ON CONFLICT (date, order_channel) DO NOTHING
+      `);
+      inserted++;
+    }
+
+    const afterCount = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2024-07-01' AND date < '2024-12-01'`);
+    log(`2024 sales import: attempted ${inserted} records. Jul–Nov 2024 rows now: ${(afterCount.rows[0] as any).c}`);
+  } catch (err) {
+    log(`2024 sales import warning: ${err instanceof Error ? err.message : err}`);
+    console.error('2024 sales import error:', err);
+  }
+}
+
 // Ensure the post-commit git hook for GitHub auto-sync is always installed.
 // The hook is written to .git/hooks/post-commit every startup so it survives
 // any Replit environment resets. Token is read at hook-run time from GITHUB_TOKEN.
@@ -530,6 +835,12 @@ app.use((req, res, next) => {
 
     // ONE-TIME restore: re-import 147 missing customers from Jan 2026 CSV upload
     await restoreMissingCustomers();
+
+    // ONE-TIME restore: insert missing 2025 sales (Oct, Nov 22-30, Dec 1-28)
+    await restoreMissing2025SalesData();
+
+    // ONE-TIME import: Jul–Nov 2024 sales from Excel data
+    await restore2024SalesData();
     
     // Initialize email assets from object storage
     const objectStorage = new ObjectStorageService();
