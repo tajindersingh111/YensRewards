@@ -18,7 +18,7 @@ async function restoreMissingPdfSalesData() {
   try {
     const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2026-03-30'`);
     const existing = parseInt((check.rows[0] as any).c || '0');
-    if (existing >= 31) {
+    if (existing >= 40) {
       log(`Sales restoration: already have ${existing} records from 2026, skipping`);
       return;
     }
@@ -62,6 +62,16 @@ async function restoreMissingPdfSalesData() {
       { date: '2026-04-17', day: 'Fri', channel: 'CARAVAN TRUCK', net: 2196.00 },
       { date: '2026-04-18', day: 'Sat', channel: 'SHOP', net: 2238.00 },
       { date: '2026-04-19', day: 'Sun', channel: 'SHOP', net: 2093.00 },
+      // Report 4: 20/04/26 – 26/04/26
+      { date: '2026-04-20', day: 'Mon', channel: 'SHOP', net: 1441.00 },
+      { date: '2026-04-21', day: 'Tue', channel: 'SHOP', net: 1824.00 },
+      { date: '2026-04-22', day: 'Wed', channel: 'SHOP', net: 1600.00 },
+      { date: '2026-04-23', day: 'Thu', channel: 'SHOP', net: 1726.00 },
+      { date: '2026-04-24', day: 'Fri', channel: 'SHOP', net: 1786.00 },
+      { date: '2026-04-24', day: 'Fri', channel: 'RIVER', net: 2964.00 },
+      { date: '2026-04-25', day: 'Sat', channel: 'SHOP', net: 1089.00 },
+      { date: '2026-04-25', day: 'Sat', channel: 'RIVER', net: 2064.00 },
+      { date: '2026-04-26', day: 'Sun', channel: 'UNIVERSITY', net: 16087.00 },
     ];
 
     let inserted = 0;
