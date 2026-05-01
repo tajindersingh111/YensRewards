@@ -7,6 +7,81 @@ import { startScheduler } from "./scheduler";
 import { storage } from "./storage";
 import fs from "fs";
 import path from "path";
+import { db } from "./db";
+import { dailySales } from "@shared/schema";
+import { sql as drizzleSql, eq, and } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
+
+// ONE-TIME: Restore Mar 30 – Apr 19 2026 PDF sales data wiped by db:push --force
+// Safe to run repeatedly: uses ON CONFLICT DO NOTHING so no duplicates
+async function restoreMissingPdfSalesData() {
+  try {
+    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2026-03-30'`);
+    const existing = parseInt((check.rows[0] as any).c || '0');
+    if (existing >= 31) {
+      log(`Sales restoration: already have ${existing} records from 2026, skipping`);
+      return;
+    }
+    log(`Sales restoration: found only ${existing} records from 2026, restoring PDF data...`);
+
+    const admins = await db.execute(drizzleSql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
+    const adminId = (admins.rows[0] as any)?.id || 'KZ-L18';
+
+    const transactions = [
+      // Report 1: 30/03/26 – 05/04/26
+      { date: '2026-03-30', day: 'Mon', channel: 'SHOP', net: 1401.00 },
+      { date: '2026-03-31', day: 'Tue', channel: 'SHOP', net: 2377.00 },
+      { date: '2026-04-01', day: 'Wed', channel: 'SHOP', net: 2140.00 },
+      { date: '2026-04-02', day: 'Thu', channel: 'SHOP', net: 2292.00 },
+      { date: '2026-04-03', day: 'Fri', channel: 'SHOP', net: 1580.00 },
+      { date: '2026-04-04', day: 'Sat', channel: 'SHOP', net: 1078.00 },
+      { date: '2026-04-05', day: 'Sun', channel: 'SHOP', net: 1994.00 },
+      // Report 2: 06/04/26 – 12/04/26
+      { date: '2026-04-06', day: 'Mon', channel: 'SHOP', net: 2502.00 },
+      { date: '2026-04-07', day: 'Tue', channel: 'SHOP', net: 3799.00 },
+      { date: '2026-04-08', day: 'Wed', channel: 'SHOP', net: 2156.00 },
+      { date: '2026-04-09', day: 'Thu', channel: 'SHOP', net: 1792.00 },
+      { date: '2026-04-10', day: 'Fri', channel: 'SHOP', net: 2182.00 },
+      { date: '2026-04-10', day: 'Fri', channel: 'RIVER', net: 2540.00 },
+      { date: '2026-04-10', day: 'Fri', channel: 'CARAVAN TRUCK', net: 1514.00 },
+      { date: '2026-04-11', day: 'Sat', channel: 'SHOP', net: 1412.00 },
+      { date: '2026-04-11', day: 'Sat', channel: 'RIVER', net: 3194.00 },
+      { date: '2026-04-11', day: 'Sat', channel: 'CARAVAN TRUCK', net: 1128.00 },
+      { date: '2026-04-12', day: 'Sun', channel: 'SHOP', net: 1941.00 },
+      { date: '2026-04-12', day: 'Sun', channel: 'MISC', net: 2041.00 },
+      // Report 3: 13/04/26 – 19/04/26
+      { date: '2026-04-13', day: 'Mon', channel: 'SONGKRAN FESTIVAL', net: 5273.00 },
+      { date: '2026-04-13', day: 'Mon', channel: 'SHOP', net: 904.00 },
+      { date: '2026-04-14', day: 'Tue', channel: 'SONGKRAN FESTIVAL', net: 4690.00 },
+      { date: '2026-04-14', day: 'Tue', channel: 'SHOP', net: 851.00 },
+      { date: '2026-04-15', day: 'Wed', channel: 'SONGKRAN FESTIVAL', net: 2780.00 },
+      { date: '2026-04-15', day: 'Wed', channel: 'SHOP', net: 1224.00 },
+      { date: '2026-04-16', day: 'Thu', channel: 'SHOP', net: 2304.00 },
+      { date: '2026-04-17', day: 'Fri', channel: 'SHOP', net: 1826.00 },
+      { date: '2026-04-17', day: 'Fri', channel: 'RIVER', net: 4112.00 },
+      { date: '2026-04-17', day: 'Fri', channel: 'CARAVAN TRUCK', net: 2196.00 },
+      { date: '2026-04-18', day: 'Sat', channel: 'SHOP', net: 2238.00 },
+      { date: '2026-04-19', day: 'Sun', channel: 'SHOP', net: 2093.00 },
+    ];
+
+    let inserted = 0;
+    for (const tx of transactions) {
+      const id = uuidv4();
+      await db.execute(drizzleSql`
+        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
+        VALUES (${id}, ${tx.date}, ${tx.day}, ${tx.channel}, ${tx.net}, 0, ${tx.net}, 0, ${adminId}, NOW(), NOW())
+        ON CONFLICT (date, order_channel) DO NOTHING
+      `);
+      inserted++;
+    }
+
+    const finalCount = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2026-03-30'`);
+    log(`Sales restoration complete: inserted up to ${inserted} records. 2026+ rows now: ${(finalCount.rows[0] as any).c}`);
+  } catch (err) {
+    log(`Sales restoration warning: ${err instanceof Error ? err.message : err}`);
+    console.error('Sales restoration error:', err);
+  }
+}
 
 // Ensure the post-commit git hook for GitHub auto-sync is always installed.
 // The hook is written to .git/hooks/post-commit every startup so it survives
@@ -180,6 +255,9 @@ app.use((req, res, next) => {
     log('Registering routes...');
     const server = await registerRoutes(app);
     log('Routes registered successfully');
+
+    // ONE-TIME restore: insert Mar 30–Apr 19 2026 PDF sales into production DB
+    await restoreMissingPdfSalesData();
     
     // Initialize email assets from object storage
     const objectStorage = new ObjectStorageService();
