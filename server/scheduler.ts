@@ -2,6 +2,7 @@ import { storage } from "./storage";
 import { sendHtmlEmail } from "./resend";
 import { sendSMS } from "./twilio";
 import { sendLineMessage } from "./line";
+import { runDailyBackup } from "./backup";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let isProcessing = false;
@@ -455,6 +456,45 @@ async function checkAutomations() {
   }
 }
 
+// ── Daily backup ─────────────────────────────────────────────────────────────
+
+const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+let lastBackupDate = ""; // YYYY-MM-DD in Bangkok time
+
+async function checkDailyBackup() {
+  try {
+    const now = new Date();
+    const bangkokNow = new Date(now.getTime() + BANGKOK_OFFSET_MS);
+    const bangkokDate = bangkokNow.toISOString().split("T")[0];
+    const bangkokHour = bangkokNow.getUTCHours();
+
+    // Run once per day at 02:00 Bangkok time
+    if (bangkokHour >= 2 && lastBackupDate !== bangkokDate) {
+      lastBackupDate = bangkokDate;
+      console.log("💾 Starting daily data backup to GitHub...");
+      const result = await runDailyBackup();
+      if (result.success) {
+        console.log(`💾 ${result.message}`);
+      } else {
+        console.error(`💾 ${result.message}`);
+      }
+    }
+  } catch (err) {
+    console.error("💾 Backup check error:", err);
+  }
+}
+
+export async function triggerBackupNow(): Promise<{ success: boolean; message: string }> {
+  console.log("💾 Manual backup triggered...");
+  const result = await runDailyBackup();
+  if (result.success) {
+    // Update last backup date so scheduled backup won't duplicate today
+    const bangkokNow = new Date(new Date().getTime() + BANGKOK_OFFSET_MS);
+    lastBackupDate = bangkokNow.toISOString().split("T")[0];
+  }
+  return result;
+}
+
 export function startScheduler() {
   if (schedulerInterval) {
     console.log('Scheduler already running');
@@ -465,10 +505,12 @@ export function startScheduler() {
   
   checkScheduledMessages();
   checkAutomations();
+  checkDailyBackup();
   
   schedulerInterval = setInterval(async () => {
     await checkScheduledMessages();
     await checkAutomations();
+    await checkDailyBackup();
   }, 60 * 1000);
 }
 

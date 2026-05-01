@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./replitAuth";
 import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products } from "@shared/schema";
-import { calculateNextRunAt, processAutomation } from "./scheduler";
+import { calculateNextRunAt, processAutomation, triggerBackupNow } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { sendSMS, normalizeE164 } from "./twilio";
@@ -416,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Version endpoint for auto-update checking
   app.get('/api/version', (req, res) => {
-    res.json({ version: 'v3.24.0' });
+    res.json({ version: 'v3.25.0' });
   });
 
   // Development-only: Quick test Resend connection (no auth required)
@@ -6297,6 +6297,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching reviews:", error);
       res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  // ── Daily backup: manual trigger (admin only) ────────────────────────────
+  app.post('/api/admin/backup/run', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const result = await triggerBackupNow();
+      if (result.success) {
+        res.json({ success: true, message: result.message });
+      } else {
+        res.status(500).json({ success: false, message: result.message });
+      }
+    } catch (error) {
+      console.error("Error running backup:", error);
+      res.status(500).json({ success: false, message: "Backup failed unexpectedly" });
     }
   });
 

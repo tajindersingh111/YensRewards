@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp, Wrench, CheckCircle, Loader2, Building2, Save } from "lucide-react";
+import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp, Wrench, CheckCircle, Loader2, Building2, Save, DatabaseBackup, Github } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -148,6 +148,20 @@ export default function SettingsPage() {
         description: error.message || t('admin.settings.twoFactorFailed'),
         variant: "destructive",
       });
+    },
+  });
+
+  // GitHub backup mutation
+  const backupMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/backup/run", {});
+      return res as { success: boolean; message: string };
+    },
+    onSuccess: (data) => {
+      toast({ title: "Backup Complete", description: data.message });
+    },
+    onError: (error: any) => {
+      toast({ title: "Backup Failed", description: error.message || "Could not back up data to GitHub", variant: "destructive" });
     },
   });
 
@@ -551,7 +565,50 @@ export default function SettingsPage() {
 
         </TabsContent>
 
-        <TabsContent value="data">
+        <TabsContent value="data" className="space-y-4">
+          {/* GitHub Backup */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DatabaseBackup className="h-5 w-5" />
+                Automatic Data Backup
+              </CardTitle>
+              <CardDescription>
+                All sales and customer data is backed up daily to GitHub at 2:00 AM. You can also run a backup instantly.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Github className="h-8 w-8 text-foreground" />
+                  <div>
+                    <p className="font-medium">GitHub Backup</p>
+                    <p className="text-sm text-muted-foreground">
+                      Sales history &amp; customer records → <span className="font-mono text-xs">backups/</span> folder
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => backupMutation.mutate()}
+                  disabled={backupMutation.isPending}
+                  size="sm"
+                  data-testid="button-run-backup"
+                >
+                  {backupMutation.isPending ? "Backing up..." : (
+                    <><DatabaseBackup className="h-4 w-4 mr-2" />Back Up Now</>
+                  )}
+                </Button>
+              </div>
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>
+                  Backups are stored as CSV files in the YensRewards GitHub repository. Each daily backup overwrites the previous file — the full history is preserved in the git commit log.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Data Downloads */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
