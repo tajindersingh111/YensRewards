@@ -23,6 +23,7 @@ import { SchedulesManager } from "@/components/SchedulesManager";
 import BaristaManager from "@/components/BaristaManager";
 import WeeklySpecialsManager from "@/pages/admin/WeeklySpecialsManager";
 import AutomationsManager from "@/components/AutomationsManager";
+import ShopCalendar from "@/components/ShopCalendar";
 import SettingsPage from "@/components/SettingsPage";
 import MessageTemplates from "@/components/MessageTemplates";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -34,7 +35,7 @@ import {
   ArrowLeft, LogOut, TrendingUp, BarChart3, Users, Package, Tag, Star,
   MessageSquare, UserCog, MapPin, Calendar, Settings2, LayoutDashboard,
   Megaphone, Wrench, ShieldCheck, Award, ChevronRight, Gift, PlusCircle,
-  Send, UserPlus, ArrowUpRight
+  Send, UserPlus, ArrowUpRight, CalendarDays
 } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { Customer } from "@shared/schema";
@@ -84,6 +85,14 @@ const NAV_GROUPS = [
       { id: 'sites', label: 'Sites', testId: 'tab-sites' },
       { id: 'schedules', label: 'Schedules', testId: 'tab-schedules' },
       { id: 'barista', label: 'Barista', testId: 'tab-barista' },
+    ],
+  },
+  {
+    id: 'calendar',
+    label: 'Calendar',
+    icon: CalendarDays,
+    subs: [
+      { id: 'shopCalendar', label: 'Events', testId: 'tab-shop-calendar' },
     ],
   },
   {
@@ -589,6 +598,12 @@ export default function AdminDashboard() {
           {activeTab === 'schedules' && <SchedulesManager key="schedules" />}
 
           {activeTab === 'barista' && <BaristaManager key="barista" />}
+
+          {activeTab === 'shopCalendar' && (
+            <div key="shopCalendar" style={{ height: 'calc(100vh - 200px)' }}>
+              <ShopCalendar />
+            </div>
+          )}
 
           {activeTab === 'users' && <UsersPage key="users" />}
 

@@ -555,6 +555,29 @@ export const insertLineLinkingCodeSchema = createInsertSchema(lineLinkingCodes).
 export type LineLinkingCode = typeof lineLinkingCodes.$inferSelect;
 export type InsertLineLinkingCode = z.infer<typeof insertLineLinkingCodeSchema>;
 
+// Shop Events table - calendar events for planning (expos, promotions, meetings, etc.)
+export const shopEvents = pgTable("shop_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("event"), // event, expo, promotion, holiday, meeting, catering, other
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  allDay: boolean("all_day").notNull().default(false),
+  location: text("location"),
+  notes: text("notes"),
+  color: text("color"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertShopEventSchema = createInsertSchema(shopEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ShopEvent = typeof shopEvents.$inferSelect;
+export type InsertShopEvent = z.infer<typeof insertShopEventSchema>;
+
 export const insertAutomationSchema = createInsertSchema(automations).omit({
   id: true,
   createdAt: true,

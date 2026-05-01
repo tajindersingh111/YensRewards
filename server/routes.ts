@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema } from "@shared/schema";
 import { calculateNextRunAt, processAutomation } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
@@ -5767,6 +5767,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching performance history:", error);
       res.status(500).json({ message: "Failed to fetch performance history" });
+    }
+  });
+
+  // === SHOP EVENTS (CALENDAR) ROUTES ===
+
+  app.get('/api/admin/shop-events', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { from, to } = req.query;
+      const fromDate = from ? new Date(from as string) : undefined;
+      const toDate = to ? new Date(to as string) : undefined;
+      const events = await storage.getShopEvents(fromDate, toDate);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching shop events:", error);
+      res.status(500).json({ message: "Failed to fetch shop events" });
+    }
+  });
+
+  app.post('/api/admin/shop-events', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const parsed = insertShopEventSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: fromError(parsed.error).toString() });
+      const event = await storage.createShopEvent(parsed.data);
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Error creating shop event:", error);
+      res.status(500).json({ message: "Failed to create shop event" });
+    }
+  });
+
+  app.patch('/api/admin/shop-events/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid event ID" });
+      const event = await storage.updateShopEvent(id, req.body);
+      if (!event) return res.status(404).json({ message: "Event not found" });
+      res.json(event);
+    } catch (error) {
+      console.error("Error updating shop event:", error);
+      res.status(500).json({ message: "Failed to update shop event" });
+    }
+  });
+
+  app.delete('/api/admin/shop-events/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid event ID" });
+      await storage.deleteShopEvent(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting shop event:", error);
+      res.status(500).json({ message: "Failed to delete shop event" });
     }
   });
 

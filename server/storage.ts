@@ -35,9 +35,11 @@ import {
   type Automation,
   type InsertAutomation,
   type AutomationRun,
+  type ShopEvent,
+  type InsertShopEvent,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte, inArray } from "drizzle-orm";
 
 export interface IStorage {
@@ -252,6 +254,13 @@ export interface IStorage {
   createAutomationRun(data: { automationId: string; status?: string }): Promise<AutomationRun>;
   completeAutomationRun(id: string, sentCount: number, failedCount: number, errorMessage?: string): Promise<AutomationRun | undefined>;
   getAutomationRuns(automationId: string, limit?: number): Promise<AutomationRun[]>;
+
+  // Shop Events methods
+  getShopEvents(from?: Date, to?: Date): Promise<ShopEvent[]>;
+  getShopEvent(id: number): Promise<ShopEvent | undefined>;
+  createShopEvent(event: InsertShopEvent): Promise<ShopEvent>;
+  updateShopEvent(id: number, event: Partial<InsertShopEvent>): Promise<ShopEvent | undefined>;
+  deleteShopEvent(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -2117,6 +2126,36 @@ export class DbStorage implements IStorage {
       .where(eq(automationRuns.automationId, automationId))
       .orderBy(desc(automationRuns.triggeredAt))
       .limit(limit);
+  }
+
+  // Shop Events methods
+  async getShopEvents(from?: Date, to?: Date): Promise<ShopEvent[]> {
+    let query = db.select().from(shopEvents);
+    if (from && to) {
+      query = query.where(and(gte(shopEvents.startDate, from), lte(shopEvents.startDate, to))) as any;
+    } else if (from) {
+      query = query.where(gte(shopEvents.startDate, from)) as any;
+    }
+    return (query as any).orderBy(asc(shopEvents.startDate));
+  }
+
+  async getShopEvent(id: number): Promise<ShopEvent | undefined> {
+    const result = await db.select().from(shopEvents).where(eq(shopEvents.id, id));
+    return result[0];
+  }
+
+  async createShopEvent(event: InsertShopEvent): Promise<ShopEvent> {
+    const result = await db.insert(shopEvents).values(event).returning();
+    return result[0];
+  }
+
+  async updateShopEvent(id: number, event: Partial<InsertShopEvent>): Promise<ShopEvent | undefined> {
+    const result = await db.update(shopEvents).set(event).where(eq(shopEvents.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteShopEvent(id: number): Promise<void> {
+    await db.delete(shopEvents).where(eq(shopEvents.id, id));
   }
 }
 
