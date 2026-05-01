@@ -573,6 +573,9 @@ export const shopEvents = pgTable("shop_events", {
 export const insertShopEventSchema = createInsertSchema(shopEvents).omit({
   id: true,
   createdAt: true,
+}).extend({
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().optional().nullable(),
 });
 
 export type ShopEvent = typeof shopEvents.$inferSelect;
