@@ -12,6 +12,105 @@ import { dailySales } from "@shared/schema";
 import { sql as drizzleSql, eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
+// ONE-TIME: Restore 147 missing customers from January 2026 CSV upload
+async function restoreMissingCustomers() {
+  try {
+    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM customers`);
+    const existing = parseInt((check.rows[0] as any).c || '0');
+    if (existing >= 620) {
+      log(`Customer restoration: already have ${existing} customers, skipping`);
+      return;
+    }
+    log(`Customer restoration: only ${existing} customers found, restoring from CSV...`);
+
+    const fsModule = await import('fs');
+    const pathModule = await import('path');
+    const csvPath = pathModule.resolve(process.cwd(), 'attached_assets/member-active-2026-01-16_1768629832619.csv');
+    if (!fsModule.existsSync(csvPath)) {
+      log('Customer restoration: CSV file not found, skipping');
+      return;
+    }
+
+    const lines = fsModule.readFileSync(csvPath, 'utf-8').split('\n').filter((l: string) => l.trim());
+    const headers = parseCSVLine(lines[0]);
+
+    const existingRows = await db.execute(drizzleSql`SELECT phone FROM customers`);
+    const existingPhones = new Set(existingRows.rows.map((r: any) => r.phone));
+
+    let inserted = 0, skipped = 0;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      const get = (name: string) => cols[headers.indexOf(name)] || '';
+
+      const rawPhone = get('Phone Number').trim().replace(/\s+/g, '');
+      if (!rawPhone) { skipped++; continue; }
+      const phone = rawPhone.startsWith('0') ? '+66' + rawPhone.substring(1) : rawPhone;
+
+      if (existingPhones.has(phone) || existingPhones.has(rawPhone)) { skipped++; continue; }
+
+      const id = uuidv4();
+      const name = get('Crm Name').trim() || 'Unknown';
+      const tierRaw = (get('Membership Tier') || '').toLowerCase().trim();
+      const tier = ['gold','silver','bronze'].includes(tierRaw) ? tierRaw : 'member';
+      const email = get('Email').trim() || null;
+      const gender = get('Gender').trim() || null;
+
+      const bdParts = (get('Birthdate') || '').split('/');
+      const birthday = bdParts.length >= 2 ? `${bdParts[1].padStart(2,'0')}-${bdParts[0].padStart(2,'0')}` : null;
+
+      const parseDate = (raw: string) => {
+        const dp = raw.split(' ')[0].split('/');
+        if (dp.length === 3) return new Date(`${dp[2]}-${dp[1].padStart(2,'0')}-${dp[0].padStart(2,'0')}`);
+        return null;
+      };
+      const registerDate = parseDate(get('Register Date'));
+      const registerBranch = get('Register Branch').trim() || null;
+      const totalSpent = parseFloat(get('Total Spending') || '0') || 0;
+      const points = parseInt(get('Point') || '0') || 0;
+      const lastUse = parseDate(get('Last Use'));
+      const tag = get('Tag').trim() || null;
+      const lineUid = get('Line UID').trim() || null;
+      const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      try {
+        await db.execute(drizzleSql`
+          INSERT INTO customers (
+            id, name, phone, email, gender, birthday, points, tier,
+            referral_code, total_spent, created_at, register_date,
+            register_branch, last_use, tag, line_uid
+          ) VALUES (
+            ${id}, ${name}, ${phone}, ${email}, ${gender}, ${birthday},
+            ${points}, ${tier}, ${referralCode}, ${totalSpent},
+            ${registerDate ?? new Date()}, ${registerDate ?? null},
+            ${registerBranch}, ${lastUse ?? null}, ${tag}, ${lineUid}
+          )
+          ON CONFLICT DO NOTHING
+        `);
+        inserted++;
+        existingPhones.add(phone);
+      } catch (_err) { skipped++; }
+    }
+
+    const after = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM customers`);
+    log(`Customer restoration complete: inserted ${inserted}, skipped ${skipped}. Total now: ${(after.rows[0] as any).c}`);
+  } catch (err) {
+    log(`Customer restoration warning: ${err instanceof Error ? err.message : err}`);
+  }
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (const ch of line) {
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
 // ONE-TIME: Restore Mar 30 – Apr 19 2026 PDF sales data wiped by db:push --force
 // Safe to run repeatedly: uses ON CONFLICT DO NOTHING so no duplicates
 async function restoreMissingPdfSalesData() {
@@ -266,8 +365,11 @@ app.use((req, res, next) => {
     const server = await registerRoutes(app);
     log('Routes registered successfully');
 
-    // ONE-TIME restore: insert Mar 30–Apr 19 2026 PDF sales into production DB
+    // ONE-TIME restore: insert Mar 30–Apr 26 2026 PDF sales into production DB
     await restoreMissingPdfSalesData();
+
+    // ONE-TIME restore: re-import 147 missing customers from Jan 2026 CSV upload
+    await restoreMissingCustomers();
     
     // Initialize email assets from object storage
     const objectStorage = new ObjectStorageService();
