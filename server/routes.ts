@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable } from "@shared/schema";
+import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable } from "@shared/schema";
 import { calculateNextRunAt, processAutomation } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
@@ -1153,10 +1153,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Customer API Endpoints ============
-  
-  // Search customers by phone number (for Barista app)
+
+  // Combined ownership check: accepts either an authenticated staff member (Passport)
+  // or a customer whose session customerId matches the given URL parameter.
+  function customerOrStaff(idParam: string = 'id'): RequestHandler {
+    return (req, res, next) => {
+      if (req.isAuthenticated()) return next();
+      const session = req.session as any;
+      if (session.customerId && session.customerId === req.params[idParam]) {
+        return next();
+      }
+      return res.status(401).json({ message: "Authentication required" });
+    };
+  }
+
+  // Customer login — authenticates by phone, establishes a server-side session for the
+  // customer identity so subsequent resource-specific endpoints can enforce ownership.
+  // Session status check — lets the frontend skip OTP when a valid customer session already exists
+  app.get('/api/customers/auth/status', async (req, res) => {
+    const session = req.session as any;
+    if (!session.customerId) {
+      return res.status(401).json({ message: "No customer session" });
+    }
+    const customer = await storage.getCustomer(session.customerId);
+    if (!customer) {
+      delete session.customerId;
+      return res.status(401).json({ message: "Customer not found" });
+    }
+    res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
+  });
+
+  // In-memory OTP store: phone → { code, customerId, expires, attempts }
+  const customerOtps = new Map<string, { code: string; customerId: string; expires: number; attempts: number }>();
+
+  // Step 1: Request OTP — sends a 6-digit code via SMS.
+  // Always returns 200 with the same message regardless of whether the phone is registered,
+  // to prevent account-enumeration attacks.
+  app.post('/api/customers/auth/request', async (req, res) => {
+    const UNIFORM_RESPONSE = { message: "If your phone number is registered, a verification code has been sent." };
+    try {
+      const { phone } = req.body;
+      if (!phone || typeof phone !== 'string') {
+        return res.status(400).json({ message: "Phone number required" });
+      }
+      const normalized = phone.trim();
+      const customer = await storage.getCustomerByPhone(normalized);
+      if (!customer) {
+        // Return same response to prevent enumeration; do not reveal non-existence
+        return res.json(UNIFORM_RESPONSE);
+      }
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+      customerOtps.set(normalized, { code, customerId: customer.id, expires, attempts: 0 });
+
+      try {
+        await sendSMS(normalized, `Your verification code is: ${code}. It expires in 10 minutes.`);
+      } catch (smsErr) {
+        console.error("Failed to send OTP SMS:", smsErr);
+        customerOtps.delete(normalized);
+        // Still return uniform response (caller can't distinguish SMS failure from non-registered phone)
+        return res.json(UNIFORM_RESPONSE);
+      }
+      res.json(UNIFORM_RESPONSE);
+    } catch (error) {
+      console.error("Error requesting customer OTP:", error);
+      res.status(500).json({ message: "Failed to send verification code" });
+    }
+  });
+
+  // Step 2: Verify OTP — checks the code and establishes the customer session
+  app.post('/api/customers/auth/verify', async (req, res) => {
+    try {
+      const { phone, code } = req.body;
+      if (!phone || !code) {
+        return res.status(400).json({ message: "Phone and code are required" });
+      }
+      const normalized = phone.trim();
+      const entry = customerOtps.get(normalized);
+      if (!entry || Date.now() > entry.expires) {
+        customerOtps.delete(normalized);
+        return res.status(401).json({ message: "Verification code expired or not found" });
+      }
+      if (entry.attempts >= 5) {
+        customerOtps.delete(normalized);
+        return res.status(401).json({ message: "Too many attempts. Please request a new code." });
+      }
+      if (entry.code !== code.trim()) {
+        entry.attempts++;
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+      customerOtps.delete(normalized);
+      (req.session as any).customerId = entry.customerId;
+      const customer = await storage.getCustomer(entry.customerId);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
+    } catch (error) {
+      console.error("Error verifying customer OTP:", error);
+      res.status(500).json({ message: "Verification failed" });
+    }
+  });
+
+
+  // Search customers by phone number (for Barista app — staff only)
   // IMPORTANT: This route must come BEFORE /api/customers/:id to avoid "search" being treated as an ID
-  app.get('/api/customers/search', async (req, res) => {
+  app.get('/api/customers/search', isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string;
       
@@ -1173,22 +1275,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer by phone
+  // Minimal public DTO — only the fields a customer needs to view their own loyalty card.
+  // Sensitive internal/PII fields (lineUid, tag, email, phone, birthday, totalSpent,
+  // registerDate, registerBranch, lastUse, gender) are intentionally excluded so that
+  // unauthenticated callers learn as little as possible from these public endpoints.
+  function toPublicCustomerDTO(customer: Record<string, unknown>) {
+    return {
+      id: customer.id,
+      name: customer.name,
+      photo: customer.photo ?? null,
+      points: customer.points,
+      tier: customer.tier,
+      referralCode: customer.referralCode ?? null,
+      lineLinked: !!customer.lineUid, // boolean only — never expose the raw UID
+    };
+  }
+
+  // Get customer by phone — requires either a matching customer session or staff auth.
+  // Prevents unauthenticated loyalty-balance and account data disclosure by phone lookup.
   app.get('/api/customers/phone/:phone', async (req, res) => {
     try {
       const customer = await storage.getCustomerByPhone(req.params.phone);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      res.json(customer);
+      const session = req.session as any;
+      const isStaff = req.isAuthenticated();
+      const isOwner = session.customerId === customer.id;
+      if (!isStaff && !isOwner) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
     } catch (error) {
       console.error("Error fetching customer:", error);
       res.status(500).json({ message: "Failed to fetch customer" });
     }
   });
 
-  // Get LINE linking code for a customer (by phone)
-  app.get('/api/customers/phone/:phone/line-link-code', async (req, res) => {
+  // Get LINE linking code for a customer — requires staff authentication to prevent
+  // unauthenticated code harvesting by anyone who knows a victim's phone number
+  app.get('/api/customers/phone/:phone/line-link-code', isAuthenticated, async (req, res) => {
     try {
       const customer = await storage.getCustomerByPhone(req.params.phone);
       if (!customer) {
@@ -1208,8 +1334,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer by referral code
-  app.get('/api/customers/referral/:code', async (req, res) => {
+  // Get customer by referral code — requires staff authentication to prevent enumeration
+  app.get('/api/customers/referral/:code', isAuthenticated, async (req, res) => {
     try {
       const customer = await storage.getCustomerByReferralCode(req.params.code);
       if (!customer) {
@@ -1222,32 +1348,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer by ID
-  app.get('/api/customers/:id', async (req, res) => {
+  // Get customer by ID — requires matching customer session or staff auth.
+  app.get('/api/customers/:id', customerOrStaff('id'), async (req, res) => {
     try {
       const customer = await storage.getCustomer(req.params.id);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      res.json(customer);
+      res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
     } catch (error) {
       console.error("Error fetching customer:", error);
       res.status(500).json({ message: "Failed to fetch customer" });
     }
   });
 
-  // Create customer
+  // Create customer (public registration — only safe profile fields accepted)
   app.post('/api/customers', async (req, res) => {
     try {
-      const validatedData = insertCustomerSchema.parse(req.body);
+      const validatedData = publicInsertCustomerSchema.parse(req.body);
       
       // Check if customer with this phone already exists
       const existingCustomer = await storage.getCustomerByPhone(validatedData.phone);
       if (existingCustomer) {
-        return res.status(409).json({ 
-          message: "A customer with this phone number already exists",
-          customer: existingCustomer 
-        });
+        // Do not return customer data — prevents data disclosure via signup probing
+        return res.status(409).json({ message: "A customer with this phone number already exists" });
       }
       
       const customer = await storage.createCustomer(validatedData);
@@ -1287,8 +1411,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer transactions
-  app.get('/api/customers/:id/transactions', async (req, res) => {
+  // Get customer transactions — requires authentication (purchase history is sensitive PII)
+  app.get('/api/customers/:id/transactions', isAuthenticated, async (req, res) => {
     try {
       const transactions = await storage.getCustomerTransactions(req.params.id);
       res.json(transactions);
@@ -1298,8 +1422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer promotions with read status
-  app.get('/api/customers/:id/promotions', async (req, res) => {
+  // Get customer promotions with read status — requires authentication
+  app.get('/api/customers/:id/promotions', isAuthenticated, async (req, res) => {
     try {
       const promotions = await storage.getCustomerPromotions(req.params.id);
       res.json(promotions);
@@ -1309,8 +1433,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get unread notification count
-  app.get('/api/customers/:id/notifications/unread-count', async (req, res) => {
+  // Get unread notification count — requires authentication
+  app.get('/api/customers/:id/notifications/unread-count', isAuthenticated, async (req, res) => {
     try {
       const count = await storage.getUnreadCount(req.params.id);
       res.json({ count });
@@ -4976,7 +5100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if ('replyToken' in event && event.replyToken) {
                 await replyLineMessage(
                   event.replyToken,
-                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nเชื่อมต่อบัญชีเพื่อรับ 50 คะแนนโบนัส!\n\n📱 วิธีที่ 1: คัดลอกรหัส LINK-XXXX จากแอพลูกค้าแล้วส่งมาที่นี่\n\n📞 วิธีที่ 2: ส่งเบอร์โทรศัพท์ของคุณ\nตัวอย่าง: 0812345678`
+                  `🍦 สวัสดี! ยินดีต้อนรับสู่ Yens Thai Ice Cream!\n\nเชื่อมต่อบัญชีเพื่อรับ 50 คะแนนโบนัส!\n\n📱 เปิดแอพลูกค้า แล้วคัดลอกรหัส LINK-XXXX จากหน้าเชื่อมต่อ LINE แล้วส่งมาที่นี่\n\nตัวอย่าง: LINK-AB12`
                 );
               }
             }
@@ -5041,89 +5165,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if ('replyToken' in event && event.replyToken) {
                 await replyLineMessage(
                   event.replyToken,
-                  `❌ รหัสไม่ถูกต้องหรือหมดอายุแล้ว\n\nกรุณาขอรหัสใหม่จากแอพลูกค้า หรือส่งเบอร์โทรศัพท์ของคุณ`
+                  `❌ รหัสไม่ถูกต้องหรือหมดอายุแล้ว\n\nกรุณาเปิดแอพลูกค้าและขอรหัส LINK-XXXX ใหม่`
                 );
               }
             }
             continue; // Don't process further for this event
           }
           
-          // Check if message looks like a phone number
-          const phoneMatch = messageText.replace(/[\s\-\(\)]/g, '').match(/^(\+66|66|0)?(\d{8,9})$/);
-          
-          if (phoneMatch) {
-            // Normalize phone number (remove +66/66 prefix, add 0 if needed)
-            let phone = phoneMatch[2];
-            if (!phone.startsWith('0') && phone.length === 9) {
-              phone = '0' + phone;
-            } else if (phone.length === 8) {
-              phone = '0' + phone;
-            }
-            
-            console.log(`📞 Phone number received: ${phone}`);
-
-            try {
-              // Find customer by phone number
-              const allCustomers = await storage.getAllCustomers();
-              const customerByPhone = allCustomers.find(c => 
-                c.phone.replace(/[\s\-]/g, '') === phone || 
-                c.phone.replace(/[\s\-]/g, '').endsWith(phone)
-              );
-
-              if (customerByPhone) {
-                // Check if already linked to another LINE account
-                if (customerByPhone.lineUid && customerByPhone.lineUid !== lineUserId) {
-                  if ('replyToken' in event && event.replyToken) {
-                    await replyLineMessage(
-                      event.replyToken,
-                      `⚠️ เบอร์นี้เชื่อมต่อกับ LINE อื่นแล้ว\n\nกรุณาติดต่อพนักงานเพื่อขอความช่วยเหลือ`
-                    );
-                  }
-                } else {
-                  // Link LINE UID to customer and award bonus points
-                  const LINE_BONUS_POINTS = 50;
-                  const wasNotLinked = !customerByPhone.lineUid;
-                  
-                  await storage.updateCustomer(customerByPhone.id, {
-                    lineUid: lineUserId,
-                    // Award bonus points only if this is first time linking
-                    points: wasNotLinked ? customerByPhone.points + LINE_BONUS_POINTS : customerByPhone.points
-                  });
-
-                  console.log(`✅ Linked ${customerByPhone.name} to LINE: ${lineUserId}${wasNotLinked ? ` (+${LINE_BONUS_POINTS} bonus points!)` : ''}`);
-
-                  // Send beautiful Flex Message for account linked
-                  if ('replyToken' in event && event.replyToken) {
-                    await replyLineTemplatedMessage(
-                      event.replyToken,
-                      'account_linked',
-                      {
-                        customerName: customerByPhone.name,
-                        phone: phone
-                      }
-                    );
-                  }
-                }
-              } else {
-                // Phone not found - offer to register
-                if ('replyToken' in event && event.replyToken) {
-                  await replyLineMessage(
-                    event.replyToken,
-                    `❓ ไม่พบเบอร์นี้ในระบบ\n\nกรุณาลงทะเบียนที่หน้าร้าน หรือถามพนักงาน`
-                  );
-                }
-              }
-            } catch (error) {
-              console.error('❌ Error linking customer:', error);
-            }
-          } else {
-            // Not a phone number or linking code - send help message
-            if ('replyToken' in event && event.replyToken) {
-              await replyLineMessage(
-                event.replyToken,
-                `🍦 Yens Thai Ice Cream\n\nเชื่อมต่อบัญชีเพื่อรับ 50 คะแนนโบนัส!\n\n📱 ส่งรหัส LINK-XXXX จากแอพลูกค้า\n📞 หรือส่งเบอร์โทรศัพท์ของคุณ\n\nตัวอย่าง: 0812345678`
-              );
-            }
+          // Unrecognized message — guide the user to use the secure LINK-XXXX code from the app.
+          // Phone-number based linking has been removed: knowing a phone number alone is not
+          // sufficient proof of account ownership and could allow account hijacking.
+          if ('replyToken' in event && event.replyToken) {
+            await replyLineMessage(
+              event.replyToken,
+              `🍦 Yens Thai Ice Cream\n\nเชื่อมต่อบัญชีเพื่อรับ 50 คะแนนโบนัส!\n\n📱 เปิดแอพลูกค้า แล้วคัดลอกรหัส LINK-XXXX จากหน้าเชื่อมต่อ LINE\n\nตัวอย่าง: LINK-AB12`
+            );
           }
         }
 

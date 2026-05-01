@@ -63,11 +63,28 @@ export default function CustomerAppV3() {
     }
   };
 
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpInput, setOtpInput] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [sessionCheckDone, setSessionCheckDone] = useState(false);
+
   useEffect(() => {
     const savedPhone = localStorage.getItem("customer_phone");
-    if (savedPhone) {
-      setPhone(savedPhone);
+    if (!savedPhone) {
+      setSessionCheckDone(true);
+      return;
     }
+    apiRequest('GET', '/api/customers/auth/status')
+      .then((res) => {
+        if (res.ok) {
+          setPhone(savedPhone);
+        } else {
+          localStorage.removeItem("customer_phone");
+        }
+      })
+      .catch(() => { localStorage.removeItem("customer_phone"); })
+      .finally(() => setSessionCheckDone(true));
   }, []);
 
   const { data: customer, isLoading: customerLoading, refetch: refetchCustomer } = useQuery<Customer>({
@@ -170,52 +187,81 @@ export default function CustomerAppV3() {
     }
   };
 
-  const loginMutation = useMutation({
-    mutationFn: async (phoneNumber: string) => {
-      const res = await apiRequest("GET", `/api/customers/phone/${phoneNumber}`);
-      return res.json();
-    },
-    onSuccess: (data: Customer | { notFound: boolean }) => {
-      if ('notFound' in data) {
-        setShowSignup(true);
-      } else {
-        localStorage.setItem("customer_phone", phoneInput);
-        setPhone(phoneInput);
-        setShowSignup(false);
-      }
-    },
-    onError: () => {
-      setShowSignup(true);
-    },
-  });
-
   const signupMutation = useMutation({
     mutationFn: async (data: { phone: string; name: string; email: string; birthday: string }) => {
       const res = await apiRequest("POST", "/api/customers", data);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || t('customer.accountCreateFailed'));
+      }
       return res.json();
     },
-    onSuccess: (data: Customer) => {
-      localStorage.setItem("customer_phone", phoneInput);
-      setPhone(phoneInput);
+    onSuccess: async () => {
       setShowSignup(false);
       toast({
         title: t('customer.welcomeTitle'),
         description: t('customer.accountCreated'),
       });
+      // OTP request after signup to verify phone ownership
+      try {
+        await apiRequest('POST', '/api/customers/auth/request', { phone: phoneInput.trim() });
+        setOtpStep(true);
+      } catch {
+        setOtpError(t('customer.loginError'));
+      }
     },
     onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || t('customer.accountCreateFailed'),
-        variant: "destructive",
-      });
+      if (error.message?.includes('already exists')) {
+        setOtpError(t('customer.loginError'));
+        setShowSignup(false);
+        handleLogin(undefined as any);
+      } else {
+        toast({
+          title: t('common.error'),
+          description: error.message || t('customer.accountCreateFailed'),
+          variant: "destructive",
+        });
+      }
     },
   });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (phoneInput.trim()) {
-      loginMutation.mutate(phoneInput.trim());
+  const handleOtpVerify = async () => {
+    if (!otpInput.trim()) return;
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const res = await apiRequest('POST', '/api/customers/auth/verify', { phone: phoneInput.trim(), code: otpInput.trim() });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setOtpError(body.message || t('customer.invalidOtp'));
+        return;
+      }
+      const customerData = await res.json();
+      queryClient.setQueryData(['/api/customers/phone', phoneInput.trim()], customerData);
+      localStorage.setItem("customer_phone", phoneInput.trim());
+      setPhone(phoneInput.trim());
+      setOtpStep(false);
+      setOtpInput("");
+    } catch {
+      setOtpError(t('customer.invalidOtp'));
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!phoneInput.trim()) return;
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      // OTP request is non-enumerable — always returns 200
+      await apiRequest('POST', '/api/customers/auth/request', { phone: phoneInput.trim() });
+      setOtpStep(true);
+    } catch {
+      setOtpError(t('customer.loginError'));
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -256,6 +302,15 @@ export default function CustomerAppV3() {
 
   const rewardProducts = products.filter(p => p.available).slice(0, 4);
 
+  // Session check in progress
+  if (!sessionCheckDone) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-yens-yellow/30 to-background flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-yens-yellow border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!phone) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-yens-yellow/30 to-background flex flex-col">
@@ -270,9 +325,55 @@ export default function CustomerAppV3() {
         <main className="flex-1 flex flex-col items-center justify-center p-6">
           <img src={logoUrl} alt="Yens Logo" className="w-28 h-28 rounded-full mb-6 shadow-lg" />
           <h1 className="text-2xl font-bold text-foreground mb-2">{t('customer.yensRewards')}</h1>
-          <p className="text-muted-foreground mb-6 text-center">{t('customer.enterPhone')}</p>
+          <p className="text-muted-foreground mb-6 text-center">
+            {otpStep ? t('customer.enterOtp') : t('customer.enterPhone')}
+          </p>
 
-          {!showSignup ? (
+          {otpStep ? (
+            <div className="w-full max-w-sm space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                {t('customer.otpSentTo', { phone: phoneInput })}
+              </p>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="123456"
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleOtpVerify()}
+                className="text-lg tracking-widest text-center"
+                maxLength={6}
+                data-testid="input-otp"
+              />
+              {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
+              <Button
+                onClick={handleOtpVerify}
+                className="w-full bg-yens-yellow text-foreground font-semibold"
+                disabled={otpLoading}
+                data-testid="button-verify-otp"
+              >
+                {otpLoading ? t('common.loading') : t('customer.verifyCode')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => { setShowSignup(true); setOtpStep(false); setOtpError(null); setOtpInput(""); }}
+                data-testid="button-signup-instead"
+              >
+                {t('customer.newCustomer')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => { setOtpStep(false); setOtpError(null); setOtpInput(""); setShowSignup(false); }}
+                data-testid="button-back-to-phone"
+              >
+                {t('common.back')}
+              </Button>
+            </div>
+          ) : !showSignup ? (
             <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
               <div>
                 <Label htmlFor="phone">{t('customer.phone')}</Label>
@@ -286,13 +387,23 @@ export default function CustomerAppV3() {
                   data-testid="input-phone"
                 />
               </div>
+              {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
               <Button
                 type="submit"
-                className="w-full bg-yens-yellow hover:bg-yens-yellow/90 text-foreground font-semibold"
-                disabled={loginMutation.isPending}
+                className="w-full bg-yens-yellow text-foreground font-semibold"
+                disabled={otpLoading}
                 data-testid="button-login"
               >
-                {loginMutation.isPending ? t('common.loading') : t('customer.accessRewards')}
+                {otpLoading ? t('common.loading') : t('customer.accessRewards')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => { setShowSignup(true); setOtpError(null); }}
+                data-testid="button-show-signup"
+              >
+                {t('customer.newCustomer')}
               </Button>
             </form>
           ) : (
@@ -332,7 +443,7 @@ export default function CustomerAppV3() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-yens-yellow hover:bg-yens-yellow/90 text-foreground font-semibold"
+                className="w-full bg-yens-yellow text-foreground font-semibold"
                 disabled={signupMutation.isPending}
                 data-testid="button-signup"
               >

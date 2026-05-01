@@ -71,16 +71,31 @@ export default function CustomerApp() {
     }
   };
 
-  // Load phone from localStorage on mount
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpInput, setOtpInput] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [sessionCheckDone, setSessionCheckDone] = useState(false);
+
+  // On mount: check if a valid server session already exists (returning user).
+  // If so, restore the phone identity without re-verifying OTP.
   useEffect(() => {
     const savedPhone = localStorage.getItem("customer_phone");
-    console.log("📱 Checking saved phone on mount:", savedPhone);
-    if (savedPhone) {
-      console.log("✅ Auto-logging in with saved phone:", savedPhone);
-      setPhone(savedPhone);
-    } else {
-      console.log("❌ No saved phone found - showing login");
+    if (!savedPhone) {
+      setSessionCheckDone(true);
+      return;
     }
+    apiRequest('GET', '/api/customers/auth/status')
+      .then(async (res) => {
+        if (res.ok) {
+          setPhone(savedPhone);
+        } else {
+          // Session expired — clear stored phone, user must re-verify
+          localStorage.removeItem("customer_phone");
+        }
+      })
+      .catch(() => { localStorage.removeItem("customer_phone"); })
+      .finally(() => setSessionCheckDone(true));
   }, []);
 
   // Fetch customer data - NO POLLING to prevent refresh issues
@@ -233,15 +248,43 @@ export default function CustomerApp() {
     }
   }, [activeTab, customer?.id]);
 
-  const handleLogin = () => {
-    if (phoneInput.trim()) {
-      console.log("💾 Saving phone to localStorage:", phoneInput.trim());
+  const handleLogin = async () => {
+    if (!phoneInput.trim()) return;
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      // OTP request always returns 200 (non-enumerable) — show OTP step regardless
+      await apiRequest('POST', '/api/customers/auth/request', { phone: phoneInput.trim() });
+      setOtpStep(true);
+    } catch {
+      setOtpError(t('customer.loginError'));
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleOtpVerify = async () => {
+    if (!otpInput.trim()) return;
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const res = await apiRequest('POST', '/api/customers/auth/verify', { phone: phoneInput.trim(), code: otpInput.trim() });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setOtpError(body.message || t('customer.invalidOtp'));
+        return;
+      }
+      const customerData = await res.json();
+      // Seed the query cache so the now-gated phone endpoint isn't needed immediately
+      queryClient.setQueryData(['/api/customers/phone', phoneInput.trim()], customerData);
       localStorage.setItem("customer_phone", phoneInput.trim());
       setPhone(phoneInput.trim());
-      
-      // Double-check it saved
-      const saved = localStorage.getItem("customer_phone");
-      console.log("✅ Verified saved phone:", saved);
+      setOtpStep(false);
+      setOtpInput("");
+    } catch {
+      setOtpError(t('customer.invalidOtp'));
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -293,7 +336,16 @@ export default function CustomerApp() {
     });
   };
 
-  // Login screen
+  // Session check in progress
+  if (!sessionCheckDone) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Login screen (phone entry or OTP verification)
   if (!phone) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -302,33 +354,139 @@ export default function CustomerApp() {
             <img src={logoUrl} alt="Yens Logo" className="w-24 h-24 rounded-full mx-auto" />
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-foreground">{t('customer.yensRewards')}</h1>
-              <p className="text-base text-muted-foreground">{t('customer.enterPhone')}</p>
+              <p className="text-base text-muted-foreground">
+                {otpStep ? t('customer.enterOtp') : showSignup ? t('customer.createAccount') : t('customer.enterPhone')}
+              </p>
             </div>
           </div>
-          
-          <div className="space-y-4">
-            <Input
-              type="tel"
-              placeholder="+66 81 234 5678"
-              value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-              className="text-lg h-12"
-              data-testid="input-phone"
-            />
-            <Button 
-              onClick={() => { enableAudio(); handleLogin(); }} 
-              className="w-full text-lg"
-              size="lg"
-              data-testid="button-login"
-            >
-              {t('customer.accessRewards')}
-            </Button>
-          </div>
-          
-          <div className="text-sm text-muted-foreground text-center">
-            <p>{t('customer.newCustomer')}</p>
-          </div>
+
+          {!otpStep && !showSignup ? (
+            <div className="space-y-4">
+              <Input
+                type="tel"
+                placeholder="+66 81 234 5678"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                className="text-lg h-12"
+                data-testid="input-phone"
+              />
+              {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
+              <Button
+                onClick={() => { enableAudio(); handleLogin(); }}
+                className="w-full text-lg"
+                size="lg"
+                disabled={otpLoading}
+                data-testid="button-login"
+              >
+                {otpLoading ? t('common.loading') : t('customer.accessRewards')}
+              </Button>
+              <p className="text-sm text-muted-foreground text-center">{t('customer.newCustomer')}</p>
+            </div>
+          ) : showSignup ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                {t('customer.phone')}: <span className="font-semibold text-foreground">{phoneInput}</span>
+              </p>
+              <Input
+                type="text"
+                placeholder={t('customer.yourName')}
+                value={signupData.name}
+                onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                data-testid="input-name"
+              />
+              <Input
+                type="email"
+                placeholder={t('customer.emailPlaceholder')}
+                value={signupData.email}
+                onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                data-testid="input-email"
+              />
+              <Input
+                type="date"
+                value={signupData.birthday}
+                onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
+                data-testid="input-birthday"
+              />
+              <Button
+                onClick={async () => {
+                  if (!signupData.name.trim()) return;
+                  try {
+                    const res = await apiRequest('POST', '/api/customers', {
+                      name: signupData.name,
+                      phone: phoneInput.trim(),
+                      email: signupData.email || undefined,
+                      birthday: signupData.birthday || undefined,
+                    });
+                    if (!res.ok) {
+                      const body = await res.json().catch(() => ({}));
+                      setOtpError(body.message || t('customer.loginError'));
+                      if (res.status === 409) {
+                        setShowSignup(false);
+                        setOtpStep(true);
+                      }
+                      return;
+                    }
+                    setShowSignup(false);
+                    await handleLogin();
+                  } catch {
+                    setOtpError(t('customer.loginError'));
+                  }
+                }}
+                className="w-full text-lg"
+                size="lg"
+                data-testid="button-signup"
+              >
+                {t('customer.createAccount')}
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => { setShowSignup(false); setOtpError(null); }}>
+                {t('common.back')}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                {t('customer.otpSentTo', { phone: phoneInput })}
+              </p>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="123456"
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleOtpVerify()}
+                className="text-lg h-12 tracking-widest text-center"
+                maxLength={6}
+                data-testid="input-otp"
+              />
+              {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
+              <Button
+                onClick={handleOtpVerify}
+                className="w-full text-lg"
+                size="lg"
+                disabled={otpLoading}
+                data-testid="button-verify-otp"
+              >
+                {otpLoading ? t('common.loading') : t('customer.verifyCode')}
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => { setShowSignup(true); setOtpError(null); setOtpStep(false); setOtpInput(""); }}
+                data-testid="button-signup-instead"
+              >
+                {t('customer.newCustomer')}
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => { setOtpStep(false); setOtpError(null); setOtpInput(""); }}
+                data-testid="button-back-to-phone"
+              >
+                {t('common.back')}
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     );

@@ -344,6 +344,17 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   }),
 });
 
+// Public registration schema — only safe fields; prevents loyalty fraud via
+// attacker-controlled points, tier, totalSpent, registerBranch, tag, lineUid
+export const publicInsertCustomerSchema = z.object({
+  name: z.string().min(1),
+  phone: z.string().min(1),
+  email: z.string().email().optional().nullable(),
+  photo: z.string().optional().nullable(),
+  birthday: z.string().optional().nullable(),
+  gender: z.string().optional().nullable(),
+});
+
 // CSV Import schema - all fields as strings from CSV, server will coerce types
 export const insertCustomerCSVSchema = z.object({
   name: z.string().min(1),
