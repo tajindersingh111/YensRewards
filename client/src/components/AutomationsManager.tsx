@@ -125,7 +125,7 @@ const QUICKSTART_TEMPLATES = [
       customerFilter: "birthday_today",
       channel: "email" as const,
       subject: "Happy Birthday from Yen's! 🎂",
-      message: "Dear {{name}},\n\nHappy Birthday from everyone at Yen's Thai Ice Cream!\n\nTo celebrate your special day, we'd love to treat you to something sweet. Come visit us and show this message to receive a special birthday treat on us.\n\nYour loyalty points: {{points}}\nMembership tier: {{tier}}\n\nWe hope to see you soon!\n\nWith love,\nThe Yen's Team",
+      message: "Dear {name},\n\nHappy Birthday from everyone at Yen's Thai Ice Cream!\n\nTo celebrate your special day, we'd love to treat you to something sweet. Come visit us and show this message to receive a special birthday treat on us.\n\nYour loyalty points: {points}\nMembership tier: {tier}\n\nWe hope to see you soon!\n\nWith love,\nThe Yen's Team",
     },
   },
   {
@@ -142,7 +142,7 @@ const QUICKSTART_TEMPLATES = [
       customerFilter: "inactive_30d",
       channel: "line" as const,
       subject: "",
-      message: "Hi {{name}}! We miss you at Yen's Thai Ice Cream 🍦\n\nIt's been a while since your last visit. Come back and enjoy your favourite treats — your {{points}} points are waiting for you!\n\nSee you soon!",
+      message: "Hi {name}! We miss you at Yen's Thai Ice Cream. It's been a while since your last visit. Come back and enjoy your favourite treats — your {points} points are waiting for you! See you soon!",
     },
   },
 ];
@@ -877,7 +877,7 @@ function AutomationDialog({
                     />
                   </FormControl>
                   <FormDescription className="text-xs">
-                    Placeholders: {"{{name}}"} · {"{{points}}"} · {"{{tier}}"}
+                    Placeholders: {"{name}"} · {"{points}"} · {"{tier}"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

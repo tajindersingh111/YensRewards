@@ -487,7 +487,7 @@ export default function SalesTrackerDashboard() {
       netSales: String(t.netSales),
       otherSales: String(t.otherSales),
       otherSalesNote: t.otherSalesNote || "",
-      grabFee: "0",
+      grabFee: t.grabFee != null ? String(t.grabFee) : "0",
       totalSales: String(t.totalSales),
       dayOfWeek: t.dayOfWeek,
       importedBy: "",

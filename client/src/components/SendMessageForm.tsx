@@ -49,12 +49,9 @@ const EMOJI_GROUPS = [
 ];
 
 const MERGE_FIELDS = [
-  { key: '{{customerName}}', label: 'Customer Name', thLabel: 'ชื่อลูกค้า' },
-  { key: '{{customerPhone}}', label: 'Phone Number', thLabel: 'เบอร์โทรศัพท์' },
-  { key: '{{customerEmail}}', label: 'Email', thLabel: 'อีเมล' },
-  { key: '{{customerTier}}', label: 'Tier', thLabel: 'ระดับสมาชิก' },
-  { key: '{{customerPoints}}', label: 'Points', thLabel: 'คะแนนสะสม' },
-  { key: '{{customerBirthday}}', label: 'Birthday', thLabel: 'วันเกิด' },
+  { key: '{name}', label: 'Customer Name', thLabel: 'ชื่อลูกค้า' },
+  { key: '{points}', label: 'Points', thLabel: 'คะแนนสะสม' },
+  { key: '{tier}', label: 'Tier', thLabel: 'ระดับสมาชิก' },
 ];
 
 export default function SendMessageForm() {

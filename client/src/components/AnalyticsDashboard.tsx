@@ -388,11 +388,11 @@ export default function AnalyticsDashboard() {
                   />
                   <Legend />
                   <ReferenceLine
-                    y={145000}
+                    y={analytics?.cfoMetrics?.monthlyTarget ?? 0}
                     stroke="#EF4444"
                     strokeWidth={2}
                     strokeDasharray="8 4"
-                    label={{ value: "Break Even ฿145k", position: "right", fill: "#EF4444", fontSize: 12, fontWeight: 600 }}
+                    label={{ value: (analytics?.cfoMetrics?.monthlyTarget ?? 0) > 0 ? `Monthly Target ฿${((analytics?.cfoMetrics?.monthlyTarget ?? 0) / 1000).toFixed(0)}k` : "", position: "right", fill: "#EF4444", fontSize: 12, fontWeight: 600 }}
                   />
                   <Line
                     type="monotone"

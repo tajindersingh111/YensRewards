@@ -58,6 +58,7 @@ export default function PromotionCreator({ onSend }: PromotionCreatorProps) {
               <option value="bronze">{t('promotions.bronzeTier')}</option>
               <option value="silver">{t('promotions.silverTier')}</option>
               <option value="gold">{t('promotions.goldTier')}</option>
+              <option value="platinum">Platinum</option>
             </select>
           </div>
 

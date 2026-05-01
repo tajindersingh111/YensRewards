@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema } from "@shared/schema";
+import { insertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable } from "@shared/schema";
 import { calculateNextRunAt, processAutomation } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
@@ -11,7 +11,7 @@ import { sendVonageSMS, isVonageConfigured } from "./vonage";
 import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially, sendBatchEmails } from "./resend";
 import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
-import { eq, sql, and, gt, lt } from "drizzle-orm";
+import { eq, sql, and, gt, lt, desc } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
 import ExcelJS from "exceljs";
@@ -1451,6 +1451,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching all customers:", error);
       res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  // Get top spenders - server-sorted for performance
+  app.get('/api/admin/customers/top-spenders', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+      const customers = await db
+        .select()
+        .from(customersTable)
+        .orderBy(desc(customersTable.totalSpent))
+        .limit(limit);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching top spenders:", error);
+      res.status(500).json({ message: "Failed to fetch top spenders" });
     }
   });
 

@@ -38,6 +38,7 @@ const tierColors = {
   bronze: "bg-[hsl(30,60%,50%)] text-white",
   silver: "bg-[hsl(0,0%,63%)] text-white",
   gold: "bg-[hsl(45,93%,47%)] text-white",
+  platinum: "bg-[hsl(270,80%,50%)] text-white",
 };
 
 export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps) {
@@ -190,6 +191,7 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
                 <SelectItem value="bronze">Bronze</SelectItem>
                 <SelectItem value="silver">Silver</SelectItem>
                 <SelectItem value="gold">Gold</SelectItem>
+                <SelectItem value="platinum">Platinum</SelectItem>
               </SelectContent>
             </Select>
             <Button

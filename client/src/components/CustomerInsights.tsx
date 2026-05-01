@@ -11,6 +11,7 @@ const tierColors = {
   bronze: "bg-[hsl(30,60%,50%)] text-white",
   silver: "bg-[hsl(0,0%,63%)] text-white",
   gold: "bg-[hsl(45,93%,47%)] text-white",
+  platinum: "bg-[hsl(270,80%,50%)] text-white",
 };
 
 interface CustomerInsightsProps {
@@ -24,7 +25,12 @@ interface CustomerInsightsProps {
 export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDetails, onSendBirthdayMessages }: CustomerInsightsProps) {
   const { t } = useTranslation();
 
-  // Fetch all customers
+  // Fetch top spenders from server (pre-sorted, limited to 10 — much faster than fetching all)
+  const { data: topSpenders = [] } = useQuery<Customer[]>({
+    queryKey: ['/api/admin/customers/top-spenders'],
+  });
+
+  // Fetch all customers only for birthday section
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers/all'],
   });
@@ -32,14 +38,9 @@ export default function CustomerInsights({ onMessage, onEdit, onDelete, onViewDe
   // Fetch customer IDs who already received birthday messages today
   const { data: birthdaySentData } = useQuery<{ customerIds: string[] }>({
     queryKey: ['/api/admin/customers/birthdays/sent-today'],
-    refetchInterval: 30000, // Refetch every 30 seconds to catch newly sent messages
+    refetchInterval: 30000,
   });
   const birthdayMessagesSentToday = new Set(birthdaySentData?.customerIds || []);
-
-  // Sort customers by totalSpent
-  const topSpenders = [...customers]
-    .sort((a, b) => parseFloat(b.totalSpent) - parseFloat(a.totalSpent))
-    .slice(0, 10);
 
   return (
     <div className="space-y-6 mb-6">

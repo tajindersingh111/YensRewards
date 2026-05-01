@@ -732,8 +732,8 @@ export default function MessageTemplates() {
                         />
                         <p className="text-xs text-muted-foreground mt-2">
                           {isThaiLanguage 
-                            ? "ใช้ตัวแปร: {{customerName}}, {{points}}, {{tier}}" 
-                            : "Use variables: {{customerName}}, {{points}}, {{tier}}"}
+                            ? "ใช้ตัวแปร: {name}, {points}, {tier}" 
+                            : "Use variables: {name}, {points}, {tier}"}
                         </p>
                       </TabsContent>
 
