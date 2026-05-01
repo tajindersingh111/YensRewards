@@ -39,7 +39,7 @@ import {
   type InsertShopEvent,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents, dailySales } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte, inArray } from "drizzle-orm";
 
 export interface IStorage {
