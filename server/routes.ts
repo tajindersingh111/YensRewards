@@ -1368,14 +1368,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [product] = await db.select().from(products).where(eq(products.id, productId));
       if (!product) return res.status(404).json({ message: "Product not found" });
       if (!product.isRedeemable) return res.status(400).json({ message: "Product is not redeemable" });
-      const customer = await storage.getCustomer(customerId);
-      if (!customer) return res.status(404).json({ message: "Customer not found" });
-      if (customer.points < product.pointCost) {
+      // Atomically deduct points: the UPDATE only succeeds when the customer
+      // has enough points, preventing concurrent double-spend.
+      const updatedCustomer = await storage.atomicRedeemPoints(customerId, product.pointCost);
+      if (!updatedCustomer) {
+        // Either the customer doesn't exist or they don't have enough points.
+        // Fetch current balance for a helpful error message.
+        const customer = await storage.getCustomer(customerId);
+        if (!customer) return res.status(404).json({ message: "Customer not found" });
         return res.status(400).json({ message: `Not enough points. Need ${product.pointCost}, have ${customer.points}` });
       }
-      // Deduct points and log transaction
-      const newPoints = customer.points - product.pointCost;
-      await storage.updateCustomer(customerId, { points: newPoints });
+      const newPoints = updatedCustomer.points;
       await storage.createTransaction({
         customerId,
         amount: "0",

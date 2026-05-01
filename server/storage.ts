@@ -108,7 +108,15 @@ export interface IStorage {
   }): Promise<{ deletedCount: number; deletedIds: string[] }>;
   deleteCustomer(id: string): Promise<void>;
   getDuplicatePhoneNumbers(): Promise<Array<{ phone: string; count: number; customers: Customer[] }>>;
-  
+  /**
+   * Atomically deduct `pointCost` from the customer's balance if and only if
+   * they currently have at least that many points.  Returns the updated
+   * Customer on success or null when the balance is insufficient (or the
+   * customer doesn't exist).  Uses a single conditional UPDATE so concurrent
+   * requests cannot both pass the affordability check.
+   */
+  atomicRedeemPoints(customerId: string, pointCost: number): Promise<Customer | null>;
+
   // Transaction methods
   getTransaction(id: string): Promise<Transaction | undefined>;
   getCustomerTransactions(customerId: string): Promise<Transaction[]>;
@@ -565,6 +573,15 @@ export class DbStorage implements IStorage {
       .returning();
     
     return result[0];
+  }
+
+  async atomicRedeemPoints(customerId: string, pointCost: number): Promise<Customer | null> {
+    const result = await db
+      .update(customers)
+      .set({ points: sql`${customers.points} - ${pointCost}` })
+      .where(and(eq(customers.id, customerId), sql`${customers.points} >= ${pointCost}`))
+      .returning();
+    return result[0] ?? null;
   }
 
   async upsertCustomerByPhone(customer: InsertCustomer & Partial<Customer>): Promise<{ action: 'insert' | 'update', customer: Customer }> {
