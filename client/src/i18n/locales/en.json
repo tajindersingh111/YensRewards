@@ -885,6 +885,7 @@
       "bronzeTier": "Bronze Tier",
       "silverTier": "Silver Tier",
       "goldTier": "Gold Tier",
+      "platinumTier": "Platinum Tier",
       "message": "Message",
       "messagePlaceholder": "Enter your promotional message...",
       "smsCharCount": "SMS character count: {{count}}/160",

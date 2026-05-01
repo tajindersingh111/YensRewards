@@ -52,6 +52,8 @@ interface ProductFormData {
   promoFocus: boolean;
   available: boolean;
   sortOrder: number;
+  isRedeemable: boolean;
+  pointCost: number;
 }
 
 export default function ProductManager() {
@@ -72,6 +74,8 @@ export default function ProductManager() {
     promoFocus: false,
     available: true,
     sortOrder: 0,
+    isRedeemable: false,
+    pointCost: 100,
   });
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
@@ -150,6 +154,8 @@ export default function ProductManager() {
       promoFocus: false,
       available: true,
       sortOrder: 0,
+      isRedeemable: false,
+      pointCost: 100,
     });
     setEditingProduct(null);
   };
@@ -169,6 +175,8 @@ export default function ProductManager() {
       promoFocus: product.promoFocus || false,
       available: product.available,
       sortOrder: product.sortOrder,
+      isRedeemable: (product as any).isRedeemable || false,
+      pointCost: (product as any).pointCost || 100,
     });
     setIsDialogOpen(true);
   };
@@ -396,7 +404,30 @@ export default function ProductManager() {
                   />
                   <span className="text-sm">{t('products.productAvailable')}</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isRedeemable}
+                    onChange={(e) => setFormData({ ...formData, isRedeemable: e.target.checked })}
+                    className="w-4 h-4 accent-green-600"
+                    data-testid="checkbox-product-redeemable"
+                  />
+                  <span className="text-sm text-green-700 dark:text-green-400 font-medium">{t('products.redeemable', 'Redeemable with points')}</span>
+                </label>
               </div>
+              {formData.isRedeemable && (
+                <div className="space-y-2">
+                  <Label htmlFor="pointCost">{t('products.pointCost', 'Point Cost for Redemption')}</Label>
+                  <Input
+                    id="pointCost"
+                    type="number"
+                    min="1"
+                    value={formData.pointCost}
+                    onChange={(e) => setFormData({ ...formData, pointCost: parseInt(e.target.value) || 100 })}
+                    data-testid="input-product-point-cost"
+                  />
+                </div>
+              )}
               <DialogFooter>
                 <Button
                   type="button"

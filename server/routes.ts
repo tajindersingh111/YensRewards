@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./replitAuth";
-import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable } from "@shared/schema";
+import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products } from "@shared/schema";
 import { calculateNextRunAt, processAutomation } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
@@ -11,7 +11,7 @@ import { sendVonageSMS, isVonageConfigured } from "./vonage";
 import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially, sendBatchEmails } from "./resend";
 import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
-import { eq, sql, and, gt, lt, desc } from "drizzle-orm";
+import { eq, sql, and, gt, lt, desc, asc } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
 import ExcelJS from "exceljs";
@@ -1185,6 +1185,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "Customer not found" });
     }
     res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
+  });
+
+  // Public leaderboard — returns top 10 customers by points (first name only for privacy)
+  app.get('/api/customers/leaderboard', async (_req, res) => {
+    try {
+      const top = await db
+        .select({ name: customersTable.name, points: customersTable.points, tier: customersTable.tier })
+        .from(customersTable)
+        .orderBy(desc(customersTable.points))
+        .limit(10);
+      const entries = top.map((c, i) => ({
+        rank: i + 1,
+        name: c.name.split(' ')[0], // first name only
+        points: c.points,
+        tier: c.tier,
+      }));
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Public redeemable products — products customers can redeem with points
+  app.get('/api/customers/redeemable-products', async (_req, res) => {
+    try {
+      const redeemable = await db
+        .select()
+        .from(products)
+        .where(and(eq(products.isRedeemable, true), eq(products.available, true)))
+        .orderBy(asc(products.pointCost), asc(products.sortOrder));
+      res.json(redeemable);
+    } catch (error) {
+      console.error("Error fetching redeemable products:", error);
+      res.status(500).json({ message: "Failed to fetch redeemable products" });
+    }
+  });
+
+  // Redeem a product with loyalty points (requires customer session)
+  app.post('/api/customers/redeem', async (req, res) => {
+    const customerId = (req.session as any)?.customerId;
+    if (!customerId) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { productId } = req.body;
+      if (!productId) return res.status(400).json({ message: "productId required" });
+      const [product] = await db.select().from(products).where(eq(products.id, productId));
+      if (!product) return res.status(404).json({ message: "Product not found" });
+      if (!product.isRedeemable) return res.status(400).json({ message: "Product is not redeemable" });
+      const customer = await storage.getCustomer(customerId);
+      if (!customer) return res.status(404).json({ message: "Customer not found" });
+      if (customer.points < product.pointCost) {
+        return res.status(400).json({ message: `Not enough points. Need ${product.pointCost}, have ${customer.points}` });
+      }
+      // Deduct points and log transaction
+      const newPoints = customer.points - product.pointCost;
+      await storage.updateCustomer(customerId, { points: newPoints });
+      await storage.createTransaction({
+        customerId,
+        amount: "0",
+        points: -product.pointCost,
+        type: "redemption",
+        description: `Redeemed: ${product.name}`,
+        location: "App",
+      });
+      res.json({ success: true, pointsDeducted: product.pointCost, remainingPoints: newPoints, productName: product.name });
+    } catch (error) {
+      console.error("Error redeeming product:", error);
+      res.status(500).json({ message: "Failed to process redemption" });
+    }
   });
 
   // In-memory OTP store: phone → { code, customerId, expires, attempts }
@@ -5900,6 +5969,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting shop event:", error);
       res.status(500).json({ message: "Failed to delete shop event" });
+    }
+  });
+
+  // === APP SETTINGS (admin) ===
+
+  app.get('/api/admin/settings', isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const rows = await db.select().from(appSettings);
+      const result: Record<string, string> = {};
+      rows.forEach(r => { result[r.key] = r.value; });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.put('/api/admin/settings', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const updates = req.body as Record<string, string>;
+      for (const [key, value] of Object.entries(updates)) {
+        await db.insert(appSettings)
+          .values({ key, value })
+          .onConflictDoUpdate({ target: appSettings.key, set: { value, updatedAt: new Date() } });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      res.status(500).json({ message: "Failed to save settings" });
     }
   });
 

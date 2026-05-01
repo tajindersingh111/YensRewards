@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink, Copy, Check, Search, Star } from "lucide-react";
+import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink, Copy, Check, Search, Star, Gift } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
@@ -611,11 +611,38 @@ export default function CustomerApp() {
     type: t.type,
   })) || [];
 
-  const mockLeaderboard = [
-    { id: "1", name: "Somchai", points: 1250, rank: 1 },
-    { id: "2", name: "Jaruwan", points: 450, rank: 2 },
-    { id: "3", name: "Orapan", points: 750, rank: 3 },
-  ];
+  // Real leaderboard from API
+  const { data: leaderboardData } = useQuery<Array<{ rank: number; name: string; points: number; tier: string }>>({
+    queryKey: ['/api/customers/leaderboard'],
+  });
+  const leaderboardEntries = (leaderboardData || []).map(e => ({
+    id: String(e.rank),
+    name: e.name,
+    points: e.points,
+    rank: e.rank,
+    tier: e.tier,
+  }));
+
+  // Redeemable products
+  const { data: redeemableProducts } = useQuery<Array<{ id: string; name: string; pointCost: number; category: string; imageUrl?: string }>>({
+    queryKey: ['/api/customers/redeemable-products'],
+  });
+
+  // Redeem mutation
+  const redeemMutation = useMutation({
+    mutationFn: (productId: string) => apiRequest('POST', '/api/customers/redeem', { productId }),
+    onSuccess: async (res: any) => {
+      const data = await res.json();
+      toast({ title: t('customer.redeemSuccess', 'Redeemed!'), description: `${data.productName} — ${data.pointsDeducted} pts used. ${data.remainingPoints} pts remaining.` });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/leaderboard'] });
+    },
+    onError: async (err: any) => {
+      let msg = t('customer.redeemError', 'Could not redeem');
+      try { const d = await err.json?.(); if (d?.message) msg = d.message; } catch {}
+      toast({ title: t('common.error', 'Error'), description: msg, variant: 'destructive' });
+    },
+  });
 
   // Determine next tier points
   const nextTierPoints = customer.tier === "bronze" ? 500 : customer.tier === "silver" ? 1000 : 0;
@@ -815,8 +842,44 @@ export default function CustomerApp() {
           </TabsContent>
 
           <TabsContent value="referrals" className="py-4 space-y-6 mt-0">
+            {/* Redeem Rewards Section */}
+            {redeemableProducts && redeemableProducts.length > 0 && (
+              <Card className="p-4">
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-primary" />
+                  {t('customer.redeemRewards', 'Redeem Rewards')}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {t('customer.yourPoints', 'Your points')}: <span className="font-bold text-primary">{customer.points}</span>
+                </p>
+                <div className="space-y-2">
+                  {redeemableProducts.map(p => {
+                    const canAfford = customer.points >= p.pointCost;
+                    return (
+                      <div key={p.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                        <div className="flex-1 min-w-0 mr-2">
+                          <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                          <p className={`text-xs ${canAfford ? 'text-primary' : 'text-muted-foreground'}`}>
+                            {p.pointCost} {t('customer.points', 'pts')}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={canAfford ? "default" : "outline"}
+                          disabled={!canAfford || redeemMutation.isPending}
+                          onClick={() => redeemMutation.mutate(p.id)}
+                          data-testid={`button-redeem-${p.id}`}
+                        >
+                          {t('customer.redeem', 'Redeem')}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
             <ReferralCard referralCode={customer.referralCode} referralCount={0} />
-            <LeaderboardCard entries={mockLeaderboard} currentUserId={customer.id} />
+            <LeaderboardCard entries={leaderboardEntries} currentUserId={customer.id} />
           </TabsContent>
 
           <TabsContent value="profile" className="py-4 space-y-6 mt-0">
@@ -1006,11 +1069,11 @@ export default function CustomerApp() {
             className={`flex flex-col items-center justify-center gap-0.5 py-2 hover-elevate active-elevate-2 ${
               activeTab === "referrals" ? "text-primary" : "text-muted-foreground"
             }`}
-            aria-label={t('customer.referrals')}
+            aria-label={t('customer.rewards', 'Rewards')}
             data-testid="button-nav-referrals"
           >
-            <Users className="w-5 h-5" />
-            <span className="text-[10px] hidden xs:block">{t('customer.referrals')}</span>
+            <Gift className="w-5 h-5" />
+            <span className="text-[10px] hidden xs:block">{t('customer.rewards', 'Rewards')}</span>
           </button>
           <button
             onClick={() => setActiveTab("profile")}

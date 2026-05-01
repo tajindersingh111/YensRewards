@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, Upload, CheckCircle, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { extractAmountFromReceipt } from "@/lib/ocr";
 
 interface ReceiptCaptureProps {
@@ -12,6 +13,7 @@ interface ReceiptCaptureProps {
 }
 
 export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptureProps) {
+  const { toast } = useToast();
   const [amount, setAmount] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -59,7 +61,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
       };
       reader.onerror = (error) => {
         console.error("Error reading file:", error);
-        alert("Error loading image - please try again");
+        toast({ title: "Error loading image", description: "Please try again", variant: "destructive" });
       };
       reader.readAsDataURL(file);
     } else {
@@ -74,7 +76,7 @@ export default function ReceiptCapture({ customerName, onSubmit }: ReceiptCaptur
       fileInputRef.current.click();
     } else {
       console.error("File input ref is null!");
-      alert("Camera button error - please refresh the app");
+      toast({ title: "Camera error", description: "Please refresh the app and try again", variant: "destructive" });
     }
   };
 

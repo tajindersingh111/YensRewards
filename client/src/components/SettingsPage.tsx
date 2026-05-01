@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp, Wrench, CheckCircle, UserPlus, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, ChevronDown, ChevronUp, Wrench, CheckCircle, UserPlus, Loader2, Building2, Save } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -27,9 +27,44 @@ export default function SettingsPage() {
   const [securityOpen, setSecurityOpen] = useState(false);
   const [adminSecret, setAdminSecret] = useState("");
 
+  // Business settings state
+  const [bizSettings, setBizSettings] = useState<Record<string, string>>({});
+  const [bizDirty, setBizDirty] = useState(false);
+
   const { data: userStatus } = useQuery<{ hasPassword: boolean; twoFactorEnabled: boolean; qrCode?: string }>({
     queryKey: ['/api/auth/account-status'],
   });
+
+  const { data: settingsData, isLoading: settingsLoading } = useQuery<Record<string, string>>({
+    queryKey: ['/api/admin/settings'],
+    select: (data) => data,
+  });
+
+  // Merge server data with local edits on first load
+  const effectiveSettings = { ...(settingsData || {}), ...bizSettings };
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: async (updates: Record<string, string>) => apiRequest('PUT', '/api/admin/settings', updates),
+    onSuccess: () => {
+      toast({ title: t('common.success'), description: t('admin.settings.businessSaved', 'Business settings saved') });
+      setBizDirty(false);
+      setBizSettings({});
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
+    },
+    onError: () => {
+      toast({ title: t('common.error'), description: t('admin.settings.saveFailed', 'Failed to save settings'), variant: 'destructive' });
+    },
+  });
+
+  const handleBizChange = (key: string, value: string) => {
+    setBizSettings(prev => ({ ...prev, [key]: value }));
+    setBizDirty(true);
+  };
+
+  const handleBizSave = () => {
+    const merged = { ...(settingsData || {}), ...bizSettings };
+    saveSettingsMutation.mutate(merged);
+  };
 
   const passwordMutation = useMutation({
     mutationFn: async (data: { currentPassword?: string; newPassword: string }) => {
@@ -228,8 +263,12 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">{t('admin.settings.pageDescription')}</p>
       </div>
 
-      <Tabs defaultValue="security" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+      <Tabs defaultValue="business" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsTrigger value="business" className="flex items-center gap-2" data-testid="tab-business">
+            <Building2 className="h-4 w-4" />
+            {t('admin.settings.tabBusiness', 'Business')}
+          </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2" data-testid="tab-security">
             <Shield className="h-4 w-4" />
             {t('admin.settings.tabSecurity')}
@@ -239,6 +278,138 @@ export default function SettingsPage() {
             {t('admin.settings.tabData')}
           </TabsTrigger>
         </TabsList>
+
+        {/* ── Business Settings Tab ── */}
+        <TabsContent value="business" className="space-y-4">
+          {settingsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              {/* Revenue Target */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t('admin.settings.revenueTarget', 'Annual Revenue Target')}</CardTitle>
+                  <CardDescription>{t('admin.settings.revenueTargetDesc', 'Used for the break-even chart and goal tracking')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="annual_revenue_target">{t('admin.settings.annualTarget', 'Annual Target (฿)')}</Label>
+                    <Input
+                      id="annual_revenue_target"
+                      type="number"
+                      min="0"
+                      value={effectiveSettings['annual_revenue_target'] || ''}
+                      onChange={e => handleBizChange('annual_revenue_target', e.target.value)}
+                      data-testid="input-annual-revenue-target"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Loyalty Points */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t('admin.settings.loyaltyPoints', 'Loyalty Points')}</CardTitle>
+                  <CardDescription>{t('admin.settings.loyaltyPointsDesc', 'How points are earned per purchase')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="points_per_100_baht">{t('admin.settings.pointsPer100', 'Points earned per ฿100 spent')}</Label>
+                    <Input
+                      id="points_per_100_baht"
+                      type="number"
+                      min="1"
+                      value={effectiveSettings['points_per_100_baht'] || ''}
+                      onChange={e => handleBizChange('points_per_100_baht', e.target.value)}
+                      data-testid="input-points-per-100"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tier Thresholds */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t('admin.settings.tierThresholds', 'Tier Thresholds')}</CardTitle>
+                  <CardDescription>{t('admin.settings.tierThresholdsDesc', 'Minimum lifetime points required for each tier')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {[
+                    { key: 'tier_silver_threshold', label: t('tiers.silver', 'Silver') },
+                    { key: 'tier_gold_threshold', label: t('tiers.gold', 'Gold') },
+                    { key: 'tier_platinum_threshold', label: t('tiers.platinum', 'Platinum') },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="space-y-2">
+                      <Label htmlFor={key}>{label} ({t('admin.settings.minPoints', 'min points')})</Label>
+                      <Input
+                        id={key}
+                        type="number"
+                        min="0"
+                        value={effectiveSettings[key] || ''}
+                        onChange={e => handleBizChange(key, e.target.value)}
+                        data-testid={`input-${key}`}
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Shop Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t('admin.settings.shopInfo', 'Shop Info')}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="shop_name">{t('admin.settings.shopName', 'Shop Name')}</Label>
+                    <Input
+                      id="shop_name"
+                      value={effectiveSettings['shop_name'] || ''}
+                      onChange={e => handleBizChange('shop_name', e.target.value)}
+                      data-testid="input-shop-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shop_phone">{t('admin.settings.shopPhone', 'Contact Phone')}</Label>
+                    <Input
+                      id="shop_phone"
+                      value={effectiveSettings['shop_phone'] || ''}
+                      onChange={e => handleBizChange('shop_phone', e.target.value)}
+                      data-testid="input-shop-phone"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shop_email">{t('admin.settings.shopEmail', 'Contact Email')}</Label>
+                    <Input
+                      id="shop_email"
+                      type="email"
+                      value={effectiveSettings['shop_email'] || ''}
+                      onChange={e => handleBizChange('shop_email', e.target.value)}
+                      data-testid="input-shop-email"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleBizSave}
+                  disabled={!bizDirty || saveSettingsMutation.isPending}
+                  data-testid="button-save-business-settings"
+                >
+                  {saveSettingsMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  {t('common.save', 'Save Changes')}
+                </Button>
+              </div>
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
           <Card>

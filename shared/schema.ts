@@ -106,6 +106,8 @@ export const products = pgTable("products", {
   featured: boolean("featured").notNull().default(false),
   promoFocus: boolean("promo_focus").notNull().default(false), // Highlight as promotional focus
   available: boolean("available").notNull().default(true),
+  isRedeemable: boolean("is_redeemable").notNull().default(false), // Can be redeemed with loyalty points
+  pointCost: integer("point_cost").notNull().default(100), // Points required for redemption
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -614,3 +616,12 @@ export type Automation = typeof automations.$inferSelect;
 export type InsertAutomation = z.infer<typeof insertAutomationSchema>;
 export type AutomationRun = typeof automationRuns.$inferSelect;
 export type InsertAutomationRun = z.infer<typeof insertAutomationRunSchema>;
+
+// App Settings table - key/value store for configurable business settings
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type AppSetting = typeof appSettings.$inferSelect;

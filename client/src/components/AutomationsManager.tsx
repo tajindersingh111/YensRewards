@@ -569,6 +569,7 @@ function AutomationDialog({
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [testDialogOpen, setTestDialogOpen] = useState(false);
 
   const { data: templates = [] } = useQuery<MessageTemplate[]>({
     queryKey: ["/api/admin/message-templates"],
@@ -884,7 +885,19 @@ function AutomationDialog({
               )} />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex-wrap gap-2">
+              {editing && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="mr-auto"
+                  onClick={() => setTestDialogOpen(true)}
+                  data-testid="button-test-send-automation"
+                >
+                  <FlaskConical className="w-4 h-4 mr-2" />
+                  Send Test
+                </Button>
+              )}
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
@@ -895,6 +908,13 @@ function AutomationDialog({
           </form>
         </Form>
       </DialogContent>
+      {editing && (
+        <TestSendDialog
+          automation={editing}
+          open={testDialogOpen}
+          onOpenChange={setTestDialogOpen}
+        />
+      )}
     </Dialog>
   );
 }

@@ -8,6 +8,7 @@ import {
   Users, 
   Award,
   Calendar,
+  MapPin,
   ArrowUpRight,
   ArrowDownRight
 } from "lucide-react";
@@ -266,6 +267,39 @@ export default function YensOverview() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Top Channels / Locations */}
+      {overview.topProducts && overview.topProducts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              {t('overview.topChannels', 'Top Channels (30 days)')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {overview.topProducts.map((item, idx) => {
+                const maxRev = overview.topProducts[0].revenue || 1;
+                const pct = Math.round((item.revenue / maxRev) * 100);
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{item.productName}</span>
+                      <span className="text-muted-foreground">
+                        {formatCurrency(item.revenue)} &middot; {item.quantity} {t('overview.days', 'days')}
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Best Day Highlight */}
       {overview.bestDay.revenue > 0 && (

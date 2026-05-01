@@ -885,6 +885,7 @@
       "bronzeTier": "ระดับบรอนซ์",
       "silverTier": "ระดับซิลเวอร์",
       "goldTier": "ระดับโกลด์",
+      "platinumTier": "ระดับแพลทินัม",
       "message": "ข้อความ",
       "messagePlaceholder": "ป้อนข้อความโปรโมชั่นของคุณ...",
       "smsCharCount": "จำนวนตัวอักษร SMS: {{count}}/160",

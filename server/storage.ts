@@ -1177,8 +1177,23 @@ export class DbStorage implements IStorage {
       day.revenue > best.revenue ? day : best
     , dailyData[0] || { date: '', revenue: 0 });
     
-    // Get top products (mock data for now - will need product tracking in transactions)
-    const topProducts: Array<{ productName: string; revenue: number; quantity: number }> = [];
+    // Top locations by revenue (using daily_sales channel/site data — last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysStr = thirtyDaysAgo.toISOString().split('T')[0];
+    const allSales = await db.select().from(dailySales);
+    const recentSales = allSales.filter(s => s.date >= thirtyDaysStr && s.totalSales);
+    const locationMap = new Map<string, { revenue: number; days: number }>();
+    recentSales.forEach(s => {
+      const loc = s.orderChannel || 'Unknown';
+      const rev = parseFloat(s.totalSales as unknown as string) || 0;
+      const existing = locationMap.get(loc) || { revenue: 0, days: 0 };
+      locationMap.set(loc, { revenue: existing.revenue + rev, days: existing.days + 1 });
+    });
+    const topProducts = Array.from(locationMap.entries())
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .slice(0, 5)
+      .map(([name, data]) => ({ productName: name, revenue: data.revenue, quantity: data.days }));
     
     return {
       thisWeek: {
