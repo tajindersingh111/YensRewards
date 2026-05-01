@@ -582,9 +582,9 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3">
                   <Github className="h-8 w-8 text-foreground" />
                   <div>
-                    <p className="font-medium">GitHub + Google Drive Backup</p>
+                    <p className="font-medium">GitHub + Google Sheets Backup</p>
                     <p className="text-sm text-muted-foreground">
-                      Sales &amp; customers → GitHub <span className="font-mono text-xs">backups/</span> + Google Drive <span className="font-mono text-xs">YensThai Backups/</span>
+                      Sales &amp; customers → GitHub <span className="font-mono text-xs">backups/</span> + Google Sheets in your Drive
                     </p>
                   </div>
                 </div>
@@ -602,7 +602,7 @@ export default function SettingsPage() {
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertDescription>
-                  Backups are stored as CSV files in both your YensRewards GitHub repo and a <strong>YensThai Backups</strong> folder in your Google Drive. GitHub preserves the full version history; Google Drive gives you direct access to download anytime.
+                  GitHub stores CSVs with full version history. Google Sheets creates two live spreadsheets in your Drive — <em>YensThai Daily Sales Backup</em> and <em>YensThai Customers Backup</em> — that refresh on every backup.
                 </AlertDescription>
               </Alert>
             </CardContent>
