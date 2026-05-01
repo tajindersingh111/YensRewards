@@ -841,7 +841,18 @@ app.use((req, res, next) => {
 
     // ONE-TIME import: Jul–Nov 2024 sales from Excel data
     await restore2024SalesData();
-    
+
+    // ONE-TIME fix: Dec 30 2024 Shop grab_fee was 0, should be 116.01 (from daily Excel file)
+    try {
+      const dec30Check = await db.execute(drizzleSql`SELECT grab_fee FROM daily_sales WHERE date = '2024-12-30' AND order_channel = 'Shop'`);
+      if (dec30Check.rows.length > 0 && Number(dec30Check.rows[0].grab_fee) === 0) {
+        await db.execute(drizzleSql`UPDATE daily_sales SET grab_fee = 116.01, total_sales = net_sales + 116.01 WHERE date = '2024-12-30' AND order_channel = 'Shop'`);
+        log("Fixed Dec 30 2024 Shop grab_fee: 0 → 116.01");
+      }
+    } catch (err) {
+      log("Dec 30 grab fee fix skipped: " + String(err));
+    }
+
     // Initialize email assets from object storage
     const objectStorage = new ObjectStorageService();
     
