@@ -54,7 +54,7 @@ export const customers = pgTable("customers", {
   lineUid: text("line_uid"),
 },
 (table) => [
-  index("customers_line_uid_idx").on(table.lineUid),
+  uniqueIndex("customers_line_uid_unique_idx").on(table.lineUid),
 ]);
 
 // Transactions table - purchase history

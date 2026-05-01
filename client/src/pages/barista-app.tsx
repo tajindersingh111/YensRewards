@@ -63,7 +63,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [twoFactorToken, setTwoFactorToken] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [requires2FA, setRequires2FA] = useState(false);
 
   const loginMutation = useMutation({
@@ -75,15 +75,15 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
       return data as { 
         success: boolean; 
         requires2FA: boolean; 
-        userId?: string;
+        pendingToken?: string;
         user?: User;
         message: string;
       };
     },
     onSuccess: (data) => {
-      if (data.requires2FA && data.userId) {
+      if (data.requires2FA && data.pendingToken) {
         setRequires2FA(true);
-        setUserId(data.userId);
+        setPendingToken(data.pendingToken);
         toast({
           title: t('common.success'),
           description: t('users.enter2FACode'),
@@ -117,8 +117,8 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
   });
 
   const verify2FAMutation = useMutation({
-    mutationFn: async ({ userId, token }: { userId: string; token: string }) => {
-      const response: any = await apiRequest("POST", "/api/auth/login-2fa", { userId, token });
+    mutationFn: async ({ pendingToken, token }: { pendingToken: string; token: string }) => {
+      const response: any = await apiRequest("POST", "/api/auth/login-2fa", { pendingToken, token });
       return response as { 
         success: boolean; 
         user?: User;
@@ -161,7 +161,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
 
   const handleVerify2FA = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId || !twoFactorToken) {
+    if (!pendingToken || !twoFactorToken) {
       toast({
         title: t('common.error'),
         description: t('users.enter2FACode'),
@@ -169,7 +169,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
       });
       return;
     }
-    verify2FAMutation.mutate({ userId, token: twoFactorToken });
+    verify2FAMutation.mutate({ pendingToken, token: twoFactorToken });
   };
 
   return (
@@ -287,7 +287,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
                   className="flex-1" 
                   onClick={() => {
                     setRequires2FA(false);
-                    setUserId(null);
+                    setPendingToken(null);
                     setTwoFactorToken("");
                   }}
                   data-testid="button-back-to-login"

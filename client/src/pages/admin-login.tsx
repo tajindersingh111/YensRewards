@@ -24,7 +24,7 @@ export default function AdminLogin() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
-  const [userId, setUserId] = useState<string>("");
+  const [pendingToken, setPendingToken] = useState<string>("");
   const [token2FA, setToken2FA] = useState("");
 
   const form = useForm<LoginFormData>({
@@ -43,7 +43,7 @@ export default function AdminLogin() {
 
       if (result.requires2FA) {
         setRequires2FA(true);
-        setUserId(result.userId);
+        setPendingToken(result.pendingToken);
         toast({
           title: "2FA Required",
           description: "Please enter your verification code",
@@ -85,7 +85,7 @@ export default function AdminLogin() {
 
     try {
       const response = await apiRequest('POST', '/api/auth/login-2fa', {
-        userId,
+        pendingToken,
         token: token2FA,
       });
       const result = await response.json();
@@ -261,7 +261,7 @@ export default function AdminLogin() {
                 onClick={() => {
                   setRequires2FA(false);
                   setToken2FA("");
-                  setUserId("");
+                  setPendingToken("");
                 }}
                 data-testid="button-back"
               >

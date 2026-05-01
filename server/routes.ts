@@ -17,6 +17,81 @@ import multer from "multer";
 import ExcelJS from "exceljs";
 import * as fs from "fs";
 import * as path from "path";
+import crypto from "crypto";
+
+// ============ In-memory rate limiter for auth endpoints ============
+// Tracks failed login attempts per IP address.
+// After MAX_FAILURES failures within the window, the IP is locked out for LOCKOUT_MS.
+const AUTH_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const AUTH_MAX_FAILURES = 10;
+const AUTH_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes lockout
+
+interface RateEntry { failures: number; windowStart: number; lockedUntil?: number; }
+const authRateMap = new Map<string, RateEntry>();
+
+function getClientIp(req: any): string {
+  // req.ip is set by Express using the trust-proxy configuration (set in server/index.ts).
+  // This gives us the correct client IP without blindly trusting raw x-forwarded-for headers,
+  // which can be spoofed by a direct client when not behind a trusted proxy.
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
+function checkAuthRateLimit(ip: string): { allowed: boolean; retryAfterSecs?: number } {
+  const now = Date.now();
+  const entry = authRateMap.get(ip);
+
+  if (entry?.lockedUntil && now < entry.lockedUntil) {
+    return { allowed: false, retryAfterSecs: Math.ceil((entry.lockedUntil - now) / 1000) };
+  }
+
+  return { allowed: true };
+}
+
+function recordAuthFailure(ip: string): void {
+  const now = Date.now();
+  const entry = authRateMap.get(ip) ?? { failures: 0, windowStart: now };
+
+  if (now - entry.windowStart > AUTH_WINDOW_MS) {
+    entry.failures = 0;
+    entry.windowStart = now;
+    delete entry.lockedUntil;
+  }
+
+  entry.failures += 1;
+  if (entry.failures >= AUTH_MAX_FAILURES) {
+    entry.lockedUntil = now + AUTH_LOCKOUT_MS;
+    console.warn(`🔒 Auth rate limit: IP ${ip} locked out for 15 minutes after ${entry.failures} failures`);
+  }
+
+  authRateMap.set(ip, entry);
+}
+
+function clearAuthFailures(ip: string): void {
+  authRateMap.delete(ip);
+}
+
+// ============ Server-side pending 2FA challenge store ============
+// When a password login succeeds for a 2FA-enabled account, a one-time challenge
+// token is minted and stored here. The /api/auth/login-2fa endpoint then requires
+// that token instead of accepting an arbitrary userId, preventing oracle abuse.
+const PENDING_2FA_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface Pending2FAEntry { userId: string; expiresAt: number; }
+const pending2FAStore = new Map<string, Pending2FAEntry>();
+
+function createPending2FAChallenge(userId: string): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  pending2FAStore.set(token, { userId, expiresAt: Date.now() + PENDING_2FA_TTL_MS });
+  return token;
+}
+
+function consumePending2FAChallenge(pendingToken: string): string | null {
+  const entry = pending2FAStore.get(pendingToken);
+  if (!entry) return null;
+  pending2FAStore.delete(pendingToken);
+  if (Date.now() > entry.expiresAt) return null;
+  return entry.userId;
+}
 
 // Helper to convert an ExcelJS worksheet to a JSON array, replicating SheetJS sheet_to_json behaviour.
 // The first row is treated as headers. Empty header cells get names like __EMPTY, __EMPTY_1, __EMPTY_2, …
@@ -757,13 +832,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Verify 2FA token (for login or verification)
-  app.post('/api/auth/verify-2fa', async (req, res) => {
+  // Verify 2FA token for the currently authenticated user (e.g. during setup confirmation).
+  // The userId is derived from the active session — the request body value is intentionally
+  // ignored to prevent cross-user oracle attacks by authenticated principals.
+  app.post('/api/auth/verify-2fa', isAuthenticated, async (req: any, res) => {
     try {
-      const { userId, token } = req.body;
+      const { token } = req.body;
 
-      if (!userId || !token) {
-        return res.status(400).json({ message: "User ID and token are required" });
+      // Derive userId from the authenticated session, not from client-supplied input.
+      const userId: string | undefined = req.user?.claims?.sub;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      if (!token) {
+        return res.status(400).json({ message: "Verification token is required" });
       }
 
       const isValid = await storage.verify2FAToken(userId, token);
@@ -783,6 +867,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Password-based login endpoint (alongside Replit Auth)
   app.post('/api/auth/login', async (req, res) => {
+    const ip = getClientIp(req);
+
+    // Rate-limit check
+    const rateCheck = checkAuthRateLimit(ip);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({ message: `Too many failed attempts. Try again in ${rateCheck.retryAfterSecs} seconds.` });
+    }
+
     try {
       const { email, password } = req.body;
 
@@ -792,11 +884,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUserByEmail(email);
       if (!user || !user.password) {
+        recordAuthFailure(ip);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       const isValidPassword = await storage.verifyUserPassword(user.id, password);
       if (!isValidPassword) {
+        recordAuthFailure(ip);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
@@ -806,16 +900,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Your account has been disabled. Please contact an administrator." });
       }
 
-      // Check if 2FA is enabled
+      // Check if 2FA is enabled — issue a server-side pending challenge instead of
+      // returning the userId directly. The login-2fa endpoint will only accept this
+      // opaque token, ensuring callers must pass the password step first.
       if (user.twoFactorEnabled) {
+        const pendingToken = createPending2FAChallenge(user.id);
         console.log(`🔐 User ${user.id} requires 2FA verification`);
         return res.json({ 
           success: true, 
           requires2FA: true,
-          userId: user.id,
+          pendingToken,
           message: "Password correct. 2FA verification required." 
         });
       }
+
+      // Clear any recorded failures on successful login
+      clearAuthFailures(ip);
 
       // Create session for password-based login
       const sessionUser = {
@@ -857,16 +957,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete login with 2FA
+  // Requires a server-issued pendingToken (returned by /api/auth/login on password success)
+  // so that this endpoint cannot be used as a standalone TOTP oracle.
   app.post('/api/auth/login-2fa', async (req, res) => {
-    try {
-      const { userId, token } = req.body;
+    const ip = getClientIp(req);
 
-      if (!userId || !token) {
-        return res.status(400).json({ message: "User ID and token are required" });
+    // Rate-limit check
+    const rateCheck = checkAuthRateLimit(ip);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({ message: `Too many failed attempts. Try again in ${rateCheck.retryAfterSecs} seconds.` });
+    }
+
+    try {
+      const { pendingToken, token } = req.body;
+
+      if (!pendingToken || !token) {
+        return res.status(400).json({ message: "Pending token and verification code are required" });
+      }
+
+      // Consume the server-side pending challenge — this validates that the caller
+      // passed the password step and prevents repeated guessing with a fixed userId.
+      const userId = consumePending2FAChallenge(pendingToken);
+      if (!userId) {
+        recordAuthFailure(ip);
+        return res.status(400).json({ message: "Invalid or expired session. Please log in again." });
       }
 
       const isValid = await storage.verify2FAToken(userId, token);
       if (!isValid) {
+        recordAuthFailure(ip);
         return res.status(400).json({ message: "Invalid verification code" });
       }
 
@@ -880,6 +999,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`❌ 2FA login denied - account disabled for user ${user.id}`);
         return res.status(403).json({ message: "Your account has been disabled. Please contact an administrator." });
       }
+
+      // Clear recorded failures on successful 2FA
+      clearAuthFailures(ip);
 
       // Create session after successful 2FA
       const sessionUser = {
@@ -1385,9 +1507,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get LINE linking code for a customer — requires staff authentication to prevent
-  // unauthenticated code harvesting by anyone who knows a victim's phone number
-  app.get('/api/customers/phone/:phone/line-link-code', isAuthenticated, async (req, res) => {
+  // Get LINE linking code for a customer — restricted to admin users only.
+  // Limiting this to admins prevents any barista from minting a linking code for an
+  // arbitrary customer and then binding their own LINE account to it.
+  app.get('/api/customers/phone/:phone/line-link-code', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const customer = await storage.getCustomerByPhone(req.params.phone);
       if (!customer) {
@@ -5202,6 +5325,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
               try {
                 const customer = await storage.getCustomer(customerId);
                 if (customer) {
+                  // Guard: reject if this LINE UID is already bound to a *different* customer.
+                  // This prevents an attacker who holds a valid linking code from overwriting
+                  // a customer record with a LINE account that is already claimed elsewhere.
+                  const existingHolder = await storage.getCustomerByLineUid(lineUserId);
+                  if (existingHolder && existingHolder.id !== customer.id) {
+                    console.warn(`⚠️ LINE UID ${lineUserId} already linked to customer ${existingHolder.id}; refusing to link to ${customer.id}`);
+                    if ('replyToken' in event && event.replyToken) {
+                      await replyLineMessage(event.replyToken, 'This LINE account is already linked to another customer record. Please contact staff for assistance.');
+                    }
+                    return;
+                  }
+
+                  // Guard: reject if the customer record already has a *different* LINE UID.
+                  // The linking code should only be redeemable once per unlinked customer.
+                  if (customer.lineUid && customer.lineUid !== lineUserId) {
+                    console.warn(`⚠️ Customer ${customer.id} already has a different LINE UID; refusing re-link via code`);
+                    if ('replyToken' in event && event.replyToken) {
+                      await replyLineMessage(event.replyToken, 'This account is already linked to a LINE account. Please contact staff if you need to change it.');
+                    }
+                    await consumeLinkingCode(fullCode);
+                    return;
+                  }
+
                   // Link LINE UID to customer and award bonus points
                   const LINE_BONUS_POINTS = 50;
                   const wasNotLinked = !customer.lineUid;

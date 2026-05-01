@@ -110,6 +110,11 @@ async function ensureCorrectBirthdayTemplate(imageUrl: string) {
 
 const app = express();
 
+// Trust the first proxy hop so that req.ip resolves correctly behind a load balancer.
+// Without this, Express would return the proxy's IP and x-forwarded-for could be
+// trivially spoofed by a direct client.
+app.set('trust proxy', 1);
+
 // Log startup info
 log(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
 log(`REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT || 'not set'}`);
