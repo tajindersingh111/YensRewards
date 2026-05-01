@@ -3,10 +3,38 @@ import { Strategy, type VerifyFunction } from "openid-client/passport";
 
 import passport from "passport";
 import session from "express-session";
-import type { Express, RequestHandler } from "express";
+import type { Express, RequestHandler, Request } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+
+interface OidcClaims {
+  sub: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_image_url?: string;
+  is_admin?: boolean;
+  exp?: number;
+}
+
+interface SessionUser {
+  claims: OidcClaims;
+  access_token?: string;
+  refresh_token?: string;
+  expires_at?: number;
+}
+
+/** Resolve a DB user from a session user object, trying sub then email. */
+export async function resolveDbUser(sessionUser: SessionUser) {
+  const sub = sessionUser.claims?.sub;
+  const email = sessionUser.claims?.email;
+  let dbUser = sub ? await storage.getUser(sub) : undefined;
+  if (!dbUser && email) {
+    dbUser = await storage.getUserByEmail(email);
+  }
+  return dbUser;
+}
 
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
@@ -54,7 +82,7 @@ export function getSession() {
   
   // Determine if we're in production (Replit deployments always use HTTPS)
   const isProduction = process.env.REPLIT_DEPLOYMENT !== undefined;
-  console.log(`🍪 Session config - isProduction: ${isProduction}, Using sameSite: ${isProduction ? 'none' : 'lax'}`);
+  console.log(`🍪 Session config - isProduction: ${isProduction}, Using sameSite: lax`);
   
   return session({
     secret: process.env.SESSION_SECRET,
@@ -64,40 +92,85 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: isProduction, // Only require secure in production
-      sameSite: isProduction ? 'none' : 'lax', // Use 'none' only in production for OIDC
+      // INVARIANT: this MUST remain 'lax' (or 'strict') in production.
+      // Loosening to 'none' removes the browser-level CSRF barrier and
+      // requires a full token-based CSRF solution to compensate.
+      sameSite: 'lax', // blocks cross-site form POSTs (CSRF) while still allowing OIDC top-level GET redirects
       maxAge: sessionTtl,
     },
   });
 }
 
 function updateUserSession(
-  user: any,
+  user: SessionUser,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
 ) {
-  user.claims = tokens.claims();
+  user.claims = tokens.claims() as OidcClaims;
   user.access_token = tokens.access_token;
   user.refresh_token = tokens.refresh_token;
   user.expires_at = user.claims?.exp;
 }
 
-async function upsertUser(
-  claims: any,
-) {
+async function upsertUser(claims: OidcClaims): Promise<void> {
   const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined;
-  const isAdminClaim = claims["is_admin"] === true;
-  
-  // In test mode, assign admin role if is_admin claim is true
-  // Otherwise use default role (barista) from database
-  const role = isTestMode && isAdminClaim ? "admin" : undefined;
-  
-  await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
-    role,
-  });
+  const isAdminClaim = claims.is_admin === true;
+  const email = claims.email;
+  const sub = claims.sub;
+
+  // Check whether this user already exists in the database (by sub then email)
+  let existingUser = await storage.getUser(sub);
+  if (!existingUser && email) {
+    existingUser = await storage.getUserByEmail(email);
+  }
+
+  if (!existingUser) {
+    // In test mode allow auto-creation so developers can work locally
+    if (isTestMode) {
+      const role = isAdminClaim ? "admin" : "barista";
+      await storage.upsertUser({
+        id: sub,
+        email,
+        firstName: claims.first_name,
+        lastName: claims.last_name,
+        profileImageUrl: claims.profile_image_url ?? null,
+        role,
+      });
+    } else {
+      // In production, reject logins from users who were not pre-created by an admin
+      throw new Error("ACCOUNT_NOT_AUTHORIZED");
+    }
+    return;
+  }
+
+  // Align DB id with OIDC sub when they differ (e.g. admin pre-created user).
+  // For a brand-new invited user (no FK references yet) this succeeds and makes
+  // claims.sub == users.id throughout the rest of the app — eliminating the
+  // need for email-fallback lookups in every route handler.
+  // If the user already has FK-referenced rows, the update fails silently and
+  // resolveDbUser() handles the email fallback everywhere auth middleware is used.
+  if (existingUser.id !== sub) {
+    await storage.alignUserOidcId(existingUser.id, sub);
+  }
+
+  // User exists — only update profile fields, never change role or isActive
+  type UserProfileUpdate = {
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string | null;
+    updatedAt: Date;
+    role?: string;
+  };
+  const updateData: UserProfileUpdate = {
+    firstName: claims.first_name,
+    lastName: claims.last_name,
+    profileImageUrl: claims.profile_image_url ?? null,
+    updatedAt: new Date(),
+  };
+  // In test mode keep the convenience of honoring the is_admin claim for the role
+  if (isTestMode && isAdminClaim) {
+    updateData.role = "admin";
+  }
+  await storage.updateUser(existingUser.id, updateData);
 }
 
 export async function setupAuth(app: Express) {
@@ -112,10 +185,28 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
+    try {
+      const claims = tokens.claims() as OidcClaims;
+      await upsertUser(claims);
+
+      // After upserting, confirm the account is active.
+      // resolveDbUser checks by sub then by email so pre-invited users work
+      // regardless of which ID they were created with.
+      const sessionUser: SessionUser = { claims };
+      const dbUser = await resolveDbUser(sessionUser);
+      if (!dbUser || !dbUser.isActive) {
+        return verified(null, false, { message: "Account is disabled" });
+      }
+
+      const user: SessionUser = { claims };
+      updateUserSession(user, tokens);
+      verified(null, user);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === "ACCOUNT_NOT_AUTHORIZED") {
+        return verified(null, false, { message: "Account not authorized. Contact an administrator." });
+      }
+      return verified(err instanceof Error ? err : new Error(String(err)));
+    }
   };
 
   for (const domain of process.env
@@ -153,8 +244,10 @@ export async function setupAuth(app: Express) {
       }
       
       if (!user) {
-        console.log('❌ No user from auth');
-        return res.redirect("/api/login");
+        console.log('❌ No user from auth, reason:', info?.message);
+        // Redirect with an error message so the user understands why they cannot log in
+        const reason = encodeURIComponent(info?.message || "Login failed");
+        return res.redirect(`/?error=${reason}`);
       }
       
       req.logIn(user, (loginErr) => {
@@ -181,26 +274,39 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
+  const sessionUser = req.user as SessionUser | undefined;
 
   console.log('🔐 isAuthenticated check:', {
     isAuth: req.isAuthenticated(),
-    hasUser: !!req.user,
-    hasExpiresAt: !!user?.expires_at,
+    hasUser: !!sessionUser,
+    hasExpiresAt: !!sessionUser?.expires_at,
     sessionID: req.sessionID,
-    cookies: req.headers.cookie,
   });
 
-  if (!req.isAuthenticated() || !user?.expires_at) {
+  if (!req.isAuthenticated() || !sessionUser?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  // Enforce isActive: disabled accounts lose access immediately.
+  // resolveDbUser checks by OIDC sub first, then by email — this handles
+  // pre-invited staff whose DB id was admin-assigned (not equal to OIDC sub).
+  try {
+    const dbUser = await resolveDbUser(sessionUser);
+    if (!dbUser || !dbUser.isActive) {
+      req.logout(() => {});
+      return res.status(401).json({ message: "Account is disabled" });
+    }
+  } catch (err: unknown) {
+    console.error('❌ isAuthenticated - error checking isActive:', err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+
   const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
+  if (now <= sessionUser.expires_at) {
     return next();
   }
 
-  const refreshToken = user.refresh_token;
+  const refreshToken = sessionUser.refresh_token;
   if (!refreshToken) {
     res.status(401).json({ message: "Unauthorized" });
     return;
@@ -209,7 +315,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   try {
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
+    updateUserSession(sessionUser, tokenResponse);
     return next();
   } catch (error) {
     res.status(401).json({ message: "Unauthorized" });
@@ -219,42 +325,92 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
 // Middleware to check if user is an admin (must be used after isAuthenticated)
 export const isAdmin: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
-  const userId = user?.claims?.sub;
-  const isAdminClaim = user?.claims?.is_admin === true;
-  const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined; // True only in local/test, false in deployments
+  const sessionUser = req.user as SessionUser | undefined;
+  const isAdminClaim = sessionUser?.claims?.is_admin === true;
+  const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined;
 
-  console.log('🔒 isAdmin middleware - User:', userId, 'is_admin claim:', isAdminClaim, 'isTestMode:', isTestMode);
+  console.log('🔒 isAdmin middleware - sub:', sessionUser?.claims?.sub, 'is_admin claim:', isAdminClaim, 'isTestMode:', isTestMode);
 
-  if (!userId) {
+  if (!sessionUser?.claims?.sub) {
     console.log('❌ isAdmin - No userId found');
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
-    // Always check the database for admin status to ensure consistency
-    // Trust the claim in test mode ONLY if it's true (optimization)
-    let isUserAdmin: boolean;
-    
-    if (isTestMode && isAdminClaim) {
-      console.log('✅ isAdmin - Access granted via is_admin claim (test mode)');
-      isUserAdmin = true;
-    } else {
-      // Check database (works for both OIDC and password-based auth)
-      isUserAdmin = await storage.isUserAdmin(userId);
-      console.log('🔒 isAdmin check result from DB for', userId, ':', isUserAdmin);
-    }
-    
-    if (!isUserAdmin) {
-      const dbUser = await storage.getUser(userId);
-      console.log('❌ isAdmin - Access denied. User role:', dbUser?.role, 'Email:', dbUser?.email);
+    // Resolve the canonical DB user (sub → email fallback) so that admin
+    // checks work correctly regardless of whether the DB id matches the OIDC sub.
+    const dbUser = await resolveDbUser(sessionUser);
+
+    if (!dbUser) {
+      console.log('❌ isAdmin - DB user not found');
       return res.status(403).json({ message: "Forbidden: Admin access required" });
     }
-    
+
+    // In test mode, trust the is_admin OIDC claim as a convenience shortcut
+    const isUserAdmin = (isTestMode && isAdminClaim) || dbUser.role === "admin";
+    console.log('🔒 isAdmin check for', dbUser.email, '— role:', dbUser.role, '→', isUserAdmin ? 'granted' : 'denied');
+
+    if (!isUserAdmin) {
+      return res.status(403).json({ message: "Forbidden: Admin access required" });
+    }
+
     console.log('✅ isAdmin - Access granted');
     return next();
   } catch (error) {
     console.error("Error checking admin status:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
+};
+
+/**
+ * Explicit CSRF defence for sensitive state-changing auth/account-management
+ * endpoints.  SameSite=lax already blocks cross-site form POSTs in modern
+ * browsers, but this server-side check provides defence-in-depth by
+ * validating that the request Origin (or Referer fallback) matches the
+ * server's own host.  Requests without any Origin/Referer header are allowed
+ * from same-scheme same-host fetch() calls (the header is omitted on same-
+ * origin navigations in some environments), so we only reject when the header
+ * is explicitly present and does not match.
+ */
+function originMatchesHost(req: Request): boolean {
+  // Use the externally-visible host from the Host header (which Express
+  // already honours, including X-Forwarded-Host when trust proxy is enabled).
+  // This is correct behind TLS-terminating proxies where socket.localPort
+  // would reflect the internal app port rather than the browser-visible 443.
+  const hostHeader = req.get("host") ?? ""; // e.g. "app.example.com" or "localhost:5000"
+  const serverProtocol = req.protocol;      // respects X-Forwarded-Proto
+
+  function isSameOrigin(headerValue: string): boolean {
+    try {
+      const parsed = new URL(headerValue);
+      const incomingHost = parsed.host; // includes port if non-default
+      if (incomingHost !== hostHeader) return false;
+      if (parsed.protocol.replace(/:$/, "") !== serverProtocol) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  const origin = req.headers["origin"];
+  if (origin) return isSameOrigin(origin);
+
+  const referer = req.headers["referer"];
+  if (referer) return isSameOrigin(referer);
+
+  // No Origin or Referer present.
+  // In production: fail closed — legitimate browser fetch() and XMLHttpRequest
+  // calls on the same origin always send the Origin header on POST/PUT/PATCH/DELETE,
+  // so its absence from an authenticated state-changing request is suspicious.
+  // In development: allow (some test clients and curl omit these headers).
+  const isProduction = process.env.REPLIT_DEPLOYMENT !== undefined;
+  return !isProduction;
+}
+
+export const requireSameOrigin: RequestHandler = (req, res, next) => {
+  if (!originMatchesHost(req)) {
+    console.warn(`🛡️  CSRF check failed for ${req.method} ${req.path} — Origin: ${req.headers["origin"]}`);
+    return res.status(403).json({ message: "Forbidden: cross-site request rejected" });
+  }
+  return next();
 };

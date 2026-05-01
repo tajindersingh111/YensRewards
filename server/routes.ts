@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./replitAuth";
 import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable } from "@shared/schema";
 import { calculateNextRunAt, processAutomation } from "./scheduler";
 import { z } from "zod";
@@ -400,40 +400,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const email = req.user.claims.email;
+      const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined;
       const isAdminClaim = req.user.claims.is_admin === true;
-      const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined; // True only in local/test, false in deployments
-      
-      console.log('🔑 Auth check - User ID:', userId, 'Email:', email, 'is_admin claim:', isAdminClaim, 'isTestMode:', isTestMode);
-      let user = await storage.getUser(userId);
-      console.log('👤 User from DB by ID:', JSON.stringify(user, null, 2));
-      
-      // If user not found by ID, try by email (handles case where user was created with different ID)
-      if (!user && email) {
-        console.log('🔍 User not found by ID, trying by email...');
-        user = await storage.getUserByEmail(email);
-        console.log('👤 User from DB by email:', JSON.stringify(user, null, 2));
-      }
-      
-      // If user still doesn't exist, create them (can happen in OIDC test mode)
-      if (!user) {
-        console.log('⚠️  User not found, creating user from claims...');
-        // Determine role: ONLY for NEW users in test mode, honor is_admin claim
-        const roleForNewUser = (isTestMode && isAdminClaim) ? 'admin' : 'barista';
-        
+
+      // Resolve canonical DB user (sub → email fallback handles pre-invited users)
+      let user = await resolveDbUser(req.user);
+
+      // Auto-create is only allowed in test/development mode.  In production,
+      // isAuthenticated and the OIDC verify callback together guarantee that any
+      // user who reaches this point already has a DB record, so the fallback
+      // branch here is only a safety net for local developer flows.
+      if (!user && isTestMode) {
+        console.log('⚠️  [dev-only] User not found, creating from claims...');
+        const roleForNewUser = isAdminClaim ? 'admin' : 'barista';
         user = await storage.upsertUser({
-          id: userId,
-          email: email || '',
+          id: req.user.claims.sub,
+          email: req.user.claims.email || '',
           firstName: req.user.claims.first_name || '',
           lastName: req.user.claims.last_name || '',
           profileImageUrl: req.user.claims.profile_image_url || null,
           role: roleForNewUser,
         });
-        console.log('✅ User created with role:', user.role, JSON.stringify(user, null, 2));
+        console.log('✅ User created with role:', user.role);
       }
-      // Note: Existing users keep their database role (database role is authoritative)
-      
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
       res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -442,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // One-time admin promotion endpoint (protected by authentication + secret)
-  app.post('/api/auth/promote-admin', isAuthenticated, async (req: any, res) => {
+  app.post('/api/auth/promote-admin', isAuthenticated, requireSameOrigin, async (req: any, res) => {
     try {
       const { secret } = req.body;
       const ADMIN_SECRET = process.env.ADMIN_PROMOTION_SECRET;
@@ -930,28 +924,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get account status (password set, 2FA enabled)
   app.get('/api/auth/account-status', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      let user = await storage.getUser(userId);
-      
-      // Auto-create user if they don't exist yet (OIDC first-time login)
+      const user = await resolveDbUser(req.user);
       if (!user) {
-        console.log('⚠️  Account status - User not found, creating from claims...');
-        const email = req.user.claims.email;
-        const firstName = req.user.claims.first_name || '';
-        const lastName = req.user.claims.last_name || '';
-        const isAdmin = req.user.claims.is_admin || false;
-        
-        user = await storage.upsertUser({
-          id: userId,
-          email,
-          firstName,
-          lastName,
-          profileImageUrl: req.user.claims.profile_image_url || null,
-          role: isAdmin ? 'admin' : 'barista',
-        });
-        console.log('✅ User created for account status:', user.role);
+        return res.status(404).json({ message: "User not found" });
       }
-
       res.json({
         hasPassword: !!user.password,
         twoFactorEnabled: user.twoFactorEnabled || false,
@@ -963,16 +939,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Set or update password
-  app.post('/api/auth/set-password', isAuthenticated, async (req: any, res) => {
+  app.post('/api/auth/set-password', isAuthenticated, requireSameOrigin, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { currentPassword, newPassword } = req.body;
 
       if (!newPassword || newPassword.length < 8) {
         return res.status(400).json({ message: "Password must be at least 8 characters" });
       }
 
-      const user = await storage.getUser(userId);
+      const user = await resolveDbUser(req.user);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -994,12 +969,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // Update password
+      // Update by canonical DB id, not OIDC sub
       await db.update(users)
         .set({ password: hashedPassword })
-        .where(eq(users.id, userId));
+        .where(eq(users.id, user.id));
 
-      console.log(`✅ Password operation completed for user ${userId}`);
+      console.log(`✅ Password operation completed for user ${user.id}`);
       res.json({ success: true, message: "Password updated successfully" });
     } catch (error: any) {
       console.error("Error setting password:", error);
@@ -1008,11 +983,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Setup 2FA (generate QR code)
-  app.post('/api/auth/setup-2fa', isAuthenticated, async (req: any, res) => {
+  app.post('/api/auth/setup-2fa', isAuthenticated, requireSameOrigin, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
+      const user = await resolveDbUser(req.user);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -1037,12 +1010,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const QRCode = await import('qrcode');
       const qrCodeUrl = await QRCode.toDataURL(totp.toString());
 
-      // Store secret temporarily (not enabled yet)
+      // Store secret temporarily (not enabled yet) — use canonical DB id
       await db.update(users)
         .set({ twoFactorSecret: secret.base32 })
-        .where(eq(users.id, userId));
+        .where(eq(users.id, user.id));
 
-      console.log(`✅ 2FA setup initiated for user ${userId}`);
+      console.log(`✅ 2FA setup initiated for user ${user.id}`);
       res.json({ 
         success: true,
         qrCode: qrCodeUrl,
@@ -1055,16 +1028,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Verify and enable 2FA
-  app.post('/api/auth/verify-2fa-setup', isAuthenticated, async (req: any, res) => {
+  app.post('/api/auth/verify-2fa-setup', isAuthenticated, requireSameOrigin, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { token } = req.body;
 
       if (!token || token.length !== 6) {
         return res.status(400).json({ message: "Invalid verification code" });
       }
 
-      const user = await storage.getUser(userId);
+      const user = await resolveDbUser(req.user);
       if (!user || !user.twoFactorSecret) {
         return res.status(400).json({ message: "2FA setup not initiated" });
       }
@@ -1085,12 +1057,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid verification code" });
       }
 
-      // Enable 2FA
+      // Enable 2FA using canonical DB id
       await db.update(users)
         .set({ twoFactorEnabled: true })
-        .where(eq(users.id, userId));
+        .where(eq(users.id, user.id));
 
-      console.log(`✅ 2FA enabled for user ${userId}`);
+      console.log(`✅ 2FA enabled for user ${user.id}`);
       res.json({ success: true, message: "2FA enabled successfully" });
     } catch (error: any) {
       console.error("Error verifying 2FA setup:", error);
@@ -1099,18 +1071,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Disable 2FA
-  app.post('/api/auth/disable-2fa', isAuthenticated, async (req: any, res) => {
+  app.post('/api/auth/disable-2fa', isAuthenticated, requireSameOrigin, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      
+      const user = await resolveDbUser(req.user);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Disable 2FA using canonical DB id
       await db.update(users)
         .set({ 
           twoFactorEnabled: false,
           twoFactorSecret: null,
         })
-        .where(eq(users.id, userId));
+        .where(eq(users.id, user.id));
 
-      console.log(`✅ 2FA disabled for user ${userId}`);
+      console.log(`✅ 2FA disabled for user ${user.id}`);
       res.json({ success: true, message: "2FA disabled successfully" });
     } catch (error: any) {
       console.error("Error disabling 2FA:", error);

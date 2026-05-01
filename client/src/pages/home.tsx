@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2, QrCode, LogOut } from "lucide-react";
+import { Smartphone, ScanLine, BarChart3, Download, CheckCircle2, QrCode, LogOut, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,8 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 export default function Home() {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
+
+  const loginError = new URLSearchParams(window.location.search).get("error");
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
@@ -44,6 +46,17 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-chart-1/5 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full space-y-8">
+        {/* Login error banner — shown when OIDC callback redirects here with ?error= */}
+        {loginError && (
+          <div className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/10 p-4 text-destructive" data-testid="banner-login-error">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-semibold">Sign-in failed</p>
+              <p className="text-sm">{loginError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Language Switcher & Logout - Top Right */}
         <div className="flex justify-end gap-2">
           <Button 

@@ -47,6 +47,13 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   isUserAdmin(id: string): Promise<boolean>;
+  /**
+   * Attempt to migrate a pre-invited user's DB id to match their OIDC sub so
+   * that claims.sub == users.id everywhere in the app.  Returns true if the id
+   * was successfully migrated, false if the old id had FK references (meaning
+   * the user already has data written against the old id).
+   */
+  alignUserOidcId(oldId: string, newId: string): Promise<boolean>;
   
   // User management methods
   getAllUsers(): Promise<User[]>;
@@ -337,6 +344,21 @@ export class DbStorage implements IStorage {
   async isUserAdmin(id: string): Promise<boolean> {
     const user = await this.getUser(id);
     return user?.role === "admin";
+  }
+
+  async alignUserOidcId(oldId: string, newId: string): Promise<boolean> {
+    try {
+      // Try to update the primary key.  If foreign-key constraints prevent it
+      // (the user already has rows referencing the old id) the DB will throw and
+      // we return false so the caller can fall back gracefully.
+      await db
+        .update(users)
+        .set({ id: newId, updatedAt: new Date() })
+        .where(eq(users.id, oldId));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // User management methods
