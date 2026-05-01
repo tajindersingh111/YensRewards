@@ -1293,6 +1293,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
   }
 
+  // Stricter ownership check: accepts only the customer themselves (by session) or a
+  // manager/admin staff member. Ordinary baristas are denied to prevent bulk enumeration
+  // of other customers' sensitive data (purchase history, promotion state, etc.).
+  function customerOrManagerAdmin(idParam: string = 'id'): RequestHandler {
+    return async (req, res, next) => {
+      const session = req.session as any;
+      if (session.customerId && session.customerId === req.params[idParam]) {
+        return next();
+      }
+      if (req.isAuthenticated()) {
+        try {
+          const sessionUser = req.user as any;
+          const dbUser = await resolveDbUser(sessionUser);
+          if (dbUser && (dbUser.role === 'admin' || dbUser.role === 'manager')) {
+            return next();
+          }
+          return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+        } catch {
+          return res.status(500).json({ message: "Internal server error" });
+        }
+      }
+      return res.status(401).json({ message: "Authentication required" });
+    };
+  }
+
   // Customer login — authenticates by phone, establishes a server-side session for the
   // customer identity so subsequent resource-specific endpoints can enforce ownership.
   // Session status check — lets the frontend skip OTP when a valid customer session already exists
@@ -1453,6 +1478,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Search customers by phone number (for Barista app — staff only)
   // IMPORTANT: This route must come BEFORE /api/customers/:id to avoid "search" being treated as an ID
+  // Results are intentionally sanitized to minimal fields — baristas should only see what is
+  // necessary to identify a customer during a transaction, not full PII or loyalty data.
   app.get('/api/customers/search', isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string;
@@ -1463,7 +1490,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const customers = await storage.searchCustomersByPhone(query, 10);
-      res.json(customers);
+      // Return only the fields a barista needs to look up a customer during a transaction.
+      // Sensitive fields (email, birthday, totalSpent, tags, referralCode, lineUid, etc.)
+      // are stripped to prevent bulk-enumeration of PII by low-privilege staff.
+      const sanitized = customers.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        points: c.points,
+        tier: c.tier,
+      }));
+      res.json(sanitized);
     } catch (error) {
       console.error("Error searching customers:", error);
       res.status(500).json({ message: "Failed to search customers" });
@@ -1530,8 +1567,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer by referral code — requires staff authentication to prevent enumeration
-  app.get('/api/customers/referral/:code', isAuthenticated, async (req, res) => {
+  // Get customer by referral code — restricted to admin only to prevent baristas from
+  // resolving referral codes to full customer objects (including sensitive PII).
+  app.get('/api/customers/referral/:code', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const customer = await storage.getCustomerByReferralCode(req.params.code);
       if (!customer) {
@@ -1607,8 +1645,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer transactions — requires authentication (purchase history is sensitive PII)
-  app.get('/api/customers/:id/transactions', isAuthenticated, async (req, res) => {
+  // Get customer transactions — restricted to the customer themselves or admin/manager.
+  // Baristas are excluded; purchase history is sensitive PII they should not enumerate.
+  app.get('/api/customers/:id/transactions', customerOrManagerAdmin('id'), async (req, res) => {
     try {
       const transactions = await storage.getCustomerTransactions(req.params.id);
       res.json(transactions);
@@ -1618,8 +1657,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get customer promotions with read status — requires authentication
-  app.get('/api/customers/:id/promotions', isAuthenticated, async (req, res) => {
+  // Get customer promotions with read status — restricted to the customer themselves or admin/manager.
+  app.get('/api/customers/:id/promotions', customerOrManagerAdmin('id'), async (req, res) => {
     try {
       const promotions = await storage.getCustomerPromotions(req.params.id);
       res.json(promotions);
@@ -1629,8 +1668,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get unread notification count — requires authentication
-  app.get('/api/customers/:id/notifications/unread-count', isAuthenticated, async (req, res) => {
+  // Get unread notification count — restricted to the customer themselves or admin/manager.
+  app.get('/api/customers/:id/notifications/unread-count', customerOrManagerAdmin('id'), async (req, res) => {
     try {
       const count = await storage.getUnreadCount(req.params.id);
       res.json({ count });
@@ -1640,8 +1679,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mark promotion as read
-  app.post('/api/customers/:customerId/promotions/:promotionId/read', async (req, res) => {
+  // Mark promotion as read — requires the customer themselves or any authenticated staff.
+  // (Marking read state is low-sensitivity, any authenticated actor is acceptable.)
+  app.post('/api/customers/:customerId/promotions/:promotionId/read', customerOrStaff('customerId'), async (req, res) => {
     try {
       await storage.markAsRead(req.params.customerId, req.params.promotionId);
       res.json({ success: true });
@@ -1651,8 +1691,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mark all promotions as read
-  app.post('/api/customers/:id/promotions/read-all', async (req, res) => {
+  // Mark all promotions as read — requires the customer themselves or any authenticated staff.
+  app.post('/api/customers/:id/promotions/read-all', customerOrStaff('id'), async (req, res) => {
     try {
       await storage.markAllAsRead(req.params.id);
       res.json({ success: true });
@@ -6186,11 +6226,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer Reviews API
   // ============================================
   
-  // Submit a customer review
+  // Submit a customer review — requires an active customer session and the customerId in
+  // the body must match the session owner to prevent forged reviews on behalf of others.
   app.post('/api/reviews', async (req, res) => {
+    const session = req.session as any;
+    if (!session.customerId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
     try {
       const reviewData = insertCustomerReviewSchema.parse(req.body);
-      
+
+      // Enforce that the review is submitted for the authenticated customer only.
+      if (reviewData.customerId !== session.customerId) {
+        return res.status(403).json({ message: "Forbidden: Cannot submit a review on behalf of another customer" });
+      }
+
       // Insert the review into the database
       const [newReview] = await db.insert(customerReviews).values({
         customerId: reviewData.customerId,
