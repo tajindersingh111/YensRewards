@@ -193,7 +193,7 @@ export default function AccountSettings() {
             Automatic Data Backup
           </CardTitle>
           <CardDescription>
-            All sales and customer data is backed up daily to GitHub at 2:00 AM. You can also trigger a backup manually at any time.
+            All sales and customer data is backed up daily at 2:00 AM — to both GitHub and your Google Drive. You can also trigger a backup manually at any time.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -201,9 +201,9 @@ export default function AccountSettings() {
             <div className="flex items-center gap-3">
               <Github className="h-8 w-8 text-foreground" />
               <div>
-                <p className="font-medium">GitHub Backup</p>
+                <p className="font-medium">GitHub + Google Drive Backup</p>
                 <p className="text-sm text-muted-foreground">
-                  Sales history &amp; customer records → <span className="font-mono text-xs">backups/</span> folder
+                  Sales &amp; customers → GitHub <span className="font-mono text-xs">backups/</span> + Google Drive <span className="font-mono text-xs">YensThai Backups/</span>
                 </p>
               </div>
             </div>
@@ -227,7 +227,7 @@ export default function AccountSettings() {
           <Alert>
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>
-              Backups are stored as CSV files in the YensRewards GitHub repository. Each daily backup overwrites the previous file — the full history is preserved in the git commit log.
+              Backups go to both your YensRewards GitHub repo and a <strong>YensThai Backups</strong> folder in Google Drive. GitHub keeps the full version history; Google Drive lets you open or download files directly any time.
             </AlertDescription>
           </Alert>
         </CardContent>

@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import { uploadBackupToSheets } from "./googleSheets";
 
 const GITHUB_OWNER = "Leonardfraser";
 const GITHUB_REPO = "YensRewards";
@@ -88,16 +89,46 @@ export async function runDailyBackup(): Promise<{ success: boolean; message: str
     `);
     const custCSV = toCSV(custResult.rows as Record<string, any>[]);
 
-    // ── Push both files to GitHub ───────────────────────────────────────────
-    const commitMsg = `Daily backup ${today}`;
-    await pushFile("backups/daily_sales.csv", salesCSV, commitMsg, token);
-    await pushFile("backups/customers.csv", custCSV, commitMsg, token);
-
     const salesRows = salesResult.rows.length;
     const custRows = custResult.rows.length;
+
+    // ── Push to GitHub ──────────────────────────────────────────────────────
+    let githubOk = true;
+    let githubMsg = "GitHub ✓";
+    try {
+      const commitMsg = `Daily backup ${today}`;
+      await pushFile("backups/daily_sales.csv", salesCSV, commitMsg, token);
+      await pushFile("backups/customers.csv",   custCSV,  commitMsg, token);
+    } catch (err) {
+      githubOk = false;
+      githubMsg = `GitHub ✗: ${String(err)}`;
+      console.error("💾 GitHub backup error:", err);
+    }
+
+    // ── Upload to Google Sheets ─────────────────────────────────────────────
+    const sheetsResult = await uploadBackupToSheets([
+      {
+        name: "daily_sales",
+        title: "YensThai Daily Sales Backup",
+        settingsKey: "google_backup_sales_sheet_id",
+        content: salesCSV,
+      },
+      {
+        name: "customers",
+        title: "YensThai Customers Backup",
+        settingsKey: "google_backup_customers_sheet_id",
+        content: custCSV,
+      },
+    ]);
+
+    const sheetsMsg = sheetsResult.success
+      ? `Sheets ✓`
+      : `Sheets ✗: ${sheetsResult.message}`;
+
+    const allOk = githubOk && sheetsResult.success;
     return {
-      success: true,
-      message: `Backup complete: ${salesRows} sales rows, ${custRows} customers → GitHub backups/`,
+      success: allOk,
+      message: `Backup: ${salesRows} sales rows, ${custRows} customers — ${githubMsg} | ${sheetsMsg}`,
     };
   } catch (err) {
     return { success: false, message: `Backup failed: ${String(err)}` };

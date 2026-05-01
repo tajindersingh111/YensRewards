@@ -574,7 +574,7 @@ export default function SettingsPage() {
                 Automatic Data Backup
               </CardTitle>
               <CardDescription>
-                All sales and customer data is backed up daily to GitHub at 2:00 AM. You can also run a backup instantly.
+                All sales and customer data is backed up daily at 2:00 AM — to GitHub and Google Sheets in your Drive. You can also run a backup instantly.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -582,9 +582,9 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3">
                   <Github className="h-8 w-8 text-foreground" />
                   <div>
-                    <p className="font-medium">GitHub Backup</p>
+                    <p className="font-medium">GitHub + Google Drive Backup</p>
                     <p className="text-sm text-muted-foreground">
-                      Sales history &amp; customer records → <span className="font-mono text-xs">backups/</span> folder
+                      Sales &amp; customers → GitHub <span className="font-mono text-xs">backups/</span> + Google Drive <span className="font-mono text-xs">YensThai Backups/</span>
                     </p>
                   </div>
                 </div>
@@ -602,7 +602,7 @@ export default function SettingsPage() {
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertDescription>
-                  Backups are stored as CSV files in the YensRewards GitHub repository. Each daily backup overwrites the previous file — the full history is preserved in the git commit log.
+                  Backups are stored as CSV files in both your YensRewards GitHub repo and a <strong>YensThai Backups</strong> folder in your Google Drive. GitHub preserves the full version history; Google Drive gives you direct access to download anytime.
                 </AlertDescription>
               </Alert>
             </CardContent>
