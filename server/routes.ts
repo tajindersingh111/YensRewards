@@ -70,6 +70,47 @@ function clearAuthFailures(ip: string): void {
   authRateMap.delete(ip);
 }
 
+// ============ In-memory rate limiter for customer OTP endpoints ============
+// Limits OTP requests per IP address and per phone number independently.
+// Per-IP: max 10 requests per 15 minutes (prevents mass enumeration/flooding from one source)
+// Per-phone: max 5 requests per 15 minutes (prevents targeting a specific customer)
+const OTP_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const OTP_MAX_PER_IP = 10;
+const OTP_MAX_PER_PHONE = 5;
+const OTP_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes lockout
+
+interface OtpRateEntry { count: number; windowStart: number; lockedUntil?: number; }
+const otpIpRateMap = new Map<string, OtpRateEntry>();
+const otpPhoneRateMap = new Map<string, OtpRateEntry>();
+
+function checkOtpRateLimit(key: string, map: Map<string, OtpRateEntry>): { allowed: boolean; retryAfterSecs?: number } {
+  const now = Date.now();
+  const entry = map.get(key);
+  if (entry?.lockedUntil && now < entry.lockedUntil) {
+    return { allowed: false, retryAfterSecs: Math.ceil((entry.lockedUntil - now) / 1000) };
+  }
+  return { allowed: true };
+}
+
+function recordOtpRequest(key: string, map: Map<string, OtpRateEntry>, max: number, label: string): void {
+  const now = Date.now();
+  const entry = map.get(key) ?? { count: 0, windowStart: now };
+
+  if (now - entry.windowStart > OTP_WINDOW_MS) {
+    entry.count = 0;
+    entry.windowStart = now;
+    delete entry.lockedUntil;
+  }
+
+  entry.count += 1;
+  if (entry.count >= max) {
+    entry.lockedUntil = now + OTP_LOCKOUT_MS;
+    console.warn(`🔒 OTP rate limit: ${label} "${key}" locked out for 15 minutes after ${entry.count} requests`);
+  }
+
+  map.set(key, entry);
+}
+
 // ============ Server-side pending 2FA challenge store ============
 // When a password login succeeds for a 2FA-enabled account, a one-time challenge
 // token is minted and stored here. The /api/auth/login-2fa endpoint then requires
@@ -507,59 +548,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // One-time admin promotion endpoint (protected by authentication + secret)
-  app.post('/api/auth/promote-admin', isAuthenticated, requireSameOrigin, async (req: any, res) => {
-    try {
-      const { secret } = req.body;
-      const ADMIN_SECRET = process.env.ADMIN_PROMOTION_SECRET;
-      
-      if (!ADMIN_SECRET) {
-        return res.status(403).json({ message: "Admin promotion is not configured. Set ADMIN_PROMOTION_SECRET environment variable." });
-      }
-      
-      if (secret !== ADMIN_SECRET) {
-        return res.status(403).json({ message: "Invalid secret" });
-      }
-
-      const userId = req.user.claims.sub;
-      const email = req.user.claims.email;
-      const firstName = req.user.claims.first_name || '';
-      const lastName = req.user.claims.last_name || '';
-      
-      console.log(`🔧 Promoting user ${email} (${userId}) to admin...`);
-      
-      // First ensure the user exists in the database
-      // upsertUser will create if needed, or update profile if exists (preserving role)
-      const user = await storage.upsertUser({
-        id: userId,
-        email,
-        firstName,
-        lastName,
-        profileImageUrl: req.user.claims.profile_image_url || null,
-      });
-      
-      console.log(`📊 User after upsert - ID: ${user.id}, role: ${user.role}`);
-      
-      // Now update the user's role to admin (use user.id from upsert, not userId from claims)
-      const result = await db.update(users)
-        .set({ role: 'admin' })
-        .where(eq(users.id, user.id))
-        .returning();
-      
-      if (!result || result.length === 0) {
-        console.error(`❌ Failed to update role for ${email} (${user.id})`);
-        return res.status(500).json({ message: "Failed to update user role" });
-      }
-      
-      console.log(`✅ Successfully promoted ${email} (${user.id}) to admin - final role: ${result[0].role}`);
-      
-      res.json({ message: "Successfully promoted to admin", email, userId: user.id });
-    } catch (error) {
-      console.error("Error promoting to admin:", error);
-      res.status(500).json({ message: "Failed to promote to admin" });
     }
   });
 
@@ -1416,7 +1404,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!phone || typeof phone !== 'string') {
         return res.status(400).json({ message: "Phone number required" });
       }
+
+      // Per-IP rate limit check
+      const clientIp = getClientIp(req);
+      const ipCheck = checkOtpRateLimit(clientIp, otpIpRateMap);
+      if (!ipCheck.allowed) {
+        res.setHeader('Retry-After', String(ipCheck.retryAfterSecs));
+        return res.status(429).json({ message: "Too many verification code requests. Please try again later." });
+      }
+
       const normalized = phone.trim();
+
+      // Per-phone rate limit check
+      const phoneCheck = checkOtpRateLimit(normalized, otpPhoneRateMap);
+      if (!phoneCheck.allowed) {
+        // Record IP attempt even if phone-blocked, so IP-hammering still counts
+        recordOtpRequest(clientIp, otpIpRateMap, OTP_MAX_PER_IP, 'IP');
+        res.setHeader('Retry-After', String(phoneCheck.retryAfterSecs));
+        return res.status(429).json({ message: "Too many verification code requests for this number. Please try again later." });
+      }
+
+      // Record both counters before processing (prevent bypassing by concurrent requests)
+      recordOtpRequest(clientIp, otpIpRateMap, OTP_MAX_PER_IP, 'IP');
+      recordOtpRequest(normalized, otpPhoneRateMap, OTP_MAX_PER_PHONE, 'phone');
+
       const customer = await storage.getCustomerByPhone(normalized);
       if (!customer) {
         // Return same response to prevent enumeration; do not reveal non-existence
@@ -1448,6 +1459,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!phone || !code) {
         return res.status(400).json({ message: "Phone and code are required" });
       }
+
+      // Per-IP rate limit on verify attempts (defense-in-depth against automated guessing)
+      const verifyClientIp = getClientIp(req);
+      const verifyIpCheck = checkOtpRateLimit(verifyClientIp, otpIpRateMap);
+      if (!verifyIpCheck.allowed) {
+        res.setHeader('Retry-After', String(verifyIpCheck.retryAfterSecs));
+        return res.status(429).json({ message: "Too many requests. Please try again later." });
+      }
+      // Count verify attempts against the same per-IP bucket used for OTP requests,
+      // capping the total combined rate of unauthenticated OTP activity from one IP.
+      recordOtpRequest(verifyClientIp, otpIpRateMap, OTP_MAX_PER_IP, 'IP (verify)');
+
       const normalized = phone.trim();
       const entry = customerOtps.get(normalized);
       if (!entry || Date.now() > entry.expires) {
