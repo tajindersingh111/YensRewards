@@ -52,7 +52,10 @@ export const customers = pgTable("customers", {
   lastUse: timestamp("last_use"),
   tag: text("tag"),
   lineUid: text("line_uid"),
-});
+},
+(table) => [
+  index("customers_line_uid_idx").on(table.lineUid),
+]);
 
 // Transactions table - purchase history
 export const transactions = pgTable("transactions", {

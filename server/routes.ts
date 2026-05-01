@@ -81,6 +81,34 @@ function cleanOldJobs() {
   });
 }
 
+// Per-user rate limiter for LINE webhook events
+// Keyed by LINE userId; each value is { count, windowStart }
+const lineWebhookRateLimit = new Map<string, { count: number; windowStart: number }>();
+const LINE_WEBHOOK_WINDOW_MS = 60 * 1000; // 1-minute sliding window
+const LINE_WEBHOOK_MAX_EVENTS = 20;       // max events per user per window
+
+function checkLineWebhookRateLimit(lineUserId: string): boolean {
+  const now = Date.now();
+  const entry = lineWebhookRateLimit.get(lineUserId);
+  if (!entry || now - entry.windowStart > LINE_WEBHOOK_WINDOW_MS) {
+    lineWebhookRateLimit.set(lineUserId, { count: 1, windowStart: now });
+    return true;
+  }
+  entry.count += 1;
+  if (entry.count > LINE_WEBHOOK_MAX_EVENTS) {
+    return false;
+  }
+  return true;
+}
+
+// Periodically purge stale rate-limit entries to prevent memory growth
+setInterval(() => {
+  const cutoff = Date.now() - LINE_WEBHOOK_WINDOW_MS;
+  lineWebhookRateLimit.forEach((v, k) => {
+    if (v.windowStart < cutoff) lineWebhookRateLimit.delete(k);
+  });
+}, 5 * 60 * 1000);
+
 // Helper function to normalize day of week names to canonical short form
 function normalizeDayOfWeek(day: string): string {
   const normalized = day.trim().toLowerCase();
@@ -5068,6 +5096,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue;
         }
 
+        // Rate-limit per LINE user to prevent database DoS
+        if (!checkLineWebhookRateLimit(lineUserId)) {
+          console.warn(`⚠️ LINE webhook rate limit exceeded for user ${lineUserId}, dropping event`);
+          continue;
+        }
+
         console.log(`📩 LINE event: ${event.type} from ${lineUserId}`);
 
         // Handle follow event (customer adds bot as friend)
@@ -5077,9 +5111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const profile = await getLineProfile(lineUserId);
             console.log(`👤 LINE profile: ${profile.displayName}`);
 
-            // Check if customer already exists with this LINE UID
-            const allCustomers = await storage.getAllCustomers();
-            const existingByLine = allCustomers.find(c => c.lineUid === lineUserId);
+            // Check if customer already exists with this LINE UID (indexed lookup, no full scan)
+            const existingByLine = await storage.getCustomerByLineUid(lineUserId);
 
             if (existingByLine) {
               console.log(`✅ Customer already linked: ${existingByLine.name}`);
