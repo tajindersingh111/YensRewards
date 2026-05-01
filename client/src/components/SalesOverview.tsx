@@ -35,7 +35,8 @@ import type { DailySales } from "@shared/schema";
 // Site/channel options
 const CHANNELS = [
   "SHOP", "SUPALAI", "BALLOON", "BOX", "RIVER", "ARMY", "LAMP", 
-  "CNY", "UNIVERSITY", "GRAB", "FOODPANDA", "LINEMAN", "SHOPEE"
+  "CNY", "UNIVERSITY", "GRAB", "FOODPANDA", "LINEMAN", "SHOPEE",
+  "CARAVAN TRUCK"
 ];
 
 interface SalesFormData {

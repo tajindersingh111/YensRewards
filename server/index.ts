@@ -842,6 +842,22 @@ app.use((req, res, next) => {
     // ONE-TIME import: Jul–Nov 2024 sales from Excel data
     await restore2024SalesData();
 
+    // ONE-TIME: ensure CARAVAN TRUCK exists as an active site/channel
+    try {
+      const caravanCheck = await db.execute(drizzleSql`SELECT id FROM sites WHERE channel_name = 'CARAVAN TRUCK' LIMIT 1`);
+      if (caravanCheck.rows.length === 0) {
+        await db.execute(drizzleSql`
+          INSERT INTO sites (id, name, channel_name, type, location, operating_days, open_time, close_time, is_active, created_at, updated_at)
+          VALUES (gen_random_uuid(), 'Caravan Truck', 'CARAVAN TRUCK', 'mobile_van', 'Various',
+            ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
+            '09:00', '21:00', true, NOW(), NOW())
+        `);
+        log("Added CARAVAN TRUCK site to channel list");
+      }
+    } catch (err) {
+      log("CARAVAN TRUCK site check skipped: " + String(err));
+    }
+
     // ONE-TIME fix: Dec 30 2024 Shop grab_fee was 0, should be 116.01 (from daily Excel file)
     try {
       const dec30Check = await db.execute(drizzleSql`SELECT grab_fee FROM daily_sales WHERE date = '2024-12-30' AND order_channel = 'Shop'`);

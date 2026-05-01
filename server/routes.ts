@@ -5573,6 +5573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { name: 'Shopee Food', channelName: 'SHOPEE', type: 'stall' as const, isActive: true, location: 'Online - Shopee Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
         { name: 'Shopzy Platform', channelName: 'SHOPZY', type: 'stall' as const, isActive: true, location: 'Online - Shopzy', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
         { name: 'G2 Location', channelName: 'G2', type: 'stall' as const, isActive: true, location: 'G2 Area', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Caravan Truck', channelName: 'CARAVAN TRUCK', type: 'mobile_van' as const, isActive: true, location: 'Various', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '09:00', closeTime: '21:00' },
       ];
 
       // Validate all data before inserting to ensure data integrity
