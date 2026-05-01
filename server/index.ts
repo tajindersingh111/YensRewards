@@ -842,20 +842,59 @@ app.use((req, res, next) => {
     // ONE-TIME import: Jul–Nov 2024 sales from Excel data
     await restore2024SalesData();
 
-    // ONE-TIME: ensure CARAVAN TRUCK exists as an active site/channel
+    // ONE-TIME: ensure all sales channels from historical data exist in sites table
     try {
-      const caravanCheck = await db.execute(drizzleSql`SELECT id FROM sites WHERE channel_name = 'CARAVAN TRUCK' LIMIT 1`);
-      if (caravanCheck.rows.length === 0) {
-        await db.execute(drizzleSql`
-          INSERT INTO sites (id, name, channel_name, type, location, operating_days, open_time, close_time, is_active, created_at, updated_at)
-          VALUES (gen_random_uuid(), 'Caravan Truck', 'CARAVAN TRUCK', 'mobile_van', 'Various',
-            ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
-            '09:00', '21:00', true, NOW(), NOW())
-        `);
-        log("Added CARAVAN TRUCK site to channel list");
+      const existingSites = await db.execute(drizzleSql`SELECT channel_name FROM sites`);
+      const existingChannels = new Set(existingSites.rows.map((r: any) => r.channel_name));
+
+      const allChannels = [
+        // Mobile/event channels
+        { name: 'Caravan Truck', channelName: 'CARAVAN TRUCK', type: 'mobile_van' },
+        { name: 'Coca Cola Event', channelName: 'COCA COLA', type: 'mobile_van' },
+        { name: 'Light Festival', channelName: 'LIGHTFESTIVAL', type: 'mobile_van' },
+        { name: 'Songkran Festival', channelName: 'SONGKRAN FESTIVAL', type: 'mobile_van' },
+        { name: 'Music in the Park', channelName: 'MUSIC IN THE PARK', type: 'mobile_van' },
+        { name: 'Valentine Event', channelName: 'VALENTINE', type: 'mobile_van' },
+        { name: 'River Boat Market', channelName: 'RIVERBOAT', type: 'mobile_van' },
+        { name: 'Suchada Market', channelName: 'SUCHADA', type: 'mobile_van' },
+        { name: 'Latyao Market', channelName: 'LATYAO', type: 'mobile_van' },
+        { name: 'Temple Market', channelName: 'TEMPLE', type: 'mobile_van' },
+        { name: 'Leycatong Market', channelName: 'LEYCATONG', type: 'mobile_van' },
+        { name: 'Chum Seant Event', channelName: 'CHUM SEANT EVENT', type: 'mobile_van' },
+        { name: 'Krokpra Market', channelName: 'KROKPRA', type: 'mobile_van' },
+        { name: 'Rongsri Market', channelName: 'RONGSRI', type: 'mobile_van' },
+        { name: 'River Market 35', channelName: 'RIVER 35', type: 'mobile_van' },
+        { name: 'River Market 110', channelName: 'RIVER 110', type: 'mobile_van' },
+        // Stall/partnership channels
+        { name: 'Misc Sales', channelName: 'MISC', type: 'stall' },
+        { name: 'Food Court', channelName: 'FOOD', type: 'stall' },
+        { name: 'CP Partnership', channelName: 'CP', type: 'stall' },
+        { name: 'CP All Partnership', channelName: 'CP ALL', type: 'stall' },
+        { name: 'CP All (Alt)', channelName: 'CPALL', type: 'stall' },
+        { name: 'University (Alt)', channelName: 'UNVERSITY', type: 'stall' },
+        // Note: 2024-only market codes (W, J, D, M, แข่งเรือ) deliberately excluded —
+        // these only exist in 2024 Excel data and are not needed for 2025 vs 2026 comparison.
+      ];
+
+      // Clean up any 2024-only market codes that may have been added previously
+      await db.execute(drizzleSql`DELETE FROM sites WHERE channel_name IN ('W','J','D','M','แข่งเรือ')`);
+
+      const missing = allChannels.filter(c => !existingChannels.has(c.channelName));
+      if (missing.length > 0) {
+        for (const ch of missing) {
+          await db.execute(drizzleSql`
+            INSERT INTO sites (id, name, channel_name, type, location, operating_days, open_time, close_time, is_active, created_at, updated_at)
+            VALUES (gen_random_uuid(), ${ch.name}, ${ch.channelName}, ${ch.type}, 'Various',
+              ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
+              '09:00', '21:00', true, NOW(), NOW())
+          `);
+        }
+        log(`Added ${missing.length} missing channels to sites: ${missing.map(c => c.channelName).join(', ')}`);
+      } else {
+        log("All sales channels already in sites table, skipping");
       }
     } catch (err) {
-      log("CARAVAN TRUCK site check skipped: " + String(err));
+      log("Channel sync skipped: " + String(err));
     }
 
     // ONE-TIME fix: Dec 30 2024 Shop grab_fee was 0, should be 116.01 (from daily Excel file)
