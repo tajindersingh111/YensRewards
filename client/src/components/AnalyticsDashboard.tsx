@@ -185,33 +185,35 @@ export default function AnalyticsDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-12 gap-2">
         {/* Current Month Card (Blue) - 3 columns */}
         <Card className="col-span-1 md:col-span-3 bg-blue-500 text-white rounded-xl" data-testid="card-current-month">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-medium text-white/80">Current Month</p>
-              <DollarSign className="w-4 h-4 text-white/80" />
+          <CardContent className="p-2">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-white/90">Current Month</p>
+                <p className="text-3xl font-bold text-white leading-tight truncate">
+                  ฿{summary.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                </p>
+              </div>
+              <DollarSign className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
             </div>
-            <p className="text-xl font-bold mb-2">
-              ฿{summary.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-            </p>
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px]">
+            <div className="border-t border-white/20 pt-1 space-y-0.5">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">vs Target</span>
                 <span className={`font-medium ${(analytics?.cfoMetrics?.monthlyTargetPercent ?? 0) >= 100 ? 'text-green-300' : 'text-white'}`}>
                   {(analytics?.cfoMetrics?.monthlyTargetPercent ?? 0).toFixed(1)}%
                 </span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">Projection</span>
                 <span className="text-white font-medium">฿{((analytics?.cfoMetrics?.projectedMonthEnd ?? 0) / 1000).toFixed(0)}k</span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">YoY Growth</span>
                 <span className={`font-medium flex items-center gap-0.5 ${(analytics?.cfoMetrics?.yoyMonthGrowth ?? 0) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
                   {(analytics?.cfoMetrics?.yoyMonthGrowth ?? 0) >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
                   {Math.abs(analytics?.cfoMetrics?.yoyMonthGrowth ?? 0).toFixed(1)}%
                 </span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">Transactions</span>
                 <span className="text-white font-medium">{summary.totalTransactions}</span>
               </div>
@@ -221,30 +223,32 @@ export default function AnalyticsDashboard() {
 
         {/* YTD Card (Green) - 3 columns */}
         <Card className="col-span-1 md:col-span-3 bg-green-500 text-white rounded-xl" data-testid="card-ytd">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-medium text-white/80">Year to Date</p>
-              <TrendingUp className="w-4 h-4 text-white/80" />
+          <CardContent className="p-2">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-white/90">Year to Date</p>
+                <p className="text-3xl font-bold text-white leading-tight truncate">
+                  ฿{((analytics?.cfoMetrics?.ytdRevenue ?? 0) / 1000).toFixed(1)}k
+                </p>
+              </div>
+              <TrendingUp className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
             </div>
-            <p className="text-xl font-bold mb-2">
-              ฿{((analytics?.cfoMetrics?.ytdRevenue ?? 0) / 1000).toFixed(1)}k
-            </p>
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px]">
+            <div className="border-t border-white/20 pt-1 space-y-0.5">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">vs Annual Target</span>
                 <span className={`font-medium ${(analytics?.cfoMetrics?.annualTargetPercent ?? 0) >= (analytics?.cfoMetrics?.daysElapsedYear ?? 0) / 365 * 100 ? 'text-green-300' : 'text-white'}`}>
                   {(analytics?.cfoMetrics?.annualTargetPercent ?? 0).toFixed(2)}%
                 </span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">Annual Projection</span>
                 <span className="text-white font-medium">฿{((analytics?.cfoMetrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M</span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">Annual Target</span>
                 <span className="text-white font-medium">฿{((analytics?.cfoMetrics?.annualTarget ?? 0) / 1000000).toFixed(2)}M</span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">YoY Growth</span>
                 <span className={`font-medium flex items-center gap-0.5 ${(analytics?.cfoMetrics?.yoyYtdGrowth ?? 0) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
                   {(analytics?.cfoMetrics?.yoyYtdGrowth ?? 0) >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
@@ -257,16 +261,18 @@ export default function AnalyticsDashboard() {
 
         {/* Projections Card (Purple) - 3 columns */}
         <Card className="col-span-1 md:col-span-3 bg-purple-500 text-white rounded-xl" data-testid="card-projections">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-medium text-white/80">Projections & Targets</p>
-              <Target className="w-4 h-4 text-white/80" />
+          <CardContent className="p-2">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-white/90">Projections & Targets</p>
+                <p className="text-3xl font-bold text-white leading-tight truncate">
+                  ฿{((analytics?.cfoMetrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M
+                </p>
+              </div>
+              <Target className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
             </div>
-            <p className="text-xl font-bold mb-2">
-              ฿{((analytics?.cfoMetrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M
-            </p>
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px]">
+            <div className="border-t border-white/20 pt-1 space-y-0.5">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">vs FY Target</span>
                 <span className={`font-medium ${(analytics?.cfoMetrics?.projectedAnnual ?? 0) >= (analytics?.cfoMetrics?.annualTarget ?? 0) ? 'text-green-300' : 'text-yellow-300'}`}>
                   {(analytics?.cfoMetrics?.annualTarget ?? 0) > 0 
@@ -274,15 +280,15 @@ export default function AnalyticsDashboard() {
                     : 0}%
                 </span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">Daily Average</span>
                 <span className="text-white font-medium">฿{(analytics?.cfoMetrics?.dailyAverage ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">Month Progress</span>
                 <span className="text-white font-medium">{analytics?.cfoMetrics?.daysElapsedMonth ?? 0}/{analytics?.cfoMetrics?.daysInMonth ?? 0} days</span>
               </div>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between text-[10px]">
                 <span className="text-white/70">MoM Growth</span>
                 <span className={`font-medium flex items-center gap-0.5 ${summary.momGrowth >= 0 ? 'text-green-300' : 'text-red-300'}`}>
                   {summary.momGrowth >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
@@ -295,15 +301,15 @@ export default function AnalyticsDashboard() {
 
         {/* Smaller Yellow Cards Container (3/12 total) */}
         <div className="col-span-1 md:col-span-3 grid grid-rows-3 gap-2">
-          {/* Best Channel - Smaller */}
+          {/* Best Channel */}
           <Card className="bg-yellow-400 rounded-lg">
-            <CardContent className="p-2">
-              <p className="text-[8px] font-medium text-gray-700 mb-0.5">Best Channel</p>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-gray-900" data-testid="text-best-channel">
+            <CardContent className="p-1.5">
+              <p className="text-[10px] font-medium text-gray-700">Best Channel</p>
+              <div className="flex items-center justify-between gap-1">
+                <p className="text-base font-bold text-gray-900 leading-tight" data-testid="text-best-channel">
                   {analytics?.topPerformers?.channels?.[0]?.channel || 'N/A'}
                 </p>
-                <p className="text-xs font-bold text-gray-800">
+                <p className="text-base font-bold text-gray-800 leading-tight shrink-0">
                   {analytics?.topPerformers?.channels?.[0] 
                     ? `฿${(analytics.topPerformers.channels[0].revenue / 1000).toFixed(0)}k` 
                     : ''}
@@ -312,17 +318,17 @@ export default function AnalyticsDashboard() {
             </CardContent>
           </Card>
 
-          {/* Best Day - Smaller */}
+          {/* Best Day */}
           <Card className="bg-blue-400 rounded-lg">
-            <CardContent className="p-2">
-              <p className="text-[8px] font-medium text-white/80 mb-0.5">Best Day</p>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-white" data-testid="text-best-day">
+            <CardContent className="p-1.5">
+              <p className="text-[10px] font-medium text-white/80">Best Day</p>
+              <div className="flex items-center justify-between gap-1">
+                <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-day">
                   {analytics?.cfoMetrics?.bestSingleDay?.date 
                     ? new Date(analytics.cfoMetrics.bestSingleDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                     : 'N/A'}
                 </p>
-                <p className="text-xs font-bold text-white">
+                <p className="text-base font-bold text-white leading-tight shrink-0">
                   {analytics?.cfoMetrics?.bestSingleDay 
                     ? `฿${(analytics.cfoMetrics.bestSingleDay.total / 1000).toFixed(1)}k` 
                     : ''}
@@ -331,15 +337,15 @@ export default function AnalyticsDashboard() {
             </CardContent>
           </Card>
 
-          {/* Avg Transaction - Smaller */}
+          {/* Avg Transaction */}
           <Card className="bg-green-400 rounded-lg">
-            <CardContent className="p-2">
-              <p className="text-[8px] font-medium text-white/80 mb-0.5">Avg Transaction</p>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-white" data-testid="text-avg-transaction">
+            <CardContent className="p-1.5">
+              <p className="text-[10px] font-medium text-white/80">Avg Transaction</p>
+              <div className="flex items-center justify-between gap-1">
+                <p className="text-base font-bold text-white leading-tight" data-testid="text-avg-transaction">
                   ฿{summary.avgTransaction.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                 </p>
-                <p className="text-xs font-bold text-white">
+                <p className="text-base font-bold text-white leading-tight shrink-0">
                   {analytics?.cfoMetrics?.ytdTransactions || 0} txns
                 </p>
               </div>
