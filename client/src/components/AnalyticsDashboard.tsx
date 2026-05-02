@@ -135,7 +135,7 @@ export default function AnalyticsDashboard() {
                     />
                     <Legend iconType="circle" />
                     <Line type="monotone" dataKey="currentYearSales" stroke="#FCD34D" strokeWidth={4} name="2026 Sales" dot={{r: 6, fill: '#FCD34D', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 8}} />
-                    <Line type="monotone" dataKey="lastYearSales" stroke="#cbd5e1" strokeWidth={2} name="2025 Sales" strokeDasharray="5 5" dot={false} />
+                    <Line type="monotone" dataKey="lastYearSales" stroke="#64748b" strokeWidth={2} name="2025 Sales" strokeDasharray="5 5" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
