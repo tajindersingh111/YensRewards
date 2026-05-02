@@ -1,6 +1,4 @@
-/* LEF'S PREMIUM ADMIN DASHBOARD UPDATE */
-/* Changes: Improved KPI logic and high-end Quick Action styling */
-
+/* LEF'S PREMIUM ADMIN DASHBOARD UPDATE - CLEAN VERSION */
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -79,14 +77,10 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
 
   const fmt = (n: number) => `฿${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
-  // LEF Logic: Fixes the scary negative percentages
   const renderTrend = (current: number, previous: number, label: string) => {
     if (!previous || previous <= 0) return <p className="text-xs text-muted-foreground mt-1.5 italic">Collecting data...</p>;
     const diff = ((current - previous) / previous) * 100;
-
-    // If drop is over 90%, it's likely just a new period (month/week) starting
     if (diff < -90) return <p className="text-xs text-muted-foreground mt-1.5">New period started</p>;
-
     const isUp = diff >= 0;
     return (
       <p className={`text-xs mt-1.5 font-medium ${isUp ? 'text-green-600' : 'text-red-500'}`}>
