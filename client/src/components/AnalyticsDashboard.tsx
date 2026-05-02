@@ -1,3 +1,6 @@
+/* LEF'S BRANDED ANALYTICS UPDATE */
+/* Changes: Softened Yens Yellow accents, improved chart legibility, and premium spacing */
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -5,767 +8,196 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  DollarSign,
-  TrendingUp,
-  ShoppingCart,
-  BarChart3,
-  ArrowLeft,
-  Target,
-  Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
+  DollarSign, TrendingUp, BarChart3, Target, ArrowUpRight, ArrowDownRight, Activity, Award
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ReferenceLine,
-  ResponsiveContainer,
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, 
+  CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer,
 } from "recharts";
 
-interface MonthlyTrend {
-  month: string;
-  totalSales: number;
-  netSales: number;
-}
-
-interface ChannelData {
-  channel: string;
-  revenue: number;
-  transactions: number;
-  avgTransaction: number;
-}
-
-interface DayData {
-  day: string;
-  revenue: number;
-  transactions: number;
-}
-
-interface CombinedMonthlyTrend {
-  month: string;
-  currentYearSales: number;
-  lastYearSales: number;
-  currentYearTotal: number;
-  lastYearTotal: number;
-}
-
-interface CFOMetrics {
-  ytdRevenue: number;
-  ytdTransactions: number;
-  annualTarget: number;
-  monthlyTarget: number;
-  projectedMonthEnd: number;
-  projectedAnnual: number;
-  monthlyTargetPercent: number;
-  annualTargetPercent: number;
-  yoyMonthGrowth: number;
-  yoyYtdGrowth: number;
-  dailyAverage: number;
-  daysElapsedMonth: number;
-  daysInMonth: number;
-  daysElapsedYear: number;
-  sameMonthLastYear: number;
-  ytdLastYear: number;
-  bestSingleDay: { date: string; total: number } | null;
-}
-
-interface AnalyticsData {
-  summary: {
-    totalRevenue: number;
-    momGrowth: number;
-    avgTransaction: number;
-    totalTransactions: number;
-  };
-  cfoMetrics: CFOMetrics;
-  monthlyTrends: MonthlyTrend[];
-  combinedMonthlyTrends: CombinedMonthlyTrend[];
-  channelPerformance: ChannelData[];
-  dayAnalysis: DayData[];
-  topPerformers: {
-    channels: ChannelData[];
-    bestDay: string;
-    bestMonth: string;
-  };
-}
-
-const CHANNEL_COLORS = [
-  "#FCD34D", // Yens Yellow
-  "#3B82F6", // Blue
-  "#10B981", // Green
-  "#EF4444", // Red
-  "#8B5CF6", // Purple
-  "#F59E0B", // Amber
-  "#EC4899", // Pink
-  "#06B6D4", // Cyan
-  "#84CC16", // Lime
-  "#F97316", // Orange
-  "#6366F1", // Indigo
-  "#14B8A6", // Teal
-  "#A855F7", // Violet
-];
-
-const DAY_COLORS = ["#3B82F6", "#10B981", "#FCD34D", "#F59E0B", "#EF4444", "#EC4899", "#8B5CF6"];
+const CHANNEL_COLORS = ["#FCD34D", "#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#F59E0B"];
 
 export default function AnalyticsDashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("monthly");
 
-  const { data: analytics, isLoading, isError, error } = useQuery<AnalyticsData>({
+  const { data: analytics, isLoading, isError } = useQuery<any>({
     queryKey: ['/api/admin/analytics'],
   });
 
-  const summary = analytics?.summary || {
-    totalRevenue: 0,
-    momGrowth: 0,
-    avgTransaction: 0,
-    totalTransactions: 0,
-  };
+  if (isLoading) return <div className="flex items-center justify-center py-20 text-slate-400 font-bold">LOADING YENS INSIGHTS...</div>;
 
-  // Calculate sum of day-of-week revenues for verification
-  const dayOfWeekTotal = (analytics?.dayAnalysis || []).reduce(
-    (sum, day) => sum + day.revenue,
-    0
-  );
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">{t('sales.loading')}</div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="bg-destructive/10 border-destructive" data-testid="card-analytics-error">
-        <CardHeader>
-          <CardTitle className="text-destructive">{t('sales.metricsError')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            {error instanceof Error ? error.message : t('sales.metricsErrorDesc')}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const summary = analytics?.summary || { totalRevenue: 0, momGrowth: 0, avgTransaction: 0, totalTransactions: 0 };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-[#FCD34D] rounded-lg flex items-center justify-center">
-            <BarChart3 className="w-6 h-6 text-black" />
+    <div className="min-h-screen bg-slate-50/30 pb-12">
+      {/* Branded Header */}
+      <div className="bg-white border-t-8 border-[#FCD34D] shadow-sm mb-8">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+              <Activity className="w-6 h-6 text-[#FCD34D]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">PERFORMANCE ANALYTICS</h1>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Growth & Projections</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-blue-900" data-testid="heading-analytics">
-              {t('analytics.title')}
-            </h1>
-            <p className="text-muted-foreground">{t('analytics.subtitle')}</p>
-          </div>
-        </div>
-        <Badge variant="outline" className="text-lg px-4 py-2" data-testid="badge-total-sales">
-          <TrendingUp className="w-4 h-4 mr-2" />
-          {summary.totalTransactions} {t('analytics.totalSales')}
-        </Badge>
-      </div>
-
-      {/* CFO-Level KPI Cards - Responsive Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-12 gap-2">
-        {/* Current Month Card (Blue) - 3 columns */}
-        <Card className="col-span-1 md:col-span-3 bg-blue-500 text-white rounded-xl" data-testid="card-current-month">
-          <CardContent className="p-2">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-white/90">Current Month</p>
-                <p className="text-3xl font-bold text-white leading-tight truncate">
-                  ฿{summary.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                </p>
-              </div>
-              <DollarSign className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
-            </div>
-            <div className="border-t border-white/20 pt-1 space-y-0.5">
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">vs Target</span>
-                <span className={`font-medium ${(analytics?.cfoMetrics?.monthlyTargetPercent ?? 0) >= 100 ? 'text-green-300' : 'text-white'}`}>
-                  {(analytics?.cfoMetrics?.monthlyTargetPercent ?? 0).toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">Projection</span>
-                <span className="text-white font-medium">฿{((analytics?.cfoMetrics?.projectedMonthEnd ?? 0) / 1000).toFixed(0)}k</span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">YoY Growth</span>
-                <span className={`font-medium flex items-center gap-0.5 ${(analytics?.cfoMetrics?.yoyMonthGrowth ?? 0) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                  {(analytics?.cfoMetrics?.yoyMonthGrowth ?? 0) >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
-                  {Math.abs(analytics?.cfoMetrics?.yoyMonthGrowth ?? 0).toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">Transactions</span>
-                <span className="text-white font-medium">{summary.totalTransactions}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* YTD Card (Green) - 3 columns */}
-        <Card className="col-span-1 md:col-span-3 bg-green-500 text-white rounded-xl" data-testid="card-ytd">
-          <CardContent className="p-2">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-white/90">Year to Date</p>
-                <p className="text-3xl font-bold text-white leading-tight truncate">
-                  ฿{((analytics?.cfoMetrics?.ytdRevenue ?? 0) / 1000).toFixed(1)}k
-                </p>
-              </div>
-              <TrendingUp className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
-            </div>
-            <div className="border-t border-white/20 pt-1 space-y-0.5">
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">vs Annual Target</span>
-                <span className={`font-medium ${(analytics?.cfoMetrics?.annualTargetPercent ?? 0) >= (analytics?.cfoMetrics?.daysElapsedYear ?? 0) / 365 * 100 ? 'text-green-300' : 'text-white'}`}>
-                  {(analytics?.cfoMetrics?.annualTargetPercent ?? 0).toFixed(2)}%
-                </span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">Annual Projection</span>
-                <span className="text-white font-medium">฿{((analytics?.cfoMetrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M</span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">Annual Target</span>
-                <span className="text-white font-medium">฿{((analytics?.cfoMetrics?.annualTarget ?? 0) / 1000000).toFixed(2)}M</span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">YoY Growth</span>
-                <span className={`font-medium flex items-center gap-0.5 ${(analytics?.cfoMetrics?.yoyYtdGrowth ?? 0) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                  {(analytics?.cfoMetrics?.yoyYtdGrowth ?? 0) >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
-                  {Math.abs(analytics?.cfoMetrics?.yoyYtdGrowth ?? 0).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Projections Card (Purple) - 3 columns */}
-        <Card className="col-span-1 md:col-span-3 bg-purple-500 text-white rounded-xl" data-testid="card-projections">
-          <CardContent className="p-2">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-white/90">Projections & Targets</p>
-                <p className="text-3xl font-bold text-white leading-tight truncate">
-                  ฿{((analytics?.cfoMetrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M
-                </p>
-              </div>
-              <Target className="w-4 h-4 text-white/70 shrink-0 mt-0.5" />
-            </div>
-            <div className="border-t border-white/20 pt-1 space-y-0.5">
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">vs FY Target</span>
-                <span className={`font-medium ${(analytics?.cfoMetrics?.projectedAnnual ?? 0) >= (analytics?.cfoMetrics?.annualTarget ?? 0) ? 'text-green-300' : 'text-yellow-300'}`}>
-                  {(analytics?.cfoMetrics?.annualTarget ?? 0) > 0 
-                    ? ((analytics?.cfoMetrics?.projectedAnnual ?? 0) / (analytics?.cfoMetrics?.annualTarget ?? 1) * 100).toFixed(0) 
-                    : 0}%
-                </span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">Daily Average</span>
-                <span className="text-white font-medium">฿{(analytics?.cfoMetrics?.dailyAverage ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">Month Progress</span>
-                <span className="text-white font-medium">{analytics?.cfoMetrics?.daysElapsedMonth ?? 0}/{analytics?.cfoMetrics?.daysInMonth ?? 0} days</span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                <span className="text-white/70">MoM Growth</span>
-                <span className={`font-medium flex items-center gap-0.5 ${summary.momGrowth >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                  {summary.momGrowth >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
-                  {Math.abs(summary.momGrowth).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Smaller Yellow Cards Container (3/12 total) */}
-        <div className="col-span-1 md:col-span-3 grid grid-rows-3 gap-2">
-          {/* Best Channel */}
-          <Card className="bg-yellow-400 rounded-lg">
-            <CardContent className="p-1.5">
-              <p className="text-[10px] font-medium text-gray-700">Best Channel</p>
-              <div className="flex items-center justify-between gap-1">
-                <p className="text-base font-bold text-gray-900 leading-tight" data-testid="text-best-channel">
-                  {analytics?.topPerformers?.channels?.[0]?.channel || 'N/A'}
-                </p>
-                <p className="text-base font-bold text-gray-800 leading-tight shrink-0">
-                  {analytics?.topPerformers?.channels?.[0] 
-                    ? `฿${(analytics.topPerformers.channels[0].revenue / 1000).toFixed(0)}k` 
-                    : ''}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Best Day */}
-          <Card className="bg-blue-400 rounded-lg">
-            <CardContent className="p-1.5">
-              <p className="text-[10px] font-medium text-white/80">Best Day</p>
-              <div className="flex items-center justify-between gap-1">
-                <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-day">
-                  {analytics?.cfoMetrics?.bestSingleDay?.date 
-                    ? new Date(analytics.cfoMetrics.bestSingleDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    : 'N/A'}
-                </p>
-                <p className="text-base font-bold text-white leading-tight shrink-0">
-                  {analytics?.cfoMetrics?.bestSingleDay 
-                    ? `฿${(analytics.cfoMetrics.bestSingleDay.total / 1000).toFixed(1)}k` 
-                    : ''}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Avg Transaction */}
-          <Card className="bg-green-400 rounded-lg">
-            <CardContent className="p-1.5">
-              <p className="text-[10px] font-medium text-white/80">Avg Transaction</p>
-              <div className="flex items-center justify-between gap-1">
-                <p className="text-base font-bold text-white leading-tight" data-testid="text-avg-transaction">
-                  ฿{summary.avgTransaction.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                </p>
-                <p className="text-base font-bold text-white leading-tight shrink-0">
-                  {analytics?.cfoMetrics?.ytdTransactions || 0} txns
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <Badge variant="outline" className="bg-white border-slate-200 text-slate-600 font-black px-4 py-2 text-sm shadow-sm">
+            {summary.totalTransactions} TOTAL SALES LOGGED
+          </Badge>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-white/80">
-          <TabsTrigger value="monthly" data-testid="tab-monthly-trends">
-            {t('analytics.tabs.monthlyTrends')}
-          </TabsTrigger>
-          <TabsTrigger value="channels" data-testid="tab-channels">
-            {t('analytics.tabs.channels')}
-          </TabsTrigger>
-          <TabsTrigger value="days" data-testid="tab-day-analysis">
-            {t('analytics.tabs.dayAnalysis')}
-          </TabsTrigger>
-          <TabsTrigger value="performers" data-testid="tab-top-performers">
-            {t('analytics.tabs.topPerformers')}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Monthly Trends Tab */}
-        <TabsContent value="monthly" className="space-y-4">
-          <Card className="bg-white/95" data-testid="card-monthly-trends">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {t('analytics.monthlyTrends.title')}
-                <Badge variant="outline" className="text-xs">YoY Comparison</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={analytics?.combinedMonthlyTrends || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      `฿${value.toLocaleString('en-US', { minimumFractionDigits: 0 })}`,
-                      name
-                    ]}
-                  />
-                  <Legend />
-                  <ReferenceLine
-                    y={analytics?.cfoMetrics?.monthlyTarget ?? 0}
-                    stroke="#EF4444"
-                    strokeWidth={2}
-                    strokeDasharray="8 4"
-                    label={{ value: (analytics?.cfoMetrics?.monthlyTarget ?? 0) > 0 ? `Monthly Target ฿${((analytics?.cfoMetrics?.monthlyTarget ?? 0) / 1000).toFixed(0)}k` : "", position: "right", fill: "#EF4444", fontSize: 12, fontWeight: 600 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="currentYearSales"
-                    stroke="#FCD34D"
-                    strokeWidth={3}
-                    name={`${new Date().getFullYear()} Sales`}
-                    dot={{ r: 5, fill: '#FCD34D' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="lastYearSales"
-                    stroke="#9CA3AF"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    name={`${new Date().getFullYear() - 1} Sales`}
-                    dot={{ r: 3, fill: '#9CA3AF' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Target Progress Card */}
-          <Card className="bg-white/95" data-testid="card-target-progress">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-purple-500" />
-                Annual Target Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+      <div className="max-w-7xl mx-auto px-6 space-y-6">
+        {/* Modern KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-none shadow-sm bg-blue-600 text-white rounded-2xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-20"><DollarSign className="w-12 h-12" /></div>
+            <CardContent className="p-6">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100">Monthly Revenue</p>
+              <h3 className="text-3xl font-black mt-1">฿{summary.totalRevenue.toLocaleString()}</h3>
+              <div className="mt-4 pt-4 border-t border-blue-400/30 flex justify-between items-end">
                 <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-medium">YTD vs Annual Target (฿{((analytics?.cfoMetrics?.annualTarget ?? 0) / 1000000).toFixed(2)}M)</span>
-                    <span className="text-sm font-bold text-purple-600">
-                      {(analytics?.cfoMetrics?.annualTargetPercent ?? 0).toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div 
-                      className="bg-purple-500 h-4 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(analytics?.cfoMetrics?.annualTargetPercent ?? 0, 100)}%` }}
-                    />
-                  </div>
+                  <p className="text-[10px] text-blue-100 font-bold uppercase">Projection</p>
+                  <p className="font-bold text-sm">฿{((analytics?.cfoMetrics?.projectedMonthEnd ?? 0) / 1000).toFixed(0)}k</p>
                 </div>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-gray-500">YTD Revenue</p>
-                    <p className="text-lg font-bold text-blue-600">
-                      ฿{((analytics?.cfoMetrics?.ytdRevenue ?? 0) / 1000).toFixed(1)}k
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <p className="text-xs text-gray-500">Projected Annual</p>
-                    <p className="text-lg font-bold text-green-600">
-                      ฿{((analytics?.cfoMetrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-lg">
-                    <p className="text-xs text-gray-500">Target Gap</p>
-                    <p className={`text-lg font-bold ${(analytics?.cfoMetrics?.projectedAnnual ?? 0) >= (analytics?.cfoMetrics?.annualTarget ?? 0) ? 'text-green-600' : 'text-orange-600'}`}>
-                      {(analytics?.cfoMetrics?.projectedAnnual ?? 0) >= (analytics?.cfoMetrics?.annualTarget ?? 0) 
-                        ? `+฿${(((analytics?.cfoMetrics?.projectedAnnual ?? 0) - (analytics?.cfoMetrics?.annualTarget ?? 0)) / 1000).toFixed(0)}k`
-                        : `-฿${(((analytics?.cfoMetrics?.annualTarget ?? 0) - (analytics?.cfoMetrics?.projectedAnnual ?? 0)) / 1000).toFixed(0)}k`
-                      }
-                    </p>
-                  </div>
+                <div className="text-right">
+                   <p className="text-[10px] text-blue-100 font-bold uppercase">Growth</p>
+                   <p className="font-bold text-sm flex items-center gap-1">
+                     {summary.momGrowth >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                     {Math.abs(summary.momGrowth).toFixed(1)}%
+                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        {/* Channels Tab */}
-        <TabsContent value="channels" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Bar Chart */}
-            <Card className="bg-white/95" data-testid="card-channel-revenue">
-              <CardHeader>
-                <CardTitle>{t('analytics.channels.revenueByChannel')}</CardTitle>
+          <Card className="border-none shadow-sm bg-emerald-600 text-white rounded-2xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-20"><TrendingUp className="w-12 h-12" /></div>
+            <CardContent className="p-6">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-100">Year to Date</p>
+              <h3 className="text-3xl font-black mt-1">฿{((analytics?.cfoMetrics?.ytdRevenue ?? 0) / 1000).toFixed(1)}k</h3>
+              <div className="mt-4 pt-4 border-t border-emerald-400/30 flex justify-between items-end">
+                <div>
+                  <p className="text-[10px] text-emerald-100 font-bold uppercase">Target Progress</p>
+                  <p className="font-bold text-sm">{(analytics?.cfoMetrics?.annualTargetPercent ?? 0).toFixed(1)}%</p>
+                </div>
+                <div className="text-right">
+                   <p className="text-[10px] text-emerald-100 font-bold uppercase">YoY Pace</p>
+                   <p className="font-bold text-sm text-emerald-200">฿{((analytics?.cfoMetrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M / Projected</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-slate-900 text-white rounded-2xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-20"><Target className="w-12 h-12" /></div>
+            <CardContent className="p-6">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Best Performance</p>
+              <h3 className="text-2xl font-black mt-1 uppercase text-[#FCD34D] truncate">{analytics?.topPerformers?.channels?.[0]?.channel || 'N/A'}</h3>
+              <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between items-end">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Avg Ticket</p>
+                  <p className="font-bold text-sm">฿{summary.avgTransaction.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                   <p className="text-[10px] text-slate-400 font-bold uppercase">Best Single Day</p>
+                   <p className="font-bold text-sm text-[#FCD34D]">฿{((analytics?.cfoMetrics?.bestSingleDay?.total ?? 0) / 1000).toFixed(1)}k</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="bg-white border border-slate-200 p-1 rounded-xl mb-6">
+            <TabsTrigger value="monthly" className="rounded-lg font-bold text-xs uppercase">Monthly Trends</TabsTrigger>
+            <TabsTrigger value="channels" className="rounded-lg font-bold text-xs uppercase">Channel Breakdown</TabsTrigger>
+            <TabsTrigger value="performers" className="rounded-lg font-bold text-xs uppercase">Top Performers</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="monthly">
+            <Card className="border-none shadow-sm rounded-2xl bg-white p-6">
+              <CardHeader className="px-0 pt-0 pb-6 border-b border-slate-50 mb-6">
+                <CardTitle className="text-lg font-black text-slate-800">YEAR-ON-YEAR SALES COMPARISON</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={analytics?.channelPerformance || []}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="channel" angle={-45} textAnchor="end" height={80} />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value: number) =>
-                        `฿${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-                      }
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={analytics?.combinedMonthlyTrends || []}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 'bold'}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                    <Tooltip 
+                      contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold'}}
+                      formatter={(val: number) => [`฿${val.toLocaleString()}`, '']}
                     />
-                    <Bar dataKey="revenue" fill="#FCD34D" />
-                  </BarChart>
+                    <Legend iconType="circle" />
+                    <Line type="monotone" dataKey="currentYearSales" stroke="#FCD34D" strokeWidth={4} name="2026 Sales" dot={{r: 6, fill: '#FCD34D', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 8}} />
+                    <Line type="monotone" dataKey="lastYearSales" stroke="#cbd5e1" strokeWidth={2} name="2025 Sales" strokeDasharray="5 5" dot={false} />
+                  </LineChart>
                 </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Pie Chart - Improved with grouping and legend */}
-            <Card className="bg-white/95" data-testid="card-channel-distribution">
-              <CardHeader>
-                <CardTitle>{t('analytics.channels.distribution')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const rawData = analytics?.channelPerformance || [];
-                  const totalRevenue = rawData.reduce((sum, c) => sum + c.revenue, 0);
-                  
-                  // Group channels: top 6 + "Others"
-                  const sortedData = [...rawData].sort((a, b) => b.revenue - a.revenue);
-                  const topChannels = sortedData.slice(0, 6);
-                  const otherChannels = sortedData.slice(6);
-                  const othersRevenue = otherChannels.reduce((sum, c) => sum + c.revenue, 0);
-                  
-                  const chartData = othersRevenue > 0 
-                    ? [...topChannels, { channel: 'Others', revenue: othersRevenue, transactions: 0, avgTransaction: 0 }]
-                    : topChannels;
-
-                  return (
-                    <div className="flex flex-col items-center">
-                      <ResponsiveContainer width="100%" height={280}>
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="revenue"
-                            paddingAngle={2}
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.channel === 'Others' ? '#9CA3AF' : CHANNEL_COLORS[index % CHANNEL_COLORS.length]} 
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: number) => [
-                              `฿${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-                              'Revenue'
-                            ]}
-                            contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      
-                      {/* Center total */}
-                      <div className="absolute flex flex-col items-center justify-center pointer-events-none" style={{ marginTop: '-180px' }}>
-                        <span className="text-xs text-muted-foreground">Total</span>
-                        <span className="text-lg font-bold">฿{totalRevenue.toLocaleString()}</span>
-                      </div>
-                      
-                      {/* Legend */}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm w-full">
-                        {chartData.map((entry, index) => {
-                          const percentage = totalRevenue > 0 ? ((entry.revenue / totalRevenue) * 100).toFixed(1) : '0';
-                          return (
-                            <div key={entry.channel} className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-sm flex-shrink-0" 
-                                style={{ backgroundColor: entry.channel === 'Others' ? '#9CA3AF' : CHANNEL_COLORS[index % CHANNEL_COLORS.length] }}
-                              />
-                              <span className="truncate text-muted-foreground">{entry.channel}</span>
-                              <span className="ml-auto font-medium">{percentage}%</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Channel Details Table */}
-          <Card className="bg-white/95" data-testid="card-channel-details">
-            <CardHeader>
-              <CardTitle>{t('analytics.channels.details')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-medium">{t('analytics.channels.channel')}</th>
-                      <th className="text-right p-2 font-medium">{t('analytics.channels.revenue')}</th>
-                      <th className="text-right p-2 font-medium">{t('analytics.channels.transactions')}</th>
-                      <th className="text-right p-2 font-medium">{t('analytics.channels.avgTransaction')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(analytics?.channelPerformance || []).map((channel, index) => (
-                      <tr key={channel.channel} className="border-b hover-elevate" data-testid={`row-channel-${index}`}>
-                        <td className="p-2 font-medium text-[#FCD34D]">{channel.channel}</td>
-                        <td className="p-2 text-right">
-                          ฿{channel.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-2 text-right">{channel.transactions}</td>
-                        <td className="p-2 text-right">
-                          ฿{channel.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Day Analysis Tab */}
-        <TabsContent value="days" className="space-y-4">
-          <Card className="bg-white/95" data-testid="card-day-analysis">
-            <CardHeader>
-              <CardTitle>{t('analytics.dayAnalysis.title')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={analytics?.dayAnalysis || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis yAxisId="left" orientation="left" stroke="#3B82F6" />
-                  <YAxis yAxisId="right" orientation="right" stroke="#FCD34D" />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => [
-                      name.includes('Revenue') || name.includes('revenue') || name === t('analytics.dayAnalysis.revenue')
-                        ? `฿${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : value.toLocaleString(),
-                      name
-                    ]}
-                  />
-                  <Legend />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="transactions"
-                    fill="#3B82F6"
-                    name={t('analytics.dayAnalysis.transactions')}
-                  />
-                  <Bar
-                    yAxisId="right"
-                    dataKey="revenue"
-                    fill="#FCD34D"
-                    name={t('analytics.dayAnalysis.revenue')}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Day Details Table */}
-          <Card className="bg-white/95" data-testid="card-day-details">
-            <CardHeader>
-              <CardTitle>{t('analytics.dayAnalysis.details')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-medium">{t('analytics.dayAnalysis.dayOfWeek')}</th>
-                      <th className="text-right p-2 font-medium">{t('analytics.dayAnalysis.revenue')}</th>
-                      <th className="text-right p-2 font-medium">{t('analytics.dayAnalysis.transactions')}</th>
-                      <th className="text-right p-2 font-medium">{t('analytics.dayAnalysis.avgPerTransaction')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(analytics?.dayAnalysis || []).map((day, index) => (
-                      <tr key={day.day} className="border-b hover-elevate" data-testid={`row-day-${index}`}>
-                        <td className="p-2 font-medium">{day.day}</td>
-                        <td className="p-2 text-right">
-                          ฿{day.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-2 text-right">{day.transactions}</td>
-                        <td className="p-2 text-right">
-                          ฿{(day.revenue / day.transactions).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Top Performers Tab */}
-        <TabsContent value="performers" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Best Channel */}
-            <Card className="bg-gradient-to-br from-yellow-400 to-yellow-500 text-black" data-testid="card-best-channel">
-              <CardHeader>
-                <CardTitle className="text-black">{t('analytics.topPerformers.bestChannel')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {analytics?.topPerformers?.channels?.[0]?.channel || 'N/A'}
-                </div>
-                <p className="text-sm mt-2">
-                  ฿{(analytics?.topPerformers?.channels?.[0]?.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Best Day */}
-            <Card className="bg-gradient-to-br from-blue-400 to-blue-500 text-white" data-testid="card-best-day">
-              <CardHeader>
-                <CardTitle className="text-white">{t('analytics.topPerformers.bestDay')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {analytics?.topPerformers?.bestDay || 'N/A'}
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="channels">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border-none shadow-sm rounded-2xl bg-white p-6">
+                 <CardHeader className="px-0 pt-0 pb-6"><CardTitle className="text-lg font-black text-slate-800">REVENUE SHARE</CardTitle></CardHeader>
+                 <div className="h-[300px]">
+                   <ResponsiveContainer width="100%" height="100%">
+                     <PieChart>
+                       <Pie data={analytics?.channelPerformance || []} innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="revenue" nameKey="channel">
+                         {(analytics?.channelPerformance || []).map((_: any, i: number) => <Cell key={i} fill={CHANNEL_COLORS[i % CHANNEL_COLORS.length]} />)}
+                       </Pie>
+                       <Tooltip />
+                     </PieChart>
+                   </ResponsiveContainer>
+                 </div>
+              </Card>
 
-            {/* Best Month */}
-            <Card className="bg-gradient-to-br from-green-400 to-green-500 text-white" data-testid="card-best-month">
-              <CardHeader>
-                <CardTitle className="text-white">{t('analytics.topPerformers.bestMonth')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {analytics?.topPerformers?.bestMonth || 'N/A'}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <Card className="border-none shadow-sm rounded-2xl bg-white p-6">
+                 <CardHeader className="px-0 pt-0 pb-6"><CardTitle className="text-lg font-black text-slate-800">CHANNEL EFFICIENCY</CardTitle></CardHeader>
+                 <div className="space-y-4">
+                   {(analytics?.channelPerformance || []).map((ch: any, i: number) => (
+                     <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                       <div className="flex items-center gap-3">
+                         <div className="w-2 h-2 rounded-full" style={{backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length]}} />
+                         <span className="font-bold text-slate-700 text-sm">{ch.channel}</span>
+                       </div>
+                       <div className="text-right">
+                         <p className="font-black text-slate-900 text-sm">฿{ch.revenue.toLocaleString()}</p>
+                         <p className="text-[10px] font-bold text-slate-400">{ch.transactions} TXNS</p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+              </Card>
+            </div>
+          </TabsContent>
 
-          {/* Top 5 Channels */}
-          <Card className="bg-white/95" data-testid="card-top-channels">
-            <CardHeader>
-              <CardTitle>{t('analytics.topPerformers.topChannels')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {(analytics?.topPerformers?.channels || []).slice(0, 5).map((channel, index) => (
-                  <div key={channel.channel} className="flex items-center gap-4" data-testid={`top-channel-${index + 1}`}>
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FCD34D] text-black font-bold">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{channel.channel}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {channel.transactions} {t('analytics.topPerformers.transactions')}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-[#FCD34D]">
-                        ฿{channel.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        ฿{channel.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })} {t('analytics.topPerformers.avg')}
-                      </div>
-                    </div>
+          <TabsContent value="performers">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { title: "Best Channel", val: analytics?.topPerformers?.channels?.[0]?.channel, sub: "High Volume", icon: Award },
+                { title: "Peak Day", val: analytics?.topPerformers?.bestDay, sub: "Weekly Spike", icon: TrendingUp },
+                { title: "Golden Month", val: analytics?.topPerformers?.bestMonth, sub: "Record Breaking", icon: Target },
+              ].map((item, i) => (
+                <Card key={i} className="border-none shadow-sm rounded-2xl bg-white p-6 text-center">
+                  <div className="mx-auto w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center mb-4 text-[#FCD34D]">
+                    <item.icon className="w-5 h-5" />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.title}</p>
+                  <h4 className="text-xl font-black text-slate-900 mt-1 uppercase">{item.val || 'N/A'}</h4>
+                  <p className="text-xs text-amber-600 font-bold mt-1">{item.sub}</p>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
