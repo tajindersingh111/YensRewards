@@ -159,7 +159,6 @@ export default function SalesTrackerDashboard() {
     bestChannel: { name: string; total: number } | null;
     bestDay: { date: string; dayOfWeek: string; total: number } | null;
     bestMonth: { month: string; total: number } | null;
-    // Enhanced CFO metrics
     currentWeekTransactions: number;
     currentMonthTransactions: number;
     ytdTransactionCount: number;
@@ -205,31 +204,25 @@ export default function SalesTrackerDashboard() {
 
   // Filter to current week only using useMemo
   const recentSales = useMemo(() => {
-    // Get start of current week (Monday) using UTC to match database dates
     const now = new Date();
-    const currentDayUTC = now.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday (UTC)
+    const currentDayUTC = now.getUTCDay();
     
-    // Calculate days to subtract to get to Monday
     let daysToSubtract;
     if (currentDayUTC === 0) {
-      daysToSubtract = 6; // Sunday: go back 6 days to previous Monday
+      daysToSubtract = 6;
     } else {
-      daysToSubtract = currentDayUTC - 1; // Mon-Sat: go back to Monday of this week
+      daysToSubtract = currentDayUTC - 1;
     }
     
-    // Use UTC date arithmetic to avoid timezone issues
     const mondayUTC = new Date(Date.UTC(
       now.getUTCFullYear(),
       now.getUTCMonth(),
       now.getUTCDate() - daysToSubtract,
       0, 0, 0, 0
     ));
-    const startOfWeek = mondayUTC.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const startOfWeek = mondayUTC.toISOString().split('T')[0];
     
-    // Filter sales from current week only (date >= startOfWeek)
-    const filtered = allSales.filter(sale => sale.date >= startOfWeek);
-    
-    return filtered;
+    return allSales.filter(sale => sale.date >= startOfWeek);
   }, [allSales]);
 
   // Add sale mutation
@@ -339,9 +332,7 @@ export default function SalesTrackerDashboard() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-
       const response = await apiRequest('POST', '/api/admin/import-sales-excel', formData);
-      
       try {
         return await response.json();
       } catch (e) {
@@ -428,13 +419,12 @@ export default function SalesTrackerDashboard() {
   // Week lookup helpers
   const getWeekRange = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
-    const day = date.getDay(); // 0=Sun, 1=Mon...
+    const day = date.getDay();
     const diffToMon = (day === 0 ? -6 : 1 - day);
     const mon = new Date(date);
     mon.setDate(date.getDate() + diffToMon);
     const sun = new Date(mon);
     sun.setDate(mon.getDate() + 6);
-    // Use local date parts to avoid UTC timezone shift
     const fmt = (d: Date) => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -478,18 +468,17 @@ export default function SalesTrackerDashboard() {
     }
   };
 
-  const handleEditFromLookup = (t: SalesReport['transactions'][0]) => {
-    // Convert report transaction shape → DailySales shape for the edit dialog
+  const handleEditFromLookup = (tx: SalesReport['transactions'][0]) => {
     const asSale = {
-      id: t.id,
-      date: t.date,
-      orderChannel: t.channel,
-      netSales: String(t.netSales),
-      otherSales: String(t.otherSales),
-      otherSalesNote: t.otherSalesNote || "",
-      grabFee: t.grabFee != null ? String(t.grabFee) : "0",
-      totalSales: String(t.totalSales),
-      dayOfWeek: t.dayOfWeek,
+      id: tx.id,
+      date: tx.date,
+      orderChannel: tx.channel,
+      netSales: String(tx.netSales),
+      otherSales: String(tx.otherSales),
+      otherSalesNote: tx.otherSalesNote || "",
+      grabFee: (tx as any).grabFee != null ? String((tx as any).grabFee) : "0",
+      totalSales: String(tx.totalSales),
+      dayOfWeek: tx.dayOfWeek,
       importedBy: "",
       importedAt: "",
     } as unknown as DailySales;
@@ -555,7 +544,6 @@ export default function SalesTrackerDashboard() {
         break;
       }
       case 'ytd': {
-        // Year to Date starts January 1st (use string format to avoid timezone issues)
         const year = now.getFullYear();
         setReportStartDate(`${year}-01-01`);
         setReportEndDate(todayStr);
@@ -604,20 +592,17 @@ export default function SalesTrackerDashboard() {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       
-      // Header with logo space
-      doc.setFillColor(252, 211, 77); // Yens Yellow
+      doc.setFillColor(252, 211, 77);
       doc.rect(0, 0, pageWidth, 30, 'F');
       doc.setFontSize(20);
-      doc.setTextColor(30, 64, 175); // Blue
-      doc.text("Yen's Sales Report", 35, 20); // Offset for logo
+      doc.setTextColor(30, 64, 175);
+      doc.text("Yen's Sales Report", 35, 20);
       
-      // Date range
       doc.setFontSize(12);
       doc.setTextColor(60, 60, 60);
       doc.text(`Period: ${formatDateDDMMYY(reportData.startDate)} to ${formatDateDDMMYY(reportData.endDate)}`, 14, 40);
       doc.text(`Generated: ${format(new Date(), 'dd/MM/yy')}`, 14, 48);
       
-      // Summary section
       doc.setFontSize(14);
       doc.setTextColor(30, 64, 175);
       doc.text("Summary", 14, 62);
@@ -630,7 +615,6 @@ export default function SalesTrackerDashboard() {
       doc.text(`Transactions: ${reportData.summary.transactionCount}`, 14, 96);
       doc.text(`Average Transaction: ${reportData.summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 104);
       
-      // Channel breakdown table
       doc.setFontSize(14);
       doc.setTextColor(30, 64, 175);
       doc.text("Sales by Channel", 14, 120);
@@ -647,7 +631,6 @@ export default function SalesTrackerDashboard() {
         alternateRowStyles: { fillColor: [255, 250, 230] },
       });
       
-      // Day breakdown table
       const afterChannelY = (doc as any).lastAutoTable.finalY + 15;
       doc.setFontSize(14);
       doc.setTextColor(30, 64, 175);
@@ -665,13 +648,12 @@ export default function SalesTrackerDashboard() {
         alternateRowStyles: { fillColor: [255, 250, 230] },
       });
       
-      // Transaction list (new page if needed)
       doc.addPage();
       doc.setFillColor(252, 211, 77);
       doc.rect(0, 0, pageWidth, 25, 'F');
       doc.setFontSize(16);
       doc.setTextColor(30, 64, 175);
-      doc.text("Transaction Details", 35, 16); // Offset for logo
+      doc.text("Transaction Details", 35, 16);
       
       autoTable(doc, {
         startY: 25,
@@ -689,15 +671,12 @@ export default function SalesTrackerDashboard() {
         styles: { fontSize: 9 },
       });
       
-      // Add logo and footer to all pages
       const pageCount = doc.internal.pages.length - 1;
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-        // Add logo to top left corner of each page
         const img = new Image();
         img.src = logoUrl;
         doc.addImage(img, 'PNG', 10, 5, 18, 18);
-        // Footer
         doc.setFontSize(8);
         doc.setTextColor(128, 128, 128);
         doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
@@ -928,7 +907,7 @@ export default function SalesTrackerDashboard() {
             </CardContent>
           </Card>
 
-          {/* Smaller Yellow Cards Container (3/12 total) */}
+          {/* Smaller Cards Container (3/12 total) */}
           <div className="col-span-3 grid grid-rows-3 gap-2">
             {/* Best Channel */}
             <Card className="bg-yellow-400 rounded-lg">
@@ -1061,7 +1040,6 @@ export default function SalesTrackerDashboard() {
             </div>
 
             <form onSubmit={handleAddSale} className="space-y-4">
-              {/* Date */}
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
                 <Input
@@ -1074,12 +1052,11 @@ export default function SalesTrackerDashboard() {
                 />
               </div>
 
-              {/* Sales Channel */}
               <div className="space-y-2">
                 <Label htmlFor="channel">Sales Channel *</Label>
                 {sitesError ? (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                    ⚠️ Failed to load sales channels. Please refresh the page or check your permissions.
+                    Failed to load sales channels. Please refresh the page or check your permissions.
                   </div>
                 ) : sitesLoading ? (
                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-600">
@@ -1109,7 +1086,6 @@ export default function SalesTrackerDashboard() {
                 )}
               </div>
 
-              {/* Net Sales */}
               <div className="space-y-2">
                 <Label htmlFor="netSales">Net Sales (฿) *</Label>
                 <Input
@@ -1124,7 +1100,6 @@ export default function SalesTrackerDashboard() {
                 />
               </div>
 
-              {/* Other Sales */}
               <div className="space-y-2">
                 <Label htmlFor="otherSales">Other Sales (฿)</Label>
                 <Input
@@ -1139,7 +1114,6 @@ export default function SalesTrackerDashboard() {
                 />
               </div>
 
-              {/* Other Sales Reference */}
               <div className="space-y-2">
                 <Label htmlFor="otherSalesNote" className="flex items-center gap-1.5">
                   Other Sales Reference
@@ -1156,7 +1130,6 @@ export default function SalesTrackerDashboard() {
                 />
               </div>
 
-              {/* Grab Fee */}
               <div className="space-y-2">
                 <Label htmlFor="grabFee">Grab Fee (฿)</Label>
                 <Input
@@ -1171,7 +1144,6 @@ export default function SalesTrackerDashboard() {
                 />
               </div>
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
@@ -1487,7 +1459,6 @@ export default function SalesTrackerDashboard() {
           
           {reportData && (
             <div className="space-y-6">
-              {/* Summary Cards */}
               <div className="grid grid-cols-3 gap-3">
                 <Card className="bg-gradient-to-br from-green-500 to-green-600">
                   <CardContent className="p-3">
@@ -1513,7 +1484,6 @@ export default function SalesTrackerDashboard() {
                 </Card>
               </div>
 
-              {/* Channel Breakdown */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Sales by Channel</h3>
                 <div className="bg-gray-50 rounded-lg overflow-hidden">
@@ -1540,7 +1510,6 @@ export default function SalesTrackerDashboard() {
                 </div>
               </div>
 
-              {/* Day Breakdown */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Sales by Day of Week</h3>
                 <div className="bg-gray-50 rounded-lg overflow-hidden">
@@ -1565,7 +1534,6 @@ export default function SalesTrackerDashboard() {
                 </div>
               </div>
 
-              {/* Transactions List */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">
                   Transaction Details ({reportData.transactions.length} records)
@@ -1602,7 +1570,6 @@ export default function SalesTrackerDashboard() {
                 </div>
               </div>
 
-              {/* Export Button */}
               <div className="flex justify-end gap-2 pt-2 border-t">
                 <Button
                   variant="outline"
@@ -1653,7 +1620,6 @@ export default function SalesTrackerDashboard() {
 
           {lookupData && (
             <div className="space-y-4">
-              {/* Summary strip */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-green-50 rounded-lg p-3 text-center">
                   <p className="text-xs text-green-700">Total Sales</p>
@@ -1669,7 +1635,6 @@ export default function SalesTrackerDashboard() {
                 </div>
               </div>
 
-              {/* Records list */}
               {lookupData.transactions.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">No sales recorded for this week</p>
               ) : (
