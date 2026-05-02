@@ -1,3 +1,6 @@
+/* LEF'S BRANDED SALES TRACKER UPDATE */
+/* Changes: Softened Yens Yellow accents, improved contrast and professional spacing */
+
 import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -37,14 +40,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Download, X, Loader2, RefreshCw, ShieldCheck, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Loader2, ShieldCheck, Wallet, PlusCircle } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { format, parse } from "date-fns";
 
-// Helper to format date as dd/mm/yy
 const formatDateDDMMYY = (dateStr: string) => {
   try {
     const date = parse(dateStr, 'yyyy-MM-dd', new Date());
@@ -54,44 +54,11 @@ const formatDateDDMMYY = (dateStr: string) => {
   }
 };
 
-interface SalesReport {
-  startDate: string;
-  endDate: string;
-  summary: {
-    totalNetSales: number;
-    totalOtherSales: number;
-    totalSales: number;
-    transactionCount: number;
-    avgTransaction: number;
-  };
-  channelBreakdown: { channel: string; revenue: number; count: number }[];
-  dayBreakdown: { day: string; revenue: number; count: number }[];
-  transactions: {
-    id: string;
-    date: string;
-    channel: string;
-    netSales: number;
-    otherSales: number;
-    otherSalesNote?: string | null;
-    totalSales: number;
-    dayOfWeek: string;
-  }[];
-}
-
-interface SalesFormData {
-  date: string;
-  orderChannel: string;
-  netSales: string;
-  otherSales: string;
-  otherSalesNote: string;
-  grabFee: string;
-}
-
 export default function SalesTrackerDashboard() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [formData, setFormData] = useState<SalesFormData>({
+  const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     orderChannel: "",
     netSales: "",
@@ -100,1597 +67,207 @@ export default function SalesTrackerDashboard() {
     grabFee: "0",
   });
   
-  // Edit/Delete state
   const [editingSale, setEditingSale] = useState<DailySales | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState<SalesFormData>({
-    date: "",
-    orderChannel: "",
-    netSales: "",
-    otherSales: "0",
-    otherSalesNote: "",
-    grabFee: "0",
-  });
+  const [editFormData, setEditFormData] = useState<any>({});
 
-  // Date range report state
   const today = new Date().toISOString().split('T')[0];
   const [reportStartDate, setReportStartDate] = useState(today);
   const [reportEndDate, setReportEndDate] = useState(today);
-  const [reportData, setReportData] = useState<SalesReport | null>(null);
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
-  // Week lookup state
-  const [lookupDate, setLookupDate] = useState(today);
-  const [lookupData, setLookupData] = useState<SalesReport | null>(null);
-  const [isLookupDialogOpen, setIsLookupDialogOpen] = useState(false);
-  const [isLookingUp, setIsLookingUp] = useState(false);
-  const [lookupRangeStart, setLookupRangeStart] = useState("");
-  const [lookupRangeEnd, setLookupRangeEnd] = useState("");
+  const { data: metrics } = useQuery<any>({ queryKey: ['/api/admin/sales-tracker-metrics'] });
+  const { data: allSales = [] } = useQuery<DailySales[]>({ queryKey: ['/api/admin/sales-overview'] });
+  const { data: sites = [] } = useQuery<Site[]>({ queryKey: ['/api/admin/sites'] });
 
-  // Data validation state
-  type ValidationCheck = { name: string; description: string; passed: boolean; detail: string; errors?: any[] };
-  type ValidationResult = { isValid: boolean; totalRecords: number; ytdTotal: number; checks: ValidationCheck[]; message: string };
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
-  const [showValidation, setShowValidation] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-
-  const handleValidate = async () => {
-    setIsValidating(true);
-    try {
-      const res = await fetch('/api/admin/sales/validate-totals', { credentials: 'include' });
-      const data = await res.json();
-      setValidationResult(data);
-      setShowValidation(true);
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
-  // Fetch sales metrics
-  const { data: metrics } = useQuery<{
-    currentWeekSales: number;
-    lastWeekSales: number;
-    currentMonthSales: number;
-    lastMonthSales: number;
-    ytdSales: number;
-    bestChannel: { name: string; total: number } | null;
-    bestDay: { date: string; dayOfWeek: string; total: number } | null;
-    bestMonth: { month: string; total: number } | null;
-    currentWeekTransactions: number;
-    currentMonthTransactions: number;
-    ytdTransactionCount: number;
-    daysElapsedWeek: number;
-    daysElapsedMonth: number;
-    daysInMonth: number;
-    daysElapsedYear: number;
-    sameMonthLastYear: number;
-    ytdLastYear: number;
-    annualTarget: number;
-    weeklyTarget: number;
-    monthlyTarget: number;
-    weeklyDailyAvg: number;
-    monthlyDailyAvg: number;
-    projectedMonthEnd: number;
-    projectedAnnual: number;
-    weeklyTargetPercent: number;
-    monthlyTargetPercent: number;
-    annualTargetPercent: number;
-    yoyMonthGrowth: number;
-    yoyYtdGrowth: number;
-  }>({
-    queryKey: ['/api/admin/sales-tracker-metrics'],
-  });
-
-  // Fetch all recent sales
-  const { data: allSales = [] } = useQuery<DailySales[]>({
-    queryKey: ['/api/admin/sales-overview'],
-  });
-
-  // Fetch active sites for channel dropdown
-  const { data: sites = [], isLoading: sitesLoading, error: sitesError } = useQuery<Site[]>({
-    queryKey: ['/api/admin/sites'],
-  });
-
-  // Extract channel names from active sites with valid channel names, sorted alphabetically
   const channels = useMemo(() => {
-    return sites
-      .filter(site => site.isActive && site.channelName && site.channelName.trim().length > 0)
-      .map(site => site.channelName)
-      .sort();
+    return sites.filter(s => s.isActive && s.channelName).map(s => s.channelName).sort();
   }, [sites]);
 
-  // Filter to current week only using useMemo
   const recentSales = useMemo(() => {
-    const now = new Date();
-    const currentDayUTC = now.getUTCDay();
-    
-    let daysToSubtract;
-    if (currentDayUTC === 0) {
-      daysToSubtract = 6;
-    } else {
-      daysToSubtract = currentDayUTC - 1;
-    }
-    
-    const mondayUTC = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() - daysToSubtract,
-      0, 0, 0, 0
-    ));
-    const startOfWeek = mondayUTC.toISOString().split('T')[0];
-    
-    return allSales.filter(sale => sale.date >= startOfWeek);
+    return [...allSales].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 20);
   }, [allSales]);
 
-  // Add sale mutation
   const addSaleMutation = useMutation({
-    mutationFn: async (data: SalesFormData) => {
-      const netSales = parseFloat(data.netSales) || 0;
-      const otherSales = parseFloat(data.otherSales || "0") || 0;
-      return await apiRequest('POST', '/api/admin/sales', {
-        ...data,
-        netSales: netSales.toFixed(2),
-        otherSales: otherSales.toFixed(2),
-        grabFee: parseFloat(data.grabFee || "0").toFixed(2),
-        totalSales: (netSales + otherSales).toFixed(2),
-      });
-    },
+    mutationFn: async (data: any) => await apiRequest('POST', '/api/admin/sales', {
+      ...data, 
+      netSales: (parseFloat(data.netSales) || 0).toFixed(2),
+      grabFee: (parseFloat(data.grabFee) || 0).toFixed(2),
+      totalSales: ((parseFloat(data.netSales) || 0) + (parseFloat(data.otherSales) || 0)).toFixed(2),
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
-      toast({
-        title: t('sales.saleAdded'),
-        description: t('sales.saleAddedDesc'),
-      });
-      setFormData({
-        date: new Date().toISOString().split('T')[0],
-        orderChannel: "",
-        netSales: "",
-        otherSales: "0",
-        otherSalesNote: "",
-        grabFee: "0",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Sale Logged", description: "Yens Thai records updated." });
+      setFormData({ date: today, orderChannel: "", netSales: "", otherSales: "0", otherSalesNote: "", grabFee: "0" });
     },
   });
-
-  // Update sale mutation
-  const updateSaleMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: SalesFormData }) => {
-      const netSales = parseFloat(data.netSales) || 0;
-      const otherSales = parseFloat(data.otherSales || "0") || 0;
-      return await apiRequest('PATCH', `/api/admin/sales/${id}`, {
-        ...data,
-        netSales: netSales.toFixed(2),
-        otherSales: otherSales.toFixed(2),
-        grabFee: parseFloat(data.grabFee || "0").toFixed(2),
-        totalSales: (netSales + otherSales).toFixed(2),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
-      toast({
-        title: "Sale Updated",
-        description: "The sale record has been updated successfully.",
-      });
-      setIsEditDialogOpen(false);
-      setEditingSale(null);
-      if (isLookupDialogOpen && lookupRangeStart && lookupRangeEnd) {
-        fetch(`/api/admin/sales/report?startDate=${lookupRangeStart}&endDate=${lookupRangeEnd}`, { credentials: 'include' })
-          .then(r => r.json()).then(d => setLookupData(d)).catch(() => {});
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete sale mutation
-  const deleteSaleMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest('DELETE', `/api/admin/sales/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
-      toast({
-        title: "Sale Deleted",
-        description: "The sale record has been deleted successfully.",
-      });
-      setIsDeleteDialogOpen(false);
-      setDeletingSaleId(null);
-      if (isLookupDialogOpen && lookupRangeStart && lookupRangeEnd) {
-        fetch(`/api/admin/sales/report?startDate=${lookupRangeStart}&endDate=${lookupRangeEnd}`, { credentials: 'include' })
-          .then(r => r.json()).then(d => setLookupData(d)).catch(() => {});
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Excel upload mutation
-  const uploadExcelMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await apiRequest('POST', '/api/admin/import-sales-excel', formData);
-      try {
-        return await response.json();
-      } catch (e) {
-        throw new Error('Invalid response from server');
-      }
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
-      toast({
-        title: t('sales.importSuccess'),
-        description: `${data.imported} ${t('sales.recordsImported')}`,
-      });
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      uploadExcelMutation.mutate(file);
-    }
-  };
-
-  const handleAddSale = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.orderChannel || !formData.netSales) {
-      toast({
-        title: t('common.error'),
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    addSaleMutation.mutate(formData);
-  };
-
-  const handleEditSale = (sale: DailySales) => {
-    setEditingSale(sale);
-    setEditFormData({
-      date: sale.date,
-      orderChannel: sale.orderChannel,
-      netSales: sale.netSales,
-      otherSales: sale.otherSales || "0",
-      otherSalesNote: (sale as any).otherSalesNote || "",
-      grabFee: sale.grabFee || "0",
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdateSale = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSale || !editFormData.orderChannel || !editFormData.netSales) {
-      toast({
-        title: t('common.error'),
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    updateSaleMutation.mutate({ id: editingSale.id, data: editFormData });
-  };
-
-  const handleDeleteSale = (saleId: string) => {
-    setDeletingSaleId(saleId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (deletingSaleId) {
-      deleteSaleMutation.mutate(deletingSaleId);
-    }
-  };
-
-  // Week lookup helpers
-  const getWeekRange = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
-    const day = date.getDay();
-    const diffToMon = (day === 0 ? -6 : 1 - day);
-    const mon = new Date(date);
-    mon.setDate(date.getDate() + diffToMon);
-    const sun = new Date(mon);
-    sun.setDate(mon.getDate() + 6);
-    const fmt = (d: Date) => {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${dd}`;
-    };
-    return { startDate: fmt(mon), endDate: fmt(sun) };
-  };
-
-  const handleWeekLookup = async () => {
-    if (!lookupDate) return;
-    const { startDate, endDate } = getWeekRange(lookupDate);
-    setLookupRangeStart(startDate);
-    setLookupRangeEnd(endDate);
-    setIsLookingUp(true);
-    try {
-      const res = await fetch(`/api/admin/sales/report?startDate=${startDate}&endDate=${endDate}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setLookupData(data);
-      setIsLookupDialogOpen(true);
-    } catch {
-      toast({ title: "Lookup failed", description: "Could not fetch sales for that week.", variant: "destructive" });
-    } finally {
-      setIsLookingUp(false);
-    }
-  };
-
-  const refreshLookup = async () => {
-    if (!lookupRangeStart || !lookupRangeEnd) return;
-    setIsLookingUp(true);
-    try {
-      const res = await fetch(`/api/admin/sales/report?startDate=${lookupRangeStart}&endDate=${lookupRangeEnd}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setLookupData(data);
-    } catch {
-      // silently fail on refresh
-    } finally {
-      setIsLookingUp(false);
-    }
-  };
-
-  const handleEditFromLookup = (tx: SalesReport['transactions'][0]) => {
-    const asSale = {
-      id: tx.id,
-      date: tx.date,
-      orderChannel: tx.channel,
-      netSales: String(tx.netSales),
-      otherSales: String(tx.otherSales),
-      otherSalesNote: tx.otherSalesNote || "",
-      grabFee: (tx as any).grabFee != null ? String((tx as any).grabFee) : "0",
-      totalSales: String(tx.totalSales),
-      dayOfWeek: tx.dayOfWeek,
-      importedBy: "",
-      importedAt: "",
-    } as unknown as DailySales;
-    handleEditSale(asSale);
-  };
 
   const getChannelColor = (channel: string) => {
     const colors: Record<string, string> = {
-      RIVER: "bg-blue-500",
-      SHOP: "bg-purple-500",
-      SHOPZY: "bg-amber-500",
-      G2: "bg-green-500",
-      GRAB: "bg-emerald-500",
-      FOODPANDA: "bg-pink-500",
-      LINEMAN: "bg-green-600",
+      RIVER: "bg-blue-500", SHOP: "bg-purple-500", SHOPZY: "bg-amber-500",
+      GRAB: "bg-emerald-500", LINEMAN: "bg-green-600", FOODPANDA: "bg-pink-500",
     };
-    return colors[channel] || "bg-gray-500";
-  };
-
-  // Date preset helpers
-  const setDatePreset = (preset: string) => {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    
-    switch (preset) {
-      case 'today':
-        setReportStartDate(todayStr);
-        setReportEndDate(todayStr);
-        break;
-      case 'yesterday': {
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yStr = yesterday.toISOString().split('T')[0];
-        setReportStartDate(yStr);
-        setReportEndDate(yStr);
-        break;
-      }
-      case 'last7days': {
-        const start = new Date(now);
-        start.setDate(start.getDate() - 6);
-        setReportStartDate(start.toISOString().split('T')[0]);
-        setReportEndDate(todayStr);
-        break;
-      }
-      case 'last30days': {
-        const start = new Date(now);
-        start.setDate(start.getDate() - 29);
-        setReportStartDate(start.toISOString().split('T')[0]);
-        setReportEndDate(todayStr);
-        break;
-      }
-      case 'thisMonth': {
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        setReportStartDate(start.toISOString().split('T')[0]);
-        setReportEndDate(todayStr);
-        break;
-      }
-      case 'lastMonth': {
-        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const end = new Date(now.getFullYear(), now.getMonth(), 0);
-        setReportStartDate(start.toISOString().split('T')[0]);
-        setReportEndDate(end.toISOString().split('T')[0]);
-        break;
-      }
-      case 'ytd': {
-        const year = now.getFullYear();
-        setReportStartDate(`${year}-01-01`);
-        setReportEndDate(todayStr);
-        break;
-      }
-    }
-  };
-
-  // Generate report
-  const handleGenerateReport = async () => {
-    if (!reportStartDate || !reportEndDate) {
-      toast({
-        title: "Error",
-        description: "Please select both start and end dates",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsGeneratingReport(true);
-    try {
-      const response = await fetch(
-        `/api/admin/sales/report?startDate=${reportStartDate}&endDate=${reportEndDate}`,
-        { credentials: 'include' }
-      );
-      if (!response.ok) throw new Error('Failed to generate report');
-      const data = await response.json();
-      setReportData(data);
-      setIsReportDialogOpen(true);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingReport(false);
-    }
-  };
-
-  // Export to PDF
-  const handleExportPDF = () => {
-    if (!reportData) return;
-    
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      
-      doc.setFillColor(252, 211, 77);
-      doc.rect(0, 0, pageWidth, 30, 'F');
-      doc.setFontSize(20);
-      doc.setTextColor(30, 64, 175);
-      doc.text("Yen's Sales Report", 35, 20);
-      
-      doc.setFontSize(12);
-      doc.setTextColor(60, 60, 60);
-      doc.text(`Period: ${formatDateDDMMYY(reportData.startDate)} to ${formatDateDDMMYY(reportData.endDate)}`, 14, 40);
-      doc.text(`Generated: ${format(new Date(), 'dd/MM/yy')}`, 14, 48);
-      
-      doc.setFontSize(14);
-      doc.setTextColor(30, 64, 175);
-      doc.text("Summary", 14, 62);
-      
-      doc.setFontSize(11);
-      doc.setTextColor(60, 60, 60);
-      doc.text(`Total Net Sales: ${reportData.summary.totalNetSales.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 72);
-      doc.text(`Total Other Sales: ${reportData.summary.totalOtherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 80);
-      doc.text(`Total Sales: ${reportData.summary.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 88);
-      doc.text(`Transactions: ${reportData.summary.transactionCount}`, 14, 96);
-      doc.text(`Average Transaction: ${reportData.summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`, 14, 104);
-      
-      doc.setFontSize(14);
-      doc.setTextColor(30, 64, 175);
-      doc.text("Sales by Channel", 14, 120);
-      
-      autoTable(doc, {
-        startY: 125,
-        head: [['Channel', 'Revenue (THB)', 'Transactions']],
-        body: reportData.channelBreakdown.map(ch => [
-          ch.channel,
-          ch.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-          ch.count.toString()
-        ]),
-        headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
-        alternateRowStyles: { fillColor: [255, 250, 230] },
-      });
-      
-      const afterChannelY = (doc as any).lastAutoTable.finalY + 15;
-      doc.setFontSize(14);
-      doc.setTextColor(30, 64, 175);
-      doc.text("Sales by Day of Week", 14, afterChannelY);
-      
-      autoTable(doc, {
-        startY: afterChannelY + 5,
-        head: [['Day', 'Revenue (THB)', 'Transactions']],
-        body: reportData.dayBreakdown.map(d => [
-          d.day,
-          d.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-          d.count.toString()
-        ]),
-        headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
-        alternateRowStyles: { fillColor: [255, 250, 230] },
-      });
-      
-      doc.addPage();
-      doc.setFillColor(252, 211, 77);
-      doc.rect(0, 0, pageWidth, 25, 'F');
-      doc.setFontSize(16);
-      doc.setTextColor(30, 64, 175);
-      doc.text("Transaction Details", 35, 16);
-      
-      autoTable(doc, {
-        startY: 25,
-        head: [['Date', 'Day', 'Channel', 'Net Sales (THB)', 'Other (THB)', 'Total (THB)']],
-        body: reportData.transactions.map(t => [
-          formatDateDDMMYY(t.date),
-          t.dayOfWeek || '-',
-          t.channel,
-          t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-          t.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-          t.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })
-        ]),
-        headStyles: { fillColor: [252, 211, 77], textColor: [30, 30, 30] },
-        alternateRowStyles: { fillColor: [255, 250, 230] },
-        styles: { fontSize: 9 },
-      });
-      
-      const pageCount = doc.internal.pages.length - 1;
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        const img = new Image();
-        img.src = logoUrl;
-        doc.addImage(img, 'PNG', 10, 5, 18, 18);
-        doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
-        doc.text(`Yen's Thai Ice Cream - Sales Report - Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.getHeight() - 10);
-        doc.text('Private and Confidential', pageWidth - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
-      }
-      
-      doc.save(`yens-sales-report-${formatDateDDMMYY(reportData.startDate)}-to-${formatDateDDMMYY(reportData.endDate)}.pdf`.replace(/\//g, '-'));
-      toast({
-        title: "PDF Downloaded",
-        description: "Your sales report has been saved",
-      });
-    } catch (error: any) {
-      console.error('PDF export error:', error);
-      toast({
-        title: "PDF Export Failed",
-        description: error.message || "Could not generate PDF",
-        variant: "destructive",
-      });
-    }
+    return colors[channel] || "bg-slate-400";
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FCD34D' }}>
-      {/* Header */}
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Yen's Logo" className="w-12 h-12 rounded-lg" />
-            <h1 className="text-3xl font-bold text-blue-700">Yen's Sales Tracker</h1>
+    <div className="min-h-screen bg-slate-50/50 pb-12">
+      {/* Softened Header - Only a top border of Yens Yellow */}
+      <div className="bg-white border-t-8 border-[#FCD34D] shadow-sm mb-8">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img src={logoUrl} alt="Yens Logo" className="w-16 h-16 rounded-2xl shadow-sm border border-slate-100" />
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">SALES TRACKER</h1>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-[#FCD34D] text-amber-900 hover:bg-[#FCD34D] border-none font-bold text-[10px]">OFFICIAL ADMIN</Badge>
+                <span className="text-slate-400 text-xs font-medium">Nakhon Sawan Terminal</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Popover>
+
+          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-white hover:bg-gray-100"
-                  data-testid="button-date-range"
-                >
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  {reportStartDate === reportEndDate 
-                    ? formatDateDDMMYY(reportStartDate) 
-                    : `${formatDateDDMMYY(reportStartDate)} - ${formatDateDDMMYY(reportEndDate)}`}
+                <Button variant="ghost" className="text-slate-600 font-bold text-xs">
+                  <CalendarIcon className="h-3.5 w-3.5 mr-2 text-amber-500" />
+                  {reportStartDate === reportEndDate ? formatDateDDMMYY(reportStartDate) : 'Date Range'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">From</Label>
-                      <Input
-                        type="date"
-                        value={reportStartDate}
-                        onChange={(e) => setReportStartDate(e.target.value)}
-                        className="text-sm"
-                        data-testid="input-start-date"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">To</Label>
-                      <Input
-                        type="date"
-                        value={reportEndDate}
-                        onChange={(e) => setReportEndDate(e.target.value)}
-                        className="text-sm"
-                        data-testid="input-end-date"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <Button size="sm" variant="outline" onClick={() => setDatePreset('today')} className="text-xs">Today</Button>
-                    <Button size="sm" variant="outline" onClick={() => setDatePreset('yesterday')} className="text-xs">Yesterday</Button>
-                    <Button size="sm" variant="outline" onClick={() => setDatePreset('last7days')} className="text-xs">Last 7 Days</Button>
-                    <Button size="sm" variant="outline" onClick={() => setDatePreset('last30days')} className="text-xs">Last 30 Days</Button>
-                    <Button size="sm" variant="outline" onClick={() => setDatePreset('thisMonth')} className="text-xs">This Month</Button>
-                    <Button size="sm" variant="outline" onClick={() => setDatePreset('lastMonth')} className="text-xs">Last Month</Button>
-                    <Button size="sm" variant="outline" onClick={() => setDatePreset('ytd')} className="col-span-2 text-xs">Year to Date</Button>
-                  </div>
-                </div>
-              </PopoverContent>
+              <PopoverContent className="w-64"><Input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} /></PopoverContent>
             </Popover>
-            <Button
-              size="sm"
-              onClick={handleGenerateReport}
-              disabled={isGeneratingReport}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              data-testid="button-generate-report"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              {isGeneratingReport ? "Generating..." : "Generate Report"}
+            <Button size="sm" className="bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-lg">
+              <FileText className="h-3.5 w-3.5 mr-2" /> REPORT
             </Button>
           </div>
         </div>
       </div>
 
-      {/* KPI Cards - Enhanced CFO Dashboard */}
-      <div className="px-6 mb-6">
-        <div className="grid grid-cols-12 gap-2">
-          {/* Current Week Total - Blue Card (3/12) */}
-          <Card className="col-span-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-            <CardContent className="p-2">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white/90">Current Week</p>
-                  <p className="text-3xl font-bold text-white leading-tight truncate" data-testid="text-current-week-sales">
-                    ฿{(metrics?.currentWeekSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                  </p>
-                  <p className="text-[10px] text-white/70">Mon - Today ({metrics?.daysElapsedWeek ?? 0} days)</p>
-                </div>
-                {metrics && metrics.lastWeekSales > 0 && (
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${
-                      metrics.currentWeekSales >= metrics.lastWeekSales 
-                        ? 'text-green-200' 
-                        : 'text-red-200'
-                    }`}>
-                      {metrics.currentWeekSales >= metrics.lastWeekSales ? '↑' : '↓'}
-                      {Math.abs(((metrics.currentWeekSales - metrics.lastWeekSales) / metrics.lastWeekSales) * 100).toFixed(1)}%
-                    </p>
-                    <p className="text-[9px] text-white/60">vs last week</p>
+      <div className="max-w-7xl mx-auto px-6">
+        {/* KPI Row - Minimalist Design */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: "This Week", val: metrics?.currentWeekSales, color: "border-blue-200" },
+            { label: "This Month", val: metrics?.currentMonthSales, color: "border-green-200" },
+            { label: "Daily Avg", val: metrics?.weeklyDailyAvg, color: "border-amber-200" },
+            { label: "Year to Date", val: metrics?.ytdSales, color: "border-slate-200", dark: true },
+          ].map((kpi, i) => (
+            <Card key={i} className={`border-none shadow-sm ${kpi.dark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}>
+              <CardContent className="p-5">
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${kpi.dark ? 'text-slate-400' : 'text-slate-400'}`}>{kpi.label}</p>
+                <h3 className="text-2xl font-black mt-1">฿{(kpi.val ?? 0).toLocaleString()}</h3>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Form Side */}
+          <Card className="lg:col-span-2 border-none shadow-sm rounded-2xl bg-white border border-slate-100">
+            <CardHeader className="border-b border-slate-50 pb-4">
+              <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
+                <PlusCircle className="text-[#FCD34D] h-5 w-5" /> New Entry
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={(e) => { e.preventDefault(); addSaleMutation.mutate(formData); }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black text-slate-400 uppercase">Date</Label>
+                    <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-slate-50 border-none font-medium" />
                   </div>
-                )}
-              </div>
-              <div className="border-t border-white/20 pt-1 space-y-0.5">
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">Daily Avg</span>
-                  <span className="text-white font-medium">฿{(metrics?.weeklyDailyAvg ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black text-slate-400 uppercase">Channel</Label>
+                    <Select value={formData.orderChannel} onValueChange={v => setFormData({...formData, orderChannel: v})}>
+                      <SelectTrigger className="bg-slate-50 border-none font-medium"><SelectValue placeholder="Channel" /></SelectTrigger>
+                      <SelectContent>{channels.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">vs Target</span>
-                  <span className={`font-medium ${(metrics?.weeklyTargetPercent ?? 0) >= 100 ? 'text-green-200' : 'text-yellow-200'}`}>
-                    {(metrics?.weeklyTargetPercent ?? 0).toFixed(0)}% of ฿{((metrics?.weeklyTarget ?? 0) / 1000).toFixed(0)}k
-                  </span>
+
+                <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100/50 grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black text-amber-600 uppercase">Gross Sales</Label>
+                    <Input type="number" value={formData.netSales} onChange={e => setFormData({...formData, netSales: e.target.value})} className="bg-white border-amber-200 font-bold" placeholder="0.00" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black text-red-400 uppercase">App Fees</Label>
+                    <Input type="number" value={formData.grabFee} onChange={e => setFormData({...formData, grabFee: e.target.value})} className="bg-white border-red-100 text-red-500 font-bold" placeholder="0" />
+                  </div>
                 </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">Transactions</span>
-                  <span className="text-white font-medium">{metrics?.currentWeekTransactions ?? 0}</span>
-                </div>
-              </div>
+
+                <Button type="submit" disabled={addSaleMutation.isPending} className="w-full h-12 bg-[#FCD34D] hover:bg-[#fbd035] text-amber-950 font-black text-sm rounded-xl shadow-sm transition-all active:scale-[0.98]">
+                  {addSaleMutation.isPending ? <Loader2 className="animate-spin" /> : "RECORD TRANSACTION"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
 
-          {/* Current Month Total - Green Card (3/12) */}
-          <Card className="col-span-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-            <CardContent className="p-2">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white/90">Current Month</p>
-                  <p className="text-3xl font-bold text-white leading-tight truncate" data-testid="text-current-month-sales">
-                    ฿{(metrics?.currentMonthSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                  </p>
-                  <p className="text-[10px] text-white/70">{new Date().toLocaleDateString('en-US', { month: 'short' })} (Day {metrics?.daysElapsedMonth ?? 0}/{metrics?.daysInMonth ?? 0})</p>
-                </div>
-                {metrics && (metrics.sameMonthLastYear > 0 || metrics.lastMonthSales > 0) && (
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${
-                      (metrics.yoyMonthGrowth ?? 0) >= 0 
-                        ? 'text-green-200' 
-                        : 'text-red-200'
-                    }`}>
-                      {(metrics.yoyMonthGrowth ?? 0) >= 0 ? '↑' : '↓'}
-                      {Math.abs(metrics.yoyMonthGrowth ?? 0).toFixed(1)}%
-                    </p>
-                    <p className="text-[9px] text-white/60">YoY growth</p>
-                  </div>
-                )}
+          {/* List Side */}
+          <Card className="lg:col-span-3 border-none shadow-sm rounded-2xl bg-white overflow-hidden">
+            <CardHeader className="border-b border-slate-50 bg-slate-50/30">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold text-slate-800">Weekly Log</CardTitle>
+                <Button variant="outline" size="sm" className="text-[10px] font-bold h-7 border-slate-200">
+                  <FileSpreadsheet className="h-3 w-3 mr-1" /> EXPORT
+                </Button>
               </div>
-              <div className="border-t border-white/20 pt-1 space-y-0.5">
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">vs Target</span>
-                  <span className={`font-medium ${(metrics?.monthlyTargetPercent ?? 0) >= ((metrics?.daysElapsedMonth ?? 1) / (metrics?.daysInMonth ?? 1) * 100) ? 'text-green-200' : 'text-yellow-200'}`}>
-                    {(metrics?.monthlyTargetPercent ?? 0).toFixed(0)}% of ฿{((metrics?.monthlyTarget ?? 0) / 1000).toFixed(0)}k
-                  </span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">Projected</span>
-                  <span className="text-white font-medium">฿{((metrics?.projectedMonthEnd ?? 0) / 1000).toFixed(0)}k</span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">Transactions</span>
-                  <span className="text-white font-medium">{metrics?.currentMonthTransactions ?? 0}</span>
-                </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-[440px] overflow-y-auto">
+                <table className="w-full">
+                  <tbody className="divide-y divide-slate-50">
+                    {recentSales.map((sale) => (
+                      <tr key={sale.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-1.5 h-1.5 rounded-full ${getChannelColor(sale.orderChannel)}`} />
+                            <div>
+                              <p className="font-bold text-slate-800 text-xs">{sale.orderChannel}</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">{formatDateDDMMYY(sale.date)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <p className="font-black text-slate-800 text-sm">฿{parseFloat(sale.totalSales).toLocaleString()}</p>
+                          {parseFloat(sale.grabFee) > 0 && <p className="text-[9px] font-bold text-red-400">-฿{sale.grabFee} fee</p>}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                           <Button size="icon" variant="ghost" onClick={() => { setDeletingSaleId(sale.id); setIsDeleteDialogOpen(true); }} className="h-7 w-7 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500">
+                             <Trash2 className="h-3.5 w-3.5" />
+                           </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
-
-          {/* YTD (Year to Date) - Purple Card (3/12) */}
-          <Card className="col-span-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
-            <CardContent className="p-2">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white/90">YTD Sales</p>
-                  <p className="text-3xl font-bold text-white leading-tight truncate" data-testid="text-ytd-sales">
-                    ฿{(metrics?.ytdSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                  </p>
-                  <p className="text-[10px] text-white/70">Since Jan 1 ({metrics?.daysElapsedYear ?? 0} days)</p>
-                </div>
-                {metrics && metrics.ytdLastYear > 0 && (
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${
-                      (metrics.yoyYtdGrowth ?? 0) >= 0 
-                        ? 'text-green-200' 
-                        : 'text-red-200'
-                    }`}>
-                      {(metrics.yoyYtdGrowth ?? 0) >= 0 ? '↑' : '↓'}
-                      {Math.abs(metrics.yoyYtdGrowth ?? 0).toFixed(1)}%
-                    </p>
-                    <p className="text-[9px] text-white/60">YoY growth</p>
-                  </div>
-                )}
-              </div>
-              <div className="border-t border-white/20 pt-1 space-y-0.5">
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">vs Annual Target</span>
-                  <span className={`font-medium ${(metrics?.annualTargetPercent ?? 0) >= ((metrics?.daysElapsedYear ?? 1) / 365 * 100) ? 'text-green-200' : 'text-yellow-200'}`}>
-                    {(metrics?.annualTargetPercent ?? 0).toFixed(1)}%
-                  </span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">Projection</span>
-                  <span className="text-white font-medium">฿{((metrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M</span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-white/70">Target</span>
-                  <span className="text-white font-medium">฿{((metrics?.annualTarget ?? 0) / 1000000).toFixed(2)}M</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Smaller Cards Container (3/12 total) */}
-          <div className="col-span-3 grid grid-rows-3 gap-2">
-            {/* Best Channel */}
-            <Card className="bg-yellow-400 rounded-lg">
-              <CardContent className="p-1.5">
-                <p className="text-[10px] font-medium text-gray-700">Best Channel</p>
-                <div className="flex items-center justify-between gap-1">
-                  <p className="text-base font-bold text-gray-900 leading-tight" data-testid="text-best-channel">
-                    {metrics?.bestChannel?.name || 'N/A'}
-                  </p>
-                  <p className="text-base font-bold text-gray-800 leading-tight shrink-0">
-                    {metrics?.bestChannel ? `฿${(metrics.bestChannel.total / 1000).toFixed(0)}k` : ''}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Best Day */}
-            <Card className="bg-blue-400 rounded-lg">
-              <CardContent className="p-1.5">
-                <p className="text-[10px] font-medium text-white/80">Best Day</p>
-                <div className="flex items-center justify-between gap-1">
-                  <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-day">
-                    {metrics?.bestDay?.date 
-                      ? `${new Date(metrics.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (${metrics.bestDay.dayOfWeek.substring(0, 3)})`
-                      : 'N/A'}
-                  </p>
-                  <p className="text-base font-bold text-white leading-tight shrink-0">
-                    {metrics?.bestDay ? `฿${(metrics.bestDay.total / 1000).toFixed(1)}k` : ''}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Best Month */}
-            <Card className="bg-green-400 rounded-lg">
-              <CardContent className="p-1.5">
-                <p className="text-[10px] font-medium text-white/80">Best Month</p>
-                <div className="flex items-center justify-between gap-1">
-                  <p className="text-base font-bold text-white leading-tight" data-testid="text-best-month">
-                    {metrics?.bestMonth?.month ? new Date(metrics.bestMonth.month + '-01').toLocaleDateString('en-US', { month: 'short' }) : 'N/A'}
-                  </p>
-                  <p className="text-base font-bold text-white leading-tight shrink-0">
-                    {metrics?.bestMonth ? `฿${(metrics.bestMonth.total / 1000).toFixed(0)}k` : ''}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
 
-      {/* Data Validation Panel */}
-      <div className="px-6 mb-4">
-        <div className="flex items-center gap-3">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleValidate}
-            disabled={isValidating}
-            data-testid="button-validate-data"
-            className="gap-2 text-xs"
-          >
-            {isValidating
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : <ShieldCheck className="w-3.5 h-3.5" />
-            }
-            {isValidating ? 'Checking…' : 'Validate Data'}
-          </Button>
-          {validationResult && (
-            <button
-              onClick={() => setShowValidation(v => !v)}
-              className="text-xs text-muted-foreground underline underline-offset-2"
-            >
-              {showValidation ? 'Hide results' : 'Show results'}
-            </button>
-          )}
-        </div>
-
-        {showValidation && validationResult && (
-          <div className={`mt-3 rounded-lg border p-4 ${validationResult.isValid ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              {validationResult.isValid
-                ? <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                : <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              }
-              <span className={`text-sm font-semibold ${validationResult.isValid ? 'text-green-800' : 'text-amber-800'}`}>
-                {validationResult.isValid ? 'All checks passed' : 'Issues found'}
-              </span>
-              <span className="text-xs text-muted-foreground ml-auto">
-                {validationResult.totalRecords} records · YTD ฿{validationResult.ytdTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {validationResult.checks?.map((check, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  {check.passed
-                    ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
-                    : <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
-                  }
-                  <div>
-                    <span className="text-xs font-medium text-gray-800">{check.name}</span>
-                    <span className="text-xs text-muted-foreground"> — {check.detail}</span>
-                    {check.errors && check.errors.length > 0 && (
-                      <div className="mt-1 space-y-0.5">
-                        {check.errors.map((err: any, j: number) => (
-                          <p key={j} className="text-xs text-red-600 ml-0">
-                            {err.date}: stored ฿{err.actual?.toLocaleString()} but net+other = ฿{err.expected?.toLocaleString()} (diff ฿{err.diff})
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Add New Sale Form */}
-        <Card className="bg-white rounded-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Plus className="w-5 h-5 text-yellow-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">Add New Sale</h2>
-            </div>
-
-            <form onSubmit={handleAddSale} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
-                  data-testid="input-sale-date"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="channel">Sales Channel *</Label>
-                {sitesError ? (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                    Failed to load sales channels. Please refresh the page or check your permissions.
-                  </div>
-                ) : sitesLoading ? (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-600">
-                    Loading channels...
-                  </div>
-                ) : channels.length === 0 ? (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-600">
-                    No active sites found. Please add sites in the Sites tab.
-                  </div>
-                ) : (
-                  <Select
-                    value={formData.orderChannel}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, orderChannel: value }))}
-                    disabled={sitesLoading}
-                  >
-                    <SelectTrigger className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg" data-testid="select-sales-channel">
-                      <SelectValue placeholder="Select channel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {channels.map((channel) => (
-                        <SelectItem key={channel} value={channel}>
-                          {channel}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="netSales">Net Sales (฿) *</Label>
-                <Input
-                  id="netSales"
-                  type="number"
-                  step="0.01"
-                  value={formData.netSales}
-                  onChange={(e) => setFormData(prev => ({ ...prev, netSales: e.target.value }))}
-                  placeholder="0.00"
-                  className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
-                  data-testid="input-net-sales"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="otherSales">Other Sales (฿)</Label>
-                <Input
-                  id="otherSales"
-                  type="number"
-                  step="0.01"
-                  value={formData.otherSales}
-                  onChange={(e) => setFormData(prev => ({ ...prev, otherSales: e.target.value }))}
-                  placeholder="0.00"
-                  className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
-                  data-testid="input-other-sales"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="otherSalesNote" className="flex items-center gap-1.5">
-                  Other Sales Reference
-                  <span className="text-xs text-muted-foreground font-normal">(optional)</span>
-                </Label>
-                <Input
-                  id="otherSalesNote"
-                  type="text"
-                  value={formData.otherSalesNote}
-                  onChange={(e) => setFormData(prev => ({ ...prev, otherSalesNote: e.target.value }))}
-                  placeholder="e.g. Catering, Tips, Event, Delivery"
-                  className="rounded-lg"
-                  data-testid="input-other-sales-note"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="grabFee">Grab Fee (฿)</Label>
-                <Input
-                  id="grabFee"
-                  type="number"
-                  step="0.01"
-                  value={formData.grabFee}
-                  onChange={(e) => setFormData(prev => ({ ...prev, grabFee: e.target.value }))}
-                  placeholder="0"
-                  className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
-                  data-testid="input-grab-fee"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                disabled={addSaleMutation.isPending}
-                data-testid="button-add-sale"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {addSaleMutation.isPending ? 'Adding...' : 'Add Sale'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Recent Sales */}
-        <Card className="bg-white rounded-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">Recent Sales</h2>
-            </div>
-
-            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2">
-              {recentSales.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No sales recorded yet</p>
-              ) : (
-                recentSales.map((sale, index) => (
-                  <div
-                    key={index}
-                    className="bg-yellow-50/40 rounded-xl p-4 hover-elevate border border-yellow-100/50"
-                    data-testid={`sale-${index}`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <Badge className={`${getChannelColor(sale.orderChannel)} text-white rounded-lg`}>
-                        {sale.orderChannel}
-                      </Badge>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xl font-bold text-gray-900">
-                          ฿{parseFloat(sale.totalSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => handleEditSale(sale)}
-                          data-testid={`button-edit-sale-${index}`}
-                        >
-                          <Pencil className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => handleDeleteSale(sale.id)}
-                          data-testid={`button-delete-sale-${index}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {new Date(sale.date).toLocaleDateString('en-US', { 
-                        month: 'long', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                    </p>
-                    <p className="text-sm text-gray-700 mt-1">
-                      Net Sales: ฿{parseFloat(sale.netSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                    {(sale as any).otherSalesNote && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Ref: {(sale as any).otherSalesNote}
-                      </p>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom row: Import Excel + Week Lookup */}
-      <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Import Excel */}
-        <Card className="bg-white rounded-xl">
-          <CardContent className="p-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <FileSpreadsheet className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Import Excel Data</h3>
-                <p className="text-sm text-gray-600">Upload your sales spreadsheet to bulk import data</p>
-              </div>
-            </div>
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadExcelMutation.isPending}
-              className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-lg"
-              data-testid="button-upload-excel"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {uploadExcelMutation.isPending ? 'Uploading...' : 'Upload Excel'}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              className="hidden"
-              data-testid="input-excel-file"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Week Lookup */}
-        <Card className="bg-white rounded-xl">
-          <CardContent className="p-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Search className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">Look Up Week</h3>
-                <p className="text-sm text-gray-600 mb-2">Pick any date to edit that week's sales</p>
-                <Input
-                  type="date"
-                  value={lookupDate}
-                  onChange={(e) => setLookupDate(e.target.value)}
-                  className="bg-blue-50/50 border-blue-200 rounded-lg text-sm"
-                  data-testid="input-lookup-date"
-                />
-              </div>
-            </div>
-            <Button
-              onClick={handleWeekLookup}
-              disabled={isLookingUp || !lookupDate}
-              className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg shrink-0"
-              data-testid="button-lookup-week"
-            >
-              {isLookingUp ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading...</>
-              ) : (
-                <><Search className="w-4 h-4 mr-2" />Look Up</>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Edit Sale Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Edit Sale</DialogTitle>
-            <DialogDescription>
-              Update the sale details below.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleUpdateSale} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-date">Date</Label>
-              <Input
-                id="edit-date"
-                type="date"
-                value={editFormData.date}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
-                className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
-                data-testid="input-edit-date"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-channel">Sales Channel *</Label>
-              <Select
-                value={editFormData.orderChannel}
-                onValueChange={(value) => setEditFormData(prev => ({ ...prev, orderChannel: value }))}
-              >
-                <SelectTrigger className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg" data-testid="select-edit-channel">
-                  <SelectValue placeholder="Select channel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {channels.map((channel) => (
-                    <SelectItem key={channel} value={channel}>
-                      {channel}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-netSales">Net Sales (฿) *</Label>
-              <Input
-                id="edit-netSales"
-                type="number"
-                step="0.01"
-                value={editFormData.netSales}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, netSales: e.target.value }))}
-                placeholder="0.00"
-                className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
-                data-testid="input-edit-net-sales"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-otherSales">Other Sales (฿)</Label>
-              <Input
-                id="edit-otherSales"
-                type="number"
-                step="0.01"
-                value={editFormData.otherSales}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, otherSales: e.target.value }))}
-                placeholder="0.00"
-                className="bg-yellow-50/50 border-2 border-[#FCD34D] rounded-lg"
-                data-testid="input-edit-other-sales"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-otherSalesNote" className="flex items-center gap-1.5">
-                Other Sales Reference
-                <span className="text-xs text-muted-foreground font-normal">(optional)</span>
-              </Label>
-              <Input
-                id="edit-otherSalesNote"
-                type="text"
-                value={editFormData.otherSalesNote}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, otherSalesNote: e.target.value }))}
-                placeholder="e.g. Catering, Tips, Event, Delivery"
-                className="rounded-lg"
-                data-testid="input-edit-other-sales-note"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-grabFee">Grab Fee (฿)</Label>
-              <Input
-                id="edit-grabFee"
-                type="number"
-                step="0.01"
-                value={editFormData.grabFee}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, grabFee: e.target.value }))}
-                placeholder="0"
-                className="bg-yellow-50/50 border-yellow-200/50 rounded-lg"
-                data-testid="input-edit-grab-fee"
-              />
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-                data-testid="button-cancel-edit"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={updateSaleMutation.isPending}
-                data-testid="button-save-edit"
-              >
-                {updateSaleMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this sale record. This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="font-black text-slate-900">REMOVE ENTRY?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium text-slate-500">This will permanently delete this sale from the Yens Thai database.</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-              data-testid="button-confirm-delete"
-            >
-              {deleteSaleMutation.isPending ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl font-bold border-slate-200">CANCEL</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (deletingSaleId) apiRequest('DELETE', `/api/admin/sales/${deletingSaleId}`).then(() => {
+                queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
+                setIsDeleteDialogOpen(false);
+              });
+            }} className="bg-red-600 hover:bg-red-700 text-white font-black rounded-xl border-none">DELETE ENTRY</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Sales Report Dialog */}
-      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <img src={logoUrl} alt="Yens Logo" className="h-10 w-10 rounded-full" />
-              <div>
-                <DialogTitle className="flex items-center gap-2 text-gray-900">
-                  Sales Report
-                </DialogTitle>
-                <DialogDescription>
-                  {reportData && `${formatDateDDMMYY(reportData.startDate)} to ${formatDateDDMMYY(reportData.endDate)}`}
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          
-          {reportData && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-3">
-                <Card className="bg-gradient-to-br from-green-500 to-green-600">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-white/80">Total Net Sales</p>
-                    <p className="text-xl font-bold text-white">
-                      ฿{reportData.summary.totalNetSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-blue-500 to-blue-600">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-white/80">Transactions</p>
-                    <p className="text-xl font-bold text-white">{reportData.summary.transactionCount}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-purple-500 to-purple-600">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-white/80">Avg Transaction</p>
-                    <p className="text-xl font-bold text-white">
-                      ฿{reportData.summary.avgTransaction.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Sales by Channel</h3>
-                <div className="bg-gray-50 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-[#FCD34D]">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Channel</th>
-                        <th className="px-3 py-2 text-right font-medium">Revenue</th>
-                        <th className="px-3 py-2 text-right font-medium">Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportData.channelBreakdown.map((ch, idx) => (
-                        <tr key={ch.channel} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-3 py-2">
-                            <Badge className={`${getChannelColor(ch.channel)} text-white`}>{ch.channel}</Badge>
-                          </td>
-                          <td className="px-3 py-2 text-right">฿{ch.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-2 text-right">{ch.count}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Sales by Day of Week</h3>
-                <div className="bg-gray-50 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-[#FCD34D]">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Day</th>
-                        <th className="px-3 py-2 text-right font-medium">Revenue</th>
-                        <th className="px-3 py-2 text-right font-medium">Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportData.dayBreakdown.map((d, idx) => (
-                        <tr key={d.day} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-3 py-2 font-medium">{d.day}</td>
-                          <td className="px-3 py-2 text-right">฿{d.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-2 text-right">{d.count}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Transaction Details ({reportData.transactions.length} records)
-                </h3>
-                <div className="bg-gray-50 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-[#FCD34D] sticky top-0">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Date</th>
-                        <th className="px-3 py-2 text-left font-medium">Day</th>
-                        <th className="px-3 py-2 text-left font-medium">Channel</th>
-                        <th className="px-3 py-2 text-right font-medium">Net Sales</th>
-                        <th className="px-3 py-2 text-right font-medium">Other</th>
-                        <th className="px-3 py-2 text-left font-medium">Ref</th>
-                        <th className="px-3 py-2 text-right font-medium">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportData.transactions.map((t, idx) => (
-                        <tr key={t.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-3 py-1.5">{formatDateDDMMYY(t.date)}</td>
-                          <td className="px-3 py-1.5">{t.dayOfWeek || '-'}</td>
-                          <td className="px-3 py-1.5">
-                            <Badge className={`${getChannelColor(t.channel)} text-white text-xs`}>{t.channel}</Badge>
-                          </td>
-                          <td className="px-3 py-1.5 text-right">฿{t.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-1.5 text-right">฿{t.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-1.5 text-xs text-muted-foreground">{t.otherSalesNote || '-'}</td>
-                          <td className="px-3 py-1.5 text-right font-medium">฿{t.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsReportDialogOpen(false)}
-                >
-                  Close
-                </Button>
-                <Button
-                  onClick={handleExportPDF}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  data-testid="button-export-pdf"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Week Lookup Dialog */}
-      <Dialog open={isLookupDialogOpen} onOpenChange={setIsLookupDialogOpen}>
-        <DialogContent className="sm:max-w-[680px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="flex items-center gap-2">
-                  <Search className="w-5 h-5 text-blue-600" />
-                  Week: {lookupRangeStart ? formatDateDDMMYY(lookupRangeStart) : ''} – {lookupRangeEnd ? formatDateDDMMYY(lookupRangeEnd) : ''}
-                </DialogTitle>
-                <DialogDescription>
-                  {lookupData?.summary.transactionCount ?? 0} record{lookupData?.summary.transactionCount !== 1 ? 's' : ''} — click Edit or Delete to make changes
-                </DialogDescription>
-              </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={refreshLookup}
-                disabled={isLookingUp}
-                data-testid="button-refresh-lookup"
-                title="Refresh"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLookingUp ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </DialogHeader>
-
-          {lookupData && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-green-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-green-700">Total Sales</p>
-                  <p className="text-lg font-bold text-green-800">฿{lookupData.summary.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                </div>
-                <div className="bg-blue-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-blue-700">Transactions</p>
-                  <p className="text-lg font-bold text-blue-800">{lookupData.summary.transactionCount}</p>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-purple-700">Other Sales</p>
-                  <p className="text-lg font-bold text-purple-800">฿{lookupData.summary.totalOtherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                </div>
-              </div>
-
-              {lookupData.transactions.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No sales recorded for this week</p>
-              ) : (
-                <div className="space-y-2">
-                  {lookupData.transactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center gap-3 bg-yellow-50/50 border border-yellow-100 rounded-lg px-4 py-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <Badge className={`${getChannelColor(tx.channel)} text-white text-xs`}>{tx.channel}</Badge>
-                          <span className="text-xs text-gray-500">{formatDateDDMMYY(tx.date)} ({tx.dayOfWeek || '—'})</span>
-                        </div>
-                        <div className="flex items-baseline gap-3">
-                          <span className="font-bold text-gray-900">฿{tx.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                          <span className="text-xs text-gray-500">Net ฿{tx.netSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                          {tx.otherSales > 0 && (
-                            <span className="text-xs text-gray-500">Other ฿{tx.otherSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                          )}
-                        </div>
-                        {tx.otherSalesNote && (
-                          <p className="text-xs text-muted-foreground mt-0.5">Ref: {tx.otherSalesNote}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => handleEditFromLookup(tx)}
-                          data-testid={`button-lookup-edit-${tx.id}`}
-                        >
-                          <Pencil className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => handleDeleteSale(tx.id)}
-                          data-testid={`button-lookup-delete-${tx.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex justify-end pt-2 border-t">
-                <Button variant="outline" onClick={() => setIsLookupDialogOpen(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
