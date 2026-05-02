@@ -798,10 +798,10 @@ export default function SalesTrackerDashboard() {
         <div className="grid grid-cols-12 gap-2">
           {/* Current Week Total - Blue Card (3/12) */}
           <Card className="col-span-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-            <CardContent className="p-3">
-              <div className="flex items-start justify-between gap-2 mb-2">
+            <CardContent className="p-2">
+              <div className="flex items-start justify-between gap-2 mb-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white/90 mb-0.5">Current Week</p>
+                  <p className="text-xs font-medium text-white/90">Current Week</p>
                   <p className="text-3xl font-bold text-white leading-tight truncate" data-testid="text-current-week-sales">
                     ฿{(metrics?.currentWeekSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </p>
@@ -821,7 +821,7 @@ export default function SalesTrackerDashboard() {
                   </div>
                 )}
               </div>
-              <div className="border-t border-white/20 pt-2 space-y-1">
+              <div className="border-t border-white/20 pt-1 space-y-0.5">
                 <div className="flex justify-between text-[10px]">
                   <span className="text-white/70">Daily Avg</span>
                   <span className="text-white font-medium">฿{(metrics?.weeklyDailyAvg ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
@@ -842,10 +842,10 @@ export default function SalesTrackerDashboard() {
 
           {/* Current Month Total - Green Card (3/12) */}
           <Card className="col-span-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-            <CardContent className="p-3">
-              <div className="flex items-start justify-between gap-2 mb-2">
+            <CardContent className="p-2">
+              <div className="flex items-start justify-between gap-2 mb-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white/90 mb-0.5">Current Month</p>
+                  <p className="text-xs font-medium text-white/90">Current Month</p>
                   <p className="text-3xl font-bold text-white leading-tight truncate" data-testid="text-current-month-sales">
                     ฿{(metrics?.currentMonthSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </p>
@@ -865,7 +865,7 @@ export default function SalesTrackerDashboard() {
                   </div>
                 )}
               </div>
-              <div className="border-t border-white/20 pt-2 space-y-1">
+              <div className="border-t border-white/20 pt-1 space-y-0.5">
                 <div className="flex justify-between text-[10px]">
                   <span className="text-white/70">vs Target</span>
                   <span className={`font-medium ${(metrics?.monthlyTargetPercent ?? 0) >= ((metrics?.daysElapsedMonth ?? 1) / (metrics?.daysInMonth ?? 1) * 100) ? 'text-green-200' : 'text-yellow-200'}`}>
@@ -886,10 +886,10 @@ export default function SalesTrackerDashboard() {
 
           {/* YTD (Year to Date) - Purple Card (3/12) */}
           <Card className="col-span-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
-            <CardContent className="p-3">
-              <div className="flex items-start justify-between gap-2 mb-2">
+            <CardContent className="p-2">
+              <div className="flex items-start justify-between gap-2 mb-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white/90 mb-0.5">YTD Sales</p>
+                  <p className="text-xs font-medium text-white/90">YTD Sales</p>
                   <p className="text-3xl font-bold text-white leading-tight truncate" data-testid="text-ytd-sales">
                     ฿{(metrics?.ytdSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </p>
@@ -909,7 +909,7 @@ export default function SalesTrackerDashboard() {
                   </div>
                 )}
               </div>
-              <div className="border-t border-white/20 pt-2 space-y-1">
+              <div className="border-t border-white/20 pt-1 space-y-0.5">
                 <div className="flex justify-between text-[10px]">
                   <span className="text-white/70">vs Annual Target</span>
                   <span className={`font-medium ${(metrics?.annualTargetPercent ?? 0) >= ((metrics?.daysElapsedYear ?? 1) / 365 * 100) ? 'text-green-200' : 'text-yellow-200'}`}>
@@ -932,8 +932,8 @@ export default function SalesTrackerDashboard() {
           <div className="col-span-3 grid grid-rows-3 gap-2">
             {/* Best Channel */}
             <Card className="bg-yellow-400 rounded-lg">
-              <CardContent className="p-2.5">
-                <p className="text-[10px] font-medium text-gray-700 mb-1">Best Channel</p>
+              <CardContent className="p-1.5">
+                <p className="text-[10px] font-medium text-gray-700">Best Channel</p>
                 <div className="flex items-center justify-between gap-1">
                   <p className="text-base font-bold text-gray-900 leading-tight" data-testid="text-best-channel">
                     {metrics?.bestChannel?.name || 'N/A'}
@@ -947,8 +947,8 @@ export default function SalesTrackerDashboard() {
 
             {/* Best Day */}
             <Card className="bg-blue-400 rounded-lg">
-              <CardContent className="p-2.5">
-                <p className="text-[10px] font-medium text-white/80 mb-1">Best Day</p>
+              <CardContent className="p-1.5">
+                <p className="text-[10px] font-medium text-white/80">Best Day</p>
                 <div className="flex items-center justify-between gap-1">
                   <p className="text-sm font-bold text-white leading-tight" data-testid="text-best-day">
                     {metrics?.bestDay?.date 
@@ -964,8 +964,8 @@ export default function SalesTrackerDashboard() {
 
             {/* Best Month */}
             <Card className="bg-green-400 rounded-lg">
-              <CardContent className="p-2.5">
-                <p className="text-[10px] font-medium text-white/80 mb-1">Best Month</p>
+              <CardContent className="p-1.5">
+                <p className="text-[10px] font-medium text-white/80">Best Month</p>
                 <div className="flex items-center justify-between gap-1">
                   <p className="text-base font-bold text-white leading-tight" data-testid="text-best-month">
                     {metrics?.bestMonth?.month ? new Date(metrics.bestMonth.month + '-01').toLocaleDateString('en-US', { month: 'short' }) : 'N/A'}
