@@ -73,7 +73,7 @@ export default function VersionCheck() {
       <div style={{ maxWidth: 700, margin: "0 auto" }}>
         <div style={{ background: "#1d4ed8", color: "white", padding: "20px 24px", borderRadius: 12, marginBottom: 20, textAlign: "center" }}>
           <div style={{ fontSize: 28, fontWeight: 800 }}>Yen's Diagnostic</div>
-          <div style={{ fontSize: 16, opacity: 0.85, marginTop: 4 }}>v3.25.9 — Tablet Debug Page</div>
+          <div style={{ fontSize: 16, opacity: 0.85, marginTop: 4 }}>v3.26.0 — Tablet Debug Page</div>
           <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>{new Date().toLocaleString()}</div>
         </div>
 
