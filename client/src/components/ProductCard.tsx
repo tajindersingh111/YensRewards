@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, ShoppingCart, Eye } from "lucide-react";
+import { Edit, Trash2, ShoppingCart, Eye, Camera } from "lucide-react";
 import type { Product } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
@@ -12,6 +12,7 @@ interface ProductCardProps {
   onDelete?: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
   onView?: (product: Product) => void;
+  onQuickPhoto?: (product: Product) => void;
 }
 
 export function ProductCard({
@@ -21,6 +22,7 @@ export function ProductCard({
   onDelete,
   onAddToCart,
   onView,
+  onQuickPhoto,
 }: ProductCardProps) {
   const { t, i18n } = useTranslation();
   
@@ -34,16 +36,11 @@ export function ProductCard({
 
   const getBadgeVariant = (badge: string | null) => {
     switch (badge) {
-      case "new":
-        return "default";
-      case "popular":
-        return "secondary";
-      case "limited":
-        return "destructive";
-      case "sale":
-        return "outline";
-      default:
-        return "secondary";
+      case "new":      return "default";
+      case "popular":  return "secondary";
+      case "limited":  return "destructive";
+      case "sale":     return "outline";
+      default:         return "secondary";
     }
   };
 
@@ -58,12 +55,22 @@ export function ProductCard({
             className="absolute inset-0 w-full h-full object-contain"
             data-testid={`img-product-${product.id}`}
           />
+        ) : variant === "management" && onQuickPhoto ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onQuickPhoto(product); }}
+            className="absolute inset-0 flex flex-col items-center justify-center w-full bg-muted/60 hover:bg-muted transition-colors cursor-pointer group"
+            data-testid={`button-quick-photo-${product.id}`}
+          >
+            <Camera className="w-7 h-7 text-muted-foreground group-hover:text-foreground transition-colors mb-1" />
+            <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors font-medium">Add Photo</span>
+          </button>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <span className="text-muted-foreground text-sm">{t('admin.products.noImage')}</span>
           </div>
         )}
-        
+
         {/* Badge Overlay */}
         {product.badge && (
           <div className="absolute top-2 right-2">
@@ -76,7 +83,7 @@ export function ProductCard({
             </Badge>
           </div>
         )}
-        
+
         {/* Featured Star */}
         {product.featured && (
           <div className="absolute top-2 left-2">
@@ -85,7 +92,7 @@ export function ProductCard({
             </Badge>
           </div>
         )}
-        
+
         {/* Promo Focus Indicator */}
         {product.promoFocus && (
           <div className="absolute bottom-2 left-2">
@@ -93,6 +100,19 @@ export function ProductCard({
               {t('admin.products.promoFocus')}
             </Badge>
           </div>
+        )}
+
+        {/* Camera overlay for products that already have a photo (management) */}
+        {product.imageUrl && variant === "management" && onQuickPhoto && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onQuickPhoto(product); }}
+            className="absolute bottom-2 right-2 p-1.5 rounded-md bg-black/50 hover:bg-black/70 transition-colors"
+            data-testid={`button-change-photo-${product.id}`}
+            title="Change photo"
+          >
+            <Camera className="w-3.5 h-3.5 text-white" />
+          </button>
         )}
       </div>
 

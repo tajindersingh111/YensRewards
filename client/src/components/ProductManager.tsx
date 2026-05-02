@@ -24,7 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Package, AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
 import ProductCSVImport from "@/components/ProductCSVImport";
 import ProductPhotoUpload from "@/components/ProductPhotoUpload";
 import { ProductCard } from "@/components/ProductCard";
@@ -33,10 +33,10 @@ import type { Product } from "@shared/schema";
 const CATEGORY_VALUES = ["soft_serve", "milk_tea", "fruit_tea", "shakes", "sundaes", "float_drinks"];
 
 const BADGE_CONFIG = [
-  { value: "new", color: "bg-green-500" },
+  { value: "new",     color: "bg-green-500" },
   { value: "popular", color: "bg-yellow-500" },
   { value: "limited", color: "bg-red-500" },
-  { value: "sale", color: "bg-blue-500" },
+  { value: "sale",    color: "bg-blue-500" },
 ];
 
 interface ProductFormData {
@@ -59,9 +59,9 @@ interface ProductFormData {
 export default function ProductManager() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen]     = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState<ProductFormData>({
+  const [formData, setFormData]             = useState<ProductFormData>({
     productCode: "",
     name: "",
     description: "",
@@ -79,14 +79,20 @@ export default function ProductManager() {
   });
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
+  // ── Quick-photo dialog state ──────────────────────────────────────────────
+  const [quickPhotoProduct, setQuickPhotoProduct] = useState<Product | null>(null);
+  const [quickPhotoUrl, setQuickPhotoUrl]         = useState("");
+  const [quickPhotoSaved, setQuickPhotoSaved]     = useState(false);
+
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
   });
 
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
   const createMutation = useMutation({
-    mutationFn: async (data: ProductFormData) => {
-      return await apiRequest('POST', '/api/admin/products', data);
-    },
+    mutationFn: async (data: ProductFormData) =>
+      await apiRequest('POST', '/api/admin/products', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       toast({ title: t('products.success'), description: t('products.productCreated') });
@@ -99,9 +105,8 @@ export default function ProductManager() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<ProductFormData> }) => {
-      return await apiRequest('PATCH', `/api/admin/products/${id}`, data);
-    },
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ProductFormData> }) =>
+      await apiRequest('PATCH', `/api/admin/products/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       toast({ title: t('products.success'), description: t('products.productUpdated') });
@@ -113,10 +118,23 @@ export default function ProductManager() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest('DELETE', `/api/admin/products/${id}`);
+  // Saves only the imageUrl for a product — used by the quick-photo dialog
+  const quickPhotoMutation = useMutation({
+    mutationFn: async ({ id, imageUrl }: { id: string; imageUrl: string }) =>
+      await apiRequest('PATCH', `/api/admin/products/${id}`, { imageUrl }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      setQuickPhotoSaved(true);
+      toast({ title: "Photo saved", description: `Photo updated for ${quickPhotoProduct?.name}` });
     },
+    onError: () => {
+      toast({ title: "Save failed", description: "Could not save the photo. Please try again.", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) =>
+      await apiRequest('DELETE', `/api/admin/products/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       toast({ title: t('products.success'), description: t('products.productDeleted') });
@@ -127,9 +145,8 @@ export default function ProductManager() {
   });
 
   const deleteAllMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest('DELETE', '/api/admin/products');
-    },
+    mutationFn: async () =>
+      await apiRequest('DELETE', '/api/admin/products'),
     onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       toast({ title: t('products.success'), description: t('products.allProductsDeleted', { count: response.deletedCount || 0 }) });
@@ -139,6 +156,8 @@ export default function ProductManager() {
       toast({ title: t('products.error'), description: t('products.deleteAllFailed'), variant: "destructive" });
     },
   });
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   const resetForm = () => {
     setFormData({
@@ -196,19 +215,37 @@ export default function ProductManager() {
     }
   };
 
-  const getBadgeInfo = (badgeValue: string | null) => {
-    if (!badgeValue) return null;
-    return BADGE_CONFIG.find(b => b.value === badgeValue);
+  // Opens the quick-photo dialog for a specific product
+  const openQuickPhoto = (product: Product) => {
+    setQuickPhotoProduct(product);
+    setQuickPhotoUrl(product.imageUrl || "");
+    setQuickPhotoSaved(false);
   };
+
+  const closeQuickPhoto = () => {
+    setQuickPhotoProduct(null);
+    setQuickPhotoUrl("");
+    setQuickPhotoSaved(false);
+  };
+
+  // Called by ProductPhotoUpload as soon as the image finishes uploading
+  const handleQuickPhotoUploaded = (url: string) => {
+    setQuickPhotoUrl(url);
+    if (quickPhotoProduct && url) {
+      quickPhotoMutation.mutate({ id: quickPhotoProduct.id, imageUrl: url });
+    }
+  };
+
+  const missingPhotoCount = products.filter(p => !p.imageUrl).length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h2 className="text-base font-semibold text-foreground">{t('products.title')}</h2>
           <p className="text-xs text-muted-foreground">{t('products.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {products.length > 0 && (
             <Dialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
               <DialogTrigger asChild>
@@ -249,209 +286,231 @@ export default function ProductManager() {
             if (!open) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button data-testid="button-add-product" className="hover-elevate active-elevate-2">
+              <Button data-testid="button-add-product">
                 <Plus className="w-4 h-4 mr-2" />
                 {t('products.addProduct')}
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingProduct ? t('products.editProduct') : t('products.addNewProduct')}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingProduct ? t('products.editProduct') : t('products.addNewProduct')}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+
+                {/* ── Photo first ── */}
                 <div>
-                  <Label htmlFor="productCode">{t('products.productCode')}</Label>
-                  <Input
-                    id="productCode"
-                    value={formData.productCode}
-                    onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
-                    placeholder="0010001"
-                    data-testid="input-product-code"
+                  <Label>{t('products.productImage')}</Label>
+                  <ProductPhotoUpload
+                    currentImageUrl={formData.imageUrl}
+                    onImageChange={(url) => setFormData({ ...formData, imageUrl: url })}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="cost">{t('products.productCost')} (฿)</Label>
-                  <Input
-                    id="cost"
-                    type="number"
-                    step="0.01"
-                    value={formData.cost}
-                    onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                    placeholder="0.00"
-                    data-testid="input-product-cost"
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="productCode">{t('products.productCode')}</Label>
+                    <Input
+                      id="productCode"
+                      value={formData.productCode}
+                      onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
+                      placeholder="0010001"
+                      data-testid="input-product-code"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cost">{t('products.productCost')} (฿)</Label>
+                    <Input
+                      id="cost"
+                      type="number"
+                      step="0.01"
+                      value={formData.cost}
+                      onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                      placeholder="0.00"
+                      data-testid="input-product-cost"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="name">{t('products.productName')} *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  data-testid="input-product-name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">{t('products.productDescription')}</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  data-testid="input-product-description"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="price">{t('products.productPrice')} (฿) *</Label>
+                  <Label htmlFor="name">{t('products.productName')} *</Label>
                   <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    data-testid="input-product-price"
+                    data-testid="input-product-name"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="category">{t('products.productCategory')} *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger id="category" data-testid="select-product-category">
-                      <SelectValue placeholder={t('products.selectCategory')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORY_VALUES.map((catValue) => (
-                        <SelectItem key={catValue} value={catValue}>
-                          {t(`menu.categories.${catValue}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label>{t('products.productImage')}</Label>
-                <ProductPhotoUpload
-                  currentImageUrl={formData.imageUrl}
-                  onImageChange={(url) => setFormData({ ...formData, imageUrl: url })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="badge">{t('products.promotionalBadge')}</Label>
-                  <Select
-                    value={formData.badge || "none"}
-                    onValueChange={(value) => setFormData({ ...formData, badge: value === "none" ? "" : value })}
-                  >
-                    <SelectTrigger id="badge" data-testid="select-product-badge">
-                      <SelectValue placeholder={t('products.none')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t('products.none')}</SelectItem>
-                      {BADGE_CONFIG.map((badge) => (
-                        <SelectItem key={badge.value} value={badge.value}>
-                          {t(`menu.badges.${badge.value}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="sortOrder">{t('products.sortOrder')}</Label>
-                  <Input
-                    id="sortOrder"
-                    type="number"
-                    value={formData.sortOrder}
-                    onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                    data-testid="input-product-sort"
+                  <Label htmlFor="description">{t('products.productDescription')}</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    data-testid="input-product-description"
                   />
                 </div>
-              </div>
-              <div className="flex gap-4 flex-wrap">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                    className="w-4 h-4"
-                    data-testid="checkbox-product-featured"
-                  />
-                  <span className="text-sm">{t('products.featured')}</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.promoFocus}
-                    onChange={(e) => setFormData({ ...formData, promoFocus: e.target.checked })}
-                    className="w-4 h-4 accent-orange-500"
-                    data-testid="checkbox-product-promo-focus"
-                  />
-                  <span className="text-sm text-orange-600 font-medium">{t('products.promoFocus')}</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.available}
-                    onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
-                    className="w-4 h-4"
-                    data-testid="checkbox-product-available"
-                  />
-                  <span className="text-sm">{t('products.productAvailable')}</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isRedeemable}
-                    onChange={(e) => setFormData({ ...formData, isRedeemable: e.target.checked })}
-                    className="w-4 h-4 accent-green-600"
-                    data-testid="checkbox-product-redeemable"
-                  />
-                  <span className="text-sm text-green-700 dark:text-green-400 font-medium">{t('products.redeemable', 'Redeemable with points')}</span>
-                </label>
-              </div>
-              {formData.isRedeemable && (
-                <div className="space-y-2">
-                  <Label htmlFor="pointCost">{t('products.pointCost', 'Point Cost for Redemption')}</Label>
-                  <Input
-                    id="pointCost"
-                    type="number"
-                    min="1"
-                    value={formData.pointCost}
-                    onChange={(e) => setFormData({ ...formData, pointCost: parseInt(e.target.value) || 100 })}
-                    data-testid="input-product-point-cost"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="price">{t('products.productPrice')} (฿) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      required
+                      data-testid="input-product-price"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="category">{t('products.productCategory')} *</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger id="category" data-testid="select-product-category">
+                        <SelectValue placeholder={t('products.selectCategory')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_VALUES.map((catValue) => (
+                          <SelectItem key={catValue} value={catValue}>
+                            {t(`menu.categories.${catValue}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="badge">{t('products.promotionalBadge')}</Label>
+                    <Select
+                      value={formData.badge || "none"}
+                      onValueChange={(value) => setFormData({ ...formData, badge: value === "none" ? "" : value })}
+                    >
+                      <SelectTrigger id="badge" data-testid="select-product-badge">
+                        <SelectValue placeholder={t('products.none')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t('products.none')}</SelectItem>
+                        {BADGE_CONFIG.map((badge) => (
+                          <SelectItem key={badge.value} value={badge.value}>
+                            {t(`menu.badges.${badge.value}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="sortOrder">{t('products.sortOrder')}</Label>
+                    <Input
+                      id="sortOrder"
+                      type="number"
+                      value={formData.sortOrder}
+                      onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                      data-testid="input-product-sort"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-4 flex-wrap">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({ ...formData, featured: e.target.checked })} className="w-4 h-4" data-testid="checkbox-product-featured" />
+                    <span className="text-sm">{t('products.featured')}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.promoFocus} onChange={(e) => setFormData({ ...formData, promoFocus: e.target.checked })} className="w-4 h-4 accent-orange-500" data-testid="checkbox-product-promo-focus" />
+                    <span className="text-sm text-orange-600 font-medium">{t('products.promoFocus')}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.available} onChange={(e) => setFormData({ ...formData, available: e.target.checked })} className="w-4 h-4" data-testid="checkbox-product-available" />
+                    <span className="text-sm">{t('products.productAvailable')}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.isRedeemable} onChange={(e) => setFormData({ ...formData, isRedeemable: e.target.checked })} className="w-4 h-4 accent-green-600" data-testid="checkbox-product-redeemable" />
+                    <span className="text-sm text-green-700 dark:text-green-400 font-medium">{t('products.redeemable', 'Redeemable with points')}</span>
+                  </label>
+                </div>
+                {formData.isRedeemable && (
+                  <div className="space-y-2">
+                    <Label htmlFor="pointCost">{t('products.pointCost', 'Point Cost for Redemption')}</Label>
+                    <Input
+                      id="pointCost"
+                      type="number"
+                      min="1"
+                      value={formData.pointCost}
+                      onChange={(e) => setFormData({ ...formData, pointCost: parseInt(e.target.value) || 100 })}
+                      data-testid="input-product-point-cost"
+                    />
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel-product">
+                    {t('products.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-save-product">
+                    {editingProduct ? t('products.update') : t('products.create')}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Missing-photo banner */}
+      {missingPhotoCount > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-md border bg-muted/50 text-sm text-muted-foreground">
+          <Camera className="w-4 h-4 shrink-0" />
+          <span>
+            <strong className="text-foreground">{missingPhotoCount} product{missingPhotoCount !== 1 ? "s" : ""}</strong> {missingPhotoCount !== 1 ? "are" : "is"} missing a photo — click the camera icon on any card to add one instantly.
+          </span>
+        </div>
+      )}
+
+      {/* ── Quick-photo dialog ── */}
+      <Dialog open={!!quickPhotoProduct} onOpenChange={(open) => { if (!open) closeQuickPhoto(); }}>
+        <DialogContent className="max-w-sm" data-testid="dialog-quick-photo">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              {quickPhotoSaved ? "Photo saved" : `Add photo — ${quickPhotoProduct?.name}`}
+            </DialogTitle>
+          </DialogHeader>
+
+          {quickPhotoSaved ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <CheckCircle2 className="w-12 h-12 text-green-500" />
+              <p className="text-sm text-muted-foreground text-center">
+                Photo saved for <strong>{quickPhotoProduct?.name}</strong>.
+              </p>
+              {quickPhotoUrl && (
+                <img src={quickPhotoUrl} alt={quickPhotoProduct?.name} className="w-full max-h-48 object-contain rounded-md border" />
+              )}
+              <Button onClick={closeQuickPhoto} className="w-full" data-testid="button-quick-photo-done">Done</Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Choose a photo — it will be saved immediately.
+              </p>
+              <ProductPhotoUpload
+                currentImageUrl={quickPhotoUrl}
+                onImageChange={handleQuickPhotoUploaded}
+              />
+              {quickPhotoMutation.isPending && (
+                <p className="text-sm text-muted-foreground text-center">Saving…</p>
               )}
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  data-testid="button-cancel-product"
-                >
-                  {t('products.cancel')}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  data-testid="button-save-product"
-                >
-                  {editingProduct ? t('products.update') : t('products.create')}
-                </Button>
+                <Button variant="outline" onClick={closeQuickPhoto} data-testid="button-quick-photo-cancel">Cancel</Button>
               </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-    {isLoading ? (
+      {/* ── Product grid ── */}
+      {isLoading ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">{t('products.loadingProducts')}</p>
         </div>
@@ -470,6 +529,7 @@ export default function ProductManager() {
               variant="management"
               onEdit={handleEdit}
               onDelete={(p) => handleDelete(p.id)}
+              onQuickPhoto={openQuickPhoto}
             />
           ))}
         </div>
