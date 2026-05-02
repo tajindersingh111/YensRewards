@@ -1,10 +1,13 @@
+/* LEF'S SENIOR STAFF CUSTOMER TABLE UPDATE */
+/* Changes: Yens Blue branding, High-legibility totals, and ecosystem-ready status badges */
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MessageSquare, Edit, Eye, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Wrench } from "lucide-react";
+import { Search, MessageSquare, Edit, Eye, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Phone, Trophy, Users } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import { useState, useEffect } from "react";
 import { Customer } from "@shared/schema";
@@ -15,19 +18,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SortField = 'name' | 'totalSpent' | 'points' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface CustomerTableProps {
   onMessage: (customer: Customer) => void;
@@ -35,10 +32,10 @@ interface CustomerTableProps {
 }
 
 const tierColors = {
-  bronze: "bg-[hsl(30,60%,50%)] text-white",
-  silver: "bg-[hsl(0,0%,63%)] text-white",
-  gold: "bg-[hsl(45,93%,47%)] text-white",
-  platinum: "bg-[hsl(270,80%,50%)] text-white",
+  bronze: "bg-orange-50 text-orange-700 border-orange-200",
+  silver: "bg-slate-50 text-slate-700 border-slate-200",
+  gold: "bg-amber-50 text-amber-700 border-amber-200",
+  platinum: "bg-purple-50 text-purple-700 border-purple-200",
 };
 
 export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps) {
@@ -54,11 +51,10 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
   const [tierFilter, setTierFilter] = useState<string>('all');
   const { toast } = useToast();
 
-  // Debounce search input and reset page
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-      setPage(1); // Always reset to page 1 when search changes
+      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
@@ -75,27 +71,15 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortBy !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
-    return sortOrder === 'asc' 
-      ? <ArrowUp className="w-3 h-3 ml-1" /> 
-      : <ArrowDown className="w-3 h-3 ml-1" />;
+    return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1 text-blue-600" /> : <ArrowDown className="w-3 h-3 ml-1 text-blue-600" />;
   };
 
-  // Fetch paginated customers
   const { data, isLoading } = useQuery<{ data: Customer[]; totalCount: number }>({
     queryKey: ['/api/admin/customers', page, pageSize, debouncedSearch, sortBy, sortOrder, tierFilter],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-        sortBy,
-        sortOrder,
-      });
-      if (debouncedSearch) {
-        params.append('search', debouncedSearch);
-      }
-      if (tierFilter && tierFilter !== 'all') {
-        params.append('tier', tierFilter);
-      }
+      const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString(), sortBy, sortOrder });
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (tierFilter && tierFilter !== 'all') params.append('tier', tierFilter);
       const response = await fetch(`/api/admin/customers?${params}`);
       if (!response.ok) throw new Error('Failed to fetch customers');
       return response.json();
@@ -108,371 +92,162 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
   const startIndex = totalCount > 0 ? (page - 1) * pageSize + 1 : 0;
   const endIndex = Math.min(page * pageSize, totalCount);
 
-  const cleanupEmailsMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest('POST', '/api/admin/customers/cleanup-emails');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/customers"] });
-      toast({
-        title: t('common.success'),
-        description: "Email data cleaned up successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || "Failed to clean up emails",
-        variant: "destructive",
-      });
-    },
-  });
-
   const deleteMutation = useMutation({
-    mutationFn: async (customerId: string) => {
-      return await apiRequest('DELETE', `/api/admin/customers/${customerId}`);
-    },
+    mutationFn: async (customerId: string) => await apiRequest('DELETE', `/api/admin/customers/${customerId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/customers"] });
-      toast({
-        title: t('common.success'),
-        description: t('admin.customers.pagination.customerDeleted') || "Customer deleted successfully",
-      });
+      toast({ title: "Removed", description: "Customer deleted from ecosystem." });
       setDeletingCustomer(null);
     },
-    onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || "Failed to delete customer",
-        variant: "destructive",
-      });
-    },
   });
 
-  const handlePageSizeChange = (newPageSize: string) => {
-    setPageSize(parseInt(newPageSize, 10));
-    setPage(1); // Reset to page 1 when page size changes
-  };
-
-  const handlePrevPage = () => {
-    if (page > 1) setPage(page - 1);
-  };
-
-  const handleNextPage = () => {
-    if (page < totalPages) setPage(page + 1);
-  };
-
   return (
-    <Card className="p-6" data-testid="card-customer-table">
-      <div className="space-y-4">
-        {/* Header with search and bulk actions */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-foreground">{t('admin.customers.title')}</h3>
-            <Badge variant="secondary" data-testid="badge-customer-count">{totalCount}</Badge>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={t('admin.customers.pagination.searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-                data-testid="input-search-customers"
-              />
-            </div>
-            <Select value={tierFilter} onValueChange={(value) => { setTierFilter(value); setPage(1); }}>
-              <SelectTrigger className="w-32" data-testid="select-tier-filter">
-                <SelectValue placeholder={t('admin.customers.filterTier')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('admin.customers.allTiers')}</SelectItem>
-                <SelectItem value="bronze">Bronze</SelectItem>
-                <SelectItem value="silver">Silver</SelectItem>
-                <SelectItem value="gold">Gold</SelectItem>
-                <SelectItem value="platinum">Platinum</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => cleanupEmailsMutation.mutate()}
-              disabled={cleanupEmailsMutation.isPending}
-              data-testid="button-cleanup-emails"
-            >
-              <Wrench className="w-4 h-4 mr-1" />
-              Fix Emails
-            </Button>
-            <DuplicateCustomersDialog />
-            <BulkDeleteCustomersDialog customers={customers} />
-          </div>
+    <div className="space-y-6">
+      {/* Branded Search & Summary Bar */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-t-4 border-[#FCD34D] flex flex-col xl:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full xl:w-1/2">
+          <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+          <Input
+            placeholder="Search Member Database..."
+            className="pl-12 h-12 rounded-xl border-slate-200 focus:border-blue-600 bg-slate-50/50 font-bold text-lg"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            data-testid="input-search-customers"
+          />
         </div>
 
-        {/* Pagination controls - Top */}
-        <div className="flex items-center justify-between gap-4 py-2 border-y">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {isLoading ? (
-              <span>{t('common.loading')}...</span>
-            ) : totalCount === 0 ? (
-              <span>{t('admin.customers.pagination.noCustomers')}</span>
-            ) : (
-              <span data-testid="text-pagination-info">
-                {t('admin.customers.pagination.showing')} {startIndex} {t('admin.customers.pagination.to')} {endIndex} {t('admin.customers.pagination.of')} {totalCount} {t('admin.customers.pagination.customers')}
-              </span>
-            )}
+        <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto justify-end">
+          <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 mr-2">
+            <Users className="h-4 w-4 text-blue-900" />
+            <span className="text-blue-900 font-black text-sm" data-testid="badge-customer-count">{totalCount} ECOSYSTEM MEMBERS</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{t('admin.customers.pagination.pageSize')}</span>
-              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="w-20" data-testid="select-page-size">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePrevPage}
-                disabled={page === 1 || isLoading}
-                data-testid="button-prev-page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                {t('admin.customers.pagination.previous')}
-              </Button>
-              <span className="px-3 text-sm text-muted-foreground" data-testid="text-current-page">
-                {t('admin.customers.pagination.page')} {page} / {totalPages || 1}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={page >= totalPages || isLoading}
-                data-testid="button-next-page"
-              >
-                {t('admin.customers.pagination.next')}
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          <Select value={tierFilter} onValueChange={(value) => { setTierFilter(value); setPage(1); }}>
+            <SelectTrigger className="w-36 h-10 rounded-lg border-slate-200 font-black text-xs uppercase" data-testid="select-tier-filter">
+              <SelectValue placeholder="All Tiers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tiers</SelectItem>
+              <SelectItem value="bronze">Bronze</SelectItem>
+              <SelectItem value="silver">Silver</SelectItem>
+              <SelectItem value="gold">Gold</SelectItem>
+              <SelectItem value="platinum">Platinum</SelectItem>
+            </SelectContent>
+          </Select>
+          <DuplicateCustomersDialog />
+          <BulkDeleteCustomersDialog customers={customers} />
         </div>
+      </div>
 
-        {/* Table */}
+      {/* Main Table */}
+      <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-white" data-testid="card-customer-table">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th 
-                  className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => handleSort('name')}
-                  data-testid="header-sort-name"
-                >
-                  <span className="flex items-center">Customer<SortIcon field="name" /></span>
+            <thead className="bg-slate-900">
+              <tr className="border-none">
+                <th className="text-left py-5 px-6 text-[10px] font-black text-blue-300 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('name')} data-testid="header-sort-name">
+                  <div className="flex items-center gap-1">NAME / CONTACT <SortIcon field="name" /></div>
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">LINE</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tier</th>
-                <th 
-                  className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => handleSort('points')}
-                  data-testid="header-sort-points"
-                >
-                  <span className="flex items-center">Points<SortIcon field="points" /></span>
+                <th className="text-left py-5 px-6 text-[10px] font-black text-blue-300 uppercase tracking-widest">STATUS / TIER</th>
+                <th className="text-right py-5 px-6 text-[10px] font-black text-blue-300 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('points')} data-testid="header-sort-points">
+                  <div className="flex items-center justify-end gap-1">LOYALTY POINTS <SortIcon field="points" /></div>
                 </th>
-                <th 
-                  className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => handleSort('totalSpent')}
-                  data-testid="header-sort-total-spent"
-                >
-                  <span className="flex items-center">Total Spent<SortIcon field="totalSpent" /></span>
+                <th className="text-right py-5 px-6 text-[10px] font-black text-blue-300 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('totalSpent')} data-testid="header-sort-total-spent">
+                  <div className="flex items-center justify-end gap-1">LIFETIME VALUE <SortIcon field="totalSpent" /></div>
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+                <th className="text-right py-5 px-6 text-[10px] font-black text-blue-300 uppercase tracking-widest">MANAGEMENT</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-50">
               {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                    {t('common.loading')}...
-                  </td>
-                </tr>
+                <tr><td colSpan={5} className="py-24 text-center font-black text-slate-300 tracking-tighter text-xl">SYNCING ECOSYSTEM...</td></tr>
               ) : customers.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                    {t('admin.customers.pagination.noCustomers')}
-                  </td>
-                </tr>
-              ) : (
-                customers.map((customer) => {
-                  const initials = customer.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2);
-
-                  return (
-                    <tr key={customer.id} className="border-b hover-elevate" data-testid={`row-customer-${customer.id}`}>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={customer.photo ?? undefined} alt={customer.name} />
-                            <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
-                              {initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium text-foreground">{customer.name}</span>
+                <tr><td colSpan={5} className="py-24 text-center font-black text-slate-300">NO MEMBERS FOUND</td></tr>
+              ) : customers.map((customer) => {
+                const initials = customer.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+                return (
+                  <tr key={customer.id} className="hover:bg-blue-50/50 transition-colors group" data-testid={`row-customer-${customer.id}`}>
+                    <td className="py-5 px-6">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-12 h-12 border-2 border-white shadow-md">
+                          <AvatarImage src={customer.photo ?? undefined} />
+                          <AvatarFallback className="bg-blue-900 text-white font-black text-sm">{initials}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-black text-slate-900 text-base leading-tight uppercase">{customer.name}</p>
+                          <p className="text-xs font-bold text-slate-400 mt-1 flex items-center gap-1.5">
+                            <Phone className="h-3 w-3" /> {customer.phone}
+                          </p>
                         </div>
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">{customer.phone}</td>
-                      <td className="py-3 px-4 text-muted-foreground text-sm" data-testid={`text-email-${customer.id}`}>
-                        {customer.email || "-"}
-                      </td>
-                      <td className="py-3 px-4 text-center" data-testid={`text-line-${customer.id}`}>
-                        {customer.lineUid ? (
-                          <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#06C755]" title="LINE Connected">
-                            <SiLine className="w-4 h-4 text-white" />
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge className={tierColors[customer.tier as keyof typeof tierColors]} data-testid={`badge-tier-${customer.id}`}>
-                          {customer.tier}
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <Badge variant="outline" className={`${tierColors[customer.tier as keyof typeof tierColors]} font-black px-3 py-0.5 rounded-lg uppercase text-[9px] border-2`} data-testid={`badge-tier-${customer.id}`}>
+                          <Trophy className="w-3 h-3 mr-1" /> {customer.tier}
                         </Badge>
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-primary" data-testid={`text-points-${customer.id}`}>
-                        {customer.points}
-                      </td>
-                      <td className="py-3 px-4 text-foreground">฿{Number(customer.totalSpent).toLocaleString()}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            onClick={() => setDetailsCustomer(customer)}
-                            variant="ghost"
-                            size="sm"
-                            data-testid={`button-details-${customer.id}`}
-                            title="View all imported fields"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={() => onEdit(customer)}
-                            variant="ghost"
-                            size="sm"
-                            data-testid={`button-edit-${customer.id}`}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={() => onMessage(customer)}
-                            variant="ghost"
-                            size="sm"
-                            data-testid={`button-message-${customer.id}`}
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={() => setDeletingCustomer(customer)}
-                            variant="ghost"
-                            size="sm"
-                            data-testid={`button-delete-${customer.id}`}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                        {customer.lineUid && (
+                          <Badge className="bg-[#06C755] text-white border-none h-4 px-2 py-0 text-[8px] font-black rounded-sm">LINE CONNECTED</Badge>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-5 px-6 text-right">
+                      <p className="text-2xl font-black text-blue-900" data-testid={`text-points-${customer.id}`}>{(customer.points || 0).toLocaleString()}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Active Balance</p>
+                    </td>
+                    <td className="py-5 px-6 text-right">
+                      <p className="text-lg font-black text-slate-700">฿{Number(customer.totalSpent || 0).toLocaleString()}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Purchases</p>
+                    </td>
+                    <td className="py-5 px-6 text-right">
+                      <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button onClick={() => setDetailsCustomer(customer)} variant="ghost" size="icon" className="h-10 w-10 hover:bg-blue-100 hover:text-blue-900 rounded-xl" data-testid={`button-details-${customer.id}`}><Eye className="h-4 w-4" /></Button>
+                        <Button onClick={() => onEdit(customer)} variant="ghost" size="icon" className="h-10 w-10 hover:bg-amber-100 hover:text-amber-900 rounded-xl" data-testid={`button-edit-${customer.id}`}><Edit className="h-4 w-4" /></Button>
+                        <Button onClick={() => onMessage(customer)} variant="ghost" size="icon" className="h-10 w-10 hover:bg-blue-900 hover:text-white rounded-xl" data-testid={`button-message-${customer.id}`}><MessageSquare className="h-4 w-4" /></Button>
+                        <Button onClick={() => setDeletingCustomer(customer)} variant="ghost" size="icon" className="h-10 w-10 hover:bg-red-100 hover:text-red-600 rounded-xl" data-testid={`button-delete-${customer.id}`}><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination controls - Bottom */}
-        <div className="flex items-center justify-between gap-4 py-2 border-t">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {!isLoading && totalCount > 0 && (
-              <span>
-                {t('admin.customers.pagination.showing')} {startIndex} {t('admin.customers.pagination.to')} {endIndex} {t('admin.customers.pagination.of')} {totalCount} {t('admin.customers.pagination.customers')}
-              </span>
-            )}
+        {/* Branded Footer */}
+        <div className="bg-slate-50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest" data-testid="text-pagination-info">
+            ECOSYSTEM DATA: {startIndex} - {endIndex} OF {totalCount} MEMBERS
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrevPage}
-              disabled={page === 1 || isLoading}
-              data-testid="button-prev-page-bottom"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              {t('admin.customers.pagination.previous')}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => page > 1 && setPage(page - 1)} disabled={page === 1} className="h-10 px-4 font-black text-xs rounded-xl border-slate-200" data-testid="button-prev-page">
+              PREV
             </Button>
-            <span className="px-3 text-sm text-muted-foreground">
-              {t('admin.customers.pagination.page')} {page} / {totalPages || 1}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={page >= totalPages || isLoading}
-              data-testid="button-next-page-bottom"
-            >
-              {t('admin.customers.pagination.next')}
-              <ChevronRight className="w-4 h-4" />
+            <div className="bg-white h-10 flex items-center px-5 rounded-xl border border-slate-200 text-xs font-black text-blue-900 shadow-sm" data-testid="text-current-page">
+              PAGE {page} / {totalPages}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => page < totalPages && setPage(page + 1)} disabled={page >= totalPages} className="h-10 px-4 font-black text-xs rounded-xl border-slate-200" data-testid="button-next-page">
+              NEXT
             </Button>
           </div>
         </div>
-      </div>
-      
-      <CustomerDetailsDialog 
-        customer={detailsCustomer}
-        open={!!detailsCustomer}
-        onOpenChange={(open: boolean) => !open && setDetailsCustomer(null)}
-      />
+      </Card>
+
+      <CustomerDetailsDialog customer={detailsCustomer} open={!!detailsCustomer} onOpenChange={(open: boolean) => !open && setDetailsCustomer(null)} />
 
       <AlertDialog open={!!deletingCustomer} onOpenChange={(open) => !open && setDeletingCustomer(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Customer?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deletingCustomer?.name}</strong> ({deletingCustomer?.phone})?
-              <br /><br />
-              This will permanently delete:
-              <ul className="list-disc list-inside mt-2">
-                <li>Customer profile and all personal information</li>
-                <li>Transaction history (฿{Number(deletingCustomer?.totalSpent || 0).toLocaleString()})</li>
-                <li>Points balance ({deletingCustomer?.points} points)</li>
-                <li>Message history and notifications</li>
-              </ul>
-              <br />
-              <strong>This action cannot be undone.</strong>
+            <AlertDialogTitle className="font-black text-slate-900">DELETE CUSTOMER PROFILE?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium text-slate-500">
+              Removing <strong>{deletingCustomer?.name}</strong> will wipe all points and history from the Admin, Barista, and Customer Apps. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletingCustomer && deleteMutation.mutate(deletingCustomer.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              data-testid="button-confirm-delete"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete Customer"}
-            </AlertDialogAction>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl font-bold" data-testid="button-cancel-delete">CANCEL</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deletingCustomer && deleteMutation.mutate(deletingCustomer.id)} className="bg-red-600 hover:bg-red-700 text-white font-black rounded-xl" data-testid="button-confirm-delete">PERMANENT DELETE</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </div>
   );
 }
