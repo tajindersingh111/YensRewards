@@ -1,5 +1,5 @@
-/* LEF'S BRANDED SALES TRACKER UPDATE */
-/* Changes: Softened Yens Yellow accents, improved contrast and professional spacing */
+/* LEF'S PREMIER YENS BRANDED UPDATE */
+/* Changes: Yens Blue theme, Optimized Monday-Start Weekly Log, and Larger Input Fields for Staff */
 
 import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -40,7 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Loader2, ShieldCheck, Wallet, PlusCircle } from "lucide-react";
+import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Loader2, ShieldCheck, Activity, Wallet, CalendarCheck } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 import { format, parse } from "date-fns";
@@ -54,11 +54,20 @@ const formatDateDDMMYY = (dateStr: string) => {
   }
 };
 
+interface SalesFormData {
+  date: string;
+  orderChannel: string;
+  netSales: string;
+  otherSales: string;
+  otherSalesNote: string;
+  grabFee: string;
+}
+
 export default function SalesTrackerDashboard() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SalesFormData>({
     date: new Date().toISOString().split('T')[0],
     orderChannel: "",
     netSales: "",
@@ -66,7 +75,7 @@ export default function SalesTrackerDashboard() {
     otherSalesNote: "",
     grabFee: "0",
   });
-  
+
   const [editingSale, setEditingSale] = useState<DailySales | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
@@ -78,6 +87,22 @@ export default function SalesTrackerDashboard() {
   const [reportEndDate, setReportEndDate] = useState(today);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [showValidation, setShowValidation] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleValidate = async () => {
+    setIsValidating(true);
+    try {
+      const res = await fetch('/api/admin/sales/validate-totals', { credentials: 'include' });
+      const data = await res.json();
+      setValidationResult(data);
+      setShowValidation(true);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const { data: metrics } = useQuery<any>({ queryKey: ['/api/admin/sales-tracker-metrics'] });
   const { data: allSales = [] } = useQuery<DailySales[]>({ queryKey: ['/api/admin/sales-overview'] });
   const { data: sites = [] } = useQuery<Site[]>({ queryKey: ['/api/admin/sites'] });
@@ -87,20 +112,30 @@ export default function SalesTrackerDashboard() {
   }, [sites]);
 
   const recentSales = useMemo(() => {
-    return [...allSales].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 20);
+    const now = new Date();
+    const currentDayUTC = now.getUTCDay();
+    let daysToSubtract = currentDayUTC === 0 ? 6 : currentDayUTC - 1;
+    const mondayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysToSubtract, 0, 0, 0, 0));
+    const startOfWeek = mondayUTC.toISOString().split('T')[0];
+    return allSales
+      .filter(sale => sale.date >= startOfWeek)
+      .sort((a, b) => b.date.localeCompare(a.date));
   }, [allSales]);
 
   const addSaleMutation = useMutation({
-    mutationFn: async (data: any) => await apiRequest('POST', '/api/admin/sales', {
-      ...data, 
-      netSales: (parseFloat(data.netSales) || 0).toFixed(2),
-      grabFee: (parseFloat(data.grabFee) || 0).toFixed(2),
-      totalSales: ((parseFloat(data.netSales) || 0) + (parseFloat(data.otherSales) || 0)).toFixed(2),
-    }),
+    mutationFn: async (data: SalesFormData) => {
+      const net = parseFloat(data.netSales) || 0;
+      const other = parseFloat(data.otherSales) || 0;
+      return await apiRequest('POST', '/api/admin/sales', {
+        ...data, netSales: net.toFixed(2), otherSales: other.toFixed(2),
+        grabFee: parseFloat(data.grabFee || "0").toFixed(2),
+        totalSales: (net + other).toFixed(2),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
-      toast({ title: "Sale Logged", description: "Yens Thai records updated." });
+      toast({ title: "Sale Logged", description: "Yens Thai record updated successfully." });
       setFormData({ date: today, orderChannel: "", netSales: "", otherSales: "0", otherSalesNote: "", grabFee: "0" });
     },
   });
@@ -110,140 +145,214 @@ export default function SalesTrackerDashboard() {
       RIVER: "bg-blue-500", SHOP: "bg-purple-500", SHOPZY: "bg-amber-500",
       GRAB: "bg-emerald-500", LINEMAN: "bg-green-600", FOODPANDA: "bg-pink-500",
     };
-    return colors[channel] || "bg-slate-400";
+    return colors[channel] || "bg-slate-500";
+  };
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      await fetch(`/api/admin/sales/report?startDate=${reportStartDate}&endDate=${reportEndDate}`, { credentials: 'include' });
+      toast({ title: "Report Generated" });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleEditSale = (sale: DailySales) => {
+    setEditingSale(sale);
+    setEditFormData({
+      date: sale.date, orderChannel: sale.orderChannel, netSales: sale.netSales,
+      otherSales: sale.otherSales || "0", otherSalesNote: (sale as any).otherSalesNote || "", grabFee: sale.grabFee || "0",
+    });
+    setIsEditDialogOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-12">
-      {/* Softened Header - Only a top border of Yens Yellow */}
-      <div className="bg-white border-t-8 border-[#FCD34D] shadow-sm mb-8">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="min-h-screen pb-12" style={{ backgroundColor: '#FCD34D' }}>
+      <div className="bg-[#FCD34D] h-48 w-full absolute top-0 z-0 shadow-sm" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <img src={logoUrl} alt="Yens Logo" className="w-16 h-16 rounded-2xl shadow-sm border border-slate-100" />
+            <div className="p-1 bg-white rounded-2xl shadow-md border border-slate-100">
+              <img src={logoUrl} alt="Yens Logo" className="w-16 h-16 rounded-xl" />
+            </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">SALES TRACKER</h1>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-[#FCD34D] text-amber-900 hover:bg-[#FCD34D] border-none font-bold text-[10px]">OFFICIAL ADMIN</Badge>
-                <span className="text-slate-400 text-xs font-medium">Nakhon Sawan Terminal</span>
-              </div>
+              <h1 className="text-3xl font-black text-blue-900 tracking-tight uppercase">Yen's Sales Tracker</h1>
+              <p className="text-blue-800 font-medium text-sm">Official Admin Hub for Yens Thai Nakhon Sawan</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-             <Popover>
+          <div className="flex items-center gap-2 bg-white/50 p-1.5 rounded-2xl backdrop-blur-sm shadow-inner">
+            <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" className="text-slate-600 font-bold text-xs">
-                  <CalendarIcon className="h-3.5 w-3.5 mr-2 text-amber-500" />
-                  {reportStartDate === reportEndDate ? formatDateDDMMYY(reportStartDate) : 'Date Range'}
+                <Button variant="ghost" className="bg-white border-none shadow-sm font-bold text-blue-900 rounded-xl">
+                  <CalendarIcon className="h-4 w-4 mr-2 text-amber-500" />
+                  {reportStartDate === reportEndDate ? formatDateDDMMYY(reportStartDate) : `${formatDateDDMMYY(reportStartDate)} - ${formatDateDDMMYY(reportEndDate)}`}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64"><Input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} /></PopoverContent>
+              <PopoverContent className="w-80" align="end">
+                <div className="grid grid-cols-2 gap-2 p-2">
+                  <Input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} />
+                  <Input type="date" value={reportEndDate} onChange={e => setReportEndDate(e.target.value)} />
+                </div>
+              </PopoverContent>
             </Popover>
-            <Button size="sm" className="bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-lg">
-              <FileText className="h-3.5 w-3.5 mr-2" /> REPORT
+            <Button onClick={handleGenerateReport} disabled={isGeneratingReport} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95">
+              {isGeneratingReport ? <Loader2 className="animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              Generate Report
             </Button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6">
-        {/* KPI Row - Minimalist Design */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {/* KPI Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "This Week", val: metrics?.currentWeekSales, color: "border-blue-200" },
-            { label: "This Month", val: metrics?.currentMonthSales, color: "border-green-200" },
-            { label: "Daily Avg", val: metrics?.weeklyDailyAvg, color: "border-amber-200" },
-            { label: "Year to Date", val: metrics?.ytdSales, color: "border-slate-200", dark: true },
+            { label: "Current Week Total", val: metrics?.currentWeekSales, icon: Activity, detail: `${metrics?.currentWeekTransactions ?? 0} Orders`, test: 'weekly-sales' },
+            { label: "Current Month Total", val: metrics?.currentMonthSales, icon: CalendarCheck, detail: `${new Date().toLocaleDateString('en-US', { month: 'short' })} (Day ${metrics?.daysElapsedMonth ?? 0}/${metrics?.daysInMonth ?? 0})`, test: 'monthly-sales' },
+            { label: "Daily Revenue Pace", val: metrics?.weeklyDailyAvg, icon: TrendingUp, detail: "Average Per Day", test: 'daily-avg' },
+            { label: "Year to Date Running Total", val: metrics?.ytdSales, icon: Wallet, detail: `฿${((metrics?.projectedAnnual ?? 0) / 1000000).toFixed(2)}M Projection`, test: 'ytd-sales' },
           ].map((kpi, i) => (
-            <Card key={i} className={`border-none shadow-sm ${kpi.dark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}>
-              <CardContent className="p-5">
-                <p className={`text-[10px] font-bold uppercase tracking-widest ${kpi.dark ? 'text-slate-400' : 'text-slate-400'}`}>{kpi.label}</p>
-                <h3 className="text-2xl font-black mt-1">฿{(kpi.val ?? 0).toLocaleString()}</h3>
+            <Card key={i} className="border-none shadow-lg bg-blue-900 text-white rounded-2xl overflow-hidden group hover:scale-[1.02] transition-transform relative">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <kpi.icon className="w-16 h-16" />
+              </div>
+              <CardContent className="p-6 relative z-10">
+                <p className="text-[10px] uppercase font-bold text-blue-300 tracking-widest">{kpi.label}</p>
+                <h3 className="text-3xl font-black mt-1" data-testid={`text-${kpi.test}`}>
+                  ฿{(kpi.val ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </h3>
+                <p className="text-[11px] font-bold text-blue-200/90 mt-2">{kpi.detail}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Form Side */}
-          <Card className="lg:col-span-2 border-none shadow-sm rounded-2xl bg-white border border-slate-100">
-            <CardHeader className="border-b border-slate-50 pb-4">
-              <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                <PlusCircle className="text-[#FCD34D] h-5 w-5" /> New Entry
+          {/* Add Sale Form */}
+          <Card className="lg:col-span-2 border-none shadow-xl rounded-2xl overflow-hidden bg-white">
+            <CardHeader className="bg-slate-900 text-white pb-6 pt-6 px-6">
+              <CardTitle className="text-xl font-bold flex items-center gap-2">
+                <Plus className="text-amber-400 h-5 w-5" /> New Daily Log Entry
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <form onSubmit={(e) => { e.preventDefault(); addSaleMutation.mutate(formData); }} className="space-y-4">
+              <form onSubmit={e => { e.preventDefault(); addSaleMutation.mutate(formData); }} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase">Date</Label>
-                    <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-slate-50 border-none font-medium" />
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase text-slate-500">Date</Label>
+                    <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="h-11 rounded-lg border-slate-200" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase">Channel</Label>
-                    <Select value={formData.orderChannel} onValueChange={v => setFormData({...formData, orderChannel: v})}>
-                      <SelectTrigger className="bg-slate-50 border-none font-medium"><SelectValue placeholder="Channel" /></SelectTrigger>
-                      <SelectContent>{channels.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase text-slate-500">Channel *</Label>
+                    <Select value={formData.orderChannel} onValueChange={v => setFormData({ ...formData, orderChannel: v })}>
+                      <SelectTrigger className="h-11 rounded-lg border-slate-200 shadow-inner"><SelectValue placeholder="Where?" /></SelectTrigger>
+                      <SelectContent>
+                        {channels.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100/50 grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black text-amber-600 uppercase">Gross Sales</Label>
-                    <Input type="number" value={formData.netSales} onChange={e => setFormData({...formData, netSales: e.target.value})} className="bg-white border-amber-200 font-bold" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black text-red-400 uppercase">App Fees</Label>
-                    <Input type="number" value={formData.grabFee} onChange={e => setFormData({...formData, grabFee: e.target.value})} className="bg-white border-red-100 text-red-500 font-bold" placeholder="0" />
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-black uppercase text-blue-900">Gross Sales (฿)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-3.5 text-slate-400 font-bold text-base">฿</span>
+                    <Input type="number" step="0.01" value={formData.netSales} onChange={e => setFormData({ ...formData, netSales: e.target.value })} className="h-12 pl-8 rounded-lg border-blue-200 bg-blue-50/40 text-blue-900 font-bold text-lg" placeholder="0.00" />
                   </div>
                 </div>
 
-                <Button type="submit" disabled={addSaleMutation.isPending} className="w-full h-12 bg-[#FCD34D] hover:bg-[#fbd035] text-amber-950 font-black text-sm rounded-xl shadow-sm transition-all active:scale-[0.98]">
-                  {addSaleMutation.isPending ? <Loader2 className="animate-spin" /> : "RECORD TRANSACTION"}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase text-slate-500">App / Grab Fee (฿)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3.5 text-slate-400 font-bold text-sm">฿</span>
+                      <Input type="number" step="0.01" value={formData.grabFee} onChange={e => setFormData({ ...formData, grabFee: e.target.value })} className="h-11 pl-7 rounded-lg border-red-200 bg-red-50/40 text-red-600" placeholder="0" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase text-slate-500">Other In / Tips (฿)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3.5 text-slate-400 font-bold text-sm">฿</span>
+                      <Input type="number" step="0.01" value={formData.otherSales} onChange={e => setFormData({ ...formData, otherSales: e.target.value })} className="h-11 pl-7 rounded-lg w-full" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold uppercase text-slate-500">Ref / Note (e.g. Delivery, Catering)</Label>
+                  <Input type="text" value={formData.otherSalesNote} onChange={e => setFormData({ ...formData, otherSalesNote: e.target.value })} className="h-11 rounded-lg" placeholder="Optional reference" />
+                </div>
+
+                <Button type="submit" disabled={addSaleMutation.isPending} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-xl shadow-lg transition-all active:scale-95">
+                  {addSaleMutation.isPending ? <Loader2 className="animate-spin" /> : "COMPLETE LOG"}
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          {/* List Side */}
-          <Card className="lg:col-span-3 border-none shadow-sm rounded-2xl bg-white overflow-hidden">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30">
+          {/* Weekly Log */}
+          <Card className="lg:col-span-3 border-none shadow-xl rounded-2xl overflow-hidden bg-white">
+            <CardHeader className="border-b border-slate-100 py-6 px-6 bg-slate-50/50">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold text-slate-800">Weekly Log</CardTitle>
-                <Button variant="outline" size="sm" className="text-[10px] font-bold h-7 border-slate-200">
-                  <FileSpreadsheet className="h-3 w-3 mr-1" /> EXPORT
-                </Button>
+                <CardTitle className="text-xl font-bold text-blue-900 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-amber-500" /> Weekly Activity Log
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={handleValidate} disabled={isValidating} className="font-bold border-slate-200 rounded-lg">
+                    <ShieldCheck className="w-4 h-4 mr-2 text-green-600" /> {isValidating ? "Checking..." : "Validate"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} className="font-bold border-slate-200 rounded-lg">
+                    <Upload className="w-4 h-4 mr-2 text-blue-600" /> Bulk Import
+                  </Button>
+                  <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" />
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="max-h-[440px] overflow-y-auto">
-                <table className="w-full">
-                  <tbody className="divide-y divide-slate-50">
-                    {recentSales.map((sale) => (
-                      <tr key={sale.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-1.5 h-1.5 rounded-full ${getChannelColor(sale.orderChannel)}`} />
-                            <div>
-                              <p className="font-bold text-slate-800 text-xs">{sale.orderChannel}</p>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase">{formatDateDDMMYY(sale.date)}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <p className="font-black text-slate-800 text-sm">฿{parseFloat(sale.totalSales).toLocaleString()}</p>
-                          {parseFloat(sale.grabFee) > 0 && <p className="text-[9px] font-bold text-red-400">-฿{sale.grabFee} fee</p>}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                           <Button size="icon" variant="ghost" onClick={() => { setDeletingSaleId(sale.id); setIsDeleteDialogOpen(true); }} className="h-7 w-7 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500">
-                             <Trash2 className="h-3.5 w-3.5" />
-                           </Button>
-                        </td>
+              <div className="max-h-[560px] overflow-y-auto">
+                {recentSales.length === 0 ? (
+                  <div className="py-20 text-center text-slate-400 font-bold">No sales logged this week</div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="bg-slate-50 sticky top-0 z-10">
+                      <tr>
+                        <th className="text-left px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date / Channel</th>
+                        <th className="text-right px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                        <th className="text-right px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {recentSales.map((sale) => (
+                        <tr key={sale.id} className="hover:bg-blue-50/40 transition-colors group">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full ${getChannelColor(sale.orderChannel)}`} />
+                              <div>
+                                <p className="font-bold text-slate-800 text-sm">{sale.orderChannel}</p>
+                                <p className="text-[11px] font-bold text-slate-400 uppercase">{formatDateDDMMYY(sale.date)}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <p className="font-black text-blue-900 text-base">฿{parseFloat(sale.totalSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            {parseFloat(sale.grabFee) > 0 && <p className="text-[10px] font-bold text-red-500">-฿{sale.grabFee} App Fee</p>}
+                          </td>
+                          <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex justify-end gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => handleEditSale(sale)} className="h-8 w-8 hover:bg-blue-100 hover:text-blue-700 rounded-lg">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => { setDeletingSaleId(sale.id); setIsDeleteDialogOpen(true); }} className="h-8 w-8 hover:bg-red-100 hover:text-red-700 rounded-lg">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -262,7 +371,9 @@ export default function SalesTrackerDashboard() {
             <AlertDialogAction onClick={() => {
               if (deletingSaleId) apiRequest('DELETE', `/api/admin/sales/${deletingSaleId}`).then(() => {
                 queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
                 setIsDeleteDialogOpen(false);
+                toast({ title: "Entry Removed" });
               });
             }} className="bg-red-600 hover:bg-red-700 text-white font-black rounded-xl border-none">DELETE ENTRY</AlertDialogAction>
           </AlertDialogFooter>
