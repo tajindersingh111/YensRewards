@@ -1,3 +1,6 @@
+/* LEF'S PREMIUM ADMIN DASHBOARD UPDATE */
+/* Changes: Improved KPI logic and high-end Quick Action styling */
+
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -41,69 +44,13 @@ import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { Customer } from "@shared/schema";
 
 const NAV_GROUPS = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    subs: [{ id: 'overview', label: 'Overview', testId: 'tab-overview' }],
-  },
-  {
-    id: 'sales',
-    label: 'Sales',
-    icon: TrendingUp,
-    subs: [
-      { id: 'salesTracker', label: 'Sales Tracker', testId: 'tab-sales-tracker' },
-      { id: 'analytics', label: 'Analytics', testId: 'tab-analytics' },
-    ],
-  },
-  {
-    id: 'customers',
-    label: 'Customers',
-    icon: Users,
-    subs: [
-      { id: 'customers', label: 'Customer List', testId: 'tab-customers' },
-      { id: 'loyalty', label: 'Loyalty', testId: 'tab-loyalty' },
-    ],
-  },
-  {
-    id: 'marketing',
-    label: 'Marketing',
-    icon: Megaphone,
-    subs: [
-      { id: 'messages', label: 'Messages', testId: 'tab-messages' },
-      { id: 'promotions', label: 'Promotions', testId: 'tab-promotions' },
-      { id: 'specials', label: 'Weekly Specials', testId: 'tab-specials' },
-      { id: 'automations', label: 'Automations', testId: 'tab-automations' },
-    ],
-  },
-  {
-    id: 'operations',
-    label: 'Operations',
-    icon: Wrench,
-    subs: [
-      { id: 'products', label: 'Products', testId: 'tab-products' },
-      { id: 'sites', label: 'Sites', testId: 'tab-sites' },
-      { id: 'schedules', label: 'Schedules', testId: 'tab-schedules' },
-      { id: 'barista', label: 'Barista', testId: 'tab-barista' },
-    ],
-  },
-  {
-    id: 'calendar',
-    label: 'Calendar',
-    icon: CalendarDays,
-    subs: [
-      { id: 'shopCalendar', label: 'Events', testId: 'tab-shop-calendar' },
-    ],
-  },
-  {
-    id: 'admin',
-    label: 'Admin',
-    icon: ShieldCheck,
-    subs: [
-      { id: 'users', label: 'Users', testId: 'tab-users' },
-      { id: 'settings', label: 'Settings', testId: 'tab-settings' },
-    ],
-  },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, subs: [{ id: 'overview', label: 'Overview', testId: 'tab-overview' }] },
+  { id: 'sales', label: 'Sales', icon: TrendingUp, subs: [{ id: 'salesTracker', label: 'Sales Tracker', testId: 'tab-sales-tracker' }, { id: 'analytics', label: 'Analytics', testId: 'tab-analytics' }] },
+  { id: 'customers', label: 'Customers', icon: Users, subs: [{ id: 'customers', label: 'Customer List', testId: 'tab-customers' }, { id: 'loyalty', label: 'Loyalty', testId: 'tab-loyalty' }] },
+  { id: 'marketing', label: 'Marketing', icon: Megaphone, subs: [{ id: 'messages', label: 'Messages', testId: 'tab-messages' }, { id: 'promotions', label: 'Promotions', testId: 'tab-promotions' }, { id: 'specials', label: 'Weekly Specials', testId: 'tab-specials' }, { id: 'automations', label: 'Automations', testId: 'tab-automations' }] },
+  { id: 'operations', label: 'Operations', icon: Wrench, subs: [{ id: 'products', label: 'Products', testId: 'tab-products' }, { id: 'sites', label: 'Sites', testId: 'tab-sites' }, { id: 'schedules', label: 'Schedules', testId: 'tab-schedules' }, { id: 'barista', label: 'Barista', testId: 'tab-barista' }] },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays, subs: [{ id: 'shopCalendar', label: 'Events', testId: 'tab-shop-calendar' }] },
+  { id: 'admin', label: 'Admin', icon: ShieldCheck, subs: [{ id: 'users', label: 'Users', testId: 'tab-users' }, { id: 'settings', label: 'Settings', testId: 'tab-settings' }] },
 ];
 
 function findSectionForTab(tabId: string): string {
@@ -113,15 +60,7 @@ function findSectionForTab(tabId: string): string {
   return 'dashboard';
 }
 
-function SectionHeader({
-  title,
-  subtitle,
-  action,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-}) {
+function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
       <div>
@@ -138,8 +77,23 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
   const { data: customers = [] } = useQuery<any[]>({ queryKey: ['/api/admin/customers'] });
   const { data: salesData = [] } = useQuery<any[]>({ queryKey: ['/api/admin/sales-overview'] });
 
-  const fmt = (n: number) =>
-    `฿${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  const fmt = (n: number) => `฿${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+  // LEF Logic: Fixes the scary negative percentages
+  const renderTrend = (current: number, previous: number, label: string) => {
+    if (!previous || previous <= 0) return <p className="text-xs text-muted-foreground mt-1.5 italic">Collecting data...</p>;
+    const diff = ((current - previous) / previous) * 100;
+
+    // If drop is over 90%, it's likely just a new period (month/week) starting
+    if (diff < -90) return <p className="text-xs text-muted-foreground mt-1.5">New period started</p>;
+
+    const isUp = diff >= 0;
+    return (
+      <p className={`text-xs mt-1.5 font-medium ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+        {isUp ? '↑' : '↓'} {Math.abs(diff).toFixed(1)}% vs {label}
+      </p>
+    );
+  };
 
   const today = new Date();
   const todayBirthdays = (customers as any[]).filter(c => {
@@ -153,149 +107,111 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
     .slice(0, 5);
 
   const quickActions = [
-    { label: 'Sales Tracker', icon: TrendingUp, section: 'sales', tab: 'salesTracker', color: 'bg-amber-50 text-amber-700' },
-    { label: 'Send Message', icon: Send, section: 'marketing', tab: 'messages', color: 'bg-blue-50 text-blue-700' },
-    { label: 'Customer List', icon: Users, section: 'customers', tab: 'customers', color: 'bg-green-50 text-green-700' },
-    { label: 'Promotions', icon: Tag, section: 'marketing', tab: 'promotions', color: 'bg-purple-50 text-purple-700' },
+    { label: 'Sales Tracker', icon: TrendingUp, section: 'sales', tab: 'salesTracker', color: 'bg-amber-100 text-amber-700' },
+    { label: 'Send Message', icon: Send, section: 'marketing', tab: 'messages', color: 'bg-blue-100 text-blue-700' },
+    { label: 'Customer List', icon: Users, section: 'customers', tab: 'customers', color: 'bg-green-100 text-green-700' },
+    { label: 'Promotions', icon: Tag, section: 'marketing', tab: 'promotions', color: 'bg-purple-100 text-purple-700' },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Birthday alert */}
       {todayBirthdays.length > 0 && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 shadow-sm">
           <Gift className="w-4 h-4 text-amber-600 shrink-0" />
           <p className="text-sm text-amber-800 font-medium">
-            {todayBirthdays.length === 1
-              ? `${todayBirthdays[0].name} has a birthday today`
-              : `${todayBirthdays.length} customers have birthdays today`}
+            {todayBirthdays.length === 1 ? `${todayBirthdays[0].name} has a birthday today` : `${todayBirthdays.length} customers have birthdays today`}
           </p>
-          <button
-            onClick={() => onNavigate('customers', 'loyalty')}
-            className="ml-auto text-xs text-amber-700 font-medium flex items-center gap-1 hover:text-amber-900 transition-colors shrink-0"
-          >
+          <button onClick={() => onNavigate('customers', 'loyalty')} className="ml-auto text-xs text-amber-700 font-bold flex items-center gap-1 hover:underline shrink-0">
             View <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       )}
 
-      {/* KPI cards */}
       <div>
-        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Performance</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Performance</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="shadow-sm border-border/60">
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">This Week</p>
-              <p className="text-xl font-bold text-foreground mt-1">{fmt(metrics?.currentWeekSales)}</p>
-              {metrics?.lastWeekSales > 0 && (
-                <p className={`text-xs mt-1.5 font-medium ${metrics.currentWeekSales >= metrics.lastWeekSales ? 'text-green-600' : 'text-red-500'}`}>
-                  {metrics.currentWeekSales >= metrics.lastWeekSales ? '↑' : '↓'}
-                  {' '}{Math.abs(((metrics.currentWeekSales - metrics.lastWeekSales) / metrics.lastWeekSales) * 100).toFixed(1)}% vs last week
-                </p>
-              )}
+              <p className="text-xs font-medium text-muted-foreground">This Week</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{fmt(metrics?.currentWeekSales)}</p>
+              {renderTrend(metrics?.currentWeekSales, metrics?.lastWeekSales, 'last week')}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="shadow-sm border-border/60">
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">This Month</p>
-              <p className="text-xl font-bold text-foreground mt-1">{fmt(metrics?.currentMonthSales)}</p>
-              {metrics?.lastMonthSales > 0 && (
-                <p className={`text-xs mt-1.5 font-medium ${metrics.currentMonthSales >= metrics.lastMonthSales ? 'text-green-600' : 'text-red-500'}`}>
-                  {metrics.currentMonthSales >= metrics.lastMonthSales ? '↑' : '↓'}
-                  {' '}{Math.abs(((metrics.currentMonthSales - metrics.lastMonthSales) / metrics.lastMonthSales) * 100).toFixed(1)}% vs last month
-                </p>
-              )}
+              <p className="text-xs font-medium text-muted-foreground">This Month</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{fmt(metrics?.currentMonthSales)}</p>
+              {renderTrend(metrics?.currentMonthSales, metrics?.lastMonthSales, 'last month')}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="shadow-sm border-border/60">
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Year to Date</p>
-              <p className="text-xl font-bold text-foreground mt-1">{fmt(metrics?.ytdSales)}</p>
-              <p className="text-xs text-muted-foreground mt-1.5">Since Jan 1</p>
+              <p className="text-xs font-medium text-muted-foreground">Year to Date</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{fmt(metrics?.ytdSales)}</p>
+              <p className="text-xs text-muted-foreground mt-1.5">Running total</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="shadow-sm border-border/60">
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Loyalty Members</p>
-              <p className="text-xl font-bold text-foreground mt-1">{customers.length}</p>
-              <p className="text-xs text-muted-foreground mt-1.5">Registered customers</p>
+              <p className="text-xs font-medium text-muted-foreground">Loyalty Members</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{customers.length}</p>
+              <p className="text-xs text-muted-foreground mt-1.5">Total Database</p>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Quick actions */}
       <div>
-        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {quickActions.map(({ label, icon: Icon, section, tab, color }) => (
             <button
               key={tab}
               onClick={() => onNavigate(section, tab)}
-              className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card hover:bg-accent/30 transition-colors text-left group"
-              data-testid={`quick-action-${tab}`}
+              className="flex items-center gap-3 p-5 rounded-xl border border-border bg-card shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left group active:scale-95"
             >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
-                <Icon className="w-4 h-4" />
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${color} group-hover:scale-110 transition-transform`}>
+                <Icon className="w-5 h-5" />
               </div>
-              <span className="text-sm font-medium text-foreground">{label}</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="text-sm font-semibold text-foreground">{label}</span>
+              <ArrowUpRight className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           ))}
         </div>
       </div>
 
-      {/* Top performers + Recent sales side by side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Top performers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {(metrics?.bestChannel || metrics?.bestDay || metrics?.bestMonth) && (
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Top Performers</h3>
-            <div className="space-y-2">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Top Performers</h3>
+            <div className="space-y-3">
               {metrics?.bestChannel && (
-                <Card>
-                  <CardContent className="p-3.5 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center shrink-0">
-                      <Award className="w-4 h-4 text-amber-600" />
+                <Card className="hover:bg-accent/5 transition-colors">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center shrink-0 border border-amber-100">
+                      <Award className="w-5 h-5 text-amber-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground">Best Channel</p>
-                      <p className="text-sm font-semibold text-foreground truncate">{metrics.bestChannel.name}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Best Channel</p>
+                      <p className="text-sm font-bold text-foreground truncate">{metrics.bestChannel.name}</p>
                     </div>
-                    <p className="text-sm font-medium text-foreground shrink-0">{fmt(metrics.bestChannel.total)}</p>
+                    <p className="text-sm font-bold text-amber-700 shrink-0">{fmt(metrics.bestChannel.total)}</p>
                   </CardContent>
                 </Card>
               )}
               {metrics?.bestDay && (
-                <Card>
-                  <CardContent className="p-3.5 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                <Card className="hover:bg-accent/5 transition-colors">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center shrink-0 border border-blue-100">
+                      <TrendingUp className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground">Best Day</p>
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {new Date(metrics.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        {' '}({metrics.bestDay.dayOfWeek?.substring(0, 3) || ''})
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Best Sales Day</p>
+                      <p className="text-sm font-bold text-foreground truncate">
+                        {new Date(metrics.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ({metrics.bestDay.dayOfWeek?.substring(0, 3)})
                       </p>
                     </div>
-                    <p className="text-sm font-medium text-foreground shrink-0">{fmt(metrics.bestDay.total)}</p>
-                  </CardContent>
-                </Card>
-              )}
-              {metrics?.bestMonth && (
-                <Card>
-                  <CardContent className="p-3.5 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
-                      <BarChart3 className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground">Best Month</p>
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {new Date(metrics.bestMonth.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium text-foreground shrink-0">{fmt(metrics.bestMonth.total)}</p>
+                    <p className="text-sm font-bold text-blue-700 shrink-0">{fmt(metrics.bestDay.total)}</p>
                   </CardContent>
                 </Card>
               )}
@@ -303,36 +219,26 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
           </div>
         )}
 
-        {/* Recent activity */}
         {recentSales.length > 0 && (
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recent Sales</h3>
-              <button
-                onClick={() => onNavigate('sales', 'salesTracker')}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-              >
-                View all <ChevronRight className="w-3 h-3" />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Recent Activity</h3>
+              <button onClick={() => onNavigate('sales', 'salesTracker')} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1">
+                Full Log <ChevronRight className="w-3 h-3" />
               </button>
             </div>
-            <Card>
+            <Card className="shadow-sm">
               <CardContent className="p-0">
-                <div className="divide-y divide-border">
+                <div className="divide-y divide-border/60">
                   {recentSales.map((sale: any, i: number) => (
-                    <div key={sale.id || i} className="flex items-center justify-between px-4 py-3">
+                    <div key={sale.id || i} className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {sale.salesChannel || sale.channel || 'Sale'}
-                        </p>
+                        <p className="text-sm font-bold text-foreground truncate">{sale.salesChannel || sale.channel || 'Sale'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {sale.date
-                            ? new Date(sale.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-                            : ''}
+                          {sale.date ? new Date(sale.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : ''}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-foreground shrink-0 ml-3">
-                        {fmt(Number(sale.netSales || sale.totalSales || sale.total || 0))}
-                      </p>
+                      <p className="text-sm font-black text-foreground shrink-0 ml-3">{fmt(Number(sale.netSales || sale.totalSales || sale.total || 0))}</p>
                     </div>
                   ))}
                 </div>
@@ -437,43 +343,36 @@ export default function AdminDashboard() {
   if (authLoading || !isAuthenticated || user?.role !== "admin") {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-muted-foreground">{t('common.loading')}</p>
+        <p className="text-lg text-muted-foreground font-medium">{t('common.loading')}</p>
       </div>
     );
   }
 
   const isFullBleed = activeTab === 'salesTracker' || activeTab === 'analytics';
-
-  // Header is ~57px, primary nav ~49px, secondary nav ~41px
   const primaryNavTop = "top-[57px]";
   const secondaryNavTop = "top-[106px]";
 
   return (
     <div className="min-h-screen bg-background">
-
-      {/* ── Header ── */}
-      <header className="bg-card border-b border-border sticky top-0 z-50 shadow-[0_1px_3px_0_rgb(0,0,0,0.04)]">
+      <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[57px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <Button onClick={() => setLocation("/")} variant="ghost" size="icon" data-testid="button-back-home">
+            <Button onClick={() => setLocation("/")} variant="ghost" size="icon" className="hover:bg-amber-50">
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full shrink-0" />
+            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full shrink-0 shadow-sm" />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-semibold text-foreground">{t('admin.title')}</h1>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 hidden sm:flex" data-testid="badge-version">
+                <h1 className="text-sm font-bold text-foreground">{t('admin.title')}</h1>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200 hidden sm:flex">
                   {t('common.version')}
                 </Badge>
               </div>
-              <p className="text-[11px] text-muted-foreground truncate hidden md:block">
-                {user?.email || user?.firstName || t('common.admin')}
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <LanguageSwitcher />
-            <Button onClick={handleLogout} variant="outline" size="sm" data-testid="button-logout">
+            <Button onClick={handleLogout} variant="outline" size="sm" className="text-red-600 border-red-100 hover:bg-red-50">
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline ml-1.5">{t('auth.logout')}</span>
             </Button>
@@ -481,10 +380,9 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* ── Primary Navigation ── */}
-      <div className={`bg-card border-b border-border sticky ${primaryNavTop} z-40`}>
+      <div className={`bg-card border-b border-border sticky ${primaryNavTop} z-40 shadow-sm`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto scrollbar-none">
-          <nav className="flex items-center w-max min-w-full" role="navigation" aria-label="Primary navigation">
+          <nav className="flex items-center w-max min-w-full">
             {NAV_GROUPS.map((group) => {
               const Icon = group.icon;
               const isActive = activeSection === group.id;
@@ -492,14 +390,11 @@ export default function AdminDashboard() {
                 <button
                   key={group.id}
                   onClick={() => handlePrimaryNav(group.id)}
-                  data-testid={`nav-${group.id}`}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all duration-150 shrink-0 ${
-                    isActive
-                      ? 'text-foreground border-amber-400 bg-amber-50/70'
-                      : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/40'
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all shrink-0 ${
+                    isActive ? 'text-amber-600 border-amber-500 bg-amber-50/50' : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/40'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber-600' : ''}`} />
+                  <Icon className="w-4 h-4 shrink-0" />
                   <span className="hidden sm:inline">{group.label}</span>
                 </button>
               );
@@ -508,22 +403,18 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Secondary Navigation ── */}
       {showSecondaryNav && (
         <div className={`bg-background border-b border-border/50 sticky ${secondaryNavTop} z-30`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto scrollbar-none">
-            <nav className="flex items-center w-max min-w-full" role="navigation" aria-label="Secondary navigation">
+            <nav className="flex items-center w-max min-w-full">
               {currentSubs.map((sub) => {
                 const isActive = activeTab === sub.id;
                 return (
                   <button
                     key={sub.id}
                     onClick={() => handleSecondaryNav(sub.id)}
-                    data-testid={sub.testId}
-                    className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors shrink-0 ${
-                      isActive
-                        ? 'text-foreground border-amber-400'
-                        : 'text-muted-foreground border-transparent hover:text-foreground'
+                    className={`px-4 py-3 text-xs font-bold whitespace-nowrap border-b-2 transition-colors shrink-0 ${
+                      isActive ? 'text-foreground border-amber-400 bg-white' : 'text-muted-foreground border-transparent hover:text-foreground'
                     }`}
                   >
                     {sub.label}
@@ -535,39 +426,26 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Content ── */}
       {isFullBleed ? (
         <div className="pb-8">
           {activeTab === 'salesTracker' && <SalesTrackerDashboard key="salesTracker" />}
           {activeTab === 'analytics' && <AnalyticsDashboard key="analytics" />}
         </div>
       ) : (
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6">
-
-          {activeTab === 'overview' && (
-            <AdminOverview key="overview" onNavigate={navigate} />
-          )}
-
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+          {activeTab === 'overview' && <AdminOverview key="overview" onNavigate={navigate} />}
           {activeTab === 'customers' && (
             <div key="customers">
-              <SectionHeader
-                title={t('admin.customers.title')}
-                subtitle={t('admin.customers.manage', 'Manage your loyalty members')}
-                action={<CustomerCSVImport showTrigger={true} />}
-              />
+              <SectionHeader title={t('admin.customers.title')} subtitle="Your loyal community members" action={<CustomerCSVImport showTrigger={true} />} />
               <CustomerTable
                 onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
                 onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
               />
             </div>
           )}
-
           {activeTab === 'loyalty' && (
             <div key="loyalty">
-              <SectionHeader
-                title="Loyalty Programme"
-                subtitle="Top spenders, birthdays, and tier insights"
-              />
+              <SectionHeader title="Loyalty Programme" subtitle="Track your most valuable fans" />
               <CustomerInsights
                 onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
                 onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
@@ -575,9 +453,7 @@ export default function AdminDashboard() {
               />
             </div>
           )}
-
           {activeTab === 'messages' && <MessagesPage key="messages" />}
-
           {activeTab === 'promotions' && (
             <div key="promotions" className="grid gap-6">
               <div className="max-w-2xl">
@@ -586,33 +462,22 @@ export default function AdminDashboard() {
               <MessageTemplates />
             </div>
           )}
-
           {activeTab === 'specials' && <WeeklySpecialsManager key="specials" />}
-
           {activeTab === 'automations' && <AutomationsManager key="automations" />}
-
           {activeTab === 'products' && <ProductManager key="products" />}
-
           {activeTab === 'sites' && <SitesManager key="sites" />}
-
           {activeTab === 'schedules' && <SchedulesManager key="schedules" />}
-
           {activeTab === 'barista' && <BaristaManager key="barista" />}
-
           {activeTab === 'shopCalendar' && (
-            <div key="shopCalendar" style={{ height: 'calc(100vh - 200px)' }}>
+            <div key="shopCalendar" className="h-[70vh]">
               <ShopCalendar />
             </div>
           )}
-
           {activeTab === 'users' && <UsersPage key="users" />}
-
           {activeTab === 'settings' && <SettingsPage key="settings" />}
-
         </main>
       )}
 
-      {/* ── Dialogs ── */}
       {editingCustomer && (
         <CustomerEditDialog
           customer={editingCustomer}
@@ -632,9 +497,9 @@ export default function AdminDashboard() {
       <Dialog open={isBirthdayMessageDialogOpen} onOpenChange={setIsBirthdayMessageDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Send Birthday Messages</DialogTitle>
+            <DialogTitle>Send Birthday Greetings</DialogTitle>
             <DialogDescription>
-              Send birthday wishes to {birthdayCustomers.length} customer{birthdayCustomers.length !== 1 ? 's' : ''}
+              Personalize a message for {birthdayCustomers.length} loyalty members celebrating today.
             </DialogDescription>
           </DialogHeader>
           <BulkMessageComposer
