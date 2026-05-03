@@ -114,11 +114,7 @@ export default function MessageTemplates() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
-  const [previewData, setPreviewData] = useState({
-    name: "John Doe",
-    tier: "gold",
-    points: "150",
-  });
+  const [previewData, setPreviewData] = useState({ name: "John Doe", tier: "gold", points: "150" });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAssetGalleryOpen, setIsAssetGalleryOpen] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
@@ -137,247 +133,130 @@ export default function MessageTemplates() {
 
   const form = useForm<InsertMessageTemplate>({
     resolver: zodResolver(insertMessageTemplateSchema),
-    defaultValues: {
-      name: "",
-      type: "birthday",
-      channel: "sms",
-      subject: "",
-      message: "",
-      isDefault: false,
-    },
+    defaultValues: { name: "", type: "birthday", channel: "sms", subject: "", message: "", isDefault: false },
   });
 
-  const { data: emailAssets = [] } = useQuery<EmailAsset[]>({
-    queryKey: ['/api/admin/email-assets'],
-  });
-
-  const { data: templates = [], isLoading } = useQuery<MessageTemplate[]>({
-    queryKey: ['/api/admin/message-templates'],
-  });
+  const { data: emailAssets = [] } = useQuery<EmailAsset[]>({ queryKey: ['/api/admin/email-assets'] });
+  const { data: templates = [], isLoading } = useQuery<MessageTemplate[]>({ queryKey: ['/api/admin/message-templates'] });
 
   const createTemplateMutation = useMutation({
-    mutationFn: async (data: InsertMessageTemplate) => {
-      return await apiRequest('POST', '/api/admin/message-templates', data);
-    },
+    mutationFn: async (data: InsertMessageTemplate) => await apiRequest('POST', '/api/admin/message-templates', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
-      toast({
-        title: t('admin.messages.success'),
-        description: t('admin.messages.templateCreated'),
-      });
+      toast({ title: t('admin.messages.success'), description: t('admin.messages.templateCreated') });
       resetForm();
     },
     onError: (error: any) => {
-      toast({
-        title: t('admin.messages.error'),
-        description: error.message || t('admin.messages.createFailed'),
-        variant: "destructive",
-      });
+      toast({ title: t('admin.messages.error'), description: error.message || t('admin.messages.createFailed'), variant: "destructive" });
     },
   });
 
   const updateTemplateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertMessageTemplate> }) => {
-      return await apiRequest('PATCH', `/api/admin/message-templates/${id}`, data);
-    },
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertMessageTemplate> }) =>
+      await apiRequest('PATCH', `/api/admin/message-templates/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
-      toast({
-        title: t('admin.messages.success'),
-        description: t('admin.messages.templateUpdated'),
-      });
+      toast({ title: t('admin.messages.success'), description: t('admin.messages.templateUpdated') });
       resetForm();
     },
     onError: (error: any) => {
-      toast({
-        title: t('admin.messages.error'),
-        description: error.message || t('admin.messages.updateFailed'),
-        variant: "destructive",
-      });
+      toast({ title: t('admin.messages.error'), description: error.message || t('admin.messages.updateFailed'), variant: "destructive" });
     },
   });
 
   const deleteTemplateMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest('DELETE', `/api/admin/message-templates/${id}`, undefined);
-    },
+    mutationFn: async (id: string) => await apiRequest('DELETE', `/api/admin/message-templates/${id}`, undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
-      toast({
-        title: t('admin.messages.success'),
-        description: t('admin.messages.templateDeleted'),
-      });
+      toast({ title: t('admin.messages.success'), description: t('admin.messages.templateDeleted') });
     },
     onError: (error: any) => {
-      toast({
-        title: t('admin.messages.error'),
-        description: error.message || t('admin.messages.deleteFailed'),
-        variant: "destructive",
-      });
+      toast({ title: t('admin.messages.error'), description: error.message || t('admin.messages.deleteFailed'), variant: "destructive" });
     },
   });
 
   const seedDefaultsMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest('POST', '/api/admin/message-templates/seed-defaults', {});
-    },
+    mutationFn: async () => await apiRequest('POST', '/api/admin/message-templates/seed-defaults', {}),
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
-      toast({
-        title: "Default Templates Created!",
-        description: `Created ${result.created} birthday message templates (Thai & English)`,
-      });
+      toast({ title: "Default Templates Created!", description: `Created ${result.created} birthday message templates (Thai & English)` });
     },
     onError: (error: any) => {
-      toast({
-        title: t('admin.messages.error'),
-        description: error.message || "Failed to create default templates",
-        variant: "destructive",
-      });
+      toast({ title: t('admin.messages.error'), description: error.message || "Failed to create default templates", variant: "destructive" });
     },
   });
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: isThaiLanguage ? "ไฟล์ใหญ่เกินไป" : "File too large",
-        description: isThaiLanguage ? "กรุณาใช้ไฟล์ขนาดไม่เกิน 10MB" : "Please use a file smaller than 10MB",
-        variant: "destructive",
-      });
+      toast({ title: isThaiLanguage ? "ไฟล์ใหญ่เกินไป" : "File too large", description: isThaiLanguage ? "กรุณาใช้ไฟล์ขนาดไม่เกิน 10MB" : "Please use a file smaller than 10MB", variant: "destructive" });
       return;
     }
-
     setIsUploadingImage(true);
     try {
-      const response = await apiRequest('POST', '/api/admin/email-assets/upload-url', { 
-        filename: file.name 
-      });
+      const response = await apiRequest('POST', '/api/admin/email-assets/upload-url', { filename: file.name });
       const result = await response.json() as { uploadURL: string; assetPath: string };
-      const { uploadURL, assetPath } = result;
-
-      await fetch(uploadURL, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type },
-      });
-
-      await apiRequest('POST', '/api/admin/email-assets/set-acl', { assetPath });
-
+      await fetch(result.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+      await apiRequest('POST', '/api/admin/email-assets/set-acl', { assetPath: result.assetPath });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/email-assets'] });
-      
-      const baseUrl = window.location.origin;
-      const fullUrl = `${baseUrl}${assetPath}`;
-      const imgTag = `<img src="${fullUrl}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px;">`;
+      const imgTag = `<img src="${window.location.origin}${result.assetPath}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px;">`;
       setHtmlContent(prev => prev + '\n' + imgTag);
-
-      toast({
-        title: isThaiLanguage ? "อัพโหลดสำเร็จ" : "Upload successful",
-        description: isThaiLanguage ? "รูปภาพถูกเพิ่มลงในเทมเพลต" : "Image added to template",
-      });
+      toast({ title: isThaiLanguage ? "อัพโหลดสำเร็จ" : "Upload successful", description: isThaiLanguage ? "รูปภาพถูกเพิ่มลงในเทมเพลต" : "Image added to template" });
     } catch (error: any) {
-      toast({
-        title: isThaiLanguage ? "อัพโหลดล้มเหลว" : "Upload failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: isThaiLanguage ? "อัพโหลดล้มเหลว" : "Upload failed", description: error.message, variant: "destructive" });
     } finally {
       setIsUploadingImage(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleLineImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: isThaiLanguage ? "ไฟล์ใหญ่เกินไป" : "File too large",
-        description: isThaiLanguage ? "ขนาดไฟล์สูงสุด 10MB" : "Maximum file size is 10MB",
-        variant: "destructive",
-      });
+      toast({ title: isThaiLanguage ? "ไฟล์ใหญ่เกินไป" : "File too large", description: isThaiLanguage ? "ขนาดไฟล์สูงสุด 10MB" : "Maximum file size is 10MB", variant: "destructive" });
       return;
     }
-
     setIsUploadingLineImage(true);
     try {
-      const response = await apiRequest('POST', '/api/admin/email-assets/upload-url', {
-        filename: file.name
-      });
+      const response = await apiRequest('POST', '/api/admin/email-assets/upload-url', { filename: file.name });
       const result = await response.json() as { uploadURL: string; assetPath: string };
-      const { uploadURL, assetPath } = result;
-
-      await fetch(uploadURL, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type },
-      });
-
-      await apiRequest('POST', '/api/admin/email-assets/set-acl', { assetPath });
-
+      await fetch(result.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+      await apiRequest('POST', '/api/admin/email-assets/set-acl', { assetPath: result.assetPath });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/email-assets'] });
-
-      const fullUrl = `${window.location.origin}${assetPath}`;
-      setLineImageUrl(fullUrl);
-      toast({
-        title: isThaiLanguage ? "อัพโหลดรูปสำเร็จ" : "Image uploaded",
-      });
+      setLineImageUrl(`${window.location.origin}${result.assetPath}`);
+      toast({ title: isThaiLanguage ? "อัพโหลดรูปสำเร็จ" : "Image uploaded" });
     } catch (error: any) {
-      toast({
-        title: isThaiLanguage ? "อัพโหลดล้มเหลว" : "Upload failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: isThaiLanguage ? "อัพโหลดล้มเหลว" : "Upload failed", description: error.message, variant: "destructive" });
     } finally {
       setIsUploadingLineImage(false);
-      if (lineImageInputRef.current) {
-        lineImageInputRef.current.value = '';
-      }
+      if (lineImageInputRef.current) lineImageInputRef.current.value = '';
     }
   };
 
   const insertSnippet = (snippet: typeof EMAIL_SNIPPETS[0]) => {
     setHtmlContent(prev => prev + '\n' + snippet.html);
-    toast({
-      title: isThaiLanguage ? "เพิ่มสำเร็จ" : "Added successfully",
-      description: isThaiLanguage ? `เพิ่ม ${snippet.nameTh} แล้ว` : `Added ${snippet.name}`,
-    });
+    toast({ title: isThaiLanguage ? "เพิ่มสำเร็จ" : "Added successfully", description: isThaiLanguage ? `เพิ่ม ${snippet.nameTh} แล้ว` : `Added ${snippet.name}` });
   };
 
   const insertAssetImage = (asset: EmailAsset) => {
-    const baseUrl = window.location.origin;
-    const fullUrl = `${baseUrl}${asset.url}`;
+    const fullUrl = `${window.location.origin}${asset.url}`;
     const currentChannel = form.watch("channel");
     if (currentChannel === 'line') {
       setLineImageUrl(fullUrl);
       setIsAssetGalleryOpen(false);
-      toast({
-        title: isThaiLanguage ? "เลือกรูปภาพแล้ว" : "Image selected",
-      });
+      toast({ title: isThaiLanguage ? "เลือกรูปภาพแล้ว" : "Image selected" });
     } else {
       const imgTag = `<img src="${fullUrl}" alt="${asset.name}" style="max-width: 100%; height: auto; border-radius: 8px;">`;
       setHtmlContent(prev => prev + '\n' + imgTag);
       setIsAssetGalleryOpen(false);
-      toast({
-        title: isThaiLanguage ? "เพิ่มรูปภาพแล้ว" : "Image inserted",
-      });
+      toast({ title: isThaiLanguage ? "เพิ่มรูปภาพแล้ว" : "Image inserted" });
     }
   };
 
   const resetForm = () => {
-    form.reset({
-      name: "",
-      type: "birthday",
-      channel: "sms",
-      subject: "",
-      message: "",
-      isDefault: false,
-    });
+    form.reset({ name: "", type: "birthday", channel: "sms", subject: "", message: "", isDefault: false });
     setIsCreating(false);
     setEditingTemplate(null);
     setHtmlContent("");
@@ -386,23 +265,14 @@ export default function MessageTemplates() {
   };
 
   const handleEdit = (template: MessageTemplate) => {
-    form.reset({
-      name: template.name,
-      type: template.type,
-      channel: template.channel,
-      subject: template.subject || "",
-      message: template.message,
-      isDefault: template.isDefault,
-    });
+    form.reset({ name: template.name, type: template.type, channel: template.channel, subject: template.subject || "", message: template.message, isDefault: template.isDefault });
     setEditingTemplate(template);
     setIsCreating(true);
     setHtmlContent(template.htmlContent || "");
     try {
       const jsonData = template.jsonContent ? JSON.parse(template.jsonContent) : {};
       setLineImageUrl(jsonData.imageUrl || "");
-    } catch {
-      setLineImageUrl("");
-    }
+    } catch { setLineImageUrl(""); }
   };
 
   const onSubmit = (data: InsertMessageTemplate) => {
@@ -419,27 +289,17 @@ export default function MessageTemplates() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(t('admin.messages.deleteConfirm'))) {
-      deleteTemplateMutation.mutate(id);
-    }
+    if (confirm(t('admin.messages.deleteConfirm'))) deleteTemplateMutation.mutate(id);
   };
 
   const getPreviewMessage = () => {
     const message = form.watch("message");
-    return message
-      .replace(/{name}/g, previewData.name)
-      .replace(/{tier}/g, previewData.tier)
-      .replace(/{points}/g, previewData.points);
+    return message.replace(/{name}/g, previewData.name).replace(/{tier}/g, previewData.tier).replace(/{points}/g, previewData.points);
   };
 
   const filteredTemplates = templates
     .filter(tmpl => {
-      if (
-        searchQuery &&
-        !tmpl.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !(tmpl.subject || '').toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !tmpl.message.toLowerCase().includes(searchQuery.toLowerCase())
-      ) return false;
+      if (searchQuery && !tmpl.name.toLowerCase().includes(searchQuery.toLowerCase()) && !(tmpl.subject || '').toLowerCase().includes(searchQuery.toLowerCase()) && !tmpl.message.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (filterChannel !== "all" && tmpl.channel !== filterChannel) return false;
       if (filterType !== "all" && tmpl.type !== filterType) return false;
       return true;
@@ -450,9 +310,7 @@ export default function MessageTemplates() {
       return 0;
     });
 
-  if (isLoading) {
-    return <div className="text-center py-8 text-muted-foreground text-sm">{t('common.loading')}</div>;
-  }
+  if (isLoading) return <div className="text-center py-8 text-muted-foreground text-sm">{t('common.loading')}</div>;
 
   return (
     <div className="space-y-5">
@@ -463,13 +321,7 @@ export default function MessageTemplates() {
         </div>
         <div className="flex gap-2">
           {templates.length === 0 && !isCreating && (
-            <Button
-              onClick={() => seedDefaultsMutation.mutate()}
-              variant="outline"
-              size="sm"
-              disabled={seedDefaultsMutation.isPending}
-              data-testid="button-seed-defaults"
-            >
+            <Button onClick={() => seedDefaultsMutation.mutate()} variant="outline" size="sm" disabled={seedDefaultsMutation.isPending} data-testid="button-seed-defaults">
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               {seedDefaultsMutation.isPending ? "Creating..." : "Create Defaults"}
             </Button>
@@ -487,13 +339,7 @@ export default function MessageTemplates() {
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder={isThaiLanguage ? "ค้นหาเทมเพลต..." : "Search templates..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 text-sm"
-              data-testid="input-search-templates"
-            />
+            <Input placeholder={isThaiLanguage ? "ค้นหาเทมเพลต..." : "Search templates..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 text-sm" data-testid="input-search-templates" />
           </div>
           <Select value={filterChannel} onValueChange={setFilterChannel}>
             <SelectTrigger className="w-full sm:w-36 text-sm" data-testid="select-filter-channel">
@@ -537,109 +383,68 @@ export default function MessageTemplates() {
         <Card>
           <CardHeader>
             <CardTitle>{editingTemplate ? t('admin.messages.editTemplate') : t('admin.messages.addNewTemplate')}</CardTitle>
-            <CardDescription>
-              {t('admin.messages.placeholdersDesc')}
-            </CardDescription>
+            <CardDescription>{t('admin.messages.placeholdersDesc')}</CardDescription>
           </CardHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('admin.messages.templateName')}</FormLabel>
+                  <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('admin.messages.templateName')}</FormLabel>
+                      <FormControl><Input placeholder={t('admin.messages.templateName')} data-testid="input-template-name" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="type" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('admin.messages.templateType')}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input placeholder={isThaiLanguage ? "เลือกหรือพิมพ์ประเภท..." : "Select or type custom..."} data-testid="input-template-type" list="template-type-options" {...field} value={field.value || ""} />
+                          <datalist id="template-type-options">
+                            <option value="birthday">{t('admin.messages.birthday')}</option>
+                            <option value="promotion">{t('admin.messages.promotion')}</option>
+                            <option value="reminder">{t('admin.messages.reminder')}</option>
+                            <option value="welcome">{isThaiLanguage ? "ต้อนรับ" : "Welcome"}</option>
+                            <option value="announcement">{isThaiLanguage ? "ประกาศ" : "Announcement"}</option>
+                            <option value="event">{isThaiLanguage ? "กิจกรรม" : "Event"}</option>
+                            <option value="seasonal">{isThaiLanguage ? "ตามฤดูกาล" : "Seasonal"}</option>
+                            <option value="thank_you">{isThaiLanguage ? "ขอบคุณ" : "Thank You"}</option>
+                          </datalist>
+                        </div>
+                      </FormControl>
+                      <FormDescription className="text-xs">{isThaiLanguage ? "เลือกจากรายการหรือพิมพ์ประเภทใหม่" : "Pick from list or type a new custom type"}</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="channel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('admin.messages.channel')}</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Input
-                            placeholder={t('admin.messages.templateName')}
-                            data-testid="input-template-name"
-                            {...field}
-                          />
+                          <SelectTrigger data-testid="select-template-channel"><SelectValue /></SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('admin.messages.templateType')}</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              placeholder={isThaiLanguage ? "เลือกหรือพิมพ์ประเภท..." : "Select or type custom..."}
-                              data-testid="input-template-type"
-                              list="template-type-options"
-                              {...field}
-                              value={field.value || ""}
-                            />
-                            <datalist id="template-type-options">
-                              <option value="birthday">{t('admin.messages.birthday')}</option>
-                              <option value="promotion">{t('admin.messages.promotion')}</option>
-                              <option value="reminder">{t('admin.messages.reminder')}</option>
-                              <option value="welcome">{isThaiLanguage ? "ต้อนรับ" : "Welcome"}</option>
-                              <option value="announcement">{isThaiLanguage ? "ประกาศ" : "Announcement"}</option>
-                              <option value="event">{isThaiLanguage ? "กิจกรรม" : "Event"}</option>
-                              <option value="seasonal">{isThaiLanguage ? "ตามฤดูกาล" : "Seasonal"}</option>
-                              <option value="thank_you">{isThaiLanguage ? "ขอบคุณ" : "Thank You"}</option>
-                            </datalist>
-                          </div>
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          {isThaiLanguage ? "เลือกจากรายการหรือพิมพ์ประเภทใหม่" : "Pick from list or type a new custom type"}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="channel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('admin.messages.channel')}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-template-channel">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="sms">{t('admin.messages.sms')}</SelectItem>
-                            <SelectItem value="email">{t('admin.messages.email')}</SelectItem>
-                            <SelectItem value="line">LINE</SelectItem>
-                            <SelectItem value="both">{t('admin.messages.sms')} + {t('admin.messages.email')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          <SelectItem value="sms">{t('admin.messages.sms')}</SelectItem>
+                          <SelectItem value="email">{t('admin.messages.email')}</SelectItem>
+                          <SelectItem value="line">LINE</SelectItem>
+                          <SelectItem value="both">{t('admin.messages.sms')} + {t('admin.messages.email')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 </div>
 
                 {(form.watch("channel") === "email" || form.watch("channel") === "both") && (
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('admin.messages.templateSubject')}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t('admin.messages.templateSubject')}
-                            data-testid="input-template-subject"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="subject" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('admin.messages.templateSubject')}</FormLabel>
+                      <FormControl><Input placeholder={t('admin.messages.templateSubject')} data-testid="input-template-subject" {...field} value={field.value || ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 )}
 
                 {(form.watch("channel") === "email" || form.watch("channel") === "both") && (
@@ -650,36 +455,12 @@ export default function MessageTemplates() {
                         {isThaiLanguage ? "เนื้อหา HTML อีเมล (รูปภาพและกราฟิก)" : "Email HTML Content (Images & Graphics)"}
                       </h4>
                       <div className="flex gap-2">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          data-testid="input-image-upload"
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploadingImage}
-                          data-testid="button-upload-image"
-                        >
-                          {isUploadingImage ? (
-                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                          ) : (
-                            <Upload className="w-4 h-4 mr-1" />
-                          )}
+                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" data-testid="input-image-upload" />
+                        <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImage} data-testid="button-upload-image">
+                          {isUploadingImage ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
                           {isThaiLanguage ? "อัพโหลดรูป" : "Upload Image"}
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setIsAssetGalleryOpen(true)}
-                          data-testid="button-image-gallery"
-                        >
+                        <Button type="button" size="sm" variant="outline" onClick={() => setIsAssetGalleryOpen(true)} data-testid="button-image-gallery">
                           <Image className="w-4 h-4 mr-1" />
                           {isThaiLanguage ? "เลือกรูป" : "Image Gallery"}
                         </Button>
@@ -688,72 +469,33 @@ export default function MessageTemplates() {
 
                     <Tabs value={emailEditorTab} onValueChange={setEmailEditorTab}>
                       <TabsList className="grid grid-cols-4 w-full">
-                        <TabsTrigger value="visual" data-testid="tab-email-visual">
-                          <Paintbrush className="w-4 h-4 mr-1" />
-                          {isThaiLanguage ? "ออกแบบ" : "Design"}
-                        </TabsTrigger>
-                        <TabsTrigger value="content" data-testid="tab-email-content">
-                          {isThaiLanguage ? "HTML" : "HTML"}
-                        </TabsTrigger>
-                        <TabsTrigger value="snippets" data-testid="tab-email-snippets">
-                          <Layout className="w-4 h-4 mr-1" />
-                          {isThaiLanguage ? "เทมเพลต" : "Snippets"}
-                        </TabsTrigger>
-                        <TabsTrigger value="preview" data-testid="tab-email-preview">
-                          <Eye className="w-4 h-4 mr-1" />
-                          {isThaiLanguage ? "ตัวอย่าง" : "Preview"}
-                        </TabsTrigger>
+                        <TabsTrigger value="visual" data-testid="tab-email-visual"><Paintbrush className="w-4 h-4 mr-1" />{isThaiLanguage ? "ออกแบบ" : "Design"}</TabsTrigger>
+                        <TabsTrigger value="content" data-testid="tab-email-content">HTML</TabsTrigger>
+                        <TabsTrigger value="snippets" data-testid="tab-email-snippets"><Layout className="w-4 h-4 mr-1" />{isThaiLanguage ? "เทมเพลต" : "Snippets"}</TabsTrigger>
+                        <TabsTrigger value="preview" data-testid="tab-email-preview"><Eye className="w-4 h-4 mr-1" />{isThaiLanguage ? "ตัวอย่าง" : "Preview"}</TabsTrigger>
                       </TabsList>
 
-                      {/* Visual editor - kept mounted to preserve state */}
                       <div className={emailEditorTab === "visual" ? "mt-3" : "hidden"}>
                         <div className="border rounded-lg p-4 bg-white">
-                          <EmailVisualEditor
-                            onExportHtml={(html) => {
-                              setHtmlContent(html);
-                              setEmailEditorTab("preview");
-                              toast({
-                                title: isThaiLanguage ? "ส่งออก HTML สำเร็จ" : "HTML Exported",
-                                description: isThaiLanguage ? "HTML ถูกส่งไปยังเนื้อหาอีเมลแล้ว" : "HTML has been applied to email content",
-                              });
-                            }}
-                            height="500px"
-                          />
+                          <EmailVisualEditor onExportHtml={(html) => {
+                            setHtmlContent(html);
+                            setEmailEditorTab("preview");
+                            toast({ title: isThaiLanguage ? "ส่งออก HTML สำเร็จ" : "HTML Exported", description: isThaiLanguage ? "HTML ถูกส่งไปยังเนื้อหาอีเมลแล้ว" : "HTML has been applied to email content" });
+                          }} height="500px" />
                         </div>
                       </div>
 
                       <TabsContent value="content" className="mt-3">
-                        <Textarea
-                          value={htmlContent}
-                          onChange={(e) => setHtmlContent(e.target.value)}
-                          placeholder={isThaiLanguage ? "ใส่ HTML ที่นี่... หรือใช้ปุ่มด้านบนเพื่อเพิ่มรูปภาพและเทมเพลต" : "Enter HTML here... or use the buttons above to add images and snippets"}
-                          className="min-h-[200px] font-mono text-sm"
-                          data-testid="textarea-html-content"
-                        />
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {isThaiLanguage 
-                            ? "ใช้ตัวแปร: {name}, {points}, {tier}" 
-                            : "Use variables: {name}, {points}, {tier}"}
-                        </p>
+                        <Textarea value={htmlContent} onChange={(e) => setHtmlContent(e.target.value)} placeholder={isThaiLanguage ? "ใส่ HTML ที่นี่..." : "Enter HTML here..."} className="min-h-[200px] font-mono text-sm" data-testid="textarea-html-content" />
+                        <p className="text-xs text-muted-foreground mt-2">{isThaiLanguage ? "ใช้ตัวแปร: {name}, {points}, {tier}" : "Use variables: {name}, {points}, {tier}"}</p>
                       </TabsContent>
 
                       <TabsContent value="snippets" className="mt-3">
                         <div className="grid grid-cols-2 gap-2">
                           {EMAIL_SNIPPETS.map((snippet) => (
-                            <Button
-                              key={snippet.id}
-                              type="button"
-                              variant="outline"
-                              className="h-auto py-3 flex flex-col items-start gap-1"
-                              onClick={() => insertSnippet(snippet)}
-                              data-testid={`button-snippet-${snippet.id}`}
-                            >
-                              <span className="font-medium text-sm">
-                                {isThaiLanguage ? snippet.nameTh : snippet.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {isThaiLanguage ? "คลิกเพื่อเพิ่ม" : "Click to add"}
-                              </span>
+                            <Button key={snippet.id} type="button" variant="outline" className="h-auto py-3 flex flex-col items-start gap-1" onClick={() => insertSnippet(snippet)} data-testid={`button-snippet-${snippet.id}`}>
+                              <span className="font-medium text-sm">{isThaiLanguage ? snippet.nameTh : snippet.name}</span>
+                              <span className="text-xs text-muted-foreground">{isThaiLanguage ? "คลิกเพื่อเพิ่ม" : "Click to add"}</span>
                             </Button>
                           ))}
                         </div>
@@ -761,13 +503,7 @@ export default function MessageTemplates() {
 
                       <TabsContent value="preview" className="mt-3">
                         <div className="border rounded-lg p-4 bg-white min-h-[200px]">
-                          {htmlContent ? (
-                            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-                          ) : (
-                            <p className="text-muted-foreground text-center py-8">
-                              {isThaiLanguage ? "ยังไม่มีเนื้อหา HTML" : "No HTML content yet"}
-                            </p>
-                          )}
+                          {htmlContent ? <div dangerouslySetInnerHTML={{ __html: htmlContent }} /> : <p className="text-muted-foreground text-center py-8">{isThaiLanguage ? "ยังไม่มีเนื้อหา HTML" : "No HTML content yet"}</p>}
                         </div>
                       </TabsContent>
                     </Tabs>
@@ -776,188 +512,81 @@ export default function MessageTemplates() {
 
                 {(form.watch("channel") === "line" || form.watch("channel") === "both") && (
                   <div className="space-y-3 border rounded-lg p-4 bg-green-50/50">
-                    <h4 className="font-semibold flex items-center gap-2">
-                      <Image className="w-4 h-4" />
-                      {isThaiLanguage ? "รูปภาพ LINE (ไม่บังคับ)" : "LINE Image (Optional)"}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      {isThaiLanguage 
-                        ? "แนบรูปภาพเพื่อส่งพร้อมข้อความ LINE ของคุณ รูปจะแสดงก่อนข้อความ" 
-                        : "Attach an image to send with your LINE message. The image will appear before the text."}
-                    </p>
+                    <h4 className="font-semibold flex items-center gap-2"><Image className="w-4 h-4" />{isThaiLanguage ? "รูปภาพ LINE (ไม่บังคับ)" : "LINE Image (Optional)"}</h4>
+                    <p className="text-xs text-muted-foreground">{isThaiLanguage ? "แนบรูปภาพเพื่อส่งพร้อมข้อความ LINE ของคุณ รูปจะแสดงก่อนข้อความ" : "Attach an image to send with your LINE message. The image will appear before the text."}</p>
                     <div className="flex gap-2 flex-wrap">
-                      <input
-                        ref={lineImageInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLineImageUpload}
-                        className="hidden"
-                        data-testid="input-line-image-upload"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => lineImageInputRef.current?.click()}
-                        disabled={isUploadingLineImage}
-                        data-testid="button-upload-line-image"
-                      >
-                        {isUploadingLineImage ? (
-                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        ) : (
-                          <Upload className="w-4 h-4 mr-1" />
-                        )}
+                      <input ref={lineImageInputRef} type="file" accept="image/*" onChange={handleLineImageUpload} className="hidden" data-testid="input-line-image-upload" />
+                      <Button type="button" size="sm" variant="outline" onClick={() => lineImageInputRef.current?.click()} disabled={isUploadingLineImage} data-testid="button-upload-line-image">
+                        {isUploadingLineImage ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
                         {isThaiLanguage ? "อัพโหลดรูป" : "Upload Image"}
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsAssetGalleryOpen(true)}
-                        data-testid="button-line-image-gallery"
-                      >
-                        <Image className="w-4 h-4 mr-1" />
-                        {isThaiLanguage ? "เลือกจากคลัง" : "Choose from Gallery"}
+                      <Button type="button" size="sm" variant="outline" onClick={() => setIsAssetGalleryOpen(true)} data-testid="button-line-image-gallery">
+                        <Image className="w-4 h-4 mr-1" />{isThaiLanguage ? "เลือกจากคลัง" : "Choose from Gallery"}
                       </Button>
                       {lineImageUrl && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setLineImageUrl("")}
-                          data-testid="button-remove-line-image"
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          {isThaiLanguage ? "ลบรูป" : "Remove"}
+                        <Button type="button" size="sm" variant="outline" onClick={() => setLineImageUrl("")} data-testid="button-remove-line-image">
+                          <X className="w-4 h-4 mr-1" />{isThaiLanguage ? "ลบรูป" : "Remove"}
                         </Button>
                       )}
                     </div>
-                    <Input
-                      placeholder={isThaiLanguage ? "หรือวาง URL รูปภาพที่นี่..." : "Or paste image URL here..."}
-                      value={lineImageUrl}
-                      onChange={(e) => setLineImageUrl(e.target.value)}
-                      data-testid="input-line-image-url"
-                    />
+                    <Input placeholder={isThaiLanguage ? "หรือวาง URL รูปภาพที่นี่..." : "Or paste image URL here..."} value={lineImageUrl} onChange={(e) => setLineImageUrl(e.target.value)} data-testid="input-line-image-url" />
                     {lineImageUrl && (
                       <div className="mt-2 border rounded-lg overflow-hidden">
-                        <img 
-                          src={lineImageUrl} 
-                          alt="LINE message image preview" 
-                          className="max-h-48 w-auto mx-auto"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
+                        <img src={lineImageUrl} alt="LINE message image preview" className="max-h-48 w-auto mx-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                       </div>
                     )}
                   </div>
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {(form.watch("channel") === "email" || form.watch("channel") === "both") 
-                          ? (isThaiLanguage ? "ข้อความ Plain Text (สำรอง)" : "Plain Text Message (Fallback)")
-                          : t('admin.messages.templateMessage')}
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t('admin.messages.placeholdersDesc')}
-                          rows={4}
-                          data-testid="input-template-message"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm font-medium text-yellow-800 mb-1">
-                          {isThaiLanguage ? "ตัวแปรที่ใช้ได้ (แทนที่อัตโนมัติ):" : "Available Merge Fields (auto-replace):"}
-                        </p>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <code className="bg-white px-2 py-1 rounded border">{"{name}"}</code>
-                          <code className="bg-white px-2 py-1 rounded border">{"{points}"}</code>
-                          <code className="bg-white px-2 py-1 rounded border">{"{tier}"}</code>
-                        </div>
+                <FormField control={form.control} name="message" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {(form.watch("channel") === "email" || form.watch("channel") === "both") ? (isThaiLanguage ? "ข้อความ Plain Text (สำรอง)" : "Plain Text Message (Fallback)") : t('admin.messages.templateMessage')}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea placeholder={t('admin.messages.placeholdersDesc')} rows={4} data-testid="input-template-message" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm font-medium text-yellow-800 mb-1">{isThaiLanguage ? "ตัวแปรที่ใช้ได้ (แทนที่อัตโนมัติ):" : "Available Merge Fields (auto-replace):"}</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <code className="bg-white px-2 py-1 rounded border">{"{name}"}</code>
+                        <code className="bg-white px-2 py-1 rounded border">{"{points}"}</code>
+                        <code className="bg-white px-2 py-1 rounded border">{"{tier}"}</code>
                       </div>
-                    </FormItem>
-                  )}
-                />
+                    </div>
+                  </FormItem>
+                )} />
 
-                <FormField
-                  control={form.control}
-                  name="isDefault"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="checkbox-is-default"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          {t('admin.messages.setDefault')}
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="isDefault" render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-is-default" /></FormControl>
+                    <div className="space-y-1 leading-none"><FormLabel>{t('admin.messages.setDefault')}</FormLabel></div>
+                  </FormItem>
+                )} />
 
                 <div className="border-t pt-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Eye className="w-4 h-4" />
-                    <h4 className="font-semibold">{t('admin.csv.preview')}</h4>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <p className="text-sm whitespace-pre-wrap">{getPreviewMessage()}</p>
-                  </div>
+                  <div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4" /><h4 className="font-semibold">{t('admin.csv.preview')}</h4></div>
+                  <div className="bg-muted p-4 rounded-lg"><p className="text-sm whitespace-pre-wrap">{getPreviewMessage()}</p></div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
-                    <Input
-                      placeholder={t('admin.messages.customerName')}
-                      value={previewData.name}
-                      onChange={(e) => setPreviewData({ ...previewData, name: e.target.value })}
-                      className="text-xs"
-                      data-testid="input-preview-name"
-                    />
-                    <Select
-                      value={previewData.tier}
-                      onValueChange={(value) => setPreviewData({ ...previewData, tier: value })}
-                    >
-                      <SelectTrigger className="text-xs" data-testid="select-preview-tier">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Input placeholder={t('admin.messages.customerName')} value={previewData.name} onChange={(e) => setPreviewData({ ...previewData, name: e.target.value })} className="text-xs" data-testid="input-preview-name" />
+                    <Select value={previewData.tier} onValueChange={(value) => setPreviewData({ ...previewData, tier: value })}>
+                      <SelectTrigger className="text-xs" data-testid="select-preview-tier"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="bronze">{t('common.tiers.bronze')}</SelectItem>
                         <SelectItem value="silver">{t('common.tiers.silver')}</SelectItem>
                         <SelectItem value="gold">{t('common.tiers.gold')}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input
-                      placeholder={t('admin.messages.customerPoints')}
-                      value={previewData.points}
-                      onChange={(e) => setPreviewData({ ...previewData, points: e.target.value })}
-                      className="text-xs"
-                      data-testid="input-preview-points"
-                    />
+                    <Input placeholder={t('admin.messages.customerPoints')} value={previewData.points} onChange={(e) => setPreviewData({ ...previewData, points: e.target.value })} className="text-xs" data-testid="input-preview-points" />
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="flex gap-2">
-                <Button
-                  type="submit"
-                  disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending}
-                  data-testid="button-save-template"
-                >
+                <Button type="submit" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} data-testid="button-save-template">
                   {editingTemplate ? t('admin.messages.update') : t('admin.messages.create')}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetForm}
-                  data-testid="button-cancel-template"
-                >
+                <Button type="button" variant="outline" onClick={resetForm} data-testid="button-cancel-template">
                   {t('admin.messages.cancel')}
                 </Button>
               </CardFooter>
@@ -966,64 +595,23 @@ export default function MessageTemplates() {
         </Card>
       )}
 
-      {/* Template card grid */}
       {!isCreating && (
         <>
-          {filteredTemplates.length === 0 && templates.length > 0 && (
-            <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground">
-                {isThaiLanguage ? "ไม่พบเทมเพลตที่ตรงกับการค้นหา" : "No templates match your search"}
-              </p>
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(""); setFilterChannel("all"); setFilterType("all"); }}
-                className="text-sm text-amber-600 mt-1 underline"
-                data-testid="button-clear-filters"
-              >
-                {isThaiLanguage ? "ล้างตัวกรอง" : "Clear filters"}
-              </button>
-            </div>
-          )}
-
-          {templates.length === 0 && (
-            <Card>
-              <CardContent className="py-14 text-center">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <FileText className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium text-foreground mb-1">{t('admin.messages.noTemplates')}</p>
-                <p className="text-xs text-muted-foreground mb-4">
-                  {isThaiLanguage ? "สร้างเทมเพลตแรกของคุณเพื่อเริ่มต้น" : "Create your first template to get started"}
-                </p>
-                <Button onClick={() => setIsCreating(true)} size="sm" data-testid="button-create-first-template">
-                  <Plus className="w-3.5 h-3.5 mr-1.5" />
-                  {t('admin.messages.addTemplate')}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredTemplates.map((template) => {
               const channelConfig: Record<string, { label: string; className: string }> = {
-                sms: { label: "SMS", className: "bg-sky-50 text-sky-700 border-sky-200" },
-                email: { label: "Email", className: "bg-violet-50 text-violet-700 border-violet-200" },
-                line: { label: "LINE", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-                both: { label: "SMS + Email", className: "bg-slate-50 text-slate-600 border-slate-200" },
+                sms:   { label: "SMS",         className: "bg-sky-50 text-sky-700 border-sky-200" },
+                email: { label: "Email",       className: "bg-violet-50 text-violet-700 border-violet-200" },
+                line:  { label: "LINE",        className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                both:  { label: "SMS + Email", className: "bg-slate-50 text-slate-600 border-slate-200" },
               };
               const ch = channelConfig[template.channel] || channelConfig.sms;
 
               return (
-                <Card
-                  key={template.id}
-                  data-testid={`template-card-${template.id}`}
-                  className="flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                >
+                <Card key={template.id} data-testid={`template-card-${template.id}`} className="flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                   <CardHeader className="pb-2 pt-4 px-4">
                     <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                      <Badge variant="outline" className={`text-xs font-medium ${ch.className}`}>
-                        {ch.label}
-                      </Badge>
+                      <Badge variant="outline" className={`text-xs font-medium ${ch.className}`}>{ch.label}</Badge>
                       {template.isDefault && (
                         <Badge className="text-xs font-medium bg-amber-400 text-amber-950 border-0 no-default-hover-elevate">
                           <Star className="w-2.5 h-2.5 mr-1 fill-amber-950" />
@@ -1042,20 +630,14 @@ export default function MessageTemplates() {
                   <CardContent className="flex-1 px-4 pb-3 pt-1">
                     {template.subject && (
                       <div className="mb-2.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
-                          {t('admin.messages.templateSubject')}
-                        </p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">{t('admin.messages.templateSubject')}</p>
                         <p className="text-xs truncate text-foreground/80">{template.subject}</p>
                       </div>
                     )}
-
                     {template.htmlContent ? (
                       <div className="rounded-md border bg-white overflow-hidden">
                         <div className="h-28 overflow-hidden relative">
-                          <div
-                            className="transform scale-[0.45] origin-top-left w-[222%] pointer-events-none"
-                            dangerouslySetInnerHTML={{ __html: template.htmlContent }}
-                          />
+                          <div className="transform scale-[0.45] origin-top-left w-[222%] pointer-events-none" dangerouslySetInnerHTML={{ __html: template.htmlContent }} />
                           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white pointer-events-none" />
                         </div>
                         <div className="px-3 py-1.5 bg-gray-50/80 border-t flex items-center gap-1.5">
@@ -1065,62 +647,29 @@ export default function MessageTemplates() {
                       </div>
                     ) : template.message ? (
                       <div className="rounded-md bg-muted/40 border border-muted p-3">
-                        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
-                          {template.message}
-                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{template.message}</p>
                       </div>
                     ) : (
                       <div className="rounded-md bg-muted/30 border border-muted p-3">
-                        <p className="text-xs text-muted-foreground italic">
-                          {isThaiLanguage ? "(ไม่มีเนื้อหา)" : "No content"}
-                        </p>
+                        <p className="text-xs text-muted-foreground italic">{isThaiLanguage ? "(ไม่มีเนื้อหา)" : "No content"}</p>
                       </div>
                     )}
                   </CardContent>
 
                   <div className="px-3 py-2.5 border-t bg-muted/20 flex items-center justify-between gap-2">
                     {!template.isDefault ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => updateTemplateMutation.mutate({ id: template.id, data: { isDefault: true } })}
-                        data-testid={`button-set-default-${template.id}`}
-                        className="h-7 px-2 text-xs text-muted-foreground"
-                      >
-                        <Star className="w-3 h-3 mr-1" />
-                        {isThaiLanguage ? "ตั้งเป็นค่าเริ่มต้น" : "Set default"}
+                      <Button size="sm" variant="ghost" onClick={() => updateTemplateMutation.mutate({ id: template.id, data: { isDefault: true } })} data-testid={`button-set-default-${template.id}`} className="h-7 px-2 text-xs text-muted-foreground">
+                        <Star className="w-3 h-3 mr-1" />{isThaiLanguage ? "ตั้งเป็นค่าเริ่มต้น" : "Set default"}
                       </Button>
-                    ) : (
-                      <div />
-                    )}
+                    ) : <div />}
                     <div className="flex items-center gap-0.5">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setPreviewTemplate(template)}
-                        data-testid={`button-preview-${template.id}`}
-                        title={isThaiLanguage ? "ดูตัวอย่าง" : "Preview"}
-                      >
+                      <Button size="icon" variant="ghost" onClick={() => setPreviewTemplate(template)} data-testid={`button-preview-${template.id}`} title={isThaiLanguage ? "ดูตัวอย่าง" : "Preview"}>
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEdit(template)}
-                        data-testid={`button-edit-${template.id}`}
-                        title={isThaiLanguage ? "แก้ไข" : "Edit"}
-                      >
+                      <Button size="icon" variant="ghost" onClick={() => handleEdit(template)} data-testid={`button-edit-${template.id}`} title={isThaiLanguage ? "แก้ไข" : "Edit"}>
                         <Edit2 className="w-3.5 h-3.5" />
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDelete(template.id)}
-                        disabled={template.isDefault}
-                        data-testid={`button-delete-${template.id}`}
-                        title={isThaiLanguage ? "ลบ" : "Delete"}
-                        className="text-destructive"
-                      >
+                      <Button size="icon" variant="ghost" onClick={() => handleDelete(template.id)} disabled={template.isDefault} data-testid={`button-delete-${template.id}`} title={isThaiLanguage ? "ลบ" : "Delete"} className="text-destructive">
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
@@ -1141,50 +690,36 @@ export default function MessageTemplates() {
               {previewTemplate?.name || (isThaiLanguage ? "ตัวอย่างเทมเพลต" : "Template Preview")}
             </DialogTitle>
             {previewTemplate?.subject && (
-              <DialogDescription className="text-xs">
-                {t('admin.messages.templateSubject')}: {previewTemplate.subject}
-              </DialogDescription>
+              <DialogDescription className="text-xs">{t('admin.messages.templateSubject')}: {previewTemplate.subject}</DialogDescription>
             )}
           </DialogHeader>
           <ScrollArea className="flex-1 mt-2">
             {previewTemplate?.htmlContent ? (
               <div className="border rounded-md overflow-hidden bg-white">
-                <iframe
-                  srcDoc={previewTemplate.htmlContent}
-                  className="w-full h-80 border-0"
-                  sandbox="allow-same-origin"
-                  title="Template Preview"
-                />
+                <iframe srcDoc={previewTemplate.htmlContent} className="w-full h-80 border-0" sandbox="allow-same-origin" title="Template Preview" />
               </div>
             ) : previewTemplate?.message ? (
               <div className="bg-muted/40 rounded-md p-4 border">
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {previewTemplate.message
-                    .replace(/{name}/g, "Test Customer")
-                    .replace(/{points}/g, "150")
-                    .replace(/{tier}/g, "gold")}
+                  {previewTemplate.message.replace(/{name}/g, "Test Customer").replace(/{points}/g, "150").replace(/{tier}/g, "gold")}
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground italic text-center py-8">
-                {isThaiLanguage ? "ไม่มีเนื้อหา" : "No content to preview"}
-              </p>
+              <p className="text-sm text-muted-foreground italic text-center py-8">{isThaiLanguage ? "ไม่มีเนื้อหา" : "No content to preview"}</p>
             )}
           </ScrollArea>
           <DialogFooter className="mt-3">
-            <Button variant="outline" size="sm" onClick={() => setPreviewTemplate(null)}>
-              {isThaiLanguage ? "ปิด" : "Close"}
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPreviewTemplate(null)}>{isThaiLanguage ? "ปิด" : "Close"}</Button>
             {previewTemplate && (
               <Button size="sm" onClick={() => { handleEdit(previewTemplate); setPreviewTemplate(null); }}>
-                <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-                {isThaiLanguage ? "แก้ไข" : "Edit Template"}
+                <Edit2 className="w-3.5 h-3.5 mr-1.5" />{isThaiLanguage ? "แก้ไข" : "Edit Template"}
               </Button>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Image Asset Gallery */}
       <Dialog open={isAssetGalleryOpen} onOpenChange={setIsAssetGalleryOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -1192,11 +727,8 @@ export default function MessageTemplates() {
               <Image className="w-5 h-5" />
               {isThaiLanguage ? "คลังรูปภาพ" : "Image Gallery"}
             </DialogTitle>
-            <DialogDescription>
-              {isThaiLanguage ? "เลือกรูปภาพที่อัพโหลดแล้วเพื่อใส่ในอีเมล" : "Select an uploaded image to insert into your email"}
-            </DialogDescription>
+            <DialogDescription>{isThaiLanguage ? "เลือกรูปภาพที่อัพโหลดแล้วเพื่อใส่ในอีเมล" : "Select an uploaded image to insert into your email"}</DialogDescription>
           </DialogHeader>
-          
           <ScrollArea className="h-[300px]">
             {emailAssets.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -1207,28 +739,15 @@ export default function MessageTemplates() {
             ) : (
               <div className="grid grid-cols-3 gap-2 p-2">
                 {emailAssets.map((asset) => (
-                  <button
-                    key={asset.url}
-                    type="button"
-                    className="aspect-square border rounded-lg overflow-hidden hover-elevate cursor-pointer"
-                    onClick={() => insertAssetImage(asset)}
-                    data-testid={`button-select-asset-${asset.name}`}
-                  >
-                    <img 
-                      src={asset.url} 
-                      alt={asset.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <button key={asset.url} type="button" className="aspect-square border rounded-lg overflow-hidden hover-elevate cursor-pointer" onClick={() => insertAssetImage(asset)} data-testid={`button-select-asset-${asset.name}`}>
+                    <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
             )}
           </ScrollArea>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAssetGalleryOpen(false)}>
-              {isThaiLanguage ? "ปิด" : "Close"}
-            </Button>
+            <Button variant="outline" onClick={() => setIsAssetGalleryOpen(false)}>{isThaiLanguage ? "ปิด" : "Close"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
