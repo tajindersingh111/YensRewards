@@ -155,20 +155,31 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
         </div>
       </div>
 
-      <div>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Quick Actions</h3>
+      <div className="space-y-6">
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] pl-1">
+          Executive Operations
+        </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickActions.map(({ label, icon: Icon, section, tab, color }) => (
+          {quickActions.map(({ label, icon: Icon, section, tab }) => (
             <button
               key={tab}
               onClick={() => onNavigate(section, tab)}
-              className="flex items-center gap-3 p-5 rounded-xl border border-border bg-card shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left group active:scale-95"
+              className="flex items-center gap-4 p-5 rounded-[2rem] border border-slate-100 bg-white shadow-sm hover:shadow-xl hover:bg-blue-900/5 hover:border-blue-900/10 transition-all text-left group active:scale-95"
             >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${color} group-hover:scale-110 transition-transform`}>
-                <Icon className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-blue-900 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Icon className="w-5 h-5 text-yellow-400" />
               </div>
-              <span className="text-sm font-semibold text-foreground">{label}</span>
-              <ArrowUpRight className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-xs font-black text-blue-900 uppercase tracking-tight leading-tight truncate">
+                  {label}
+                </span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Execute Now
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 opacity-0 group-hover:opacity-100 transition-all">
+                <ArrowUpRight className="w-4 h-4 text-blue-900" />
+              </div>
             </button>
           ))}
         </div>
