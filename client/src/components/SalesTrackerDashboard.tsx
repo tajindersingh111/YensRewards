@@ -243,35 +243,41 @@ export default function SalesTrackerDashboard() {
     if (!reportData) return;
     const data = reportData;
 
-    const fmtPdf = (n: number) => `฿${n.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    const YELLOW: [number, number, number] = [252, 211, 77];
-    const BLUE_DARK: [number, number, number] = [30, 58, 138];
-    const BLUE_MID: [number, number, number] = [37, 99, 235];
-    const WHITE: [number, number, number] = [255, 255, 255];
-    const GREY_ROW: [number, number, number] = [248, 250, 252];
-    const GREY_TEXT: [number, number, number] = [71, 85, 105];
+    // ── Colour palette ────────────────────────────────────────────────
+    const YELLOW:    [number,number,number] = [252, 196,  56];
+    const NAVY:      [number,number,number] = [ 30,  58, 138];
+    const NAVY_MID:  [number,number,number] = [ 37,  99, 235];
+    const WHITE:     [number,number,number] = [255, 255, 255];
+    const OFF_WHITE: [number,number,number] = [249, 250, 251];
+    const RULE:      [number,number,number] = [226, 232, 240];
+    const GREY_DARK: [number,number,number] = [ 51,  65,  85];
+    const GREY_MID:  [number,number,number] = [100, 116, 139];
+    const GREEN:     [number,number,number] = [ 22, 163,  74];
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const W = doc.internal.pageSize.getWidth();
+    const fmtPdf   = (n: number) => `฿${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const fmtInt   = (n: number) => n.toLocaleString('en-US');
+    const pct      = (v: number, t: number) => t > 0 ? `${((v / t) * 100).toFixed(1)}%` : '-';
 
-    // Load Sarabun Thai font (supports ฿ and all Thai characters)
+    const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W    = doc.internal.pageSize.getWidth();
+    const H    = doc.internal.pageSize.getHeight();
+    const FONT = 'Sarabun';
+
+    // ── Load Sarabun font ─────────────────────────────────────────────
     try {
-      const fontRes = await fetch('/fonts/Sarabun-Regular.ttf');
-      const fontBuf = await fontRes.arrayBuffer();
+      const fontRes  = await fetch('/fonts/Sarabun-Regular.ttf');
+      const fontBuf  = await fontRes.arrayBuffer();
       const fontBytes = new Uint8Array(fontBuf);
-      let fontB64 = '';
-      for (let i = 0; i < fontBytes.length; i += 1024) {
-        fontB64 += String.fromCharCode(...fontBytes.subarray(i, i + 1024));
-      }
-      fontB64 = btoa(fontB64);
-      doc.addFileToVFS('Sarabun-Regular.ttf', fontB64);
-      doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal');
-      doc.setFont('Sarabun', 'normal');
-    } catch {
-      doc.setFont('helvetica', 'normal');
-    }
+      let b64 = '';
+      for (let i = 0; i < fontBytes.length; i += 1024)
+        b64 += String.fromCharCode(...fontBytes.subarray(i, i + 1024));
+      b64 = btoa(b64);
+      doc.addFileToVFS('Sarabun-Regular.ttf', b64);
+      doc.addFont('Sarabun-Regular.ttf', FONT, 'normal');
+      doc.setFont(FONT, 'normal');
+    } catch { doc.setFont('helvetica', 'normal'); }
 
-    // Pre-load logo image
+    // ── Load logo ─────────────────────────────────────────────────────
     let logoImg: HTMLImageElement | null = null;
     try {
       logoImg = new Image();
@@ -280,123 +286,211 @@ export default function SalesTrackerDashboard() {
       await new Promise<void>((res, rej) => { logoImg!.onload = () => res(); logoImg!.onerror = () => rej(); });
     } catch { logoImg = null; }
 
-    const setHeadingFont = () => doc.setFont('Sarabun', 'normal');
-    const setBodyFont = () => doc.setFont('Sarabun', 'normal');
-
-    const drawPageHeader = (title: string) => {
-      doc.setFillColor(...YELLOW);
-      doc.rect(0, 0, W, 30, 'F');
-      doc.setFillColor(...BLUE_DARK);
-      doc.rect(0, 30, W, 2, 'F');
-      if (logoImg) {
-        doc.addImage(logoImg, 'PNG', 5, 3, 24, 24);
-      } else {
-        doc.setFillColor(...BLUE_DARK);
-        doc.circle(17, 15, 11, 'F');
-        doc.setFontSize(8); doc.setTextColor(...WHITE);
-        setHeadingFont();
-        doc.text("YEN'S", 17, 14, { align: 'center' });
-        doc.text("THAI", 17, 19, { align: 'center' });
-      }
-      doc.setFontSize(20); doc.setTextColor(...BLUE_DARK); setHeadingFont();
-      doc.text(title, 33, 13);
-      doc.setFontSize(9); setBodyFont(); doc.setTextColor(...GREY_TEXT);
-      doc.text("Yen's Thai Ice Cream  -  Nakhon Sawan", 33, 20);
-      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 33, 26);
+    // ── Helpers ───────────────────────────────────────────────────────
+    const sf = (size: number, color: [number,number,number] = GREY_DARK) => {
+      doc.setFontSize(size);
+      doc.setFont(FONT, 'normal');
+      doc.setTextColor(...color);
     };
 
-    // ── PAGE 1 ────────────────────────────────────────────────────────
+    const sectionHeading = (label: string, y: number) => {
+      doc.setFillColor(...YELLOW);
+      doc.rect(14, y - 4, 3, 5.5, 'F');
+      sf(11, NAVY);
+      doc.text(label, 20, y);
+      doc.setDrawColor(...RULE);
+      doc.setLineWidth(0.3);
+      doc.line(14, y + 2, W - 14, y + 2);
+    };
+
+    const drawPageHeader = (title: string, subtitle = '') => {
+      // Yellow top band
+      doc.setFillColor(...YELLOW);
+      doc.rect(0, 0, W, 36, 'F');
+      // Navy stripe at bottom of band
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 36, W, 1.5, 'F');
+
+      // Logo
+      if (logoImg) {
+        doc.addImage(logoImg, 'PNG', 7, 3, 30, 30);
+      } else {
+        doc.setFillColor(...NAVY);
+        doc.circle(22, 18, 13, 'F');
+        sf(9, WHITE); doc.text("YEN'S", 22, 16, { align: 'center' });
+        sf(7, WHITE); doc.text("THAI", 22, 22, { align: 'center' });
+      }
+
+      // Title block
+      sf(22, NAVY); doc.text(title, 42, 16);
+      sf(9, GREY_DARK); doc.text("Yen's Thai Ice Cream  –  Nakhon Sawan", 42, 24);
+      if (subtitle) { sf(8, GREY_MID); doc.text(subtitle, 42, 30); }
+
+      // Generated stamp — right-aligned
+      sf(7, GREY_MID);
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, W - 14, 30, { align: 'right' });
+    };
+
+    const drawFooter = (pageNum: number, totalPages: number) => {
+      const fy = H - 10;
+      doc.setDrawColor(...RULE);
+      doc.setLineWidth(0.4);
+      doc.line(14, fy - 2, W - 14, fy - 2);
+      sf(7, GREY_MID);
+      doc.text("Yen's Thai Ice Cream  |  Nakhon Sawan  |  Confidential", 14, fy + 2);
+      doc.text(`Page ${pageNum} of ${totalPages}`, W - 14, fy + 2, { align: 'right' });
+    };
+
+    // ── PAGE 1 — Summary ─────────────────────────────────────────────
     drawPageHeader("Sales Report");
 
-    doc.setFillColor(...BLUE_MID);
-    doc.roundedRect(14, 36, W - 28, 9, 2, 2, 'F');
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...WHITE);
-    doc.text(`Period: ${formatDateDDMMYY(reportStartDate)}  to  ${formatDateDDMMYY(reportEndDate)}`, W / 2, 42, { align: 'center' });
+    // Period pill
+    doc.setFillColor(...NAVY);
+    doc.roundedRect(14, 42, W - 28, 11, 2, 2, 'F');
+    sf(10, WHITE);
+    doc.text(
+      `${formatDateDDMMYY(reportStartDate)}  –  ${formatDateDDMMYY(reportEndDate)}`,
+      W / 2, 49.5, { align: 'center' }
+    );
+    sf(7, [180,200,230]);
+    doc.text('REPORT PERIOD', W / 2, 44.8, { align: 'center' });
 
-    // Summary cards — row of 3, then row of 2 centred
+    // ── Summary cards (5 cards, 3 then 2) ────────────────────────────
     const summaryItems = [
-      { label: 'Total Net Sales', value: fmtPdf(data.summary.totalNetSales) },
-      { label: 'Other Sales',     value: fmtPdf(data.summary.totalOtherSales) },
-      { label: 'Total Sales',     value: fmtPdf(data.summary.totalSales) },
-      { label: 'Days Logged',     value: String(data.summary.transactionCount) },
-      { label: 'Avg / Day',       value: fmtPdf(data.summary.avgTransaction) },
+      { label: 'TOTAL NET SALES',  value: fmtPdf(data.summary.totalNetSales),    accent: NAVY_MID },
+      { label: 'OTHER SALES',      value: fmtPdf(data.summary.totalOtherSales),  accent: GREY_MID },
+      { label: 'TOTAL REVENUE',    value: fmtPdf(data.summary.totalSales),        accent: GREEN    },
+      { label: 'DAYS LOGGED',      value: fmtInt(data.summary.transactionCount), accent: NAVY_MID },
+      { label: 'AVG REVENUE / DAY',value: fmtPdf(data.summary.avgTransaction),   accent: NAVY_MID },
     ];
-    const cW = (W - 28 - 8) / 3;
-    [[0,1,2],[3,4]].forEach((row, ri) => {
-      const rowW = row.length === 3 ? W - 28 : (cW * 2 + 4);
-      const startX = row.length === 3 ? 14 : (W - rowW) / 2;
-      const cy = 50 + ri * 22;
+    const gap = 4;
+    const cW3 = (W - 28 - gap * 2) / 3;
+    const cH  = 22;
+    const rows: number[][] = [[0, 1, 2], [3, 4]];
+    rows.forEach((row, ri) => {
+      const n = row.length;
+      const rowW = n === 3 ? W - 28 : cW3 * 2 + gap;
+      const startX = n === 3 ? 14 : (W - rowW) / 2;
+      const cy = 58 + ri * (cH + 4);
       row.forEach((idx, ci) => {
-        const bx = startX + ci * (cW + 4);
-        doc.setFillColor(...WHITE); doc.setDrawColor(...YELLOW); doc.setLineWidth(0.5);
-        doc.roundedRect(bx, cy, cW, 17, 2, 2, 'FD');
-        doc.setFontSize(7); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...GREY_TEXT);
-        doc.text(summaryItems[idx].label.toUpperCase(), bx + cW / 2, cy + 6, { align: 'center' });
-        doc.setFontSize(10); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...BLUE_DARK);
-        doc.text(summaryItems[idx].value, bx + cW / 2, cy + 13, { align: 'center' });
+        const bx = startX + ci * (cW3 + gap);
+        // Card background
+        doc.setFillColor(...WHITE);
+        doc.setDrawColor(...RULE);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(bx, cy, cW3, cH, 2, 2, 'FD');
+        // Coloured top accent bar
+        doc.setFillColor(...summaryItems[idx].accent);
+        doc.roundedRect(bx, cy, cW3, 3, 2, 2, 'F');
+        doc.rect(bx, cy + 1.5, cW3, 1.5, 'F'); // flatten bottom of accent
+        // Label
+        sf(6.5, GREY_MID);
+        doc.text(summaryItems[idx].label, bx + cW3 / 2, cy + 9, { align: 'center' });
+        // Value
+        sf(11, NAVY);
+        doc.text(summaryItems[idx].value, bx + cW3 / 2, cy + 18, { align: 'center' });
       });
     });
 
-    const tblFont = 'Sarabun';
-    let nextY = 100;
-
-    doc.setFontSize(12); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...BLUE_DARK);
-    doc.text('Sales by Channel', 14, nextY);
+    // ── Sales by Channel ──────────────────────────────────────────────
+    let nextY = 116;
+    sectionHeading('Sales by Channel', nextY);
+    const totalRev = data.summary.totalSales as number;
     autoTable(doc, {
-      startY: nextY + 3,
-      head: [['Channel', 'Revenue (฿)', 'Days']],
-      body: data.channelBreakdown.map((c: any) => [c.channel, fmtPdf(c.revenue), c.count.toString()]),
-      styles: { font: tblFont, fontSize: 9 },
-      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold' },
-      bodyStyles: { textColor: [30, 30, 30] },
-      alternateRowStyles: { fillColor: GREY_ROW },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
-      margin: { left: 14, right: 14 },
-    });
-
-    nextY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFontSize(12); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...BLUE_DARK);
-    doc.text('Sales by Day of Week', 14, nextY);
-    autoTable(doc, {
-      startY: nextY + 3,
-      head: [['Day', 'Revenue (฿)', 'Days']],
-      body: data.dayBreakdown.map((d: any) => [d.day, fmtPdf(d.revenue), d.count.toString()]),
-      styles: { font: tblFont, fontSize: 9 },
-      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold' },
-      bodyStyles: { textColor: [30, 30, 30] },
-      alternateRowStyles: { fillColor: GREY_ROW },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
-      margin: { left: 14, right: 14 },
-    });
-
-    // ── PAGE 2: Transaction log ───────────────────────────────────────
-    doc.addPage();
-    drawPageHeader("Transaction Details");
-    autoTable(doc, {
-      startY: 36,
-      head: [['Date', 'Day', 'Channel', 'Net Sales (฿)', 'Other (฿)', 'Note', 'Total (฿)']],
-      body: data.transactions.map((t: any) => [
-        formatDateDDMMYY(t.date), t.dayOfWeek || '-', t.channel,
-        fmtPdf(t.netSales), fmtPdf(t.otherSales), t.otherSalesNote || '-', fmtPdf(t.totalSales),
+      startY: nextY + 5,
+      head: [['Channel', 'Revenue', '% Share', 'Days Active']],
+      body: data.channelBreakdown.map((c: any) => [
+        c.channel,
+        fmtPdf(c.revenue),
+        pct(c.revenue, totalRev),
+        c.count.toString(),
       ]),
-      styles: { font: tblFont, fontSize: 8 },
-      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold' },
-      bodyStyles: { textColor: [30, 30, 30] },
-      alternateRowStyles: { fillColor: GREY_ROW },
-      columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' }, 6: { halign: 'right' } },
+      styles:          { font: FONT, fontSize: 9, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+      headStyles:      { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+      bodyStyles:      { textColor: GREY_DARK },
+      alternateRowStyles: { fillColor: OFF_WHITE },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { halign: 'right', cellWidth: 40 },
+        2: { halign: 'center', cellWidth: 28, textColor: GREY_MID },
+        3: { halign: 'center' },
+      },
       margin: { left: 14, right: 14 },
+      tableLineColor: RULE,
+      tableLineWidth: 0.2,
     });
 
-    // Footer
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
+    // ── Sales by Day of Week ──────────────────────────────────────────
+    nextY = (doc as any).lastAutoTable.finalY + 12;
+    sectionHeading('Sales by Day of Week', nextY);
+    const totalDayRev = data.dayBreakdown.reduce((s: number, d: any) => s + d.revenue, 0);
+    autoTable(doc, {
+      startY: nextY + 5,
+      head: [['Day', 'Revenue', '% Share', 'Days Logged']],
+      body: data.dayBreakdown.map((d: any) => [
+        d.day,
+        fmtPdf(d.revenue),
+        pct(d.revenue, totalDayRev),
+        d.count.toString(),
+      ]),
+      styles:          { font: FONT, fontSize: 9, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+      headStyles:      { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+      bodyStyles:      { textColor: GREY_DARK },
+      alternateRowStyles: { fillColor: OFF_WHITE },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { halign: 'right', cellWidth: 40 },
+        2: { halign: 'center', cellWidth: 28, textColor: GREY_MID },
+        3: { halign: 'center' },
+      },
+      margin: { left: 14, right: 14 },
+      tableLineColor: RULE,
+      tableLineWidth: 0.2,
+    });
+
+    // ── PAGE 2 — Transaction Log ──────────────────────────────────────
+    doc.addPage();
+    drawPageHeader("Transaction Log", `${data.transactions.length} entries  |  ${formatDateDDMMYY(reportStartDate)} – ${formatDateDDMMYY(reportEndDate)}`);
+
+    autoTable(doc, {
+      startY: 42,
+      head: [['Date', 'Day', 'Channel', 'Net Sales', 'Other', 'Note', 'Total']],
+      body: data.transactions.map((t: any) => [
+        formatDateDDMMYY(t.date),
+        t.dayOfWeek || '-',
+        t.channel,
+        fmtPdf(t.netSales),
+        fmtPdf(t.otherSales),
+        t.otherSalesNote || '-',
+        fmtPdf(t.totalSales),
+      ]),
+      styles:          { font: FONT, fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 } },
+      headStyles:      { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5 },
+      bodyStyles:      { textColor: GREY_DARK },
+      alternateRowStyles: { fillColor: OFF_WHITE },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 14, halign: 'center', textColor: GREY_MID },
+        2: { cellWidth: 30 },
+        3: { halign: 'right', cellWidth: 28 },
+        4: { halign: 'right', cellWidth: 22 },
+        5: { cellWidth: 32, textColor: GREY_MID, fontSize: 7 },
+        6: { halign: 'right', fontStyle: 'bold', textColor: NAVY },
+      },
+      margin: { left: 14, right: 14 },
+      tableLineColor: RULE,
+      tableLineWidth: 0.2,
+    });
+
+    // ── Footers on every page ─────────────────────────────────────────
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      doc.setFontSize(7); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...GREY_TEXT);
-      doc.text(`Page ${i} of ${pageCount}  |  Yen's Thai Ice Cream  |  Confidential`, W / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' });
+      drawFooter(i, totalPages);
     }
 
     doc.save(`yens-sales-report-${reportStartDate}-to-${reportEndDate}.pdf`);
-    toast({ title: "PDF saved", description: `${data.summary.transactionCount} days exported` });
+    toast({ title: "PDF downloaded", description: `${data.transactions.length} transactions exported` });
   };
 
   const handleEditSale = (sale: DailySales) => {
