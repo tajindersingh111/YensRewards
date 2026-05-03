@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Home, User, RefreshCw, Gift, ChevronRight, IceCream, Check, Copy, ExternalLink, Star, LogOut, X } from "lucide-react";
+import { Home, User, RefreshCw, Gift, ChevronRight, IceCream, Check, Copy, ExternalLink, Star, LogOut, X, QrCode, Smartphone } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import TransactionList from "@/components/TransactionList";
 import CustomerReviewPage from "@/components/CustomerReviewPage";
@@ -614,30 +614,44 @@ export default function CustomerAppV3() {
         </Card>
 
         {/* QR Code Card */}
-        <Card className="p-4 rounded-2xl border-0 shadow-md bg-white">
-          <div className="flex items-center gap-4">
-            {/* QR Code */}
-            <div className="w-20 h-20 flex-shrink-0 border-2 border-yens-yellow rounded-lg overflow-hidden flex items-center justify-center bg-white">
+        <Card className="p-6 rounded-[2rem] border-none shadow-2xl bg-white relative overflow-hidden group" data-testid="card-membership-pass">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <QrCode className="w-20 h-20 text-blue-900" />
+          </div>
+
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="relative w-24 h-24 flex-shrink-0 bg-white rounded-2xl ring-4 ring-yellow-400 border-4 border-blue-900 p-2 shadow-xl overflow-hidden flex items-center justify-center">
               {customer?.id ? (
-                <QRCode value={customer.id} size={72} />
+                <QRCode value={customer.id} size={80} level="H" />
               ) : (
-                <div className="w-full h-full bg-gray-100" />
+                <div className="w-full h-full bg-slate-50 animate-pulse rounded-lg" />
               )}
+              <div className="absolute top-0 right-0 w-3 h-3 bg-blue-900 rounded-bl-lg flex items-center justify-center">
+                <div className="w-1 h-1 rounded-full bg-yellow-400" />
+              </div>
             </div>
-            
-            {/* Customer Info */}
+
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-lg text-foreground truncate">
-                {customer?.name || "Guest"}
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className="bg-blue-900/10 text-blue-900 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
+                  Verified Member
+                </Badge>
+              </div>
+
+              <h4 className="font-black text-xl text-blue-900 uppercase tracking-tighter truncate">
+                {customer?.name || "Premium Guest"}
               </h4>
-              <p className="text-xs text-muted-foreground truncate">
-                ID: {customer?.id?.substring(0, 20)}...
+
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate mt-1">
+                ID: {customer?.id?.substring(0, 12).toUpperCase()}
               </p>
+
               <button
                 onClick={() => setActiveTab("profile")}
-                className="text-sm text-yens-yellow font-medium mt-1"
+                className="flex items-center gap-2 text-[10px] font-black text-yellow-500 uppercase tracking-[0.2em] mt-4 hover:text-blue-900 transition-colors"
                 data-testid="button-show-barista"
               >
+                <Smartphone className="w-3.5 h-3.5" />
                 {t('customer.showToBarista')}
               </button>
             </div>
