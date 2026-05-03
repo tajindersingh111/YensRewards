@@ -2,6 +2,7 @@
 /* Changes: Executive Table Architecture, Tactical Member Chips, and High-Contrast Filtering */
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Search, Filter, 
   Phone, Download,
@@ -19,13 +20,27 @@ import {
   DropdownMenu, DropdownMenuContent, 
   DropdownMenuItem, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import type { Customer } from "@shared/schema";
 
-export default function CustomerTable({ customers, onEdit, onMessage }: any) {
+export default function CustomerTable({ customers: customersProp, onEdit, onMessage }: any) {
   const [search, setSearch] = useState("");
 
+  const { data: fetchedCustomers = [], isLoading } = useQuery<Customer[]>({
+    queryKey: ['/api/admin/customers/all'],
+    enabled: !customersProp,
+  });
+
+  const customers = customersProp ?? fetchedCustomers;
+
   const filtered = customers.filter((c: any) => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    c.phone.includes(search)
+    c.name?.toLowerCase().includes(search.toLowerCase()) || 
+    c.phone?.includes(search)
+  );
+
+  if (isLoading && !customersProp) return (
+    <div className="py-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-widest">
+      Loading Member Registry...
+    </div>
   );
 
   return (
