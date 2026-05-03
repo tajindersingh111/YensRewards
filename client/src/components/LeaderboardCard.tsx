@@ -41,10 +41,10 @@ export default function LeaderboardCard({ entries, currentUserId }: LeaderboardC
         {entries.map((entry) => (
           <div
             key={entry.id}
-            className={`flex items-center gap-2 p-2 rounded-lg ${
+            className={`flex items-center gap-2 p-2 rounded-xl ${
               entry.id === currentUserId
-                ? "bg-blue-900/10 border border-blue-100"
-                : "bg-muted/50"
+                ? "bg-blue-900/10"
+                : "bg-slate-50"
             }`}
             data-testid={`row-leaderboard-${entry.id}`}
           >

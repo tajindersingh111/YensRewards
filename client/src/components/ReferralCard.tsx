@@ -46,7 +46,7 @@ export default function ReferralCard({ referralCode, referralCount }: ReferralCa
           {t('referral.description')}
         </p>
 
-        <div className="bg-muted rounded-lg p-3 text-center overflow-hidden">
+        <div className="bg-slate-50 rounded-2xl p-3 text-center overflow-hidden">
           <p className="text-lg xs:text-xl font-bold text-foreground tracking-wide truncate" data-testid="text-referral-code">
             {referralCode}
           </p>
