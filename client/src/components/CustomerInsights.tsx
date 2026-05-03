@@ -4,10 +4,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Users, Trophy, Gift, TrendingUp, Star,
-  ArrowUpRight, MailCheck, Crown, CalendarDays
+  MailCheck, Crown, CalendarDays
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -26,7 +25,6 @@ const TIER_COLORS = {
 export default function CustomerInsights() {
   const { t } = useTranslation();
 
-  // Use /all endpoint to get every customer (not paginated) for accurate metrics
   const { data: customers = [], isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/admin/customers/all'],
   });
@@ -58,18 +56,20 @@ export default function CustomerInsights() {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* ── Branded Header ── */}
-      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-xl p-3 shadow-lg">
+
+      {/* ── BRANDED HEADER ── */}
+      <div className="bg-blue-900 rounded-[2rem] p-6 flex items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3">
             <TrendingUp className="h-5 w-5 text-blue-900" />
           </div>
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tight leading-none">Customer Insights</h2>
-            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">Loyalty analytics and member intelligence</p>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Customer Insights</h2>
+            <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-1.5 opacity-80">Loyalty analytics and member intelligence</p>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2 relative z-10">
           <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-md flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
             <span className="text-[10px] font-black text-white uppercase tracking-widest">{customers.length} Members</span>
