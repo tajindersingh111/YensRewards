@@ -71,7 +71,7 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortBy !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
-    return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1 text-blue-600" /> : <ArrowDown className="w-3 h-3 ml-1 text-blue-600" />;
+    return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1 text-yellow-400" /> : <ArrowDown className="w-3 h-3 ml-1 text-yellow-400" />;
   };
 
   const { data, isLoading } = useQuery<{ data: Customer[]; totalCount: number }>({
@@ -103,26 +103,30 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
 
   return (
     <div className="space-y-6">
-      {/* Branded Search & Summary Bar */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border-t-4 border-[#FCD34D] flex flex-col xl:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full xl:w-1/2">
-          <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-          <Input
-            placeholder="Search Member Database..."
-            className="pl-12 h-12 rounded-xl border-slate-200 focus:border-blue-600 bg-slate-50/50 font-bold text-lg"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            data-testid="input-search-customers"
-          />
+      {/* ── Branded Header ── */}
+      <div className="bg-blue-900 rounded-lg p-6 text-white flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5">
+            <Users className="h-5 w-5 text-blue-900" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black uppercase tracking-tight">Member Database</h2>
+            <p className="text-blue-300 text-sm" data-testid="badge-customer-count">{totalCount} ecosystem members</p>
+          </div>
         </div>
-
-        <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto justify-end">
-          <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 mr-2">
-            <Users className="h-4 w-4 text-blue-900" />
-            <span className="text-blue-900 font-black text-sm" data-testid="badge-customer-count">{totalCount} ECOSYSTEM MEMBERS</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/50" />
+            <input
+              placeholder="Search members..."
+              className="pl-9 h-9 rounded-md border border-white/20 bg-white/10 text-white placeholder:text-white/50 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-400 w-52"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              data-testid="input-search-customers"
+            />
           </div>
           <Select value={tierFilter} onValueChange={(value) => { setTierFilter(value); setPage(1); }}>
-            <SelectTrigger className="w-36 h-10 rounded-lg border-slate-200 font-black text-xs uppercase" data-testid="select-tier-filter">
+            <SelectTrigger className="w-32 bg-white/10 border-white/20 text-white text-xs font-bold" data-testid="select-tier-filter">
               <SelectValue placeholder="All Tiers" />
             </SelectTrigger>
             <SelectContent>
@@ -142,7 +146,7 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
       <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-white" data-testid="card-customer-table">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-900">
+            <thead className="bg-blue-900">
               <tr className="border-none">
                 <th className="text-left py-5 px-6 text-[10px] font-black text-blue-300 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('name')} data-testid="header-sort-name">
                   <div className="flex items-center gap-1">NAME / CONTACT <SortIcon field="name" /></div>
@@ -213,10 +217,10 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
           </table>
         </div>
 
-        {/* Branded Footer */}
-        <div className="bg-slate-50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest" data-testid="text-pagination-info">
-            ECOSYSTEM DATA: {startIndex} - {endIndex} OF {totalCount} MEMBERS
+        {/* Footer */}
+        <div className="bg-blue-900/5 px-6 py-4 flex items-center justify-between border-t border-blue-100">
+          <div className="text-[10px] font-black text-blue-900/60 uppercase tracking-widest" data-testid="text-pagination-info">
+            {startIndex} - {endIndex} OF {totalCount} MEMBERS
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => page > 1 && setPage(page - 1)} disabled={page === 1} className="h-10 px-4 font-black text-xs rounded-xl border-slate-200" data-testid="button-prev-page">

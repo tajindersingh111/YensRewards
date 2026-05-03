@@ -58,7 +58,18 @@ export default function CustomerInsights() {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Branded KPI Header */}
+      {/* ── Branded Header ── */}
+      <div className="bg-blue-900 rounded-lg p-6 text-white flex items-center gap-4">
+        <div className="bg-yellow-400 rounded-lg p-2.5">
+          <TrendingUp className="h-5 w-5 text-blue-900" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black uppercase tracking-tight">Customer Insights</h2>
+          <p className="text-blue-300 text-sm">Loyalty analytics and member intelligence</p>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "Community Size", val: customers.length, icon: Users, detail: "Total Members" },
@@ -70,11 +81,11 @@ export default function CustomerInsights() {
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{kpi.label}</p>
+                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${kpi.dark ? 'text-blue-300' : 'text-slate-400'}`}>{kpi.label}</p>
                   <h3 className={`text-3xl font-black ${kpi.dark ? 'text-white' : 'text-blue-900'}`}>{kpi.val}</h3>
                   <p className={`text-[10px] font-bold mt-2 ${kpi.dark ? 'text-blue-300' : 'text-slate-400'}`}>{kpi.detail}</p>
                 </div>
-                <div className={`p-2 rounded-xl ${kpi.dark ? 'bg-white/10 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                <div className={`p-2 rounded-xl ${kpi.dark ? 'bg-yellow-400/20 text-yellow-400' : 'bg-blue-50 text-blue-600'}`}>
                   <kpi.icon className="h-5 w-5" />
                 </div>
               </div>
@@ -112,7 +123,7 @@ export default function CustomerInsights() {
         </Card>
 
         {/* Birthday Automation Watch */}
-        <Card className="border-none shadow-sm rounded-2xl bg-slate-900 text-white overflow-hidden">
+        <Card className="border-none shadow-sm rounded-2xl bg-blue-900 text-white overflow-hidden">
           <CardHeader className="bg-white/5 border-b border-white/5 pb-4">
             <CardTitle className="text-sm font-black flex items-center gap-2 tracking-widest text-blue-300">
               <Gift className="h-4 w-4 text-amber-400" /> BIRTHDAY AUTOMATION
@@ -126,16 +137,16 @@ export default function CustomerInsights() {
               </div>
               <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2">
                 {birthdayFolks.length === 0 ? (
-                  <p className="text-slate-500 text-xs font-bold italic">No automated messages scheduled for today.</p>
+                  <p className="text-blue-300 text-xs font-bold italic">No automated messages scheduled for today.</p>
                 ) : (
                   birthdayFolks.map((person, i) => (
                     <div key={i} className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5">
                       <div>
                         <p className="text-sm font-black uppercase">{person.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400">{person.phone}</p>
+                        <p className="text-[10px] font-bold text-blue-300">{person.phone}</p>
                       </div>
                       <div className="text-right">
-                        <Badge variant="outline" className="text-[8px] border-blue-500/50 text-blue-400 font-black">
+                        <Badge variant="outline" className="text-[8px] border-yellow-400/50 text-yellow-400 font-black">
                           <MailCheck className="h-2.5 w-2.5 mr-1" /> SENT
                         </Badge>
                       </div>
@@ -144,9 +155,9 @@ export default function CustomerInsights() {
                 )}
               </div>
             </div>
-            <div className="mt-4 p-4 bg-blue-600 flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase">System Status: Active</p>
-              <CalendarDays className="h-4 w-4 opacity-50" />
+            <div className="mt-4 p-4 bg-yellow-400 flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase text-blue-900">System Status: Active</p>
+              <CalendarDays className="h-4 w-4 text-blue-900 opacity-70" />
             </div>
           </CardContent>
         </Card>
@@ -159,12 +170,12 @@ export default function CustomerInsights() {
         </CardHeader>
         <CardContent className="p-0">
           <table className="w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-blue-900/5 border-b border-blue-100">
               <tr>
-                <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer</th>
-                <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tier</th>
-                <th className="text-right px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Purchases</th>
-                <th className="text-right px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Point Balance</th>
+                <th className="text-left px-6 py-4 text-[10px] font-black text-blue-900 uppercase tracking-widest">Customer</th>
+                <th className="text-center px-6 py-4 text-[10px] font-black text-blue-900 uppercase tracking-widest">Tier</th>
+                <th className="text-right px-6 py-4 text-[10px] font-black text-blue-900 uppercase tracking-widest">Total Purchases</th>
+                <th className="text-right px-6 py-4 text-[10px] font-black text-blue-900 uppercase tracking-widest">Point Balance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
