@@ -1,7 +1,8 @@
-/* LEF'S PREMIUM ADMIN DASHBOARD UPDATE - CLEAN VERSION */
+/* LEF'S PREMIER YENS ADMIN DASHBOARD - FINAL INTEGRATION */
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { useAuth } from "@/hooks/useAuth";
@@ -101,10 +102,10 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
     .slice(0, 5);
 
   const quickActions = [
-    { label: 'Sales Tracker', icon: TrendingUp, section: 'sales', tab: 'salesTracker', color: 'bg-yellow-400/20 text-yellow-600' },
-    { label: 'Send Message', icon: Send, section: 'marketing', tab: 'messages', color: 'bg-blue-900/10 text-blue-900' },
-    { label: 'Customer List', icon: Users, section: 'customers', tab: 'customers', color: 'bg-blue-900/10 text-blue-900' },
-    { label: 'Promotions', icon: Tag, section: 'marketing', tab: 'promotions', color: 'bg-yellow-400/20 text-yellow-600' },
+    { label: 'Sales Tracker', icon: TrendingUp, section: 'sales', tab: 'salesTracker' },
+    { label: 'Send Message', icon: Send, section: 'marketing', tab: 'messages' },
+    { label: 'Customer List', icon: Users, section: 'customers', tab: 'customers' },
+    { label: 'Promotions', icon: Tag, section: 'marketing', tab: 'promotions' },
   ];
 
   return (
@@ -163,15 +164,14 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
       </div>
 
       <div className="space-y-6">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] pl-1">
-          Executive Operations
-        </h3>
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] pl-1">Executive Operations</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {quickActions.map(({ label, icon: Icon, section, tab }) => (
             <button
               key={tab}
               onClick={() => onNavigate(section, tab)}
-              className="flex items-center gap-4 p-5 rounded-[2rem] border border-slate-100 bg-white shadow-sm hover:shadow-xl hover:bg-blue-900/5 hover:border-blue-900/10 transition-all text-left group active:scale-95"
+              className="flex items-center gap-4 p-5 rounded-[2rem] border border-slate-100 bg-white shadow-sm transition-all text-left group active:scale-95"
+              data-testid={`quick-action-${tab}`}
             >
               <div className="w-12 h-12 rounded-2xl bg-blue-900 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <Icon className="w-5 h-5 text-yellow-400" />
@@ -181,108 +181,59 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
                   {label}
                 </span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Execute Now
+                  Open Module
                 </span>
               </div>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 opacity-0 group-hover:opacity-100 transition-all">
-                <ArrowUpRight className="w-4 h-4 text-blue-900" />
-              </div>
+              <ArrowUpRight className="w-4 h-4 text-blue-900 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
             </button>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {(metrics?.bestChannel || metrics?.bestDay) && (
-          <div className="space-y-4">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] pl-1">Top Performers</h3>
-            <div className="space-y-3">
-              {metrics?.bestChannel && (
-                <Card className="border-none shadow-xl rounded-[2rem] bg-white hover:bg-blue-900/5 transition-all duration-300 group overflow-hidden relative">
-                  <div className="absolute -right-2 -top-2 p-4 opacity-5 pointer-events-none">
-                    <Award className="w-12 h-12 text-blue-900" />
-                  </div>
-                  <CardContent className="p-5 flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center shrink-0 shadow-lg group-hover:rotate-6 transition-transform">
-                      <Award className="w-6 h-6 text-yellow-400" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* RECENT ACTIVITY LEDGER */}
+        <div className="space-y-4">
+          <SectionHeader title="Recent Ledger" subtitle="Live Transaction Feed" />
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
+            <CardContent className="p-0">
+              {recentSales.length === 0 ? (
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest p-6 text-center">No recent transactions</p>
+              ) : recentSales.map((sale: any, idx: number) => (
+                <div key={sale.id || idx} className="flex items-center justify-between p-5 transition-all border-b border-slate-50 last:border-0">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-900/5 flex items-center justify-center text-blue-900 font-black text-xs shrink-0">
+                      {(sale.salesChannel || sale.channel || 'G').charAt(0).toUpperCase()}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1">Best Channel</p>
-                      <p className="text-sm font-black text-blue-900 uppercase tracking-tight truncate">{metrics.bestChannel.name}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-lg font-black text-yellow-600 tracking-tighter">{fmt(metrics.bestChannel.total)}</p>
-                      <div className="flex items-center justify-end gap-1 mt-0.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Live Lead</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              {metrics?.bestDay && (
-                <Card className="border-none shadow-xl rounded-[2rem] bg-white hover:bg-blue-900/5 transition-all duration-300 group overflow-hidden relative">
-                  <div className="absolute -right-2 -top-2 p-4 opacity-5 pointer-events-none">
-                    <TrendingUp className="w-12 h-12 text-blue-900" />
-                  </div>
-                  <CardContent className="p-5 flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center shrink-0 shadow-lg group-hover:rotate-6 transition-transform">
-                      <TrendingUp className="w-6 h-6 text-blue-900" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1">Best Sales Day</p>
-                      <p className="text-sm font-black text-blue-900 uppercase tracking-tight truncate">
-                        {new Date(metrics.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ({metrics.bestDay.dayOfWeek?.substring(0, 3)})
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-blue-900 uppercase truncate">{sale.salesChannel || sale.channel || 'Guest'}</p>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">
+                        {sale.date ? format(new Date(sale.date), "MMM dd, yyyy") : ''}
                       </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-lg font-black text-yellow-600 tracking-tighter">{fmt(metrics.bestDay.total)}</p>
-                      <div className="flex items-center justify-end gap-1 mt-0.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Peak Day</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        )}
-
-        {recentSales.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pl-1">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Recent Activity</h3>
-              <button
-                onClick={() => onNavigate('sales', 'salesTracker')}
-                className="text-[9px] font-black text-blue-900 uppercase tracking-widest flex items-center gap-1"
-              >
-                Full Log <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-            <Card className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
-              <CardContent className="p-0">
-                <div className="divide-y divide-slate-50">
-                  {recentSales.map((sale: any, i: number) => (
-                    <div key={sale.id || i} className="flex items-center justify-between px-6 py-4 hover:bg-blue-900/5 transition-colors">
-                      <div className="min-w-0">
-                        <p className="text-xs font-black text-blue-900 uppercase tracking-tight truncate">{sale.salesChannel || sale.channel || 'Sale'}</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                          {sale.date ? new Date(sale.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : ''}
-                        </p>
-                      </div>
-                      <p className="text-sm font-black text-yellow-600 tracking-tighter shrink-0 ml-3">{fmt(Number(sale.netSales || sale.totalSales || sale.total || 0))}</p>
-                    </div>
-                  ))}
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <p className="text-sm font-black text-blue-900">฿{Number(sale.netSales || sale.totalSales || sale.total || 0).toLocaleString()}</p>
+                    <p className="text-[9px] font-black text-yellow-600 uppercase">{sale.salesChannel || 'Channel'}</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* REVENUE INSIGHTS */}
+        <div className="space-y-4">
+          <SectionHeader title="Revenue Insights" subtitle="Top Performing Channels" />
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white p-6">
+            <AnalyticsDashboard />
+          </Card>
+        </div>
       </div>
     </div>
   );
 }
+
+// ── MAIN DASHBOARD COMPONENT ───────────────────────────────────────────────────
 
 export default function AdminDashboard() {
   useAutoUpdate();
@@ -306,9 +257,7 @@ export default function AdminDashboard() {
     setActiveTab(resolvedTab);
   }, [resolvedSection, resolvedTab]);
 
-  const currentGroup = NAV_GROUPS.find(g => g.id === activeSection);
-  const currentSubs = currentGroup?.subs || [];
-  const showSecondaryNav = currentSubs.length > 1;
+  const currentSection = NAV_GROUPS.find(g => g.id === activeSection) || NAV_GROUPS[0];
 
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -326,32 +275,19 @@ export default function AdminDashboard() {
       p.set('tab', tab);
     }
     setLocation(p.toString() ? `/admin?${p.toString()}` : '/admin');
-  };
-
-  const handlePrimaryNav = (sectionId: string) => {
-    const group = NAV_GROUPS.find(g => g.id === sectionId);
-    const firstSub = group?.subs[0]?.id || 'overview';
-    navigate(sectionId, firstSub);
-  };
-
-  const handleSecondaryNav = (tabId: string) => {
-    navigate(activeSection, tabId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({ title: t('admin.toasts.authRequired'), description: t('admin.toasts.authRequiredDesc'), variant: "destructive" });
       setTimeout(() => setLocation("/admin/login"), 500);
-      return;
     }
     if (!authLoading && isAuthenticated && user?.role !== "admin") {
       toast({ title: t('admin.toasts.accessDenied'), description: t('admin.toasts.accessDeniedDesc'), variant: "destructive" });
       setTimeout(() => setLocation("/"), 500);
-      return;
     }
   }, [isAuthenticated, authLoading, user, toast, setLocation, t]);
-
-  const handleLogout = () => { window.location.href = "/api/logout"; };
 
   const createPromotion = useMutation({
     mutationFn: async (data: { title: string; targetTier?: string; message: string }) =>
@@ -381,170 +317,131 @@ export default function AdminDashboard() {
     );
   }
 
-  const isFullBleed = activeTab === 'salesTracker' || activeTab === 'analytics';
-  const primaryNavTop = "top-[64px]";
-  const secondaryNavTop = "top-[116px]";
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-blue-900 text-white border-b border-white/5 sticky top-0 z-50 shadow-2xl">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24">
+      {/* EXECUTIVE HEADER */}
+      <header className="bg-blue-900 text-white sticky top-0 z-50 shadow-2xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[64px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button
-              onClick={() => setLocation("/")}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10 rounded-xl transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
             <img
               src={logoUrl}
               alt="Yens Logo"
               className="w-9 h-9 rounded-full shrink-0 ring-2 ring-yellow-400 border-2 border-blue-900 shadow-lg object-cover"
             />
-            <div className="min-w-0 ml-1">
-              <div className="flex items-center gap-3">
-                <h1 className="text-sm font-black uppercase tracking-tight text-white">
-                  {t('admin.title')}
-                </h1>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] font-black uppercase px-2 py-0.5 bg-white/10 text-yellow-400 border-white/10 tracking-widest hidden sm:flex"
-                >
-                  {t('common.version')} v2.4
-                </Badge>
-              </div>
-              <p className="text-[8px] font-bold text-blue-300 uppercase tracking-[0.2em] mt-0.5 opacity-70">
-                Executive Administration Suite
-              </p>
+            <div className="hidden sm:block min-w-0">
+              <h1 className="text-sm font-black uppercase tracking-tight text-white">Executive Hub</h1>
+              <p className="text-[8px] font-bold text-blue-300 uppercase tracking-[0.2em] mt-0.5 opacity-70">Yen's Thai Protocol v2.4</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-4 shrink-0">
             <LanguageSwitcher />
-            <div className="h-6 w-px bg-white/10 mx-1" />
+            <div className="h-6 w-px bg-white/10" />
             <Button
-              onClick={handleLogout}
+              onClick={() => { window.location.href = "/api/logout"; }}
               variant="ghost"
               size="sm"
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-black uppercase text-[10px] tracking-widest rounded-xl"
+              className="text-red-400 font-black uppercase text-[10px] tracking-widest"
+              data-testid="button-logout"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline ml-2">{t('auth.logout')}</span>
+              <LogOut className="w-4 h-4 mr-2" /> {t('auth.logout')}
             </Button>
           </div>
         </div>
       </header>
 
-      <div className={`bg-blue-900 border-b border-white/10 sticky ${primaryNavTop} z-40 shadow-xl`}>
+      {/* PRIMARY SECTOR NAV */}
+      <nav className="bg-blue-900/95 backdrop-blur-md sticky top-[64px] z-40 border-b border-white/5 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto scrollbar-none">
-          <nav className="flex items-center w-max min-w-full h-[52px]">
+          <div className="flex items-center h-[52px] w-max min-w-full">
             {NAV_GROUPS.map((group) => {
               const Icon = group.icon;
               const isActive = activeSection === group.id;
               return (
                 <button
                   key={group.id}
-                  onClick={() => handlePrimaryNav(group.id)}
-                  className={`flex items-center gap-2.5 px-6 h-full text-[10px] font-black uppercase tracking-[0.15em] transition-all shrink-0 border-b-2 ${
-                    isActive
-                      ? 'text-yellow-400 border-yellow-400 bg-white/5'
-                      : 'text-blue-300/40 border-transparent hover:text-white hover:bg-white/5'
+                  onClick={() => navigate(group.id, group.subs[0].id)}
+                  className={`flex items-center gap-2.5 px-6 h-full text-[10px] font-black uppercase tracking-[0.15em] border-b-2 transition-all shrink-0 ${
+                    isActive ? 'text-yellow-400 border-yellow-400 bg-white/5' : 'text-blue-300/40 border-transparent hover:text-white'
                   }`}
                   data-testid={`nav-group-${group.id}`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-yellow-400' : 'text-blue-300/40'}`} />
-                  <span className="whitespace-nowrap">{group.label}</span>
+                  <Icon className="w-4 h-4 shrink-0" /> {group.label}
                   {isActive && <div className="w-1 h-1 bg-yellow-400 rounded-full animate-pulse ml-0.5" />}
                 </button>
               );
             })}
-          </nav>
+          </div>
+        </div>
+      </nav>
+
+      {/* SECONDARY ACTION NAV */}
+      <div className="bg-white sticky top-[116px] z-30 border-b border-slate-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto scrollbar-none">
+          <div className="flex items-center h-[48px] w-max min-w-full">
+            {currentSection.subs.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => navigate(activeSection, sub.id)}
+                className={`px-6 h-full text-[9px] font-black uppercase tracking-[0.2em] border-b-2 transition-all shrink-0 flex items-center gap-1 ${
+                  activeTab === sub.id ? 'text-blue-900 border-yellow-400 bg-blue-900/5' : 'text-slate-400 border-transparent hover:text-blue-900'
+                }`}
+                data-testid={sub.testId}
+              >
+                {sub.label}
+                {activeTab === sub.id && <span className="w-1 h-1 bg-yellow-400 rounded-full" />}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {showSecondaryNav && (
-        <div className={`bg-white border-b border-slate-100 sticky ${secondaryNavTop} z-30 shadow-sm overflow-hidden`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto scrollbar-none">
-            <nav className="flex items-center w-max min-w-full h-[48px]">
-              {currentSubs.map((sub) => {
-                const isActive = activeTab === sub.id;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => handleSecondaryNav(sub.id)}
-                    className={`px-6 h-full text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap border-b-2 transition-all shrink-0 flex items-center justify-center ${
-                      isActive
-                        ? 'text-blue-900 border-yellow-400 bg-blue-900/5'
-                        : 'text-slate-400 border-transparent hover:text-blue-900 hover:bg-slate-50'
-                    }`}
-                    data-testid={`sub-nav-${sub.id}`}
-                  >
-                    <span className="relative">
-                      {sub.label}
-                      {isActive && (
-                        <span className="absolute -top-1 -right-2 w-1 h-1 bg-yellow-400 rounded-full" />
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
+      {/* MAIN VIEWPORT */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-700">
+        {activeTab === 'overview' && <AdminOverview key="overview" onNavigate={navigate} />}
+        {activeTab === 'salesTracker' && <SalesTrackerDashboard key="salesTracker" />}
+        {activeTab === 'analytics' && <AnalyticsDashboard key="analytics" />}
+        {activeTab === 'customers' && (
+          <div key="customers">
+            <SectionHeader title={t('admin.customers.title')} subtitle="Your loyal community members" action={<CustomerCSVImport showTrigger={true} />} />
+            <CustomerTable
+              onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
+              onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
+            />
           </div>
-        </div>
-      )}
-
-      {isFullBleed ? (
-        <div className="pb-8">
-          {activeTab === 'salesTracker' && <SalesTrackerDashboard key="salesTracker" />}
-          {activeTab === 'analytics' && <AnalyticsDashboard key="analytics" />}
-        </div>
-      ) : (
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-8">
-          {activeTab === 'overview' && <AdminOverview key="overview" onNavigate={navigate} />}
-          {activeTab === 'customers' && (
-            <div key="customers">
-              <SectionHeader title={t('admin.customers.title')} subtitle="Your loyal community members" action={<CustomerCSVImport showTrigger={true} />} />
-              <CustomerTable
-                onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
-                onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
-              />
+        )}
+        {activeTab === 'loyalty' && (
+          <div key="loyalty">
+            <SectionHeader title="Loyalty Programme" subtitle="Track your most valuable fans" />
+            <CustomerInsights
+              onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
+              onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
+              onSendBirthdayMessages={(customers) => { setBirthdayCustomers(customers); setIsBirthdayMessageDialogOpen(true); }}
+            />
+          </div>
+        )}
+        {activeTab === 'messages' && <MessagesPage key="messages" />}
+        {activeTab === 'promotions' && (
+          <div key="promotions" className="grid gap-6">
+            <div className="max-w-2xl">
+              <PromotionCreator onSend={handleSendPromotion} />
             </div>
-          )}
-          {activeTab === 'loyalty' && (
-            <div key="loyalty">
-              <SectionHeader title="Loyalty Programme" subtitle="Track your most valuable fans" />
-              <CustomerInsights
-                onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
-                onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
-                onSendBirthdayMessages={(customers) => { setBirthdayCustomers(customers); setIsBirthdayMessageDialogOpen(true); }}
-              />
-            </div>
-          )}
-          {activeTab === 'messages' && <MessagesPage key="messages" />}
-          {activeTab === 'promotions' && (
-            <div key="promotions" className="grid gap-6">
-              <div className="max-w-2xl">
-                <PromotionCreator onSend={handleSendPromotion} />
-              </div>
-              <MessageTemplates />
-            </div>
-          )}
-          {activeTab === 'specials' && <WeeklySpecialsManager key="specials" />}
-          {activeTab === 'automations' && <AutomationsManager key="automations" />}
-          {activeTab === 'products' && <ProductManager key="products" />}
-          {activeTab === 'sites' && <SitesManager key="sites" />}
-          {activeTab === 'schedules' && <SchedulesManager key="schedules" />}
-          {activeTab === 'barista' && <BaristaManager key="barista" />}
-          {activeTab === 'shopCalendar' && (
-            <div key="shopCalendar" className="h-[70vh]">
-              <ShopCalendar />
-            </div>
-          )}
-          {activeTab === 'users' && <UsersPage key="users" />}
-          {activeTab === 'settings' && <SettingsPage key="settings" />}
-        </main>
-      )}
+            <MessageTemplates />
+          </div>
+        )}
+        {activeTab === 'specials' && <WeeklySpecialsManager key="specials" />}
+        {activeTab === 'automations' && <AutomationsManager key="automations" />}
+        {activeTab === 'products' && <ProductManager key="products" />}
+        {activeTab === 'sites' && <SitesManager key="sites" />}
+        {activeTab === 'schedules' && <SchedulesManager key="schedules" />}
+        {activeTab === 'barista' && <BaristaManager key="barista" />}
+        {activeTab === 'shopCalendar' && (
+          <div key="shopCalendar" className="h-[70vh]">
+            <ShopCalendar />
+          </div>
+        )}
+        {activeTab === 'users' && <UsersPage key="users" />}
+        {activeTab === 'settings' && <SettingsPage key="settings" />}
+      </main>
 
       {editingCustomer && (
         <CustomerEditDialog
