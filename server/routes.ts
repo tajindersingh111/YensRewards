@@ -3050,6 +3050,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalSales = sales.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const transactionCount = sales.length;
       const avgTransaction = transactionCount > 0 ? totalNetSales / transactionCount : 0;
+      // Calendar days in the report period (inclusive)
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const daysInPeriod = Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / msPerDay) + 1;
+      const avgPerDay = daysInPeriod > 0 ? totalSales / daysInPeriod : 0;
       
       // Channel breakdown
       const channelMap = new Map<string, { revenue: number; count: number }>();
@@ -3095,6 +3099,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalSales: Math.round(totalSales * 100) / 100,
           transactionCount,
           avgTransaction: Math.round(avgTransaction * 100) / 100,
+          daysInPeriod,
+          avgPerDay: Math.round(avgPerDay * 100) / 100,
         },
         channelBreakdown,
         dayBreakdown,

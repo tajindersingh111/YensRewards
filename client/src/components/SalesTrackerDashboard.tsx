@@ -360,8 +360,8 @@ export default function SalesTrackerDashboard() {
       { label: 'TOTAL NET SALES',  value: fmtPdf(data.summary.totalNetSales),    accent: NAVY_MID },
       { label: 'OTHER SALES',      value: fmtPdf(data.summary.totalOtherSales),  accent: GREY_MID },
       { label: 'TOTAL REVENUE',    value: fmtPdf(data.summary.totalSales),        accent: GREEN    },
-      { label: 'DAYS LOGGED',      value: fmtInt(data.summary.transactionCount), accent: NAVY_MID },
-      { label: 'AVG REVENUE / DAY',value: fmtPdf(data.summary.avgTransaction),   accent: NAVY_MID },
+      { label: 'DAYS IN PERIOD',   value: fmtInt(data.summary.daysInPeriod),    accent: NAVY_MID },
+      { label: 'AVG REVENUE / DAY',value: fmtPdf(data.summary.avgPerDay),        accent: NAVY_MID },
     ];
     const gap = 4;
     const cW3 = (W - 28 - gap * 2) / 3;
@@ -880,8 +880,8 @@ export default function SalesTrackerDashboard() {
                     { label: 'Total Net Sales', value: `฿${Number(reportData.summary.totalNetSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
                     { label: 'Other Sales',     value: `฿${Number(reportData.summary.totalOtherSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
                     { label: 'Total Sales',     value: `฿${Number(reportData.summary.totalSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
-                    { label: 'Days Logged',     value: String(reportData.summary.transactionCount) },
-                    { label: 'Avg / Day',       value: `฿${Number(reportData.summary.avgTransaction).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
+                    { label: 'Days in Period',  value: String(reportData.summary.daysInPeriod) },
+                    { label: 'Avg / Day',       value: `฿${Number(reportData.summary.avgPerDay).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
                   ].map((item) => (
                     <div key={item.label} className="border border-yellow-300 rounded-xl p-3 text-center bg-white">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
