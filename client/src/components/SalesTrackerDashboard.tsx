@@ -187,8 +187,65 @@ export default function SalesTrackerDashboard() {
   const handleGenerateReport = async () => {
     setIsGeneratingReport(true);
     try {
-      await fetch(`/api/admin/sales/report?startDate=${reportStartDate}&endDate=${reportEndDate}`, { credentials: 'include' });
-      toast({ title: "Report Generated" });
+      const res = await fetch(`/api/admin/sales/report?startDate=${reportStartDate}&endDate=${reportEndDate}`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+
+      // Build CSV content
+      const lines: string[] = [];
+
+      // Header
+      lines.push(`"Yen's Sales Report"`);
+      lines.push(`"Period","${reportStartDate} to ${reportEndDate}"`);
+      lines.push('');
+
+      // Summary
+      lines.push('"SUMMARY"');
+      lines.push('"Metric","Value"');
+      lines.push(`"Total Net Sales","฿${data.summary.totalNetSales.toLocaleString()}"`);
+      lines.push(`"Other Sales","฿${data.summary.totalOtherSales.toLocaleString()}"`);
+      lines.push(`"Total Sales","฿${data.summary.totalSales.toLocaleString()}"`);
+      lines.push(`"Days Logged","${data.summary.transactionCount}"`);
+      lines.push(`"Avg Net Sales / Day","฿${data.summary.avgTransaction.toLocaleString()}"`);
+      lines.push('');
+
+      // Channel breakdown
+      lines.push('"CHANNEL BREAKDOWN"');
+      lines.push('"Channel","Revenue (฿)","Days"');
+      data.channelBreakdown.forEach((c: { channel: string; revenue: number; count: number }) => {
+        lines.push(`"${c.channel}","${c.revenue.toLocaleString()}","${c.count}"`);
+      });
+      lines.push('');
+
+      // Day of week breakdown
+      lines.push('"DAY OF WEEK BREAKDOWN"');
+      lines.push('"Day","Revenue (฿)","Days"');
+      data.dayBreakdown.forEach((d: { day: string; revenue: number; count: number }) => {
+        lines.push(`"${d.day}","${d.revenue.toLocaleString()}","${d.count}"`);
+      });
+      lines.push('');
+
+      // Transaction log
+      lines.push('"TRANSACTION LOG"');
+      lines.push('"Date","Day","Channel","Net Sales (฿)","Other Sales (฿)","Note","Total (฿)"');
+      data.transactions.forEach((t: { date: string; dayOfWeek?: string; channel: string; netSales: number; otherSales: number; otherSalesNote?: string; totalSales: number }) => {
+        lines.push(`"${t.date}","${t.dayOfWeek || ''}","${t.channel}","${t.netSales}","${t.otherSales}","${t.otherSalesNote || ''}","${t.totalSales}"`);
+      });
+
+      // Trigger download
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `yens-sales-report-${reportStartDate}-to-${reportEndDate}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Report downloaded", description: `${data.summary.transactionCount} days, ฿${data.summary.totalSales.toLocaleString()} total` });
+    } catch (err: any) {
+      toast({ title: "Report failed", description: err?.message || "Could not generate report", variant: "destructive" });
     } finally {
       setIsGeneratingReport(false);
     }
