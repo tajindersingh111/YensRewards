@@ -372,14 +372,19 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-semibold text-foreground">{t("admin.users.title")}</h1>
-          <p className="text-xs text-muted-foreground">{t("admin.users.subtitle")}</p>
+      <div className="bg-blue-900 rounded-lg p-6 text-white flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5">
+            <Users className="h-5 w-5 text-blue-900" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black uppercase tracking-tight">{t("admin.users.title")}</h1>
+            <p className="text-blue-300 text-sm">{t("admin.users.subtitle")}</p>
+          </div>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-user">
+            <Button data-testid="button-add-user" className="bg-yellow-400 text-blue-900 font-bold hover:bg-yellow-300">
               <UserPlus className="w-4 h-4 mr-2" />
               {t("admin.users.addUser")}
             </Button>
@@ -475,12 +480,12 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.user")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.email")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.role")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.created")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">{t("admin.users.actions")}</th>
+                <tr className="bg-blue-900/5 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.user")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.email")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.role")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.created")}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -494,7 +499,7 @@ export default function UsersPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="w-10 h-10">
                             <AvatarImage src={user.profileImageUrl || undefined} alt={fullName} />
-                            <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                            <AvatarFallback className="bg-blue-900/10 text-blue-900 dark:text-blue-300 font-semibold">
                               {initials}
                             </AvatarFallback>
                           </Avatar>
@@ -664,6 +669,7 @@ export default function UsersPage() {
               onClick={handleUpdateRole}
               disabled={updateRoleMutation.isPending || !editingRole}
               data-testid="button-save-role"
+              className="bg-blue-900 text-white hover:bg-blue-800"
             >
               {updateRoleMutation.isPending ? t("admin.users.updating") : t("admin.users.saveChanges")}
             </Button>
@@ -729,6 +735,7 @@ export default function UsersPage() {
               onClick={handleUpdateDetails}
               disabled={updateDetailsMutation.isPending || !editDetails.email}
               data-testid="button-save-details"
+              className="bg-blue-900 text-white hover:bg-blue-800"
             >
               {updateDetailsMutation.isPending ? t("admin.users.updating") : t("admin.users.saveChanges")}
             </Button>
@@ -833,6 +840,7 @@ export default function UsersPage() {
                 password.length < 8
               }
               data-testid="button-save-password"
+              className="bg-blue-900 text-white hover:bg-blue-800"
             >
               {setPasswordMutation.isPending ? t("admin.users.setting") : t("admin.users.setPassword")}
             </Button>

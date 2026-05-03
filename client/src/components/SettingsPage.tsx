@@ -252,9 +252,14 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 p-4">
-      <div>
-        <h2 className="text-2xl font-bold">{t('admin.settings.title')}</h2>
-        <p className="text-muted-foreground">{t('admin.settings.pageDescription')}</p>
+      <div className="bg-blue-900 rounded-lg p-6 text-white flex items-center gap-4">
+        <div className="bg-yellow-400 rounded-lg p-2.5">
+          <Wrench className="h-5 w-5 text-blue-900" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black uppercase tracking-tight">{t('admin.settings.title')}</h2>
+          <p className="text-blue-300 text-sm">{t('admin.settings.pageDescription')}</p>
+        </div>
       </div>
 
       <Tabs defaultValue="business" className="w-full">
@@ -392,6 +397,7 @@ export default function SettingsPage() {
                   onClick={handleBizSave}
                   disabled={!bizDirty || saveSettingsMutation.isPending}
                   data-testid="button-save-business-settings"
+                  className="bg-blue-900 text-white hover:bg-blue-800"
                 >
                   {saveSettingsMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -593,6 +599,7 @@ export default function SettingsPage() {
                   disabled={backupMutation.isPending}
                   size="sm"
                   data-testid="button-run-backup"
+                  className="bg-yellow-400 text-blue-900 font-bold hover:bg-yellow-300"
                 >
                   {backupMutation.isPending ? "Backing up..." : (
                     <><DatabaseBackup className="h-4 w-4 mr-2" />Back Up Now</>

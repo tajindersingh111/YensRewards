@@ -417,9 +417,9 @@ function WeekView({
             data-testid={`week-day-${format(day, "yyyy-MM-dd")}`}
             className="flex flex-col cursor-pointer"
           >
-            <div className={`text-center py-2 rounded-t-md border-b mb-2 ${isCurrentDay ? "bg-primary text-primary-foreground" : "bg-muted/40"}`}>
-              <div className="text-xs text-muted-foreground">{format(day, "EEE")}</div>
-              <div className={`text-lg font-semibold ${isCurrentDay ? "text-primary-foreground" : ""}`}>{format(day, "d")}</div>
+            <div className={`text-center py-2 rounded-t-md border-b mb-2 ${isCurrentDay ? "bg-blue-900 text-white" : "bg-muted/40"}`}>
+              <div className={`text-xs ${isCurrentDay ? "text-blue-200" : "text-muted-foreground"}`}>{format(day, "EEE")}</div>
+              <div className={`text-lg font-semibold ${isCurrentDay ? "text-white" : ""}`}>{format(day, "d")}</div>
             </div>
             <div className="space-y-1 flex-1">
               {dayEvents.map(ev => (
@@ -461,7 +461,7 @@ function UpcomingSidebar({
 
   return (
     <div className="flex flex-col gap-4 w-64 shrink-0">
-      <Button onClick={onAdd} data-testid="button-add-event" className="w-full">
+      <Button onClick={onAdd} data-testid="button-add-event" className="w-full bg-yellow-400 text-blue-900 font-bold hover:bg-yellow-300">
         <Plus className="h-4 w-4 mr-1.5" />Add Event
       </Button>
 
@@ -604,14 +604,19 @@ export default function ShopCalendar() {
   return (
     <div className="flex flex-col h-full gap-4">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Shop Calendar</h2>
-          <p className="text-xs text-muted-foreground">Plan events, expos, promotions and more</p>
+      <div className="bg-blue-900 rounded-lg p-6 text-white flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5">
+            <CalendarDays className="h-5 w-5 text-blue-900" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black uppercase tracking-tight">Shop Calendar</h2>
+            <p className="text-blue-300 text-sm">Plan events, expos, promotions and more</p>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-36" data-testid="select-filter-type">
+            <SelectTrigger className="w-36 bg-white/10 border-white/20 text-white" data-testid="select-filter-type">
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
@@ -621,22 +626,20 @@ export default function ShopCalendar() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex rounded-md border overflow-hidden">
+          <div className="flex rounded-md border border-white/20 overflow-hidden">
             <Button
-              variant={view === "month" ? "default" : "ghost"}
               size="sm"
               onClick={() => setView("month")}
               data-testid="button-view-month"
-              className="rounded-none border-0"
+              className={`rounded-none border-0 ${view === "month" ? "bg-yellow-400 text-blue-900 font-bold" : "bg-white/10 text-white"}`}
             >
               <LayoutGrid className="h-4 w-4 mr-1.5" />Month
             </Button>
             <Button
-              variant={view === "week" ? "default" : "ghost"}
               size="sm"
               onClick={() => setView("week")}
               data-testid="button-view-week"
-              className="rounded-none border-0 border-l"
+              className={`rounded-none border-0 border-l border-white/20 ${view === "week" ? "bg-yellow-400 text-blue-900 font-bold" : "bg-white/10 text-white"}`}
             >
               <List className="h-4 w-4 mr-1.5" />Week
             </Button>
