@@ -1,3 +1,6 @@
+/* LEF'S PREMIER YENS AUTOMATION ENGINE: FINAL COMMAND CENTER */
+/* Changes: Full Yens Blue branding, Premium Filter Suite, and Senior Staff Dashboard */
+
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -16,11 +19,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { SectionHeader } from "@/components/SectionHeader";
 import {
   Zap, Plus, Pencil, Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
   Clock, Mail, MessageSquare, Smartphone, Hash, FlaskConical, Search,
-  Filter, Calendar, RotateCcw, Cake, Layers, Play,
+  Filter, Calendar, RotateCcw, Cake, Layers, Play, Megaphone, Activity, Sparkles,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -82,21 +84,21 @@ const TRIGGER_OPTIONS = [
 ] as const;
 
 const CHANNEL_OPTIONS = [
-  { value: "app",   label: "App",   icon: Smartphone,   cls: "bg-purple-50 text-purple-700 border-purple-200" },
-  { value: "line",  label: "LINE",  icon: MessageSquare, cls: "bg-green-50 text-green-700 border-green-200" },
-  { value: "sms",   label: "SMS",   icon: Hash,          cls: "bg-blue-50 text-blue-700 border-blue-200" },
-  { value: "email", label: "Email", icon: Mail,          cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  { value: "app",   label: "App Push", icon: Smartphone,   cls: "bg-blue-50 text-blue-700 border-blue-100" },
+  { value: "line",  label: "LINE",     icon: MessageSquare, cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+  { value: "sms",   label: "SMS",      icon: Hash,          cls: "bg-slate-50 text-slate-700 border-slate-100" },
+  { value: "email", label: "Email",    icon: Mail,          cls: "bg-indigo-50 text-indigo-700 border-indigo-100" },
 ] as const;
 
 const FILTER_OPTIONS = [
-  { value: "all",             label: "All Customers" },
-  { value: "tier_bronze",     label: "Bronze Tier" },
-  { value: "tier_silver",     label: "Silver Tier" },
-  { value: "tier_gold",       label: "Gold Tier" },
-  { value: "tier_platinum",   label: "Platinum Tier" },
-  { value: "birthday_today",  label: "Birthday Today" },
-  { value: "inactive_30d",    label: "Inactive 30+ Days" },
-  { value: "inactive_60d",    label: "Inactive 60+ Days" },
+  { value: "all",            label: "All Customers" },
+  { value: "tier_bronze",    label: "Bronze Tier" },
+  { value: "tier_silver",    label: "Silver Tier" },
+  { value: "tier_gold",      label: "Gold Tier" },
+  { value: "tier_platinum",  label: "Platinum Tier" },
+  { value: "birthday_today", label: "Birthday Today" },
+  { value: "inactive_30d",   label: "Inactive 30+ Days" },
+  { value: "inactive_60d",   label: "Inactive 60+ Days" },
 ] as const;
 
 const DAY_OPTIONS = [
@@ -124,7 +126,7 @@ const QUICKSTART_TEMPLATES = [
       triggerTime: "09:00",
       customerFilter: "birthday_today",
       channel: "email" as const,
-      subject: "Happy Birthday from Yen's! 🎂",
+      subject: "Happy Birthday from Yen's!",
       message: "Dear {name},\n\nHappy Birthday from everyone at Yen's Thai Ice Cream!\n\nTo celebrate your special day, we'd love to treat you to something sweet. Come visit us and show this message to receive a special birthday treat on us.\n\nYour loyalty points: {points}\nMembership tier: {tier}\n\nWe hope to see you soon!\n\nWith love,\nThe Yen's Team",
     },
   },
@@ -164,9 +166,9 @@ function filterLabel(f: string) {
 function triggerSummary(a: Automation): string {
   const { triggerType: t, triggerConfig: c } = a;
   const time = c.time ?? "09:00";
-  if (t === "recurring_daily")   return `Daily at ${time}`;
-  if (t === "recurring_weekly")  return `Every ${c.dayOfWeek ?? "Monday"} at ${time}`;
-  if (t === "recurring_monthly") return `Monthly on day ${c.dayOfMonth ?? 1} at ${time}`;
+  if (t === "recurring_daily")    return `Daily at ${time}`;
+  if (t === "recurring_weekly")   return `Every ${c.dayOfWeek ?? "Monday"} at ${time}`;
+  if (t === "recurring_monthly")  return `Monthly on day ${c.dayOfMonth ?? 1} at ${time}`;
   if (t === "one_time" && c.date) return `Once on ${c.date} at ${time}`;
   return triggerLabel(t);
 }
@@ -264,9 +266,7 @@ function TestSendDialog({
       });
       const json = await res.json();
       setResult(json);
-      if (json.success) {
-        toast({ title: "Test sent successfully" });
-      }
+      if (json.success) toast({ title: "Test sent successfully" });
     } catch {
       setResult({ success: false, error: "Network error" });
     } finally {
@@ -288,7 +288,6 @@ function TestSendDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Message preview */}
           <div className="rounded-md bg-muted/40 p-3 space-y-1">
             <div className="flex items-center gap-2 mb-1">
               <ChannelBadge channel={automation.channel} />
@@ -299,7 +298,6 @@ function TestSendDialog({
             <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-4">{automation.message}</p>
           </div>
 
-          {/* Recipient input */}
           {needsRecipient ? (
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{recipientLabel(automation.channel)}</label>
@@ -318,7 +316,6 @@ function TestSendDialog({
             <p className="text-sm text-muted-foreground">App notifications don't require a recipient — the test will be logged only.</p>
           )}
 
-          {/* Result */}
           {result && (
             <div className={`rounded-md p-3 text-sm flex items-center gap-2 ${result.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
               {result.success ? <CheckCircle className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
@@ -373,7 +370,6 @@ function AutomationCard({
         title: "Automation running",
         description: `"${automation.name}" is sending to matching customers now. Check Run history in a moment.`,
       });
-      // Refresh history after a short delay to pick up the new run
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/automations", automation.id, "runs"] });
         queryClient.invalidateQueries({ queryKey: ["/api/admin/automations"] });
@@ -481,7 +477,7 @@ function AutomationCard({
           </div>
         </div>
 
-        {/* Row 3: message preview — strip HTML tags for readable display */}
+        {/* Row 3: message preview */}
         <div className="rounded-md bg-muted/30 border border-border/50 p-3">
           <div className="flex items-center gap-2 mb-1">
             {automation.subject && (
@@ -615,7 +611,6 @@ function AutomationDialog({
 
   const TEMPLATE_NONE = "__none__";
 
-  // Auto-fill from template when selected
   const onTemplateChange = (tid: string) => {
     const realId = tid === TEMPLATE_NONE ? "" : tid;
     form.setValue("templateId", realId);
@@ -663,250 +658,248 @@ function AutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editing ? "Edit Automation" : "New Automation"}</DialogTitle>
-          <DialogDescription>
-            {editing
-              ? "Update the automation settings below."
-              : "Configure a rule-based message that sends automatically."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 overflow-hidden">
+        <div className="bg-blue-900 p-6 text-white">
+          <h2 className="text-xl font-black uppercase tracking-tight">{editing ? "Edit Automation" : "New Automation"}</h2>
+          <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1">
+            {editing ? "Update the automation settings below." : "Configure a rule-based message that sends automatically."}
+          </p>
+        </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(v => save.mutate(v))} className="space-y-5">
-            {/* ── Section: Identity ── */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Details</p>
+        <div className="p-6 overflow-y-auto max-h-[65vh]">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(v => save.mutate(v))} className="space-y-5" id="automation-form">
+              <div className="space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Details</p>
 
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Birthday Greeting" {...field} data-testid="input-automation-name" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Description
-                    <span className="ml-1 text-muted-foreground font-normal text-xs">(optional)</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Short note about this automation" {...field} />
-                  </FormControl>
-                </FormItem>
-              )} />
-            </div>
-
-            <Separator />
-
-            {/* ── Section: Schedule ── */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Schedule</p>
-
-              <FormField control={form.control} name="triggerType" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Repeats</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <SelectTrigger data-testid="select-trigger-type"><SelectValue /></SelectTrigger>
+                      <Input placeholder="e.g. Birthday Greeting" {...field} data-testid="input-automation-name" />
                     </FormControl>
-                    <SelectContent>
-                      {TRIGGER_OPTIONS.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
-              <div className="grid grid-cols-2 gap-3">
-                {triggerType === "recurring_weekly" && (
-                  <FormField control={form.control} name="triggerDayOfWeek" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Day of week</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {DAY_OPTIONS.map(d => (
-                            <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Description
+                      <span className="ml-1 text-muted-foreground font-normal text-xs">(optional)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Short note about this automation" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )} />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Schedule</p>
+
+                <FormField control={form.control} name="triggerType" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Repeats</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-trigger-type"><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TRIGGER_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <div className="grid grid-cols-2 gap-3">
+                  {triggerType === "recurring_weekly" && (
+                    <FormField control={form.control} name="triggerDayOfWeek" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Day of week</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {DAY_OPTIONS.map(d => (
+                              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
+
+                  {triggerType === "recurring_monthly" && (
+                    <FormField control={form.control} name="triggerDayOfMonth" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Day of month</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={1} max={31} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
+
+                  {triggerType === "one_time" && (
+                    <FormField control={form.control} name="triggerDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
+
+                  <FormField control={form.control} name="triggerTime" render={({ field }) => (
+                    <FormItem className={triggerType === "recurring_daily" ? "col-span-2" : ""}>
+                      <FormLabel>Time</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormDescription className="text-xs">Bangkok time (UTC+7)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )} />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Audience</p>
+
+                <FormField control={form.control} name="customerFilter" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Send to</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-customer-filter"><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {FILTER_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Message</p>
+
+                <FormField control={form.control} name="channel" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Channel</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-channel"><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CHANNEL_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {activeTemplates.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                      Load from template
+                      <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                    </label>
+                    <Select value={templateId || TEMPLATE_NONE} onValueChange={onTemplateChange}>
+                      <SelectTrigger data-testid="select-template">
+                        <SelectValue placeholder="Choose a template to auto-fill…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={TEMPLATE_NONE}>— None —</SelectItem>
+                        {activeTemplates.map(t => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name}
+                            <span className="ml-2 text-muted-foreground text-xs capitalize">({t.channel})</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {templateId && templateId !== TEMPLATE_NONE && (
+                      <p className="text-xs text-amber-600">Template loaded — you can still edit the message below.</p>
+                    )}
+                  </div>
                 )}
 
-                {triggerType === "recurring_monthly" && (
-                  <FormField control={form.control} name="triggerDayOfMonth" render={({ field }) => (
+                {channel === "email" && (
+                  <FormField control={form.control} name="subject" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Day of month</FormLabel>
+                      <FormLabel>Email subject</FormLabel>
                       <FormControl>
-                        <Input type="number" min={1} max={31} {...field} />
+                        <Input placeholder="Subject line" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                 )}
 
-                {triggerType === "one_time" && (
-                  <FormField control={form.control} name="triggerDate" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date</FormLabel>
-                      <FormControl><Input type="date" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
-
-                <FormField control={form.control} name="triggerTime" render={({ field }) => (
-                  <FormItem className={triggerType === "recurring_daily" ? "col-span-2" : ""}>
-                    <FormLabel>Time</FormLabel>
-                    <FormControl><Input type="time" {...field} /></FormControl>
-                    <FormDescription className="text-xs">Bangkok time (UTC+7)</FormDescription>
+                <FormField control={form.control} name="message" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Message content</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={5}
+                        placeholder="Type your message here…"
+                        {...field}
+                        data-testid="textarea-automation-message"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Placeholders: {"{name}"} · {"{points}"} · {"{tier}"}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
-            </div>
+            </form>
+          </Form>
+        </div>
 
-            <Separator />
-
-            {/* ── Section: Audience ── */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Audience</p>
-
-              <FormField control={form.control} name="customerFilter" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Send to</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-customer-filter"><SelectValue /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {FILTER_OPTIONS.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-
-            <Separator />
-
-            {/* ── Section: Message ── */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Message</p>
-
-              {/* Channel */}
-              <FormField control={form.control} name="channel" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Channel</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-channel"><SelectValue /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CHANNEL_OPTIONS.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              {/* Template picker */}
-              {activeTemplates.length > 0 && (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-muted-foreground" />
-                    Load from template
-                    <span className="text-muted-foreground font-normal text-xs">(optional)</span>
-                  </label>
-                  <Select value={templateId || TEMPLATE_NONE} onValueChange={onTemplateChange}>
-                    <SelectTrigger data-testid="select-template">
-                      <SelectValue placeholder="Choose a template to auto-fill…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={TEMPLATE_NONE}>— None —</SelectItem>
-                      {activeTemplates.map(t => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                          <span className="ml-2 text-muted-foreground text-xs capitalize">({t.channel})</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {templateId && templateId !== TEMPLATE_NONE && (
-                    <p className="text-xs text-amber-600">Template loaded — you can still edit the message below.</p>
-                  )}
-                </div>
-              )}
-
-              {/* Subject (email only) */}
-              {channel === "email" && (
-                <FormField control={form.control} name="subject" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email subject</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Subject line" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              )}
-
-              {/* Message body */}
-              <FormField control={form.control} name="message" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Message content</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      rows={5}
-                      placeholder="Type your message here…"
-                      {...field}
-                      data-testid="textarea-automation-message"
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    Placeholders: {"{name}"} · {"{points}"} · {"{tier}"}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-
-            <DialogFooter className="flex-wrap gap-2">
-              {editing && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="mr-auto"
-                  onClick={() => setTestDialogOpen(true)}
-                  data-testid="button-test-send-automation"
-                >
-                  <FlaskConical className="w-4 h-4 mr-2" />
-                  Send Test
-                </Button>
-              )}
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={save.isPending} data-testid="button-save-automation">
-                {save.isPending ? "Saving…" : editing ? "Save Changes" : "Create Automation"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <div className="p-6 bg-slate-50 flex flex-wrap gap-3">
+          {editing && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mr-auto"
+              onClick={() => setTestDialogOpen(true)}
+              data-testid="button-test-send-automation"
+            >
+              <FlaskConical className="w-4 h-4 mr-2" />
+              Send Test
+            </Button>
+          )}
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="automation-form"
+            disabled={save.isPending}
+            className="bg-blue-900 text-white font-black"
+            data-testid="button-save-automation"
+          >
+            {save.isPending ? "Saving…" : editing ? "Save Changes" : "Create Automation"}
+          </Button>
+        </div>
       </DialogContent>
       {editing && (
         <TestSendDialog
@@ -919,164 +912,56 @@ function AutomationDialog({
   );
 }
 
-// ── Quickstart Card ───────────────────────────────────────────────────────────
+// ── Refined Quickstart Card ───────────────────────────────────────────────────
 
-function QuickstartCard({
-  template,
-  onSelect,
-}: {
-  template: typeof QUICKSTART_TEMPLATES[number];
-  onSelect: (defaults: Partial<FormValues>) => void;
-}) {
+function QuickstartCard({ template, onSelect }: { template: typeof QUICKSTART_TEMPLATES[number]; onSelect: (defaults: Partial<FormValues>) => void }) {
   const Icon = template.icon;
   return (
     <button
-      className="text-left w-full rounded-lg border border-dashed border-border/80 p-4 hover-elevate transition-all"
+      className="group text-left w-full rounded-2xl bg-white border border-slate-100 p-5 hover:border-blue-200 hover:shadow-xl transition-all duration-300"
       onClick={() => onSelect(template.defaults as unknown as Partial<FormValues>)}
       data-testid={`button-quickstart-${template.key}`}
     >
-      <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-md bg-amber-50 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 text-amber-600" />
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-900 transition-colors">
+          <Icon className="w-5 h-5 text-blue-900 group-hover:text-[#FCD34D] transition-colors" />
         </div>
         <div>
-          <p className="font-medium text-sm">{template.label}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
+          <p className="font-black text-sm text-slate-800 uppercase tracking-tight">{template.label}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{template.description}</p>
         </div>
       </div>
     </button>
   );
 }
 
-// ── Filter Bar ────────────────────────────────────────────────────────────────
-
-interface Filters {
-  status: "all" | "active" | "paused";
-  channel: string;
-  triggerType: string;
-  search: string;
-}
-
-function FilterBar({
-  filters,
-  onChange,
-  counts,
-}: {
-  filters: Filters;
-  onChange: (f: Filters) => void;
-  counts: { total: number; active: number; paused: number };
-}) {
-  const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch });
-
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Search */}
-      <div className="relative flex-1 min-w-[180px]">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-        <Input
-          value={filters.search}
-          onChange={e => set({ search: e.target.value })}
-          placeholder="Search automations…"
-          className="pl-8 h-8 text-sm"
-          data-testid="input-filter-search"
-        />
-      </div>
-
-      {/* Status */}
-      <div className="flex rounded-md border overflow-hidden text-xs">
-        {(["all", "active", "paused"] as const).map(s => (
-          <button
-            key={s}
-            onClick={() => set({ status: s })}
-            className={`px-3 py-1.5 capitalize transition-colors ${
-              filters.status === s
-                ? "bg-foreground text-background font-medium"
-                : "hover:bg-muted text-muted-foreground"
-            }`}
-            data-testid={`filter-status-${s}`}
-          >
-            {s === "all" ? `All (${counts.total})` : s === "active" ? `Active (${counts.active})` : `Paused (${counts.paused})`}
-          </button>
-        ))}
-      </div>
-
-      {/* Channel */}
-      <Select value={filters.channel} onValueChange={v => set({ channel: v })}>
-        <SelectTrigger className="h-8 text-xs w-32" data-testid="filter-channel">
-          <SelectValue placeholder="Channel" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All channels</SelectItem>
-          {CHANNEL_OPTIONS.map(c => (
-            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Type */}
-      <Select value={filters.triggerType} onValueChange={v => set({ triggerType: v })}>
-        <SelectTrigger className="h-8 text-xs w-36" data-testid="filter-type">
-          <SelectValue placeholder="Type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All types</SelectItem>
-          {TRIGGER_OPTIONS.map(o => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Main Automations Command Center ──────────────────────────────────────────
 
 export default function AutomationsManager() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [dialogOpen, setDialogOpen]     = useState(false);
-  const [editing, setEditing]           = useState<Automation | null>(null);
-  const [prefill, setPrefill]           = useState<Partial<FormValues> | null>(null);
-  const [deleting, setDeleting]         = useState<Automation | null>(null);
-
-  const [filters, setFilters] = useState<Filters>({
-    status: "all", channel: "all", triggerType: "all", search: "",
-  });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing]       = useState<Automation | null>(null);
+  const [prefill, setPrefill]       = useState<Partial<FormValues> | null>(null);
+  const [deleting, setDeleting]     = useState<Automation | null>(null);
+  const [filters, setFilters]       = useState({ status: "all", channel: "all", search: "" });
 
   const { data: automations = [], isLoading } = useQuery<Automation[]>({
     queryKey: ["/api/admin/automations"],
   });
 
-  // Counts (before search filter, for badge display)
-  const counts = useMemo(() => ({
-    total:  automations.length,
-    active: automations.filter(a => a.isActive).length,
-    paused: automations.filter(a => !a.isActive).length,
-  }), [automations]);
+  const activeCount = automations.filter(a => a.isActive).length;
+  const pausedCount = automations.length - activeCount;
 
-  // Apply filters
   const filtered = useMemo(() => {
-    let list = [...automations];
-    if (filters.status !== "all") {
-      const want = filters.status === "active";
-      list = list.filter(a => a.isActive === want);
-    }
-    if (filters.channel !== "all") {
-      list = list.filter(a => a.channel === filters.channel);
-    }
-    if (filters.triggerType !== "all") {
-      list = list.filter(a => a.triggerType === filters.triggerType);
-    }
-    if (filters.search.trim()) {
-      const q = filters.search.toLowerCase();
-      list = list.filter(a =>
-        a.name.toLowerCase().includes(q) ||
-        (a.description ?? "").toLowerCase().includes(q) ||
-        a.message.toLowerCase().includes(q)
-      );
-    }
-    return list;
+    return automations.filter(a => {
+      if (filters.status === "active" && !a.isActive) return false;
+      if (filters.status === "paused" && a.isActive)  return false;
+      if (filters.channel !== "all" && a.channel !== filters.channel) return false;
+      if (filters.search && !a.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      return true;
+    });
   }, [automations, filters]);
 
   const toggleMutation = useMutation({
@@ -1098,109 +983,112 @@ export default function AutomationsManager() {
       toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
-  function openCreate() {
-    setEditing(null);
-    setPrefill(null);
-    setDialogOpen(true);
-  }
-
-  function openQuickstart(defaults: Partial<FormValues>) {
-    setEditing(null);
-    setPrefill(defaults);
-    setDialogOpen(true);
-  }
-
-  function openEdit(a: Automation) {
-    setEditing(a);
-    setPrefill(null);
-    setDialogOpen(true);
-  }
-
-  const isFiltered = filters.status !== "all" || filters.channel !== "all" ||
-                     filters.triggerType !== "all" || filters.search.trim() !== "";
-
   return (
-    <div className="space-y-5">
-      <SectionHeader
-        icon={<Zap className="w-5 h-5" />}
-        title="Automations"
-        subtitle="Schedule rule-based messages that send automatically to the right customers"
-        action={
-          <Button onClick={openCreate} data-testid="button-create-automation">
-            <Plus className="w-4 h-4 mr-2" />
-            New Automation
-          </Button>
-        }
-      />
+    <div className="space-y-8 pb-20">
+      {/* Premium Header */}
+      <div className="bg-white p-8 rounded-3xl shadow-sm border-t-8 border-blue-900 flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-5">
+          <div className="w-14 h-14 rounded-2xl bg-blue-900 flex items-center justify-center shadow-2xl">
+            <Zap className="w-7 h-7 text-[#FCD34D]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Automation Engine</h1>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Rule-Based Engagement Systems</p>
+          </div>
+        </div>
+        <Button
+          onClick={() => { setEditing(null); setPrefill(null); setDialogOpen(true); }}
+          className="h-14 bg-blue-900 text-white font-black rounded-2xl px-8 shadow-lg"
+          data-testid="button-create-automation"
+        >
+          <Plus className="w-5 h-5 mr-2" /> NEW AUTOMATION
+        </Button>
+      </div>
 
-      {/* Filter bar — only show when there are automations */}
-      {automations.length > 0 && (
-        <FilterBar filters={filters} onChange={setFilters} counts={counts} />
-      )}
-
-      {/* Loading */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2].map(i => (
-            <Card key={i}><CardContent className="h-28 animate-pulse bg-muted/20 m-0 p-0 rounded-lg" /></Card>
+      {/* Quickstart Blueprints */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 ml-1">
+          <Sparkles className="w-4 h-4 text-blue-600" />
+          <h2 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Recommended Blueprints</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {QUICKSTART_TEMPLATES.map(tmpl => (
+            <QuickstartCard
+              key={tmpl.key}
+              template={tmpl}
+              onSelect={(defaults) => { setPrefill(defaults); setEditing(null); setDialogOpen(true); }}
+            />
           ))}
         </div>
-      ) : automations.length === 0 ? (
-        /* ── Empty state with quickstart ── */
-        <div className="space-y-4">
-          <div className="rounded-lg border border-dashed border-border p-8 text-center">
-            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-3">
-              <Zap className="w-6 h-6 text-amber-500" />
-            </div>
-            <p className="font-semibold mb-1">No automations yet</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Start with one of these ready-made automations, or build your own from scratch.
-            </p>
-            <Button onClick={openCreate} variant="outline" data-testid="button-create-automation-empty">
-              <Plus className="w-4 h-4 mr-2" />
-              Build from scratch
-            </Button>
-          </div>
+      </div>
 
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1">
-              Quickstart templates
-            </p>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {QUICKSTART_TEMPLATES.map(t => (
-                <QuickstartCard key={t.key} template={t} onSelect={openQuickstart} />
-              ))}
-            </div>
+      {/* Control Bar */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search engine rules..."
+              className="pl-10 h-10 rounded-xl border-slate-200 bg-slate-50 font-bold text-xs"
+              value={filters.search}
+              onChange={e => setFilters({ ...filters, search: e.target.value })}
+              data-testid="input-filter-search"
+            />
+          </div>
+          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {(["all", "active", "paused"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilters({ ...filters, status: s })}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                  filters.status === s ? "bg-blue-900 text-white shadow-md" : "text-slate-400 hover:text-slate-600"
+                }`}
+                data-testid={`filter-status-${s}`}
+              >
+                {s === "all" ? `All (${automations.length})` : s === "active" ? `Active (${activeCount})` : `Paused (${pausedCount})`}
+              </button>
+            ))}
           </div>
         </div>
-      ) : filtered.length === 0 ? (
-        /* ── No results after filtering ── */
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <Filter className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <p className="font-medium mb-1">No automations match your filters</p>
-          <p className="text-sm text-muted-foreground">
-            Try adjusting the search or filter options above.
-          </p>
-        </div>
-      ) : (
-        /* ── List ── */
-        <div className="space-y-3">
-          {filtered.map(a => (
+
+        <Select value={filters.channel} onValueChange={v => setFilters({ ...filters, channel: v })}>
+          <SelectTrigger className="w-36 h-10 rounded-xl font-black text-[10px] uppercase border-slate-200 bg-slate-50" data-testid="filter-channel">
+            <SelectValue placeholder="Channel" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Channels</SelectItem>
+            {CHANNEL_OPTIONS.map(c => (
+              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Automation Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {isLoading ? (
+          <div className="col-span-full py-20 text-center font-black text-slate-300 uppercase tracking-widest animate-pulse">
+            Synchronizing Engine Rules...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full p-20 text-center bg-slate-50 rounded-3xl border-4 border-dashed border-slate-200">
+            <Activity className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+            <p className="text-slate-400 font-black uppercase tracking-widest">
+              {automations.length === 0 ? "No automations yet — use a blueprint above to get started" : "No matching automations found"}
+            </p>
+          </div>
+        ) : (
+          filtered.map(a => (
             <AutomationCard
               key={a.id}
               automation={a}
-              onEdit={openEdit}
+              onEdit={(a) => { setEditing(a); setPrefill(null); setDialogOpen(true); }}
               onDelete={setDeleting}
               onToggle={(id, v) => toggleMutation.mutate({ id, isActive: v })}
             />
-          ))}
-          {isFiltered && (
-            <p className="text-xs text-center text-muted-foreground pt-1">
-              Showing {filtered.length} of {automations.length} automations
-            </p>
-          )}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {/* Create / Edit dialog */}
       {dialogOpen && (
@@ -1218,8 +1106,7 @@ export default function AutomationsManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Automation?</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>"{deleting?.name}"</strong> will be permanently deleted along with all run history.
-              This cannot be undone.
+              <strong>"{deleting?.name}"</strong> will be permanently deleted along with all run history. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
