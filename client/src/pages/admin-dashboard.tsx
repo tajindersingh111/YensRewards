@@ -343,40 +343,63 @@ export default function AdminDashboard() {
   }
 
   const isFullBleed = activeTab === 'salesTracker' || activeTab === 'analytics';
-  const primaryNavTop = "top-[57px]";
-  const secondaryNavTop = "top-[106px]";
+  const primaryNavTop = "top-[64px]";
+  const secondaryNavTop = "top-[116px]";
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[57px] flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Button onClick={() => setLocation("/")} variant="ghost" size="icon" className="hover:bg-amber-50">
+      <header className="bg-blue-900 text-white border-b border-white/5 sticky top-0 z-50 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[64px] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button
+              onClick={() => setLocation("/")}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10 rounded-xl transition-colors"
+            >
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full shrink-0 shadow-sm" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm font-bold text-foreground">{t('admin.title')}</h1>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200 hidden sm:flex">
-                  {t('common.version')}
+            <img
+              src={logoUrl}
+              alt="Yens Logo"
+              className="w-9 h-9 rounded-full shrink-0 ring-2 ring-yellow-400 border-2 border-blue-900 shadow-lg object-cover"
+            />
+            <div className="min-w-0 ml-1">
+              <div className="flex items-center gap-3">
+                <h1 className="text-sm font-black uppercase tracking-tight text-white">
+                  {t('admin.title')}
+                </h1>
+                <Badge
+                  variant="outline"
+                  className="text-[9px] font-black uppercase px-2 py-0.5 bg-white/10 text-yellow-400 border-white/10 tracking-widest hidden sm:flex"
+                >
+                  {t('common.version')} v2.4
                 </Badge>
               </div>
+              <p className="text-[8px] font-bold text-blue-300 uppercase tracking-[0.2em] mt-0.5 opacity-70">
+                Executive Administration Suite
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <LanguageSwitcher />
-            <Button onClick={handleLogout} variant="outline" size="sm" className="text-red-600 border-red-100 hover:bg-red-50">
+            <div className="h-6 w-px bg-white/10 mx-1" />
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              size="sm"
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-black uppercase text-[10px] tracking-widest rounded-xl"
+            >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline ml-1.5">{t('auth.logout')}</span>
+              <span className="hidden sm:inline ml-2">{t('auth.logout')}</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className={`bg-card border-b border-border sticky ${primaryNavTop} z-40 shadow-sm`}>
+      <div className={`bg-blue-900 border-b border-white/10 sticky ${primaryNavTop} z-40 shadow-xl`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto scrollbar-none">
-          <nav className="flex items-center w-max min-w-full">
+          <nav className="flex items-center w-max min-w-full h-[52px]">
             {NAV_GROUPS.map((group) => {
               const Icon = group.icon;
               const isActive = activeSection === group.id;
@@ -384,12 +407,16 @@ export default function AdminDashboard() {
                 <button
                   key={group.id}
                   onClick={() => handlePrimaryNav(group.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all shrink-0 ${
-                    isActive ? 'text-white border-yellow-400 bg-blue-900' : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/40'
+                  className={`flex items-center gap-2.5 px-6 h-full text-[10px] font-black uppercase tracking-[0.15em] transition-all shrink-0 border-b-2 ${
+                    isActive
+                      ? 'text-yellow-400 border-yellow-400 bg-white/5'
+                      : 'text-blue-300/40 border-transparent hover:text-white hover:bg-white/5'
                   }`}
+                  data-testid={`nav-group-${group.id}`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="hidden sm:inline">{group.label}</span>
+                  <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-yellow-400' : 'text-blue-300/40'}`} />
+                  <span className="whitespace-nowrap">{group.label}</span>
+                  {isActive && <div className="w-1 h-1 bg-yellow-400 rounded-full animate-pulse ml-0.5" />}
                 </button>
               );
             })}
