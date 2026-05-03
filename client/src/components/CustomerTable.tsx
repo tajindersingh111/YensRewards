@@ -240,7 +240,9 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
 
                 {/* LTV / TOTAL SPENT */}
                 <TableCell className="text-right">
-                  <span className="text-sm font-black text-blue-900 tabular-nums">
+                  <span className={`text-sm font-black tabular-nums ${
+                    Number(customer.totalSpent) > 10000 ? "text-emerald-600" : "text-blue-900"
+                  }`}>
                     ฿{Number(customer.totalSpent || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
                 </TableCell>

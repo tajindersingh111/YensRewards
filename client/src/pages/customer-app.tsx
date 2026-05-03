@@ -20,6 +20,16 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink, Copy, Check, Search, Star, Gift } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import QRCode from "react-qr-code";
@@ -50,6 +60,7 @@ export default function CustomerApp() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [linkCodeCopied, setLinkCodeCopied] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
+  const [confirmRedeem, setConfirmRedeem] = useState<{ id: string; name: string; pointCost: number } | null>(null);
   const { toast } = useToast();
 
   // Enable audio on first user interaction (iOS requirement)
@@ -904,7 +915,7 @@ export default function CustomerApp() {
                           size="sm"
                           variant={canAfford ? "default" : "outline"}
                           disabled={!canAfford || redeemMutation.isPending}
-                          onClick={() => redeemMutation.mutate(p.id)}
+                          onClick={() => setConfirmRedeem({ id: p.id, name: p.name, pointCost: p.pointCost })}
                           data-testid={`button-redeem-${p.id}`}
                         >
                           {t('customer.redeem', 'Redeem')}
@@ -915,6 +926,53 @@ export default function CustomerApp() {
                 </div>
               </Card>
             )}
+
+            {/* Redemption confirmation dialog */}
+            <AlertDialog open={!!confirmRedeem} onOpenChange={(open) => { if (!open) setConfirmRedeem(null); }}>
+              <AlertDialogContent data-testid="dialog-redeem-confirm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('customer.confirmRedeem', 'Confirm Redemption')}</AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-3 pt-1">
+                      <p className="text-sm text-foreground font-medium">{confirmRedeem?.name}</p>
+                      <div className="rounded-md bg-muted px-4 py-3 space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{t('customer.cost', 'Cost')}</span>
+                          <span className="font-bold text-destructive">−{confirmRedeem?.pointCost} {t('customer.points', 'pts')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{t('customer.balance', 'Balance')}</span>
+                          <span className="font-bold">{customer.points} {t('customer.points', 'pts')}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-border pt-1 mt-1">
+                          <span className="text-muted-foreground">{t('customer.remaining', 'Remaining')}</span>
+                          <span className="font-bold text-primary">{customer.points - (confirmRedeem?.pointCost ?? 0)} {t('customer.points', 'pts')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-redeem-cancel" disabled={redeemMutation.isPending}>
+                    {t('common.cancel', 'Cancel')}
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    data-testid="button-redeem-confirm"
+                    disabled={redeemMutation.isPending}
+                    onClick={() => {
+                      if (confirmRedeem) {
+                        redeemMutation.mutate(confirmRedeem.id, {
+                          onSettled: () => setConfirmRedeem(null),
+                        });
+                      }
+                    }}
+                  >
+                    {redeemMutation.isPending ? t('common.processing', 'Processing…') : t('customer.confirmRedeem', 'Confirm')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <ReferralCard referralCode={customer.referralCode} referralCount={0} />
             <LeaderboardCard entries={leaderboardEntries} currentUserId={customer.id} />
           </TabsContent>
