@@ -1,74 +1,25 @@
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Award } from "lucide-react";
+import { Check, Banknote, Coins } from "lucide-react";
 
-interface TransactionConfirmProps {
-  customerName: string;
-  amount: number;
-  points: number;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
-export default function TransactionConfirm({
-  customerName,
-  amount,
-  points,
-  onConfirm,
-  onCancel,
-}: TransactionConfirmProps) {
+export function TransactionConfirm({ customer, amount, points, onConfirm, onCancel, isPending }: any) {
   return (
-    <Card className="p-4 border-none shadow-xl rounded-[2rem]" data-testid="card-transaction-confirm">
-      <div className="space-y-4">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-yellow-400 flex items-center justify-center mx-auto mb-3 shadow-lg">
-            <CheckCircle className="w-6 h-6 text-blue-900" />
-          </div>
-          <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight">Confirm Transaction</h3>
+    <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white overflow-hidden animate-in fade-in zoom-in">
+      <CardContent className="p-8 space-y-8">
+        <div className="text-center space-y-2">
+          <div className="bg-blue-900 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"><Check className="w-6 h-6 text-yellow-400" /></div>
+          <h2 className="text-xl font-black text-blue-900 uppercase tracking-tight italic">Verify Transaction</h2>
         </div>
-
-        <div className="space-y-2 bg-slate-50 rounded-xl p-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400 font-medium">Customer</span>
-            <span className="font-black text-blue-900" data-testid="text-customer-name">
-              {customerName}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400 font-medium">Amount</span>
-            <span className="font-black text-blue-900" data-testid="text-amount">
-              ฿{amount}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-400 font-medium">Points Earned</span>
-            <div className="flex items-center gap-1">
-              <Award className="w-3 h-3 text-blue-900" />
-              <span className="font-black text-blue-900" data-testid="text-points-earned">
-                +{points}
-              </span>
-            </div>
-          </div>
+        <div className="bg-slate-50 rounded-[2rem] p-6 space-y-4 border border-slate-100">
+          <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Member</span><span className="text-sm font-black text-blue-900 uppercase">{customer.name}</span></div>
+          <div className="flex justify-between items-center pt-4 border-t border-slate-200/50"><div className="flex items-center gap-2"><Banknote className="w-4 h-4 text-blue-900" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sale Value</span></div><span className="text-xl font-black text-blue-900">฿{amount}</span></div>
+          <div className="flex justify-between items-center pt-4 border-t border-slate-200/50"><div className="flex items-center gap-2"><Coins className="w-4 h-4 text-blue-900" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Points Yield</span></div><span className="text-2xl font-black text-blue-900">+{points} <span className="text-xs uppercase text-yellow-600 italic">Pts</span></span></div>
         </div>
-
-        <div className="flex gap-2">
-          <Button
-            onClick={onCancel}
-            variant="outline"
-            className="flex-1 font-black uppercase text-[10px] tracking-widest rounded-xl border-blue-900/10 text-blue-900"
-            data-testid="button-cancel"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={onConfirm}
-            className="flex-1 bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
-            data-testid="button-confirm"
-          >
-            Confirm
-          </Button>
+        <div className="grid grid-cols-1 gap-3">
+          <Button onClick={onConfirm} disabled={isPending} className="h-14 bg-yellow-400 text-blue-900 font-black uppercase text-sm rounded-2xl shadow-xl">Authorize Deposit</Button>
+          <Button variant="ghost" onClick={onCancel} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Abort Transaction</Button>
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 }

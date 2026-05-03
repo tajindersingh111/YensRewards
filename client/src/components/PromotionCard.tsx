@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Megaphone, ArrowUpRight } from "lucide-react";
 
-export function PromotionCard({ title, type, status, targetCount }: { title: string, type: string, status: string, targetCount: number }) {
+export default function PromotionCard({ title, type, status, targetCount }: { title: string, type: string, status: string, targetCount: number }) {
   return (
     <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden group transition-all duration-500">
       <div className="h-44 bg-gradient-to-br from-blue-900 to-blue-800 relative p-6 flex flex-col justify-between overflow-hidden">

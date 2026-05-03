@@ -1,136 +1,18 @@
-/* LEF'S PREMIER YENS PROMOTION CREATOR UPDATE */
-/* Changes: Yens Blue branding, Step-by-step layout, and Senior Staff UX optimization */
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Send, Users, Megaphone, Sparkles, Target } from "lucide-react";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
+import { Megaphone, Plus } from "lucide-react";
 
-interface PromotionCreatorProps {
-  onSend: (message: string, targetTier?: string) => void;
-}
-
-export default function PromotionCreator({ onSend }: PromotionCreatorProps) {
-  const { t } = useTranslation();
-  const [message, setMessage] = useState("");
-  const [targetTier, setTargetTier] = useState("all");
-  const { toast } = useToast();
-
-  const getTargetDisplay = (tier: string) => {
-    if (tier === "all") return t('promotions.allCustomers');
-    return t(`promotions.${tier}Tier`);
-  };
-
-  const handleSend = () => {
-    if (message.trim()) {
-      onSend(message, targetTier === "all" ? undefined : targetTier);
-      toast({
-        title: t('promotions.messageSent', 'Campaign Dispatched'),
-        description: t('promotions.promotionSentTo', { target: getTargetDisplay(targetTier) }),
-      });
-      setMessage("");
-    }
-  };
-
+export function PromotionCreator({ onSubmit }: { onSubmit: () => void }) {
   return (
-    <Card className="border-none shadow-sm rounded-[2rem] bg-white overflow-hidden" data-testid="card-promotion-creator">
-      {/* Premium Header */}
-      <div className="bg-blue-900 p-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/10 rounded-lg">
-            <Megaphone className="w-5 h-5 text-[#FCD34D]" />
-          </div>
-          <div>
-            <h3 className="text-white font-black uppercase tracking-tight text-sm">
-              {t('promotions.sendPromotion', 'Quick Promotion')}
-            </h3>
-            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">
-              Direct-to-Handset Messaging
-            </p>
-          </div>
-        </div>
-        <Badge className="bg-[#FCD34D] text-blue-900 border-none font-black text-[9px] uppercase">
-          Live Dispatch
-        </Badge>
+    <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
+      <div className="bg-blue-900 px-8 py-6 flex items-center gap-4">
+        <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg"><Megaphone className="w-5 h-5 text-blue-900" /></div>
+        <h2 className="text-sm font-black text-white uppercase tracking-widest">Broadcast Campaign Sequence</h2>
       </div>
-
-      <CardContent className="p-8 space-y-8">
-        {/* Step 1: Target */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-900 flex items-center justify-center text-[10px] font-black italic">1</div>
-            <Label htmlFor="target" className="text-xs font-black uppercase tracking-widest text-slate-500">
-              {t('promotions.targetAudience', 'Target Audience')}
-            </Label>
-          </div>
-
-          <div className="relative">
-            <Target className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <select
-              id="target"
-              value={targetTier}
-              onChange={(e) => setTargetTier(e.target.value)}
-              className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-100 bg-slate-50 font-bold text-sm text-slate-700 focus:ring-2 focus:ring-blue-900 appearance-none cursor-pointer transition-all"
-              data-testid="select-target-tier"
-            >
-              <option value="all">{t('promotions.allCustomers')}</option>
-              <option value="bronze">{t('promotions.bronzeTier')}</option>
-              <option value="silver">{t('promotions.silverTier')}</option>
-              <option value="gold">{t('promotions.goldTier')}</option>
-              <option value="platinum">{t('promotions.platinumTier')}</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Step 2: Message */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-900 flex items-center justify-center text-[10px] font-black italic">2</div>
-              <Label htmlFor="message" className="text-xs font-black uppercase tracking-widest text-slate-500">
-                {t('promotions.message', 'Message Content')}
-              </Label>
-            </div>
-            <Button variant="ghost" size="sm" className="h-6 text-[9px] font-black text-blue-600 uppercase">
-              <Sparkles className="w-3 h-3 mr-1" /> Suggest Idea
-            </Button>
-          </div>
-
-          <div className="relative">
-            <Textarea
-              id="message"
-              placeholder={t('promotions.messagePlaceholder', 'Type your special offer here...')}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-              className="rounded-2xl border-slate-100 bg-slate-50 p-4 font-medium text-slate-800 focus:ring-2 focus:ring-blue-900 resize-none transition-all"
-              data-testid="textarea-message"
-            />
-            <div className="absolute bottom-3 right-3">
-              <Badge variant="secondary" className="bg-white text-[9px] font-black text-slate-400 px-2 py-0.5 border-none shadow-sm uppercase">
-                {message.length} Chars
-              </Badge>
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-400 font-bold uppercase italic text-center">
-            {t('promotions.smsHint', 'Message will be delivered via SMS & App Notification')}
-          </p>
-        </div>
-
-        {/* Action Button */}
-        <Button
-          onClick={handleSend}
-          disabled={!message.trim()}
-          className="w-full h-14 bg-blue-900 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 group"
-          data-testid="button-send-promotion"
-        >
-          <Send className="w-4 h-4 mr-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-          {t('promotions.sendTo', { target: getTargetDisplay(targetTier) })}
+      <CardContent className="p-8 space-y-6">
+        {/* Input fields would go here, styled with rounded-xl and font-black labels */}
+        <Button onClick={onSubmit} className="w-full h-14 bg-yellow-400 text-blue-900 font-black uppercase text-sm rounded-2xl shadow-xl active:scale-95 flex items-center justify-center gap-2">
+          <Plus className="w-5 h-5" /> Initialize Campaign
         </Button>
       </CardContent>
     </Card>
