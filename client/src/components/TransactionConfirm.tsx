@@ -18,33 +18,33 @@ export default function TransactionConfirm({
   onCancel,
 }: TransactionConfirmProps) {
   return (
-    <Card className="p-4" data-testid="card-transaction-confirm">
+    <Card className="p-4 border-none shadow-xl rounded-[2rem]" data-testid="card-transaction-confirm">
       <div className="space-y-4">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-full bg-chart-3/10 flex items-center justify-center mx-auto mb-2">
-            <CheckCircle className="w-6 h-6 text-chart-3" />
+          <div className="w-12 h-12 rounded-xl bg-yellow-400 flex items-center justify-center mx-auto mb-3 shadow-lg">
+            <CheckCircle className="w-6 h-6 text-blue-900" />
           </div>
-          <h3 className="text-lg font-bold text-foreground">Confirm Transaction</h3>
+          <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight">Confirm Transaction</h3>
         </div>
 
-        <div className="space-y-2 bg-muted rounded-lg p-3">
+        <div className="space-y-2 bg-slate-50 rounded-xl p-3">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Customer</span>
-            <span className="font-semibold text-foreground" data-testid="text-customer-name">
+            <span className="text-slate-400 font-medium">Customer</span>
+            <span className="font-black text-blue-900" data-testid="text-customer-name">
               {customerName}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Amount</span>
-            <span className="font-semibold text-foreground" data-testid="text-amount">
+            <span className="text-slate-400 font-medium">Amount</span>
+            <span className="font-black text-blue-900" data-testid="text-amount">
               ฿{amount}
             </span>
           </div>
           <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Points Earned</span>
+            <span className="text-slate-400 font-medium">Points Earned</span>
             <div className="flex items-center gap-1">
-              <Award className="w-3 h-3 text-primary" />
-              <span className="font-bold text-primary" data-testid="text-points-earned">
+              <Award className="w-3 h-3 text-blue-900" />
+              <span className="font-black text-blue-900" data-testid="text-points-earned">
                 +{points}
               </span>
             </div>
@@ -55,12 +55,16 @@ export default function TransactionConfirm({
           <Button
             onClick={onCancel}
             variant="outline"
-            className="flex-1"
+            className="flex-1 font-black uppercase text-[10px] tracking-widest rounded-xl border-blue-900/10 text-blue-900"
             data-testid="button-cancel"
           >
             Cancel
           </Button>
-          <Button onClick={onConfirm} className="flex-1" data-testid="button-confirm">
+          <Button
+            onClick={onConfirm}
+            className="flex-1 bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
+            data-testid="button-confirm"
+          >
             Confirm
           </Button>
         </div>

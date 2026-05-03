@@ -1,43 +1,29 @@
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Megaphone, Clock } from "lucide-react";
-import { format } from "date-fns";
-import { th as thLocale } from "date-fns/locale";
-import { useTranslation } from "react-i18next";
+import { Megaphone, ArrowUpRight } from "lucide-react";
 
-interface PromotionCardProps {
-  title: string;
-  description: string;
-  validUntil: Date;
-  isNew?: boolean;
-}
-
-export default function PromotionCard({ title, description, validUntil, isNew }: PromotionCardProps) {
-  const { t, i18n } = useTranslation();
-  const dateLocale = i18n.language === 'th' ? thLocale : undefined;
-  
+export function PromotionCard({ title, type, status, targetCount }: { title: string, type: string, status: string, targetCount: number }) {
   return (
-    <Card className="p-6 bg-gradient-to-br from-primary to-chart-2 text-primary-foreground hover-elevate" data-testid="card-promotion">
-      <div className="space-y-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Megaphone className="w-5 h-5" />
-            <h3 className="text-lg font-bold">{title}</h3>
+    <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden group transition-all duration-500">
+      <div className="h-44 bg-gradient-to-br from-blue-900 to-blue-800 relative p-6 flex flex-col justify-between overflow-hidden">
+        <div className="flex justify-between items-start relative z-10">
+          <div className="bg-white/20 rounded-xl p-2.5 backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform">
+            <Megaphone className="w-5 h-5 text-yellow-400" />
           </div>
-          {isNew && (
-            <Badge className="bg-chart-4 text-white" data-testid="badge-new">
-              {t('common.new')}
-            </Badge>
-          )}
+          <Badge className="bg-yellow-400 text-blue-900 font-black uppercase text-[9px] tracking-widest border-none shadow-lg">{status}</Badge>
         </div>
-
-        <p className="text-sm opacity-90">{description}</p>
-
-        <div className="flex items-center gap-1 text-xs opacity-80">
-          <Clock className="w-3 h-3" />
-          <span>{t('promotion.validUntil')} {format(validUntil, "MMM dd, yyyy", { locale: dateLocale })}</span>
+        <div className="relative z-10">
+          <p className="text-[9px] font-black text-blue-300 uppercase tracking-[0.2em] mb-1">{type}</p>
+          <h3 className="text-xl font-black text-white uppercase tracking-tight leading-tight italic">{title}</h3>
         </div>
       </div>
+      <CardContent className="p-6 bg-white flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Broadcast Audience</p>
+          <p className="text-sm font-black text-blue-900 uppercase">{targetCount} Members</p>
+        </div>
+        <button className="text-blue-900 hover:bg-blue-900/5 p-2 rounded-xl transition-colors"><ArrowUpRight className="w-5 h-5" /></button>
+      </CardContent>
     </Card>
   );
 }
