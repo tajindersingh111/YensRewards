@@ -241,14 +241,14 @@ export default function ProductManager() {
   return (
     <div className="space-y-6">
       {/* ── Branded header ── */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white">
+      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+          <div className="bg-yellow-400 rounded-xl p-3 shrink-0 shadow-lg">
             <Package className="h-5 w-5 text-blue-900" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black uppercase tracking-tight">{t('products.title')}</h2>
-            <p className="text-blue-300 text-sm">{t('products.subtitle')}</p>
+            <h2 className="text-xl font-black uppercase tracking-tight leading-none">{t('products.title')}</h2>
+            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">{t('products.subtitle')}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {products.length > 0 && (
@@ -485,10 +485,12 @@ export default function ProductManager() {
 
       {/* Missing-photo banner */}
       {missingPhotoCount > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-md border bg-muted/50 text-sm text-muted-foreground">
-          <Camera className="w-4 h-4 shrink-0" />
-          <span>
-            <strong className="text-foreground">{missingPhotoCount} product{missingPhotoCount !== 1 ? "s" : ""}</strong> {missingPhotoCount !== 1 ? "are" : "is"} missing a photo — click the camera icon on any card to add one instantly.
+        <div className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-yellow-400/10 border border-yellow-400/30 text-sm">
+          <div className="w-8 h-8 rounded-xl bg-yellow-400 flex items-center justify-center shrink-0">
+            <Camera className="w-4 h-4 text-blue-900" />
+          </div>
+          <span className="text-blue-900 font-bold">
+            <strong className="font-black">{missingPhotoCount} product{missingPhotoCount !== 1 ? "s" : ""}</strong> missing photos — click the camera icon on any card to add one instantly.
           </span>
         </div>
       )}

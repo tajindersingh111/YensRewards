@@ -252,28 +252,36 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 p-4">
-      <div className="bg-blue-900 rounded-lg p-6 text-white flex items-center gap-4">
-        <div className="bg-yellow-400 rounded-lg p-2.5">
-          <Wrench className="h-5 w-5 text-blue-900" />
+      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-yellow-400 rounded-xl p-3 shadow-lg">
+            <Wrench className="h-5 w-5 text-blue-900" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black uppercase tracking-tight leading-none">{t('admin.settings.title')}</h2>
+            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">{t('admin.settings.pageDescription')}</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-black uppercase tracking-tight">{t('admin.settings.title')}</h2>
-          <p className="text-blue-300 text-sm">{t('admin.settings.pageDescription')}</p>
+        <div className="hidden md:flex items-center gap-2">
+          <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-md flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">Config Ready</span>
+          </div>
         </div>
       </div>
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="business" className="flex items-center gap-2" data-testid="tab-business">
-            <Building2 className="h-4 w-4" />
+        <TabsList className="h-auto p-1 bg-white border border-slate-100 rounded-2xl w-full md:w-auto justify-start gap-1 mb-6 shadow-sm">
+          <TabsTrigger value="business" data-testid="tab-business" className="flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <Building2 className="h-3.5 w-3.5" />
             {t('admin.settings.tabBusiness', 'Business')}
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2" data-testid="tab-security">
-            <Shield className="h-4 w-4" />
+          <TabsTrigger value="security" data-testid="tab-security" className="flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <Shield className="h-3.5 w-3.5" />
             {t('admin.settings.tabSecurity')}
           </TabsTrigger>
-          <TabsTrigger value="data" className="flex items-center gap-2" data-testid="tab-data">
-            <Download className="h-4 w-4" />
+          <TabsTrigger value="data" data-testid="tab-data" className="flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <Download className="h-3.5 w-3.5" />
             {t('admin.settings.tabData')}
           </TabsTrigger>
         </TabsList>
@@ -287,10 +295,10 @@ export default function SettingsPage() {
           ) : (
             <>
               {/* Revenue Target */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('admin.settings.revenueTarget', 'Annual Revenue Target')}</CardTitle>
-                  <CardDescription>{t('admin.settings.revenueTargetDesc', 'Used for the break-even chart and goal tracking')}</CardDescription>
+              <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+                <CardHeader className="px-6 pt-6 pb-2">
+                  <CardTitle className="text-sm font-black text-blue-900 uppercase tracking-tight">{t('admin.settings.revenueTarget', 'Annual Revenue Target')}</CardTitle>
+                  <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('admin.settings.revenueTargetDesc', 'Used for the break-even chart and goal tracking')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -308,10 +316,10 @@ export default function SettingsPage() {
               </Card>
 
               {/* Loyalty Points */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('admin.settings.loyaltyPoints', 'Loyalty Points')}</CardTitle>
-                  <CardDescription>{t('admin.settings.loyaltyPointsDesc', 'How points are earned per purchase')}</CardDescription>
+              <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+                <CardHeader className="px-6 pt-6 pb-2">
+                  <CardTitle className="text-sm font-black text-blue-900 uppercase tracking-tight">{t('admin.settings.loyaltyPoints', 'Loyalty Points')}</CardTitle>
+                  <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('admin.settings.loyaltyPointsDesc', 'How points are earned per purchase')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -329,10 +337,10 @@ export default function SettingsPage() {
               </Card>
 
               {/* Tier Thresholds */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('admin.settings.tierThresholds', 'Tier Thresholds')}</CardTitle>
-                  <CardDescription>{t('admin.settings.tierThresholdsDesc', 'Minimum lifetime points required for each tier')}</CardDescription>
+              <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+                <CardHeader className="px-6 pt-6 pb-2">
+                  <CardTitle className="text-sm font-black text-blue-900 uppercase tracking-tight">{t('admin.settings.tierThresholds', 'Tier Thresholds')}</CardTitle>
+                  <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('admin.settings.tierThresholdsDesc', 'Minimum lifetime points required for each tier')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
@@ -356,9 +364,9 @@ export default function SettingsPage() {
               </Card>
 
               {/* Shop Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('admin.settings.shopInfo', 'Shop Info')}</CardTitle>
+              <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+                <CardHeader className="px-6 pt-6 pb-2">
+                  <CardTitle className="text-sm font-black text-blue-900 uppercase tracking-tight">{t('admin.settings.shopInfo', 'Shop Info')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -412,25 +420,25 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+            <CardHeader className="px-6 pt-6 pb-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Key className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-sm font-black text-blue-900 uppercase tracking-tight">
+                    <Key className="h-4 w-4" />
                     {t('admin.settings.baristaAccess')}
                   </CardTitle>
-                  <CardDescription className="text-sm">{t('admin.settings.baristaAccessDesc')}</CardDescription>
+                  <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('admin.settings.baristaAccessDesc')}</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   {userStatus?.hasPassword && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
+                    <Badge className="bg-blue-900 text-white border-none flex items-center gap-1 text-[9px] font-black uppercase">
                       <CheckCircle2 className="h-3 w-3" />
                       Set
                     </Badge>
                   )}
                   {userStatus?.twoFactorEnabled && (
-                    <Badge variant="default" className="flex items-center gap-1 bg-green-600">
+                    <Badge className="bg-emerald-600 text-white border-none flex items-center gap-1 text-[9px] font-black uppercase">
                       <Shield className="h-3 w-3" />
                       2FA
                     </Badge>
@@ -573,14 +581,14 @@ export default function SettingsPage() {
 
         <TabsContent value="data" className="space-y-4">
           {/* GitHub Backup */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DatabaseBackup className="h-5 w-5" />
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+            <CardHeader className="px-6 pt-6 pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-black text-blue-900 uppercase tracking-tight">
+                <DatabaseBackup className="h-4 w-4" />
                 Automatic Data Backup
               </CardTitle>
-              <CardDescription>
-                All sales and customer data is backed up daily at 2:00 AM — to GitHub and Google Sheets in your Drive. You can also run a backup instantly.
+              <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Backed up daily at 2:00 AM — GitHub + Google Sheets. Run instantly below.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -616,13 +624,13 @@ export default function SettingsPage() {
           </Card>
 
           {/* Data Downloads */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5" />
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+            <CardHeader className="px-6 pt-6 pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-black text-blue-900 uppercase tracking-tight">
+                <Download className="h-4 w-4" />
                 {t('admin.settings.dataDownloads')}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 {t('admin.settings.dataDownloadsDesc')}
               </CardDescription>
             </CardHeader>
@@ -657,13 +665,13 @@ export default function SettingsPage() {
           </Card>
 
           {/* Data Maintenance Section */}
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wrench className="h-5 w-5" />
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+            <CardHeader className="px-6 pt-6 pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-black text-blue-900 uppercase tracking-tight">
+                <Wrench className="h-4 w-4" />
                 Data Maintenance
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 Tools for validating and repairing sales data
               </CardDescription>
             </CardHeader>

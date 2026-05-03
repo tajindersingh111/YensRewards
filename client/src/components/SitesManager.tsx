@@ -205,14 +205,14 @@ export default function SitesManager() {
   return (
     <div className="space-y-6 p-6">
       {/* ── Branded header ── */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white">
+      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+          <div className="bg-yellow-400 rounded-xl p-3 shrink-0 shadow-lg">
             <MapPin className="h-5 w-5 text-blue-900" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black uppercase tracking-tight">{t('sites.title')}</h2>
-            <p className="text-blue-300 text-sm">{t('sites.subtitle')}</p>
+            <h2 className="text-xl font-black uppercase tracking-tight leading-none">{t('sites.title')}</h2>
+            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">{t('sites.subtitle')}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {sites.length < 5 && (
@@ -415,66 +415,64 @@ export default function SitesManager() {
       </Dialog>
 
       {sites.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <MapPin className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">{t('sites.noSites')}</p>
+        <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-blue-900/5 flex items-center justify-center mb-4">
+              <MapPin className="w-7 h-7 text-blue-900/30" />
+            </div>
+            <p className="font-black text-slate-400 uppercase tracking-widest text-sm">{t('sites.noSites')}</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sites.map((site) => (
-            <Card key={site.id} className="overflow-hidden" data-testid={`site-card-${site.id}`}>
-              <CardHeader className="pb-3 bg-blue-900/5 border-b border-blue-100 dark:border-blue-900/30">
+            <Card key={site.id} className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden group hover:shadow-2xl transition-shadow" data-testid={`site-card-${site.id}`}>
+              {/* Card top stripe */}
+              <div className="bg-blue-900 px-6 pt-5 pb-4">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg" data-testid={`text-site-name-${site.id}`}>
-                      {site.name}
-                    </CardTitle>
-                    <Badge
-                      variant="outline"
-                      className="mt-1 bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700"
-                    >
-                      {site.channelName}
-                    </Badge>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black uppercase text-blue-400 tracking-[0.25em] mb-1">{site.type === "stall" ? "Fixed Stall" : "Mobile Van"}</p>
+                    <h3 className="text-base font-black text-white uppercase tracking-tight truncate" data-testid={`text-site-name-${site.id}`}>{site.name}</h3>
+                    <p className="text-yellow-400 text-[10px] font-black uppercase tracking-widest mt-0.5">{site.channelName}</p>
                   </div>
-                  <div className="flex gap-1 flex-wrap justify-end">
-                    <Badge
-                      variant={site.type === "stall" ? "default" : "secondary"}
-                      className="text-xs"
-                    >
-                      {t(`sites.type${site.type === "stall" ? "Stall" : "MobileVan"}`)}
-                    </Badge>
+                  <div className="shrink-0">
                     {site.isActive ? (
-                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-                        {t('sites.active')}
-                      </Badge>
+                      <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-[9px] font-black text-white uppercase tracking-widest">{t('sites.active')}</span>
+                      </div>
                     ) : (
-                      <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400">
-                        {t('sites.inactive')}
-                      </Badge>
+                      <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl">
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">{t('sites.inactive')}</span>
+                      </div>
                     )}
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-3">
-                <div className="flex items-start gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">{site.location}</span>
+              </div>
+
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                    <MapPin className="w-3.5 h-3.5 text-blue-900" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600">{site.location}</span>
                 </div>
-                <div className="flex items-start gap-2 text-sm">
-                  <Clock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">
-                    {site.openTime || "N/A"} - {site.closeTime || "N/A"}
-                  </span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                    <Clock className="w-3.5 h-3.5 text-blue-900" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600">{site.openTime || "N/A"} – {site.closeTime || "N/A"}</span>
                 </div>
-                <div className="flex items-start gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+                    <Calendar className="w-3.5 h-3.5 text-blue-900" />
+                  </div>
                   <div className="flex flex-wrap gap-1">
                     {(site.operatingDays || []).map((day) => (
-                      <Badge key={day} variant="outline" className="text-xs">
+                      <span key={day} className="text-[9px] font-black text-blue-900 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-wide">
                         {t(`sites.days.${day}`)}
-                      </Badge>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -483,7 +481,7 @@ export default function SitesManager() {
                     onClick={() => handleEdit(site)}
                     variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 font-black uppercase tracking-wide text-[10px] rounded-xl border-slate-200"
                     data-testid={`button-edit-${site.id}`}
                   >
                     <Edit className="w-3 h-3 mr-1" />
@@ -493,7 +491,7 @@ export default function SitesManager() {
                     onClick={() => handleDelete(site)}
                     variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 font-black uppercase tracking-wide text-[10px] rounded-xl border-red-100 text-red-500 hover:text-red-600"
                     data-testid={`button-delete-${site.id}`}
                   >
                     <Trash2 className="w-3 h-3 mr-1" />

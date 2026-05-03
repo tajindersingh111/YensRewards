@@ -104,14 +104,14 @@ export default function CustomerTable({ onMessage, onEdit }: CustomerTableProps)
   return (
     <div className="space-y-6">
       {/* ── Branded Header ── */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5">
+          <div className="bg-yellow-400 rounded-xl p-3 shadow-lg">
             <Users className="h-5 w-5 text-blue-900" />
           </div>
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tight">Member Database</h2>
-            <p className="text-blue-300 text-sm" data-testid="badge-customer-count">{totalCount} ecosystem members</p>
+            <h2 className="text-xl font-black uppercase tracking-tight leading-none">Member Database</h2>
+            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90" data-testid="badge-customer-count">{totalCount} ecosystem members</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

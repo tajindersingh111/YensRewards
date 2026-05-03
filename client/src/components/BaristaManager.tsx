@@ -137,7 +137,9 @@ function OverviewTab({ users, schedules, timeEntries, sites }: {
 
       <div className="grid gap-3">
         {baristas.length === 0 && (
-          <Card><CardContent className="py-8 text-center text-muted-foreground">No barista accounts found</CardContent></Card>
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white">
+            <CardContent className="py-12 text-center font-black text-slate-300 uppercase tracking-widest">No barista accounts found</CardContent>
+          </Card>
         )}
         {baristas.map(u => {
           const mySchedules = weekSchedules.filter(s => s.userId === u.id);
@@ -149,57 +151,57 @@ function OverviewTab({ users, schedules, timeEntries, sites }: {
           const attendancePct = scheduledMins > 0 ? Math.min(100, Math.round((workedMins / scheduledMins) * 100)) : null;
 
           return (
-            <Card key={u.id} data-testid={`card-barista-${u.id}`}>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-blue-900/10 text-blue-900 dark:text-blue-300 font-semibold">{userInitials(u)}</AvatarFallback>
+            <Card key={u.id} className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden" data-testid={`card-barista-${u.id}`}>
+              <CardContent className="p-0">
+                <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-5">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-12 h-12 ring-2 ring-blue-900/10">
+                      <AvatarFallback className="bg-blue-900 text-white font-black text-sm">{userInitials(u)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium" data-testid={`text-barista-name-${u.id}`}>{userName(u)}</div>
-                      <div className="text-xs text-muted-foreground capitalize">{u.role}{u.location ? ` · ${u.location}` : ""}</div>
+                      <div className="font-black text-blue-900 uppercase tracking-tight text-sm" data-testid={`text-barista-name-${u.id}`}>{userName(u)}</div>
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest capitalize mt-0.5">{u.role}{u.location ? ` · ${u.location}` : ""}</div>
                     </div>
                     {openEntry && (
-                      <Badge className="bg-green-500/15 text-green-700 dark:text-green-400 border-0 gap-1 no-default-active-elevate" data-testid={`badge-clocked-in-${u.id}`}>
+                      <Badge className="bg-green-500/15 text-green-700 border-0 gap-1.5 no-default-active-elevate" data-testid={`badge-clocked-in-${u.id}`}>
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                         Clocked In
                       </Badge>
                     )}
                     {!u.isActive && (
-                      <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                      <Badge variant="secondary" className="text-[9px] font-black uppercase">Inactive</Badge>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex flex-wrap gap-6">
                     <div className="text-center">
-                      <div className="font-semibold" data-testid={`text-scheduled-${u.id}`}>{scheduledMins > 0 ? minutesToHours(scheduledMins) : "—"}</div>
-                      <div className="text-xs text-muted-foreground">Scheduled</div>
+                      <div className="text-lg font-black text-blue-900" data-testid={`text-scheduled-${u.id}`}>{scheduledMins > 0 ? minutesToHours(scheduledMins) : "—"}</div>
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Scheduled</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold" data-testid={`text-worked-${u.id}`}>{workedMins > 0 ? minutesToHours(workedMins) : "—"}</div>
-                      <div className="text-xs text-muted-foreground">Worked</div>
+                      <div className="text-lg font-black text-blue-900" data-testid={`text-worked-${u.id}`}>{workedMins > 0 ? minutesToHours(workedMins) : "—"}</div>
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Worked</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold" data-testid={`text-shifts-${u.id}`}>{shifts}</div>
-                      <div className="text-xs text-muted-foreground">Shifts</div>
+                      <div className="text-lg font-black text-blue-900" data-testid={`text-shifts-${u.id}`}>{shifts}</div>
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Shifts</div>
                     </div>
                     {attendancePct !== null && (
                       <div className="text-center">
-                        <div className={`font-semibold ${attendancePct >= 90 ? "text-green-600 dark:text-green-400" : attendancePct >= 70 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}
+                        <div className={`text-lg font-black ${attendancePct >= 90 ? "text-emerald-600" : attendancePct >= 70 ? "text-yellow-600" : "text-red-500"}`}
                           data-testid={`text-attendance-${u.id}`}>{attendancePct}%</div>
-                        <div className="text-xs text-muted-foreground">Attendance</div>
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Attendance</div>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {mySchedules.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="px-6 pb-5 flex flex-wrap gap-2">
                     {mySchedules.map(s => (
-                      <div key={s.id} className="text-xs bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-md px-2 py-1">
-                        <span className="font-medium text-blue-900 dark:text-blue-300">{format(parseISO(s.scheduledDate), "EEE d")}</span>
-                        <span className="text-blue-700 dark:text-blue-400 ml-1">{s.startTime}–{s.endTime} · {siteName(s.siteId)}</span>
+                      <div key={s.id} className="text-[10px] bg-blue-50 rounded-xl px-3 py-1.5">
+                        <span className="font-black text-blue-900">{format(parseISO(s.scheduledDate), "EEE d")}</span>
+                        <span className="text-blue-700 ml-1 font-bold">{s.startTime}–{s.endTime} · {siteName(s.siteId)}</span>
                       </div>
                     ))}
                   </div>
@@ -744,14 +746,14 @@ export default function BaristaManager() {
   return (
     <div className="space-y-6">
       {/* ── Branded header ── */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white">
+      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+          <div className="bg-yellow-400 rounded-xl p-3 shrink-0 shadow-lg">
             <Users className="h-5 w-5 text-blue-900" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black uppercase tracking-tight">Barista Management</h2>
-            <p className="text-blue-300 text-sm">Schedules, hours, attendance and performance</p>
+            <h2 className="text-xl font-black uppercase tracking-tight leading-none">Barista Management</h2>
+            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">Schedules, hours, attendance and performance</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {currentlyIn.length > 0 && (
@@ -768,21 +770,21 @@ export default function BaristaManager() {
       </div>
 
       <Tabs defaultValue="calendar">
-        <TabsList className="mb-2" data-testid="tabs-barista-manager">
-          <TabsTrigger value="calendar" data-testid="tab-calendar">
-            <CalendarDays className="h-4 w-4 mr-1.5" />Calendar
+        <TabsList className="h-auto p-1 bg-white border border-slate-100 rounded-2xl w-full md:w-auto justify-start gap-1 mb-6 shadow-sm flex-wrap" data-testid="tabs-barista-manager">
+          <TabsTrigger value="calendar" data-testid="tab-calendar" className="flex items-center gap-2 px-5 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <CalendarDays className="h-3.5 w-3.5" />Calendar
           </TabsTrigger>
-          <TabsTrigger value="overview" data-testid="tab-overview">
-            <Users className="h-4 w-4 mr-1.5" />Overview
+          <TabsTrigger value="overview" data-testid="tab-overview" className="flex items-center gap-2 px-5 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <Users className="h-3.5 w-3.5" />Overview
           </TabsTrigger>
-          <TabsTrigger value="attendance" data-testid="tab-attendance">
-            <Clock className="h-4 w-4 mr-1.5" />Attendance
+          <TabsTrigger value="attendance" data-testid="tab-attendance" className="flex items-center gap-2 px-5 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <Clock className="h-3.5 w-3.5" />Attendance
           </TabsTrigger>
-          <TabsTrigger value="hours" data-testid="tab-hours">
-            <Timer className="h-4 w-4 mr-1.5" />Hours Summary
+          <TabsTrigger value="hours" data-testid="tab-hours" className="flex items-center gap-2 px-5 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <Timer className="h-3.5 w-3.5" />Hours
           </TabsTrigger>
-          <TabsTrigger value="performance" data-testid="tab-performance">
-            <TrendingUp className="h-4 w-4 mr-1.5" />Performance
+          <TabsTrigger value="performance" data-testid="tab-performance" className="flex items-center gap-2 px-5 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-400">
+            <TrendingUp className="h-3.5 w-3.5" />Performance
           </TabsTrigger>
         </TabsList>
 
