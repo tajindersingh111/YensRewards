@@ -35,7 +35,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Trash2, Shield, Users, Pencil, Lock, ShieldCheck, ShieldOff, CheckCircle, XCircle } from "lucide-react";
+import { UserPlus, Trash2, Shield, Users, Pencil, Lock, ShieldCheck, ShieldOff, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { User } from "@shared/schema";
 import QRCodeSVG from "react-qr-code";
 
@@ -52,6 +53,9 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingDetailsUser, setEditingDetailsUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [passwordUser, setPasswordUser] = useState<User | null>(null);
   const [twoFAUser, setTwoFAUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
@@ -289,6 +293,42 @@ export default function UsersPage() {
 
   const [editingRole, setEditingRole] = useState<string>("");
 
+  const allSelected = users.length > 0 && selectedUserIds.size === users.length;
+  const someSelected = selectedUserIds.size > 0 && !allSelected;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(users.map(u => u.id)));
+    }
+  };
+
+  const toggleSelectUser = (id: string) => {
+    setSelectedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      await Promise.all(
+        Array.from(selectedUserIds).map(id => apiRequest("DELETE", `/api/admin/users/${id}`))
+      );
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: `${selectedUserIds.size} user${selectedUserIds.size > 1 ? "s" : ""} deleted` });
+      setSelectedUserIds(new Set());
+    } catch {
+      toast({ title: "Some deletions failed", variant: "destructive" });
+    } finally {
+      setIsBulkDeleting(false);
+      setBulkDeleteConfirmOpen(false);
+    }
+  };
+
   const handleUpdateRole = () => {
     if (editingUser && editingRole) {
       updateRoleMutation.mutate({ id: editingUser.id, role: editingRole });
@@ -480,9 +520,35 @@ export default function UsersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            {selectedUserIds.size > 0 && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border-b border-red-100">
+                <span className="text-sm font-black text-red-700 uppercase tracking-wide">
+                  {selectedUserIds.size} user{selectedUserIds.size > 1 ? "s" : ""} selected
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBulkDeleteConfirmOpen(true)}
+                  className="font-black uppercase text-[10px] tracking-widest rounded-xl"
+                  data-testid="button-bulk-delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                  Delete Selected ({selectedUserIds.size})
+                </Button>
+              </div>
+            )}
             <table className="w-full">
               <thead>
                 <tr className="bg-blue-900">
+                  <th className="py-3 px-4 w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                      className="border-white data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 data-[state=checked]:text-blue-900"
+                      data-testid="checkbox-select-all"
+                      aria-label="Select all"
+                    />
+                  </th>
                   <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.user")}</th>
                   <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.email")}</th>
                   <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.role")}</th>
@@ -494,9 +560,18 @@ export default function UsersPage() {
                 {users.map((user) => {
                   const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || (user.email ? user.email[0].toUpperCase() : "U");
                   const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Unknown User";
+                  const isSelected = selectedUserIds.has(user.id);
                   
                   return (
-                    <tr key={user.id} className="border-b hover-elevate" data-testid={`row-user-${user.id}`}>
+                    <tr key={user.id} className={`border-b hover-elevate transition-colors ${isSelected ? "bg-red-50/60" : ""}`} data-testid={`row-user-${user.id}`}>
+                      <td className="py-3 px-4">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelectUser(user.id)}
+                          className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                          data-testid={`checkbox-user-${user.id}`}
+                        />
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-10 h-10">
@@ -756,6 +831,40 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
+        <AlertDialogContent className="rounded-2xl border-none shadow-2xl" data-testid="dialog-bulk-delete">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-black text-red-700 uppercase tracking-tight">
+              Delete {selectedUserIds.size} User{selectedUserIds.size > 1 ? "s" : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-medium text-slate-500">
+              This will permanently delete the selected {selectedUserIds.size} user account{selectedUserIds.size > 1 ? "s" : ""}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="rounded-xl font-bold"
+              data-testid="button-cancel-bulk-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-red-600 text-white font-black rounded-xl uppercase text-[10px] tracking-widest"
+              data-testid="button-confirm-bulk-delete"
+            >
+              {isBulkDeleting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Deleting...</>
+              ) : (
+                <>Delete {selectedUserIds.size} User{selectedUserIds.size > 1 ? "s" : ""}</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
