@@ -907,14 +907,14 @@ function AutomationDialog({
               Send Test
             </Button>
           )}
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
             type="submit"
             form="automation-form"
             disabled={save.isPending}
-            className="bg-blue-900 text-white font-black"
+            className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
             data-testid="button-save-automation"
           >
             {save.isPending ? "Saving…" : editing ? "Save Changes" : "Create Automation"}

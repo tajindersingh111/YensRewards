@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -242,23 +242,22 @@ export function SchedulesManager() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="bg-blue-900 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-2xl">
-            <DialogTitle className="flex items-center gap-4 text-white">
-              <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
-                <Calendar className="h-4 w-4 text-blue-900" />
-              </div>
-              <div>
-                <span className="font-black uppercase tracking-tight leading-none block">
-                  {editingSchedule ? t('admin.schedules.editSchedule') : t('admin.schedules.addSchedule')}
-                </span>
-                <span className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1 opacity-90 block">
-                  {editingSchedule ? t('admin.schedules.subtitle') : t('admin.schedules.subtitle')}
-                </span>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
+        <DialogContent className="max-w-2xl p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <Calendar className="h-4 w-4 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+                {editingSchedule ? t('admin.schedules.editSchedule') : t('admin.schedules.addSchedule')}
+              </h2>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">
+                {t('admin.schedules.subtitle')}
+              </p>
+            </div>
+          </div>
+          <div className="max-h-[70vh] overflow-y-auto">
+          <div className="space-y-4 px-8 py-6">
             {!editingSchedule && (
               <div>
                 <Label>{t('admin.schedules.mode')}</Label>
@@ -439,6 +438,7 @@ export function SchedulesManager() {
             >
               {createMutation.isPending || updateMutation.isPending ? t('common.saving') : t('common.save')}
             </Button>
+          </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -372,31 +372,31 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-900 rounded-lg p-6 text-white flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5">
-            <Users className="h-5 w-5 text-blue-900" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black uppercase tracking-tight">{t("admin.users.title")}</h1>
-            <p className="text-blue-300 text-sm">{t("admin.users.subtitle")}</p>
-          </div>
+      <div className="bg-blue-900 rounded-2xl p-5 flex flex-wrap items-center gap-4 shadow-xl">
+        <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+          <Users className="h-5 w-5 text-blue-900" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-black uppercase tracking-tight leading-none">{t("admin.users.title")}</h1>
+          <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{t("admin.users.subtitle")}</p>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-user" className="bg-yellow-400 text-blue-900 font-bold hover:bg-yellow-300">
+            <Button data-testid="button-add-user" className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl shrink-0">
               <UserPlus className="w-4 h-4 mr-2" />
               {t("admin.users.addUser")}
             </Button>
           </DialogTrigger>
-          <DialogContent data-testid="dialog-add-user">
-            <DialogHeader>
-              <DialogTitle>{t("admin.users.addUserTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("admin.users.addUserDesc")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
+          <DialogContent className="p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden" data-testid="dialog-add-user">
+            <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+              <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+                <UserPlus className="h-4 w-4 text-blue-900" />
+              </div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+                {t("admin.users.addUserTitle")}
+              </h2>
+            </div>
+            <div className="p-8 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">{t("admin.users.emailLabel")}</Label>
                 <Input
@@ -448,12 +448,14 @@ export default function UsersPage() {
             <DialogFooter>
               <Button
                 variant="outline"
+                className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
                 onClick={() => setAddDialogOpen(false)}
                 data-testid="button-cancel"
               >
                 {t("admin.users.cancel")}
               </Button>
               <Button
+                className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
                 onClick={handleCreateUser}
                 disabled={createMutation.isPending}
                 data-testid="button-create-user"
@@ -465,13 +467,13 @@ export default function UsersPage() {
         </Dialog>
       </div>
 
-      <Card className="p-6">
+      <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
         {isLoading ? (
-          <div className="text-center py-8">
+          <div className="text-center py-16 px-6">
             <p className="text-muted-foreground">{t("common.loading")}</p>
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-16 px-6">
             <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <p className="text-lg font-medium">{t("admin.users.noUsers")}</p>
             <p className="text-sm text-muted-foreground">{t("admin.users.noUsersDesc")}</p>
@@ -480,12 +482,12 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-blue-900/5 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.user")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.email")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.role")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.created")}</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-blue-900 dark:text-blue-300">{t("admin.users.actions")}</th>
+                <tr className="bg-blue-900">
+                  <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.user")}</th>
+                  <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.email")}</th>
+                  <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.role")}</th>
+                  <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.created")}</th>
+                  <th className="text-left py-3 px-4 text-xs font-black text-white uppercase tracking-widest">{t("admin.users.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -629,14 +631,19 @@ export default function UsersPage() {
           }
         }}
       >
-        <DialogContent data-testid="dialog-edit-role">
-          <DialogHeader>
-            <DialogTitle>{t("admin.users.editRoleTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("admin.users.editRoleDesc", { email: editingUser?.email })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden" data-testid="dialog-edit-role">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <Shield className="h-4 w-4 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+                {t("admin.users.editRoleTitle")}
+              </h2>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{editingUser?.email}</p>
+            </div>
+          </div>
+          <div className="p-8 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="editRole">{t("admin.users.role")}</Label>
               <Select
@@ -657,6 +664,7 @@ export default function UsersPage() {
           <DialogFooter>
             <Button
               variant="outline"
+              className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
               onClick={() => {
                 setEditingUser(null);
                 setEditingRole("");
@@ -669,7 +677,7 @@ export default function UsersPage() {
               onClick={handleUpdateRole}
               disabled={updateRoleMutation.isPending || !editingRole}
               data-testid="button-save-role"
-              className="bg-blue-900 text-white hover:bg-blue-800"
+              className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
             >
               {updateRoleMutation.isPending ? t("admin.users.updating") : t("admin.users.saveChanges")}
             </Button>
@@ -686,14 +694,19 @@ export default function UsersPage() {
           }
         }}
       >
-        <DialogContent data-testid="dialog-edit-details">
-          <DialogHeader>
-            <DialogTitle>{t("admin.users.editDetailsTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("admin.users.editDetailsDesc", { email: editingDetailsUser?.email })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden" data-testid="dialog-edit-details">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <Pencil className="h-4 w-4 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+                {t("admin.users.editDetailsTitle")}
+              </h2>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{editingDetailsUser?.email}</p>
+            </div>
+          </div>
+          <div className="p-8 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="editEmail">{t("admin.users.emailLabel")}</Label>
               <Input
@@ -726,6 +739,7 @@ export default function UsersPage() {
           <DialogFooter>
             <Button
               variant="outline"
+              className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
               onClick={() => setEditingDetailsUser(null)}
               data-testid="button-cancel-edit-details"
             >
@@ -735,7 +749,7 @@ export default function UsersPage() {
               onClick={handleUpdateDetails}
               disabled={updateDetailsMutation.isPending || !editDetails.email}
               data-testid="button-save-details"
-              className="bg-blue-900 text-white hover:bg-blue-800"
+              className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
             >
               {updateDetailsMutation.isPending ? t("admin.users.updating") : t("admin.users.saveChanges")}
             </Button>
@@ -773,14 +787,19 @@ export default function UsersPage() {
           setConfirmPassword("");
         }
       }}>
-        <DialogContent data-testid="dialog-set-password">
-          <DialogHeader>
-            <DialogTitle>{t("admin.users.setPasswordTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("admin.users.setPasswordDesc", { email: passwordUser?.email })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden" data-testid="dialog-set-password">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <Lock className="h-4 w-4 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+                {t("admin.users.setPasswordTitle")}
+              </h2>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{passwordUser?.email}</p>
+            </div>
+          </div>
+          <div className="p-8 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">{t("admin.users.password")}</Label>
               <Input
@@ -821,6 +840,7 @@ export default function UsersPage() {
           <DialogFooter>
             <Button
               variant="outline"
+              className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
               onClick={() => {
                 setPasswordUser(null);
                 setPassword("");
@@ -840,7 +860,7 @@ export default function UsersPage() {
                 password.length < 8
               }
               data-testid="button-save-password"
-              className="bg-blue-900 text-white hover:bg-blue-800"
+              className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
             >
               {setPasswordMutation.isPending ? t("admin.users.setting") : t("admin.users.setPassword")}
             </Button>
@@ -858,19 +878,20 @@ export default function UsersPage() {
           setTwoFAStep("setup");
         }
       }}>
-        <DialogContent data-testid="dialog-2fa">
-          <DialogHeader>
-            <DialogTitle>
-              {twoFAUser?.twoFactorEnabled ? t("admin.users.disable2FATitle") : t("admin.users.setup2FATitle")}
-            </DialogTitle>
-            <DialogDescription>
-              {twoFAUser?.twoFactorEnabled 
-                ? t("admin.users.disable2FADesc", { email: twoFAUser?.email })
-                : t("admin.users.setup2FADesc", { email: twoFAUser?.email })
-              }
-            </DialogDescription>
-          </DialogHeader>
-          
+        <DialogContent className="p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden" data-testid="dialog-2fa">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              {twoFAUser?.twoFactorEnabled ? <ShieldOff className="h-4 w-4 text-blue-900" /> : <ShieldCheck className="h-4 w-4 text-blue-900" />}
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+                {twoFAUser?.twoFactorEnabled ? t("admin.users.disable2FATitle") : t("admin.users.setup2FATitle")}
+              </h2>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{twoFAUser?.email}</p>
+            </div>
+          </div>
+          <div className="p-8">
+
           {twoFAUser?.twoFactorEnabled ? (
             /* Disable 2FA */
             <div className="space-y-4">
@@ -909,9 +930,10 @@ export default function UsersPage() {
             </div>
           )}
           
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button
               variant="outline"
+              className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
               onClick={() => {
                 setTwoFAUser(null);
                 setTwoFASecret("");
@@ -936,6 +958,7 @@ export default function UsersPage() {
               <Button
                 onClick={handleSetup2FA}
                 disabled={setup2FAMutation.isPending}
+                className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
                 data-testid="button-setup-2fa"
               >
                 {setup2FAMutation.isPending ? t("admin.users.generating") : t("admin.users.generateQR")}
@@ -944,12 +967,14 @@ export default function UsersPage() {
               <Button
                 onClick={handleEnable2FA}
                 disabled={enable2FAMutation.isPending || !twoFAToken || twoFAToken.length !== 6}
+                className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
                 data-testid="button-enable-2fa"
               >
                 {enable2FAMutation.isPending ? t("admin.users.enabling") : t("admin.users.enable2FA")}
               </Button>
             )}
           </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

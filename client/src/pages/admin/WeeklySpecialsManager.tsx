@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -155,17 +155,15 @@ export default function WeeklySpecialsManager() {
   return (
     <div className="space-y-8">
       {/* Premium Header */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5">
-            <Megaphone className="w-5 h-5 text-blue-900" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black text-white uppercase tracking-tight">Campaign Manager</h2>
-            <p className="text-blue-300 text-sm">Weekly Loyalty Incentives</p>
-          </div>
+      <div className="bg-blue-900 rounded-2xl p-5 flex flex-wrap items-center gap-4 shadow-xl">
+        <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+          <Megaphone className="w-5 h-5 text-blue-900" />
         </div>
-        <Button onClick={() => setAddDialogOpen(true)} className="bg-yellow-400 text-blue-900 font-black rounded-lg px-6 hover:bg-yellow-300" data-testid="button-add-special">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-black text-white uppercase tracking-tight leading-none">Campaign Manager</h2>
+          <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">Weekly Loyalty Incentives</p>
+        </div>
+        <Button onClick={() => setAddDialogOpen(true)} className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl shrink-0" data-testid="button-add-special">
           <Plus className="w-4 h-4 mr-2" /> CREATE NEW SPECIAL
         </Button>
       </div>
@@ -239,9 +237,14 @@ export default function WeeklySpecialsManager() {
       {/* Add/Edit Dialog */}
       <Dialog open={addDialogOpen || !!editingSpecial} onOpenChange={(open) => { if (!open) { setAddDialogOpen(false); setEditingSpecial(null); resetForm(); } }}>
         <DialogContent className="max-w-xl rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-white" data-testid="dialog-special-form">
-          <div className="bg-blue-900 p-8 text-white">
-            <h2 className="text-2xl font-black uppercase tracking-tight">{editingSpecial ? 'Edit Campaign' : 'Create Campaign'}</h2>
-            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1">Design your weekly customer incentive</p>
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <Megaphone className="h-4 w-4 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">{editingSpecial ? 'Edit Campaign' : 'Create Campaign'}</h2>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">Design your weekly customer incentive</p>
+            </div>
           </div>
 
           <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
@@ -293,7 +296,7 @@ export default function WeeklySpecialsManager() {
             <Button
               onClick={editingSpecial ? () => updateMutation.mutate({ id: editingSpecial.id, data: formData }) : () => createMutation.mutate(formData)}
               disabled={!formData.title || !formData.description || createMutation.isPending || updateMutation.isPending}
-              className="flex-1 h-12 bg-blue-900 text-white font-black rounded-xl uppercase text-xs shadow-lg"
+              className="flex-1 h-12 bg-yellow-400 text-blue-900 font-black rounded-xl uppercase text-xs shadow-lg"
               data-testid="button-save"
             >
               {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Campaign'}
@@ -304,19 +307,26 @@ export default function WeeklySpecialsManager() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deletingSpecial} onOpenChange={(open) => !open && setDeletingSpecial(null)}>
-        <DialogContent data-testid="dialog-delete-confirm">
-          <DialogHeader>
-            <DialogTitle>{t("admin.specials.deleteConfirm")}</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {t("admin.specials.deleteMessage")} <strong>{deletingSpecial?.title}</strong>?
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingSpecial(null)} data-testid="button-delete-cancel">{t("common.cancel")}</Button>
-            <Button variant="destructive" onClick={() => deletingSpecial && deleteMutation.mutate(deletingSpecial.id)} disabled={deleteMutation.isPending} data-testid="button-delete-confirm">
+        <DialogContent className="p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden" data-testid="dialog-delete-confirm">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <Trash2 className="h-4 w-4 text-blue-900" />
+            </div>
+            <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+              {t("admin.specials.deleteConfirm")}
+            </h2>
+          </div>
+          <div className="p-8">
+            <p className="text-sm text-muted-foreground">
+              {t("admin.specials.deleteMessage")} <strong>{deletingSpecial?.title}</strong>?
+            </p>
+          </div>
+          <div className="flex gap-3 px-8 pb-8">
+            <Button variant="outline" className="flex-1 border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" onClick={() => setDeletingSpecial(null)} data-testid="button-delete-cancel">{t("common.cancel")}</Button>
+            <Button variant="destructive" className="flex-1 font-black uppercase text-[10px] tracking-widest rounded-xl" onClick={() => deletingSpecial && deleteMutation.mutate(deletingSpecial.id)} disabled={deleteMutation.isPending} data-testid="button-delete-confirm">
               {deleteMutation.isPending ? t("common.deleting") : t("common.delete")}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
