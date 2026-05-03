@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, ArrowRight, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown, Smartphone, Users, UserCheck, ShieldCheck, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown, Smartphone, Users, UserCheck, ShieldCheck, Check, X, Banknote, Coins } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -1361,24 +1361,36 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
 
         {/* ENTER AMOUNT STEP */}
         {isClockedIn && step === "enter-amount" && selectedCustomer && (
-          <div className="pt-8">
-            <Card className="p-6 space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-foreground">{t('barista.enterAmount')}</h2>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {t('barista.customer')}: {selectedCustomer.name}
-                </p>
+          <div className="pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Card className="overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white" data-testid="card-enter-amount">
+
+              {/* Premium Transaction Header */}
+              <div className="bg-blue-900 px-8 py-6 flex items-center gap-4">
+                <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg">
+                  <Banknote className="w-5 h-5 text-blue-900" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-white uppercase tracking-tighter">
+                    {t('barista.enterAmount')}
+                  </h2>
+                  <p className="text-blue-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
+                    {t('barista.customer')}: <span className="text-white">{selectedCustomer.name}</span>
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">{t('barista.spendAmount')}</label>
+              <div className="p-8 space-y-8">
+                {/* Large Sales Input Area */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center block">
+                    {t('barista.spendAmount')} (฿)
+                  </label>
                   <Input
                     type="number"
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="text-2xl h-16 text-center"
+                    className="text-4xl h-20 text-center font-black text-blue-900 border-none bg-slate-50 rounded-3xl focus-visible:ring-yellow-400 shadow-inner"
                     autoFocus
                     step="0.01"
                     min="0"
@@ -1386,39 +1398,58 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                   />
                 </div>
 
+                {/* Live Points Engine Pod */}
                 {amount && parseFloat(amount) > 0 && (
-                  <Card className="p-4 bg-muted">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{t('barista.pointsToEarn')}:</span>
-                      <span className="text-2xl font-bold text-chart-1">
-                        +{Math.floor(parseFloat(amount) / 10)}
-                      </span>
+                  <div className="p-6 bg-blue-900/5 border border-blue-900/10 rounded-[2rem] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
+                      <Coins className="w-12 h-12 text-blue-900" />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {t('barista.pointsFormula')}
-                    </p>
-                  </Card>
+                    <div className="flex items-center justify-between relative z-10">
+                      <div>
+                        <p className="text-[10px] font-black text-blue-900/60 uppercase tracking-widest">
+                          {t('barista.pointsToEarn')}
+                        </p>
+                        <p className="text-xs text-slate-400 font-bold mt-1">
+                          {t('barista.pointsFormula')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-4xl font-black text-yellow-600 tracking-tighter">
+                          +{Math.floor(parseFloat(amount) / 10)}
+                        </span>
+                        <span className="ml-1 text-xs font-black text-blue-900 uppercase">Pts</span>
+                      </div>
+                    </div>
+                  </div>
                 )}
+
+                {/* Action Controls */}
+                <div className="space-y-3 pt-2">
+                  <Button
+                    onClick={handleAmountSubmit}
+                    className="w-full h-14 bg-yellow-400 text-blue-900 font-black uppercase text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2"
+                    disabled={!amount || parseFloat(amount) <= 0 || !canTransact}
+                    data-testid="button-continue-amount"
+                  >
+                    {t('common.next')}
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setStep("verify")}
+                    className="w-full text-slate-400 font-black uppercase text-[10px] tracking-widest"
+                    data-testid="button-back-to-verify"
+                  >
+                    {t('common.back')}
+                  </Button>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <Button
-                  onClick={handleAmountSubmit}
-                  className="w-full"
-                  size="lg"
-                  disabled={!amount || parseFloat(amount) <= 0 || !canTransact}
-                  data-testid="button-continue-amount"
-                >
-                  {t('common.next')}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setStep("verify")}
-                  className="w-full"
-                  data-testid="button-back-to-verify"
-                >
-                  {t('common.back')}
-                </Button>
+              {/* Security Audit Footer */}
+              <div className="px-8 py-4 bg-slate-50/50 text-center border-t border-slate-50">
+                <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                  Financial Protocol: Transaction audited by {location} station
+                </p>
               </div>
             </Card>
           </div>
