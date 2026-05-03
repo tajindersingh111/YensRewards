@@ -95,6 +95,8 @@ export default function SalesTrackerDashboard() {
   const [reportStartDate, setReportStartDate] = useState(getMonday);
   const [reportEndDate, setReportEndDate] = useState(today);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportData, setReportData] = useState<any>(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [draftStart, setDraftStart] = useState(getMonday);
   const [draftEnd, setDraftEnd] = useState(today);
@@ -228,177 +230,150 @@ export default function SalesTrackerDashboard() {
       const res = await fetch(`/api/admin/sales/report?startDate=${reportStartDate}&endDate=${reportEndDate}`, { credentials: 'include' });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
-
-      // Theme colours
-      const YELLOW: [number, number, number] = [252, 211, 77];
-      const BLUE_DARK: [number, number, number] = [30, 58, 138];
-      const BLUE_MID: [number, number, number] = [37, 99, 235];
-      const WHITE: [number, number, number] = [255, 255, 255];
-      const GREY_ROW: [number, number, number] = [248, 250, 252];
-      const GREY_TEXT: [number, number, number] = [71, 85, 105];
-
-      const fmt = (n: number) => `฿${n.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const W = doc.internal.pageSize.getWidth();
-
-      const drawPageHeader = (title: string) => {
-        // Yellow banner
-        doc.setFillColor(...YELLOW);
-        doc.rect(0, 0, W, 28, 'F');
-        // Blue accent stripe
-        doc.setFillColor(...BLUE_DARK);
-        doc.rect(0, 28, W, 2, 'F');
-        // Logo circle placeholder
-        doc.setFillColor(...BLUE_DARK);
-        doc.circle(20, 14, 10, 'F');
-        doc.setFontSize(9);
-        doc.setTextColor(...WHITE);
-        doc.setFont('helvetica', 'bold');
-        doc.text("YEN'S", 20, 13, { align: 'center' });
-        doc.text("THAI", 20, 17.5, { align: 'center' });
-        // Title text
-        doc.setFontSize(18);
-        doc.setTextColor(...BLUE_DARK);
-        doc.setFont('helvetica', 'bold');
-        doc.text(title, 34, 12);
-        // Subtitle
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...GREY_TEXT);
-        doc.text('Yen\'s Thai Ice Cream · Nakhon Sawan', 34, 19);
-        doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 34, 24);
-      };
-
-      // ── PAGE 1 ────────────────────────────────────────────────────────
-      drawPageHeader("Sales Report");
-
-      // Period badge
-      doc.setFillColor(...BLUE_MID);
-      doc.roundedRect(14, 34, W - 28, 9, 2, 2, 'F');
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...WHITE);
-      doc.text(`Period: ${formatDateDDMMYY(reportStartDate)}  –  ${formatDateDDMMYY(reportEndDate)}`, W / 2, 40, { align: 'center' });
-
-      // ── Summary cards ─────────────────────────────────────────────────
-      const summaryItems = [
-        { label: 'Total Net Sales', value: fmt(data.summary.totalNetSales) },
-        { label: 'Other Sales', value: fmt(data.summary.totalOtherSales) },
-        { label: 'Total Sales', value: fmt(data.summary.totalSales) },
-        { label: 'Days Logged', value: String(data.summary.transactionCount) },
-        { label: 'Avg / Day', value: fmt(data.summary.avgTransaction) },
-      ];
-      const cardW = (W - 28 - 8) / 3;
-      let cx = 14;
-      let cy = 48;
-      summaryItems.forEach((item, i) => {
-        if (i === 3) { cx = 14 + cardW + 4; cy = 48 + 22; }
-        if (i === 4) { cx = 14 + (cardW + 4) * 2; cy = 48 + 22; }
-        doc.setFillColor(...WHITE);
-        doc.setDrawColor(...YELLOW);
-        doc.setLineWidth(0.5);
-        doc.roundedRect(cx + (i < 3 ? (cardW + 4) * i : 0), cy, cardW, 18, 2, 2, 'FD');
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...GREY_TEXT);
-        const bx = cx + (i < 3 ? (cardW + 4) * i : 0) + cardW / 2;
-        doc.text(item.label.toUpperCase(), bx, cy + 6, { align: 'center' });
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...BLUE_DARK);
-        doc.text(item.value, bx, cy + 13, { align: 'center' });
-      });
-
-      let nextY = 96;
-
-      // ── Channel breakdown ─────────────────────────────────────────────
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...BLUE_DARK);
-      doc.text('Sales by Channel', 14, nextY);
-
-      autoTable(doc, {
-        startY: nextY + 3,
-        head: [['Channel', 'Revenue (THB)', 'Days']],
-        body: data.channelBreakdown.map((c: { channel: string; revenue: number; count: number }) => [
-          c.channel,
-          fmt(c.revenue),
-          c.count.toString(),
-        ]),
-        headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
-        bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
-        alternateRowStyles: { fillColor: GREY_ROW },
-        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
-        margin: { left: 14, right: 14 },
-      });
-
-      nextY = (doc as any).lastAutoTable.finalY + 10;
-
-      // ── Day of week breakdown ─────────────────────────────────────────
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...BLUE_DARK);
-      doc.text('Sales by Day of Week', 14, nextY);
-
-      autoTable(doc, {
-        startY: nextY + 3,
-        head: [['Day', 'Revenue (THB)', 'Days']],
-        body: data.dayBreakdown.map((d: { day: string; revenue: number; count: number }) => [
-          d.day,
-          fmt(d.revenue),
-          d.count.toString(),
-        ]),
-        headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
-        bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
-        alternateRowStyles: { fillColor: GREY_ROW },
-        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
-        margin: { left: 14, right: 14 },
-      });
-
-      // ── PAGE 2: Transaction log ───────────────────────────────────────
-      doc.addPage();
-      drawPageHeader("Transaction Details");
-
-      autoTable(doc, {
-        startY: 34,
-        head: [['Date', 'Day', 'Channel', 'Net Sales', 'Other', 'Note', 'Total']],
-        body: data.transactions.map((t: { date: string; dayOfWeek?: string; channel: string; netSales: number; otherSales: number; otherSalesNote?: string; totalSales: number }) => [
-          formatDateDDMMYY(t.date),
-          t.dayOfWeek || '-',
-          t.channel,
-          fmt(t.netSales),
-          fmt(t.otherSales),
-          t.otherSalesNote || '-',
-          fmt(t.totalSales),
-        ]),
-        headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 8 },
-        bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
-        alternateRowStyles: { fillColor: GREY_ROW },
-        columnStyles: {
-          3: { halign: 'right' },
-          4: { halign: 'right' },
-          6: { halign: 'right' },
-        },
-        margin: { left: 14, right: 14 },
-      });
-
-      // Footer on each page
-      const pageCount = (doc as any).internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(7);
-        doc.setTextColor(...GREY_TEXT);
-        doc.text(`Page ${i} of ${pageCount}  ·  Yen's Thai Ice Cream  ·  Confidential`, W / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' });
-      }
-
-      doc.save(`yens-sales-report-${reportStartDate}-to-${reportEndDate}.pdf`);
-      toast({ title: "PDF downloaded", description: `${data.summary.transactionCount} days · ${fmt(data.summary.totalSales)}` });
+      setReportData(data);
+      setIsReportDialogOpen(true);
     } catch (err: any) {
       toast({ title: "Report failed", description: err?.message || "Could not generate report", variant: "destructive" });
     } finally {
       setIsGeneratingReport(false);
     }
+  };
+
+  const handleExportPDF = async () => {
+    if (!reportData) return;
+    const data = reportData;
+
+    // jsPDF helvetica cannot render ฿ (Thai Unicode) — use "THB" prefix in PDF
+    const fmtPdf = (n: number) => `THB ${n.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    const YELLOW: [number, number, number] = [252, 211, 77];
+    const BLUE_DARK: [number, number, number] = [30, 58, 138];
+    const BLUE_MID: [number, number, number] = [37, 99, 235];
+    const WHITE: [number, number, number] = [255, 255, 255];
+    const GREY_ROW: [number, number, number] = [248, 250, 252];
+    const GREY_TEXT: [number, number, number] = [71, 85, 105];
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+
+    // Pre-load logo image
+    let logoImg: HTMLImageElement | null = null;
+    try {
+      logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      logoImg.src = logoUrl;
+      await new Promise<void>((res, rej) => { logoImg!.onload = () => res(); logoImg!.onerror = () => rej(); });
+    } catch { logoImg = null; }
+
+    const drawPageHeader = (title: string) => {
+      doc.setFillColor(...YELLOW);
+      doc.rect(0, 0, W, 30, 'F');
+      doc.setFillColor(...BLUE_DARK);
+      doc.rect(0, 30, W, 2, 'F');
+      // Real logo or fallback circle
+      if (logoImg) {
+        doc.addImage(logoImg, 'PNG', 5, 3, 24, 24);
+      } else {
+        doc.setFillColor(...BLUE_DARK);
+        doc.circle(17, 15, 11, 'F');
+        doc.setFontSize(8); doc.setTextColor(...WHITE); doc.setFont('helvetica', 'bold');
+        doc.text("YEN'S", 17, 14, { align: 'center' });
+        doc.text("THAI", 17, 19, { align: 'center' });
+      }
+      doc.setFontSize(20); doc.setTextColor(...BLUE_DARK); doc.setFont('helvetica', 'bold');
+      doc.text(title, 33, 13);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GREY_TEXT);
+      doc.text("Yen's Thai Ice Cream  -  Nakhon Sawan", 33, 20);
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 33, 26);
+    };
+
+    // ── PAGE 1 ────────────────────────────────────────────────────────
+    drawPageHeader("Sales Report");
+
+    doc.setFillColor(...BLUE_MID);
+    doc.roundedRect(14, 36, W - 28, 9, 2, 2, 'F');
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...WHITE);
+    doc.text(`Period: ${formatDateDDMMYY(reportStartDate)}  to  ${formatDateDDMMYY(reportEndDate)}`, W / 2, 42, { align: 'center' });
+
+    // Summary cards — row of 3, then row of 2 centred
+    const summaryItems = [
+      { label: 'Total Net Sales', value: fmtPdf(data.summary.totalNetSales) },
+      { label: 'Other Sales',     value: fmtPdf(data.summary.totalOtherSales) },
+      { label: 'Total Sales',     value: fmtPdf(data.summary.totalSales) },
+      { label: 'Days Logged',     value: String(data.summary.transactionCount) },
+      { label: 'Avg / Day',       value: fmtPdf(data.summary.avgTransaction) },
+    ];
+    const cW = (W - 28 - 8) / 3;
+    [[0,1,2],[3,4]].forEach((row, ri) => {
+      const rowW = row.length === 3 ? W - 28 : (cW * 2 + 4);
+      const startX = row.length === 3 ? 14 : (W - rowW) / 2;
+      const cy = 50 + ri * 22;
+      row.forEach((idx, ci) => {
+        const bx = startX + ci * (cW + 4);
+        doc.setFillColor(...WHITE); doc.setDrawColor(...YELLOW); doc.setLineWidth(0.5);
+        doc.roundedRect(bx, cy, cW, 17, 2, 2, 'FD');
+        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GREY_TEXT);
+        doc.text(summaryItems[idx].label.toUpperCase(), bx + cW / 2, cy + 6, { align: 'center' });
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE_DARK);
+        doc.text(summaryItems[idx].value, bx + cW / 2, cy + 13, { align: 'center' });
+      });
+    });
+
+    let nextY = 100;
+
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE_DARK);
+    doc.text('Sales by Channel', 14, nextY);
+    autoTable(doc, {
+      startY: nextY + 3,
+      head: [['Channel', 'Revenue (THB)', 'Days']],
+      body: data.channelBreakdown.map((c: any) => [c.channel, fmtPdf(c.revenue), c.count.toString()]),
+      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: GREY_ROW },
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
+      margin: { left: 14, right: 14 },
+    });
+
+    nextY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE_DARK);
+    doc.text('Sales by Day of Week', 14, nextY);
+    autoTable(doc, {
+      startY: nextY + 3,
+      head: [['Day', 'Revenue (THB)', 'Days']],
+      body: data.dayBreakdown.map((d: any) => [d.day, fmtPdf(d.revenue), d.count.toString()]),
+      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: GREY_ROW },
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
+      margin: { left: 14, right: 14 },
+    });
+
+    // ── PAGE 2: Transaction log ───────────────────────────────────────
+    doc.addPage();
+    drawPageHeader("Transaction Details");
+    autoTable(doc, {
+      startY: 36,
+      head: [['Date', 'Day', 'Channel', 'Net Sales (THB)', 'Other (THB)', 'Note', 'Total (THB)']],
+      body: data.transactions.map((t: any) => [
+        formatDateDDMMYY(t.date), t.dayOfWeek || '-', t.channel,
+        fmtPdf(t.netSales), fmtPdf(t.otherSales), t.otherSalesNote || '-', fmtPdf(t.totalSales),
+      ]),
+      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 8 },
+      bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: GREY_ROW },
+      columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' }, 6: { halign: 'right' } },
+      margin: { left: 14, right: 14 },
+    });
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7); doc.setTextColor(...GREY_TEXT);
+      doc.text(`Page ${i} of ${pageCount}  |  Yen's Thai Ice Cream  |  Confidential`, W / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' });
+    }
+
+    doc.save(`yens-sales-report-${reportStartDate}-to-${reportEndDate}.pdf`);
+    toast({ title: "PDF saved", description: `${data.summary.transactionCount} days exported` });
   };
 
   const handleEditSale = (sale: DailySales) => {
@@ -755,6 +730,134 @@ export default function SalesTrackerDashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Preview Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl">
+          {reportData && (
+            <>
+              {/* Header */}
+              <div className="bg-[#FCD34D] px-6 py-4 flex items-center gap-4 rounded-t-2xl">
+                <img src={logoUrl} alt="Yen's" className="w-14 h-14 rounded-full border-2 border-blue-900" />
+                <div className="flex-1">
+                  <h2 className="text-2xl font-black text-blue-900 leading-tight">Sales Report</h2>
+                  <p className="text-blue-800 text-sm font-medium">Yen's Thai Ice Cream · Nakhon Sawan</p>
+                  <p className="text-blue-700 text-xs">Generated: {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+                </div>
+                <Button onClick={handleExportPDF} className="bg-blue-900 text-yellow-400 font-black rounded-xl gap-2 shrink-0">
+                  <FileText className="h-4 w-4" /> Download PDF
+                </Button>
+              </div>
+
+              {/* Period bar */}
+              <div className="bg-blue-700 text-white text-center font-bold py-2 text-sm tracking-wide">
+                Period: {formatDateDDMMYY(reportData.startDate)} &nbsp;–&nbsp; {formatDateDDMMYY(reportData.endDate)}
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Summary cards */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Total Net Sales', value: `฿${Number(reportData.summary.totalNetSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
+                    { label: 'Other Sales',     value: `฿${Number(reportData.summary.totalOtherSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
+                    { label: 'Total Sales',     value: `฿${Number(reportData.summary.totalSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
+                    { label: 'Days Logged',     value: String(reportData.summary.transactionCount) },
+                    { label: 'Avg / Day',       value: `฿${Number(reportData.summary.avgTransaction).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
+                  ].map((item) => (
+                    <div key={item.label} className="border border-yellow-300 rounded-xl p-3 text-center bg-white">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
+                      <p className="text-lg font-black text-blue-900">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Channel breakdown */}
+                <div>
+                  <h3 className="text-sm font-black text-blue-900 uppercase tracking-widest mb-2">Sales by Channel</h3>
+                  <table className="w-full text-sm rounded-xl overflow-hidden border border-slate-100">
+                    <thead>
+                      <tr className="bg-yellow-300 text-blue-900">
+                        <th className="text-left px-3 py-2 font-black">Channel</th>
+                        <th className="text-right px-3 py-2 font-black">Revenue (฿)</th>
+                        <th className="text-center px-3 py-2 font-black">Days</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.channelBreakdown.map((c: any, i: number) => (
+                        <tr key={c.channel} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                          <td className="px-3 py-2 font-medium">{c.channel}</td>
+                          <td className="px-3 py-2 text-right font-mono">฿{Number(c.revenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2 text-center text-slate-500">{c.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Day of week breakdown */}
+                <div>
+                  <h3 className="text-sm font-black text-blue-900 uppercase tracking-widest mb-2">Sales by Day of Week</h3>
+                  <table className="w-full text-sm rounded-xl overflow-hidden border border-slate-100">
+                    <thead>
+                      <tr className="bg-yellow-300 text-blue-900">
+                        <th className="text-left px-3 py-2 font-black">Day</th>
+                        <th className="text-right px-3 py-2 font-black">Revenue (฿)</th>
+                        <th className="text-center px-3 py-2 font-black">Days</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.dayBreakdown.map((d: any, i: number) => (
+                        <tr key={d.day} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                          <td className="px-3 py-2 font-medium">{d.day}</td>
+                          <td className="px-3 py-2 text-right font-mono">฿{Number(d.revenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2 text-center text-slate-500">{d.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Transaction log */}
+                <div>
+                  <h3 className="text-sm font-black text-blue-900 uppercase tracking-widest mb-2">Transaction Log</h3>
+                  <table className="w-full text-xs rounded-xl overflow-hidden border border-slate-100">
+                    <thead>
+                      <tr className="bg-yellow-300 text-blue-900">
+                        <th className="text-left px-2 py-2 font-black">Date</th>
+                        <th className="text-left px-2 py-2 font-black">Day</th>
+                        <th className="text-left px-2 py-2 font-black">Channel</th>
+                        <th className="text-right px-2 py-2 font-black">Net Sales</th>
+                        <th className="text-right px-2 py-2 font-black">Other</th>
+                        <th className="text-right px-2 py-2 font-black">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.transactions.map((t: any, i: number) => (
+                        <tr key={t.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                          <td className="px-2 py-1.5">{formatDateDDMMYY(t.date)}</td>
+                          <td className="px-2 py-1.5 text-slate-500">{t.dayOfWeek || '-'}</td>
+                          <td className="px-2 py-1.5 font-medium">{t.channel}</td>
+                          <td className="px-2 py-1.5 text-right font-mono">฿{Number(t.netSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-slate-500">฿{Number(t.otherSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-2 py-1.5 text-right font-mono font-bold text-blue-900">฿{Number(t.totalSales).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Footer actions */}
+                <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+                  <Button variant="outline" onClick={() => setIsReportDialogOpen(false)} className="rounded-xl">Close</Button>
+                  <Button onClick={handleExportPDF} className="bg-blue-900 text-yellow-400 font-black rounded-xl gap-2">
+                    <FileText className="h-4 w-4" /> Download PDF
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
