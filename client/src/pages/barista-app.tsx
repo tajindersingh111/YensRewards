@@ -775,72 +775,87 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-chart-1 text-white p-4 sticky top-0 z-50">
-        <div className="max-w-md md:max-w-3xl mx-auto flex items-center justify-between">
-          <Button
-            onClick={() => setLocationPath("/")}
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20"
-            data-testid="button-home"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 rounded-full" />
-            <div className="flex flex-col">
-              <h1 className="text-sm font-bold">{t('barista.title')}</h1>
-              <span className="text-xs opacity-70" data-testid="text-version">{t('common.version')}</span>
+      {/* ── PREMIER BARISTA COCKPIT HEADER ── */}
+      <header className="bg-blue-900 text-white p-4 sticky top-0 z-50 shadow-2xl border-b border-white/5">
+        <div className="max-w-md md:max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setLocationPath("/")}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10 h-10 w-10 rounded-xl"
+              data-testid="button-home"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <img
+                src={logoUrl}
+                alt="Yens Logo"
+                className="w-10 h-10 rounded-full ring-2 ring-yellow-400 border-2 border-blue-900 object-cover"
+              />
+              <div className="flex flex-col">
+                <h1 className="text-xs font-black uppercase tracking-tight leading-none">
+                  {t('barista.title')}
+                </h1>
+                <span className="text-[8px] font-black text-blue-300 uppercase tracking-[0.2em] mt-1 opacity-70" data-testid="text-version">
+                  {t('common.version')}
+                </span>
+              </div>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            {activeSites.length > 0 ? (
-              <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="bg-transparent border-b border-white/30 outline-none text-xs py-0.5"
-                data-testid="select-location"
-              >
-                {activeSites.map((site) => (
-                  <option key={site.id} value={site.name} className="text-foreground">
-                    {site.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="text-xs opacity-70">{t('barista.noActiveSites')}</span>
+
+            {activeSites.length > 0 && (
+              <div className="hidden sm:flex items-center bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-md">
+                <select
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="bg-transparent border-none outline-none text-[10px] font-black uppercase text-white appearance-none cursor-pointer"
+                  data-testid="select-location"
+                >
+                  {activeSites.map((site) => (
+                    <option key={site.id} value={site.name} className="text-slate-900 font-bold">
+                      {site.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
-            <Button
-              onClick={() => setMenuOpen(true)}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/20"
-              data-testid="button-menu"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-            {step !== "search" && (
+
+            <div className="flex items-center gap-1 border-l border-white/10 ml-2 pl-2">
               <Button
-                onClick={handleCancel}
+                onClick={() => setMenuOpen(true)}
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20"
-                data-testid="button-back"
+                className="text-white hover:bg-white/10 h-9 w-9 rounded-lg"
+                data-testid="button-menu"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <Menu className="w-4 h-4" />
               </Button>
-            )}
-            <Button
-              onClick={onLogout}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/20"
-              data-testid="button-logout"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
+              {step !== "search" && (
+                <Button
+                  onClick={handleCancel}
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/10 h-9 w-9 rounded-lg"
+                  data-testid="button-back"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              )}
+              <Button
+                onClick={onLogout}
+                variant="ghost"
+                size="icon"
+                className="text-red-400 hover:bg-red-500/20 h-9 w-9 rounded-lg transition-colors"
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
