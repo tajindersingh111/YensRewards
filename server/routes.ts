@@ -132,6 +132,7 @@ async function checkDailyTreasuryCap(customerId: string): Promise<{
       and(
         eq(transactionsTable.customerId, customerId),
         gte(transactionsTable.createdAt, twentyFourHoursAgo),
+        eq(transactionsTable.type, 'purchase'), // only count purchase events; rewards/bonuses/referrals don't consume quota
       )
     );
 
