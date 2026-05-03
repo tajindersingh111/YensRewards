@@ -122,6 +122,30 @@ export default function SalesTrackerDashboard() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [allSales]);
 
+  const editSaleMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const net = parseFloat(data.netSales) || 0;
+      const other = parseFloat(data.otherSales) || 0;
+      return await apiRequest('PATCH', `/api/admin/sales/${editingSale!.id}`, {
+        ...data,
+        netSales: net.toFixed(2),
+        otherSales: other.toFixed(2),
+        grabFee: parseFloat(data.grabFee || "0").toFixed(2),
+        totalSales: (net + other).toFixed(2),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-tracker-metrics'] });
+      toast({ title: "Sale Updated", description: "Entry saved successfully." });
+      setIsEditDialogOpen(false);
+      setEditingSale(null);
+    },
+    onError: () => {
+      toast({ title: "Update Failed", description: "Could not save changes.", variant: "destructive" });
+    },
+  });
+
   const addSaleMutation = useMutation({
     mutationFn: async (data: SalesFormData) => {
       const net = parseFloat(data.netSales) || 0;
@@ -358,6 +382,123 @@ export default function SalesTrackerDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Sale Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) setEditingSale(null); }}>
+        <DialogContent className="rounded-2xl border-none shadow-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-black text-blue-900 uppercase tracking-tight">Edit Sale Entry</DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
+              Update the details for this sale record.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-bold uppercase text-slate-500">Date</Label>
+                <Input
+                  type="date"
+                  value={editFormData.date || ""}
+                  onChange={e => setEditFormData({ ...editFormData, date: e.target.value })}
+                  className="h-11 rounded-xl border-slate-200"
+                  data-testid="input-edit-date"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-bold uppercase text-slate-500">Channel</Label>
+                <Select value={editFormData.orderChannel || ""} onValueChange={v => setEditFormData({ ...editFormData, orderChannel: v })}>
+                  <SelectTrigger className="h-11 rounded-xl border-slate-200" data-testid="select-edit-channel">
+                    <SelectValue placeholder="Channel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {channels.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-black uppercase text-blue-900">Gross Sales (฿)</Label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-3.5 text-slate-400 font-bold text-base">฿</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.netSales || ""}
+                  onChange={e => setEditFormData({ ...editFormData, netSales: e.target.value })}
+                  className="h-12 pl-8 rounded-xl border-blue-200 bg-blue-50/40 text-blue-900 font-bold text-lg"
+                  placeholder="0.00"
+                  data-testid="input-edit-netsales"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-bold uppercase text-slate-500">App / Grab Fee (฿)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3.5 text-slate-400 font-bold text-sm">฿</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.grabFee || ""}
+                    onChange={e => setEditFormData({ ...editFormData, grabFee: e.target.value })}
+                    className="h-11 pl-7 rounded-xl border-red-200 bg-red-50/40 text-red-600"
+                    placeholder="0"
+                    data-testid="input-edit-grabfee"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-bold uppercase text-slate-500">Other / Tips (฿)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3.5 text-slate-400 font-bold text-sm">฿</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.otherSales || ""}
+                    onChange={e => setEditFormData({ ...editFormData, otherSales: e.target.value })}
+                    className="h-11 pl-7 rounded-xl"
+                    placeholder="0"
+                    data-testid="input-edit-othersales"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-bold uppercase text-slate-500">Ref / Note</Label>
+              <Input
+                type="text"
+                value={editFormData.otherSalesNote || ""}
+                onChange={e => setEditFormData({ ...editFormData, otherSalesNote: e.target.value })}
+                className="h-11 rounded-xl"
+                placeholder="Optional reference"
+                data-testid="input-edit-note"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => { setIsEditDialogOpen(false); setEditingSale(null); }}
+                className="flex-1 h-12 rounded-xl font-black uppercase text-xs border-slate-200"
+                data-testid="button-edit-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => editSaleMutation.mutate(editFormData)}
+                disabled={editSaleMutation.isPending}
+                className="flex-1 h-12 bg-blue-900 text-yellow-400 rounded-xl font-black uppercase text-xs tracking-widest"
+                data-testid="button-edit-save"
+              >
+                {editSaleMutation.isPending ? <Loader2 className="animate-spin" /> : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
