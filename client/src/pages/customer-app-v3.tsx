@@ -517,31 +517,38 @@ export default function CustomerAppV3() {
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header - Compact yellow banner same width as content */}
-      <div className="sticky top-0 z-50 px-4 pt-2 max-w-[480px] md:max-w-[680px] mx-auto">
-        <header className="bg-primary text-primary-foreground py-2 px-3 flex items-center justify-between gap-1">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <img src={logoUrl} alt="Yens Logo" className="w-8 h-8 rounded-full flex-shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-base font-bold truncate">{t('customer.yensRewards')}</h1>
-              <span className="text-[10px] opacity-70" data-testid="text-version">
-                {t('common.version')}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-0.5 flex-shrink-0">
-            <LanguageSwitcher />
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleRefresh}
-              className="text-primary-foreground hover:bg-primary-foreground/20 w-8 h-8"
-              data-testid="button-refresh"
+      <header className="bg-blue-900 text-white py-3 px-4 flex items-center justify-between gap-1 sticky top-0 z-50 shadow-lg border-b border-white/5">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <img
+            src={logoUrl}
+            alt="Yens Logo"
+            className="w-10 h-10 rounded-full flex-shrink-0 ring-2 ring-yellow-400 border-2 border-blue-900 object-cover shadow-md"
+          />
+          <div className="flex flex-col min-w-0">
+            <h1 className="text-sm font-black uppercase tracking-tighter leading-none">
+              {t('customer.yensRewards')}
+            </h1>
+            <span
+              className="text-[8px] font-black text-blue-300 uppercase tracking-[0.2em] mt-1 opacity-70"
+              data-testid="text-version"
             >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
+              {t('common.version')} v2.4
+            </span>
           </div>
-        </header>
-      </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <LanguageSwitcher />
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={handleRefresh}
+            className="text-white hover:bg-white/10 w-9 h-9 rounded-xl"
+            data-testid="button-refresh"
+          >
+            <RefreshCw className="w-4 h-4 text-blue-300" />
+          </Button>
+        </div>
+      </header>
 
       {/* Hero Banner - Only show on Home tab */}
       {activeTab === "home" && (
