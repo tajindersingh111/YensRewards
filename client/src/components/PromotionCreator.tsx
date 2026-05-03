@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Megaphone, Plus } from "lucide-react";
 
-export function PromotionCreator({ onSubmit }: { onSubmit: () => void }) {
+export default function PromotionCreator({ onSubmit }: { onSubmit: () => void }) {
   return (
     <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
       <div className="bg-blue-900 px-8 py-6 flex items-center gap-4">
