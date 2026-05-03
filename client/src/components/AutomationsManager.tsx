@@ -84,10 +84,10 @@ const TRIGGER_OPTIONS = [
 ] as const;
 
 const CHANNEL_OPTIONS = [
-  { value: "app",   label: "App Push", icon: Smartphone,    cls: "bg-blue-50 text-blue-700 border-blue-100" },
-  { value: "line",  label: "LINE",     icon: MessageSquare, cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-  { value: "sms",   label: "SMS",      icon: Hash,          cls: "bg-slate-50 text-slate-700 border-slate-100" },
-  { value: "email", label: "Email",    icon: Mail,          cls: "bg-indigo-50 text-indigo-700 border-indigo-100" },
+  { value: "line",  label: "LINE",     icon: MessageSquare, cls: "bg-emerald-50 text-emerald-700 border-emerald-100", disabled: false },
+  { value: "sms",   label: "SMS",      icon: Hash,          cls: "bg-slate-50 text-slate-700 border-slate-100",       disabled: false },
+  { value: "email", label: "Email",    icon: Mail,          cls: "bg-indigo-50 text-indigo-700 border-indigo-100",    disabled: false },
+  { value: "app",   label: "App Push", icon: Smartphone,    cls: "bg-slate-50 text-slate-400 border-slate-100",       disabled: true  },
 ] as const;
 
 const FILTER_OPTIONS = [
@@ -767,7 +767,11 @@ function AutomationDialog({
                       </FormControl>
                       <SelectContent>
                         {CHANNEL_OPTIONS.map(o => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                          <SelectItem key={o.value} value={o.value} disabled={o.disabled}>
+                            <span className={o.disabled ? 'opacity-40' : ''}>
+                              {o.label}{o.disabled ? ' — Coming Soon' : ''}
+                            </span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

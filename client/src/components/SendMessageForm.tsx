@@ -53,15 +53,16 @@ export default function SendMessageForm() {
             <Tabs value={channel} onValueChange={(v: any) => setChannel(v)} className="mb-8">
               <TabsList className="bg-slate-100 p-1 rounded-2xl h-14 w-full grid grid-cols-4 gap-1">
                 {[
-                  { id: 'sms',   icon: MessageSquare, label: 'SMS' },
-                  { id: 'line',  icon: MessageCircle, label: 'LINE' },
-                  { id: 'email', icon: Mail,          label: 'Email' },
-                  { id: 'app',   icon: Smartphone,    label: 'APK Push' },
+                  { id: 'sms',   icon: MessageSquare, label: 'SMS',          disabled: false },
+                  { id: 'line',  icon: MessageCircle, label: 'LINE',         disabled: false },
+                  { id: 'email', icon: Mail,          label: 'Email',        disabled: false },
+                  { id: 'app',   icon: Smartphone,    label: 'Push (Soon)',  disabled: true  },
                 ].map((ch) => (
                   <TabsTrigger
                     key={ch.id}
                     value={ch.id}
-                    className="rounded-xl font-black text-[10px] uppercase data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-md transition-all"
+                    disabled={ch.disabled}
+                    className="rounded-xl font-black text-[10px] uppercase data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ch.icon className="w-4 h-4 mr-2" />
                     {ch.label}

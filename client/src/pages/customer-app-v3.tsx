@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import logoUrl from "@assets/Yens_logo_high_res_1766925576641.png";
 import heroPromoUrl from "@assets/Screenshot_2026-01-27_at_22.41.34_1769521341373.png";
+import { initializeSeamlessSignup, isRunningInLine } from "@/pages/customer/EnrollmentLogic";
 
 const LINE_FOLLOW_URL = "https://line.me/R/ti/p/@752afsdq";
 const LINE_ID = "@752afsdq";
@@ -48,6 +49,8 @@ export default function CustomerAppV3() {
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [linkCodeCopied, setLinkCodeCopied] = useState(false);
   const [showLinePrompt, setShowLinePrompt] = useState(false);
+  const [liffLinking, setLiffLinking] = useState(false);
+  const inLineApp = isRunningInLine();
   const { toast } = useToast();
 
   const enableAudio = () => {
@@ -188,6 +191,38 @@ export default function CustomerAppV3() {
       setTimeout(() => setLinkCodeCopied(false), 2000);
     }
   };
+
+  // LIFF seamless connect — used when the customer opens the app inside LINE browser
+  const handleLiffConnect = useCallback(async () => {
+    setLiffLinking(true);
+    try {
+      const profile = await initializeSeamlessSignup();
+      if (!profile) return; // redirect in progress or LIFF not configured
+
+      const res = await apiRequest('POST', '/api/customers/liff-link', {
+        lineUid: profile.lineUid,
+        displayName: profile.displayName,
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({ title: 'Could not link LINE', description: data.message, variant: 'destructive' });
+        return;
+      }
+
+      toast({
+        title: 'LINE Connected',
+        description: data.bonusAwarded > 0
+          ? `+${data.bonusAwarded} bonus points added to your account!`
+          : 'Your LINE account is now linked.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/phone', phone] });
+    } catch (err) {
+      toast({ title: 'Connection failed', description: 'Please try again.', variant: 'destructive' });
+    } finally {
+      setLiffLinking(false);
+    }
+  }, [phone, toast]);
 
   const signupMutation = useMutation({
     mutationFn: async (data: { phone: string; name: string; email: string; birthday: string }) => {
@@ -866,38 +901,52 @@ export default function CustomerAppV3() {
                   </div>
                 </div>
 
-                {linkCodeData?.linkCode && (
-                  <div className="space-y-3">
-                    <div className="text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('customer.lineLinkingCode')}</p>
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="px-4 py-2 bg-[#06C755]/5 border-2 border-[#06C755] rounded-xl">
-                          <span className="text-xl font-mono font-black text-[#06C755] tracking-wider">
-                            {linkCodeData.linkCode}
-                          </span>
+                {/* LIFF one-tap connect — shown only when opened inside LINE browser */}
+                {inLineApp ? (
+                  <Button
+                    className="w-full bg-[#06C755] text-white font-black uppercase tracking-tight"
+                    onClick={handleLiffConnect}
+                    disabled={liffLinking}
+                    data-testid="button-liff-connect"
+                  >
+                    <SiLine className="w-5 h-5 mr-2" />
+                    {liffLinking ? 'Connecting...' : 'One-tap LINE Connect'}
+                  </Button>
+                ) : (
+                  /* Manual LINK code flow — shown in all other browsers */
+                  linkCodeData?.linkCode && (
+                    <div className="space-y-3">
+                      <div className="text-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('customer.lineLinkingCode')}</p>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="px-4 py-2 bg-[#06C755]/5 border-2 border-[#06C755] rounded-xl">
+                            <span className="text-xl font-mono font-black text-[#06C755] tracking-wider">
+                              {linkCodeData.linkCode}
+                            </span>
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="border-[#06C755] text-[#06C755]"
+                            onClick={handleCopyLinkCode}
+                            data-testid="button-copy-link-code"
+                          >
+                            {linkCodeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          </Button>
                         </div>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="border-[#06C755] text-[#06C755]"
-                          onClick={handleCopyLinkCode}
-                          data-testid="button-copy-link-code"
-                        >
-                          {linkCodeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        </Button>
                       </div>
-                    </div>
 
-                    <Button
-                      className="w-full bg-[#06C755] text-white font-black uppercase tracking-tight"
-                      onClick={() => window.open('https://line.me/R/oaMessage/@752afsdq', '_blank')}
-                      data-testid="button-open-line-chat"
-                    >
-                      <SiLine className="w-5 h-5 mr-2" />
-                      {t('customer.lineOpenChat')}
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
+                      <Button
+                        className="w-full bg-[#06C755] text-white font-black uppercase tracking-tight"
+                        onClick={() => window.open('https://line.me/R/oaMessage/@752afsdq', '_blank')}
+                        data-testid="button-open-line-chat"
+                      >
+                        <SiLine className="w-5 h-5 mr-2" />
+                        {t('customer.lineOpenChat')}
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  )
                 )}
               </Card>
             )}

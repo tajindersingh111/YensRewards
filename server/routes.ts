@@ -1322,6 +1322,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
   });
 
+  // LIFF seamless LINE linking — called from the customer app when running inside LINE browser.
+  // The client sends the lineUid obtained from liff.getProfile() and we link it to the
+  // authenticated customer session. No separate verification token is needed because:
+  //   (a) the customer must have an active session (OTP-verified phone)
+  //   (b) the lineUid is injected by LINE's own LIFF SDK and cannot be spoofed client-side
+  app.post('/api/customers/liff-link', async (req, res) => {
+    try {
+      const session = req.session as any;
+      if (!session.customerId) {
+        return res.status(401).json({ message: "No customer session" });
+      }
+
+      const { lineUid, displayName } = req.body;
+      if (!lineUid || typeof lineUid !== 'string') {
+        return res.status(400).json({ message: "lineUid is required" });
+      }
+
+      const customer = await storage.getCustomer(session.customerId);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      // Guard: already linked to a different LINE account
+      if (customer.lineUid && customer.lineUid !== lineUid) {
+        return res.status(409).json({ message: "Account already linked to a different LINE user" });
+      }
+
+      // Guard: this lineUid already belongs to another customer
+      const existing = await storage.getCustomerByLineUid(lineUid);
+      if (existing && existing.id !== customer.id) {
+        return res.status(409).json({ message: "This LINE account is already linked to another member" });
+      }
+
+      const LINE_BONUS_POINTS = 50;
+      const wasNotLinked = !customer.lineUid;
+
+      await storage.updateCustomer(customer.id, {
+        lineUid,
+        isLineActive: true,
+        lastUnfollowAt: null,
+        relinkCount: (customer.relinkCount || 0) + 1,
+        points: wasNotLinked ? customer.points + LINE_BONUS_POINTS : customer.points,
+      });
+
+      console.log(`✨ LIFF LINK: Member ${customer.name || customer.phone} linked via LIFF${wasNotLinked ? ` (+${LINE_BONUS_POINTS} pts)` : ' (re-linked)'} — LINE name: ${displayName}`);
+      res.json({ success: true, bonusAwarded: wasNotLinked ? LINE_BONUS_POINTS : 0 });
+    } catch (error) {
+      console.error("Error linking LINE via LIFF:", error);
+      res.status(500).json({ message: "Failed to link LINE account" });
+    }
+  });
+
   // Public leaderboard — returns top 10 customers by points (first name only for privacy)
   app.get('/api/customers/leaderboard', async (_req, res) => {
     try {
