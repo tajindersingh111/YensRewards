@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
 import { ArrowLeft, ArrowRight, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown, Smartphone, Users, UserCheck, ShieldCheck, Check, X, Banknote, Coins, Edit2, MapPin } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -463,6 +464,16 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Fetch weekly leaderboard
   const { data: leaderboard = [] } = useQuery<Array<BaristaPerformance & { user: User }>>({
     queryKey: ['/api/barista/leaderboard'],
+  });
+
+  // Fetch performance history for WoW chart (last 6 weeks)
+  const { data: perfHistory = [] } = useQuery<BaristaPerformance[]>({
+    queryKey: ['/api/barista/performance/history', { limit: 6 }],
+    queryFn: async () => {
+      const res = await fetch('/api/barista/performance/history?limit=6');
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
   // Derive transaction eligibility from live sites - filter active downstream
@@ -1003,6 +1014,42 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                 )}
               </div>
             </Card>
+
+            {/* WoW Performance Chart */}
+            {perfHistory.length > 1 && (
+              <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white" data-testid="wow-chart">
+                <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+                  <div className="bg-yellow-400 rounded-xl p-2">
+                    <TrendingUp className="w-4 h-4 text-blue-900" />
+                  </div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-tight">Week-over-Week</h3>
+                  <Badge variant="outline" className="ml-auto text-xs border-blue-400 text-blue-300">Last {perfHistory.length} Weeks</Badge>
+                </div>
+                <div className="p-6">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={[...perfHistory].reverse().map(w => ({
+                        week: new Date(w.weekStart + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                        Transactions: w.transactionCount,
+                        Points: w.totalPoints,
+                      }))}
+                      margin={{ top: 4, right: 4, left: -16, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: 12 }}
+                        cursor={{ fill: '#f8fafc' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }} />
+                      <Bar dataKey="Transactions" fill="#1e3a8a" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                      <Bar dataKey="Points" fill="#FCD34D" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            )}
 
             {/* Champions Circle / Leaderboard */}
             <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white" data-testid="leaderboard">

@@ -20,16 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Home, Award, Users, User, LogOut, UserPlus, ArrowLeft, UtensilsCrossed, IceCream, MessageSquare, ExternalLink, Copy, Check, Search, Star, Gift } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import QRCode from "react-qr-code";
@@ -928,50 +919,51 @@ export default function CustomerApp() {
             )}
 
             {/* Redemption confirmation dialog */}
-            <AlertDialog open={!!confirmRedeem} onOpenChange={(open) => { if (!open) setConfirmRedeem(null); }}>
-              <AlertDialogContent data-testid="dialog-redeem-confirm">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t('customer.confirmRedeem', 'Confirm Redemption')}</AlertDialogTitle>
-                  <AlertDialogDescription asChild>
-                    <div className="space-y-3 pt-1">
-                      <p className="text-sm text-foreground font-medium">{confirmRedeem?.name}</p>
-                      <div className="rounded-md bg-muted px-4 py-3 space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">{t('customer.cost', 'Cost')}</span>
-                          <span className="font-bold text-destructive">−{confirmRedeem?.pointCost} {t('customer.points', 'pts')}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">{t('customer.balance', 'Balance')}</span>
-                          <span className="font-bold">{customer.points} {t('customer.points', 'pts')}</span>
-                        </div>
-                        <div className="flex justify-between border-t border-border pt-1 mt-1">
-                          <span className="text-muted-foreground">{t('customer.remaining', 'Remaining')}</span>
-                          <span className="font-bold text-primary">{customer.points - (confirmRedeem?.pointCost ?? 0)} {t('customer.points', 'pts')}</span>
-                        </div>
-                      </div>
+            {confirmRedeem && (
+              <Dialog open={!!confirmRedeem} onOpenChange={() => setConfirmRedeem(null)}>
+                <DialogContent className="rounded-[2rem] border-none bg-white p-8 shadow-2xl" data-testid="dialog-redeem-confirm">
+                  <div className="space-y-6 text-center">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-900">
+                      <Gift className="h-8 w-8" />
                     </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel data-testid="button-redeem-cancel" disabled={redeemMutation.isPending}>
-                    {t('common.cancel', 'Cancel')}
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    data-testid="button-redeem-confirm"
-                    disabled={redeemMutation.isPending}
-                    onClick={() => {
-                      if (confirmRedeem) {
-                        redeemMutation.mutate(confirmRedeem.id, {
-                          onSettled: () => setConfirmRedeem(null),
-                        });
-                      }
-                    }}
-                  >
-                    {redeemMutation.isPending ? t('common.processing', 'Processing…') : t('customer.confirmRedeem', 'Confirm')}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-black text-blue-900 uppercase tracking-tight">Confirm Treasure</h2>
+                      <p className="text-sm font-medium text-slate-500">
+                        You are about to redeem <span className="font-bold text-blue-900">{confirmRedeem.name}</span>.
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-2xl p-4 border-2 border-dashed border-slate-200">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Points to be Deducted</p>
+                      <p className="text-3xl font-black text-red-600 tabular-nums">-{confirmRedeem.pointCost}</p>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        variant="ghost"
+                        className="flex-1 rounded-xl text-xs font-black uppercase tracking-widest text-slate-400"
+                        onClick={() => setConfirmRedeem(null)}
+                        data-testid="button-redeem-cancel"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="flex-1 bg-blue-900 text-yellow-400 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg"
+                        disabled={redeemMutation.isPending}
+                        onClick={() => {
+                          redeemMutation.mutate(confirmRedeem.id);
+                          setConfirmRedeem(null);
+                        }}
+                        data-testid="button-redeem-confirm"
+                      >
+                        {redeemMutation.isPending ? 'Processing…' : 'Confirm & Claim'}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
 
             <ReferralCard referralCode={customer.referralCode} referralCount={0} />
             <LeaderboardCard entries={leaderboardEntries} currentUserId={customer.id} />
