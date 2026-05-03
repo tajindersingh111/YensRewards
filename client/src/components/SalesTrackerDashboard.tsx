@@ -93,6 +93,35 @@ export default function SalesTrackerDashboard() {
   const [reportStartDate, setReportStartDate] = useState(getMonday);
   const [reportEndDate, setReportEndDate] = useState(today);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [draftStart, setDraftStart] = useState(getMonday);
+  const [draftEnd, setDraftEnd] = useState(today);
+  const [activePreset, setActivePreset] = useState<string | null>("This Week");
+
+  const openPicker = () => {
+    setDraftStart(reportStartDate);
+    setDraftEnd(reportEndDate);
+    setActivePreset(null);
+    setPickerOpen(true);
+  };
+  const applyPicker = () => {
+    setReportStartDate(draftStart);
+    setReportEndDate(draftEnd);
+    setPickerOpen(false);
+  };
+  const cancelPicker = () => setPickerOpen(false);
+
+  const pickerPresets = [
+    { label: "Today", start: () => today, end: () => today },
+    { label: "Yesterday", start: () => { const d = new Date(); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; }, end: () => { const d = new Date(); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; } },
+    { label: "Last 7 days", start: () => { const d = new Date(); d.setDate(d.getDate()-6); return d.toISOString().split('T')[0]; }, end: () => today },
+    { label: "Last 30 days", start: () => { const d = new Date(); d.setDate(d.getDate()-29); return d.toISOString().split('T')[0]; }, end: () => today },
+    { label: "This week", start: () => getMonday(), end: () => today },
+    { label: "Last week", start: () => { const d = new Date(); const day = d.getDay(); const diff = day===0?-6:1-day; const mon = new Date(d); mon.setDate(d.getDate()+diff-7); return mon.toISOString().split('T')[0]; }, end: () => { const d = new Date(); const day = d.getDay(); const diff = day===0?-6:1-day; const mon = new Date(d); mon.setDate(d.getDate()+diff-7); const sun = new Date(mon); sun.setDate(mon.getDate()+6); return sun.toISOString().split('T')[0]; } },
+    { label: "This month", start: () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; }, end: () => today },
+    { label: "Last month", start: () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth()-1, 1).toISOString().split('T')[0]; }, end: () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 0).toISOString().split('T')[0]; } },
+    { label: "This year", start: () => `${new Date().getFullYear()}-01-01`, end: () => today },
+  ];
 
   const [validationResult, setValidationResult] = useState<any>(null);
   const [showValidation, setShowValidation] = useState(false);
@@ -283,67 +312,42 @@ export default function SalesTrackerDashboard() {
           </div>
 
           <div className="flex items-center gap-2 bg-white/50 p-1.5 rounded-2xl backdrop-blur-sm shadow-inner">
-            <Popover>
+            <Popover open={pickerOpen} onOpenChange={(o) => { if (!o) cancelPicker(); }}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" className="bg-white border-none shadow-sm font-bold text-blue-900 rounded-xl">
+                <Button variant="ghost" className="bg-white border-none shadow-sm font-bold text-blue-900 rounded-xl" onClick={openPicker}>
                   <CalendarIcon className="h-4 w-4 mr-2 text-amber-500" />
                   {reportStartDate === reportEndDate ? formatDateDDMMYY(reportStartDate) : `${formatDateDDMMYY(reportStartDate)} - ${formatDateDDMMYY(reportEndDate)}`}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-72" align="end">
-                <div className="p-3 space-y-3">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Select</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "This Week", fn: () => {
-                        const d = new Date(); const day = d.getDay(); const diff = day === 0 ? -6 : 1 - day;
-                        const mon = new Date(d); mon.setDate(d.getDate() + diff);
-                        setReportStartDate(mon.toISOString().split('T')[0]);
-                        setReportEndDate(new Date().toISOString().split('T')[0]);
-                      }},
-                      { label: "Last Week", fn: () => {
-                        const d = new Date(); const day = d.getDay(); const diff = day === 0 ? -6 : 1 - day;
-                        const mon = new Date(d); mon.setDate(d.getDate() + diff - 7);
-                        const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-                        setReportStartDate(mon.toISOString().split('T')[0]);
-                        setReportEndDate(sun.toISOString().split('T')[0]);
-                      }},
-                      { label: "This Month", fn: () => {
-                        const d = new Date();
-                        setReportStartDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`);
-                        setReportEndDate(d.toISOString().split('T')[0]);
-                      }},
-                      { label: "Last Month", fn: () => {
-                        const d = new Date();
-                        const first = new Date(d.getFullYear(), d.getMonth() - 1, 1);
-                        const last = new Date(d.getFullYear(), d.getMonth(), 0);
-                        setReportStartDate(first.toISOString().split('T')[0]);
-                        setReportEndDate(last.toISOString().split('T')[0]);
-                      }},
-                      { label: "Last 30 Days", fn: () => {
-                        const end = new Date(); const start = new Date();
-                        start.setDate(end.getDate() - 29);
-                        setReportStartDate(start.toISOString().split('T')[0]);
-                        setReportEndDate(end.toISOString().split('T')[0]);
-                      }},
-                      { label: "This Year", fn: () => {
-                        const d = new Date();
-                        setReportStartDate(`${d.getFullYear()}-01-01`);
-                        setReportEndDate(d.toISOString().split('T')[0]);
-                      }},
-                    ].map(({ label, fn }) => (
-                      <Button key={label} variant="outline" size="sm"
-                        className="text-xs font-bold text-blue-900 border-slate-200 rounded-lg h-8"
-                        onClick={fn}
-                      >{label}</Button>
-                    ))}
-                  </div>
-                  <div className="border-t border-slate-100 pt-3 space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Custom Range</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} className="text-xs h-8" />
-                      <Input type="date" value={reportEndDate} onChange={e => setReportEndDate(e.target.value)} className="text-xs h-8" />
+              <PopoverContent className="w-auto p-0" align="end">
+                <div className="flex">
+                  {/* Left: date inputs */}
+                  <div className="p-4 border-r border-slate-100 flex flex-col gap-3 min-w-[200px]">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Range</p>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-[10px] text-slate-400 mb-1">Start</p>
+                        <Input type="date" value={draftStart} onChange={e => { setDraftStart(e.target.value); setActivePreset(null); }} className="text-sm" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 mb-1">End</p>
+                        <Input type="date" value={draftEnd} onChange={e => { setDraftEnd(e.target.value); setActivePreset(null); }} className="text-sm" />
+                      </div>
                     </div>
+                    <div className="flex gap-2 mt-auto pt-2">
+                      <Button size="sm" onClick={applyPicker} className="flex-1 bg-blue-600 text-white font-bold rounded-lg">Choose</Button>
+                      <Button size="sm" variant="outline" onClick={cancelPicker} className="flex-1 rounded-lg">Cancel</Button>
+                    </div>
+                  </div>
+                  {/* Right: preset list */}
+                  <div className="py-2 flex flex-col min-w-[130px]">
+                    {pickerPresets.map(({ label, start, end }) => (
+                      <button
+                        key={label}
+                        onClick={() => { setDraftStart(start()); setDraftEnd(end()); setActivePreset(label); }}
+                        className={`text-left px-4 py-2 text-sm font-medium transition-colors ${activePreset === label ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+                      >{label}</button>
+                    ))}
                   </div>
                 </div>
               </PopoverContent>
