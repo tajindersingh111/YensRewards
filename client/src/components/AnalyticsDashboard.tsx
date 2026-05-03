@@ -32,18 +32,18 @@ export default function AnalyticsDashboard() {
   return (
     <div className="min-h-screen bg-slate-50/30 pb-12">
       {/* Branded Header */}
-      <div className="bg-white border-t-8 border-[#FCD34D] shadow-sm mb-8">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-6 pt-6 mb-8">
+        <div className="bg-blue-900 rounded-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-              <Activity className="w-6 h-6 text-[#FCD34D]" />
+            <div className="bg-yellow-400 rounded-lg p-2.5">
+              <Activity className="w-5 h-5 text-blue-900" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">PERFORMANCE ANALYTICS</h1>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Growth & Projections</p>
+              <h1 className="text-xl font-black text-white uppercase tracking-tight">Performance Analytics</h1>
+              <p className="text-blue-300 text-sm">Growth &amp; Projections</p>
             </div>
           </div>
-          <Badge variant="outline" className="bg-white border-slate-200 text-slate-600 font-black px-4 py-2 text-sm shadow-sm">
+          <Badge variant="outline" className="bg-white/10 border-white/20 text-white font-black px-4 py-2 text-sm">
             {summary.totalTransactions} TOTAL SALES LOGGED
           </Badge>
         </div>
@@ -91,7 +91,7 @@ export default function AnalyticsDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm bg-slate-900 text-white rounded-2xl overflow-hidden relative">
+          <Card className="border-none shadow-sm bg-blue-900 text-white rounded-2xl overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-20"><Target className="w-12 h-12" /></div>
             <CardContent className="p-6">
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Best Performance</p>

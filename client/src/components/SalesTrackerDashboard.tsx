@@ -231,9 +231,9 @@ export default function SalesTrackerDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Add Sale Form */}
           <Card className="lg:col-span-2 border-none shadow-xl rounded-2xl overflow-hidden bg-white">
-            <CardHeader className="bg-slate-900 text-white pb-6 pt-6 px-6">
+            <CardHeader className="bg-blue-900 text-white pb-6 pt-6 px-6">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
-                <Plus className="text-amber-400 h-5 w-5" /> New Daily Log Entry
+                <Plus className="text-yellow-400 h-5 w-5" /> New Daily Log Entry
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -284,7 +284,7 @@ export default function SalesTrackerDashboard() {
                   <Input type="text" value={formData.otherSalesNote} onChange={e => setFormData({ ...formData, otherSalesNote: e.target.value })} className="h-11 rounded-lg" placeholder="Optional reference" />
                 </div>
 
-                <Button type="submit" disabled={addSaleMutation.isPending} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-xl shadow-lg transition-all active:scale-95">
+                <Button type="submit" disabled={addSaleMutation.isPending} className="w-full h-12 bg-blue-900 hover:bg-black active:scale-95 transition-all shadow-lg hover:shadow-blue-900/20 text-white font-black text-lg rounded-xl">
                   {addSaleMutation.isPending ? <Loader2 className="animate-spin" /> : "COMPLETE LOG"}
                 </Button>
               </form>
@@ -315,11 +315,11 @@ export default function SalesTrackerDashboard() {
                   <div className="py-20 text-center text-slate-400 font-bold">No sales logged this week</div>
                 ) : (
                   <table className="w-full">
-                    <thead className="bg-slate-50 sticky top-0 z-10">
+                    <thead className="bg-blue-900/5 border-b border-blue-100 sticky top-0 z-10">
                       <tr>
-                        <th className="text-left px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date / Channel</th>
-                        <th className="text-right px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount</th>
-                        <th className="text-right px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                        <th className="text-left px-6 py-4 text-[10px] font-bold text-blue-900 uppercase tracking-widest">Date / Channel</th>
+                        <th className="text-right px-6 py-4 text-[10px] font-bold text-blue-900 uppercase tracking-widest">Amount</th>
+                        <th className="text-right px-6 py-4 text-[10px] font-bold text-blue-900 uppercase tracking-widest">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
