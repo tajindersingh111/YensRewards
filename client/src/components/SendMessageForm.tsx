@@ -37,7 +37,9 @@ export default function SendMessageForm() {
         <Card className="border-none shadow-sm rounded-3xl bg-white overflow-hidden">
           <div className="bg-blue-900 p-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Megaphone className="h-5 w-5 text-[#FCD34D]" />
+              <div className="bg-yellow-400 rounded-xl p-2 shadow-lg">
+                <Megaphone className="h-5 w-5 text-blue-900" />
+              </div>
               <h3 className="text-white font-black uppercase tracking-tight">Campaign Dispatch</h3>
             </div>
             <Badge className="bg-white/10 text-white border-none font-black text-[9px] uppercase">Secure Channel</Badge>

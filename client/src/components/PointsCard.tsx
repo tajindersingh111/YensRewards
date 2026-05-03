@@ -21,7 +21,7 @@ export default function PointsCard({ points, tier, nextTierPoints }: PointsCardP
   const nextTier = tier === "bronze" ? "silver" : "gold";
 
   return (
-    <Card className="p-4 bg-primary text-primary-foreground rounded-2xl" data-testid="points-card">
+    <Card className="p-4 bg-blue-900 text-white rounded-2xl" data-testid="points-card">
       <div className="flex flex-col items-center gap-1.5">
         <Badge className={`${tierColors[tier]} px-3 py-0.5 text-sm`} data-testid={`badge-tier-${tier}`}>
           {t(`customer.tiers.${tier}`)} {t('customer.member')}
@@ -29,7 +29,7 @@ export default function PointsCard({ points, tier, nextTierPoints }: PointsCardP
         
         <div className="text-center">
           <p className="text-sm font-medium opacity-90 mb-0.5">{t('customer.points')}</p>
-          <p className="text-5xl font-bold" data-testid="text-points">{points}</p>
+          <p className="text-5xl font-black" data-testid="text-points">{points}</p>
         </div>
 
         {nextTierPoints && (

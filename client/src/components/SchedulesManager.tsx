@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -178,18 +178,19 @@ export function SchedulesManager() {
   return (
     <div className="space-y-6">
       {/* ── Branded header ── */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-8 -mt-8" />
+        <div className="flex flex-wrap items-center gap-4 relative z-10">
+          <div className="bg-yellow-400 rounded-xl p-3 shadow-lg shrink-0">
             <Calendar className="h-5 w-5 text-blue-900" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black uppercase tracking-tight">{t('admin.schedules.title')}</h2>
-            <p className="text-blue-300 text-sm">{t('admin.schedules.subtitle')}</p>
+            <h2 className="text-xl font-black uppercase tracking-tight leading-none">{t('admin.schedules.title')}</h2>
+            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">{t('admin.schedules.subtitle')}</p>
           </div>
           <Button
             onClick={() => { resetForm(); setIsDialogOpen(true); }}
-            className="bg-yellow-400 text-blue-900 font-bold"
+            className="bg-yellow-400 text-blue-900 font-black uppercase text-xs px-6 h-11 rounded-xl shadow-lg"
             data-testid="button-add-schedule"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -208,30 +209,32 @@ export function SchedulesManager() {
             const barista = users.find(u => u.id === schedule.userId);
             const site = sites.find(s => s.id === schedule.siteId);
             return (
-              <Card key={schedule.id} className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-4 flex-1">
-                    <div className="bg-blue-900/10 rounded-md p-2 shrink-0">
-                      <Calendar className="w-4 h-4 text-blue-900 dark:text-blue-400" />
+              <Card key={schedule.id} className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex gap-4 flex-1">
+                      <div className="bg-yellow-400 rounded-xl p-2.5 shadow-md shrink-0">
+                        <Calendar className="w-4 h-4 text-blue-900" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-black text-blue-900 uppercase tracking-tight leading-none">{barista?.firstName} {barista?.lastName}</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{site?.name}</p>
+                        <p className="text-sm font-medium text-slate-600 mt-2 bg-slate-50 rounded-lg px-3 py-1.5 inline-block">
+                          {schedule.scheduledDate} · {schedule.startTime} – {schedule.endTime}
+                        </p>
+                        {schedule.notes && <p className="text-xs text-slate-400 mt-1.5">{schedule.notes}</p>}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{barista?.firstName} {barista?.lastName}</h3>
-                      <p className="text-sm text-muted-foreground">{site?.name}</p>
-                      <p className="text-sm mt-1">
-                        {schedule.scheduledDate} | {schedule.startTime} - {schedule.endTime}
-                      </p>
-                      {schedule.notes && <p className="text-sm text-muted-foreground mt-1">{schedule.notes}</p>}
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} data-testid={`button-edit-schedule-${schedule.id}`}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(schedule.id)} data-testid={`button-delete-schedule-${schedule.id}`}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(schedule)} data-testid={`button-edit-schedule-${schedule.id}`}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(schedule.id)} data-testid={`button-delete-schedule-${schedule.id}`}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                </CardContent>
               </Card>
             );
           })}

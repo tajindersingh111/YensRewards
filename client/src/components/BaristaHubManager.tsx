@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Plus, Edit, Trash2, Megaphone, ToggleLeft, ToggleRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,12 +118,22 @@ export function BaristaHubManager() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">{t('admin.barista.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('admin.barista.subtitle')}</p>
+      <div className="bg-blue-900 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-8 -mt-8" />
+        <div className="flex items-center gap-4 z-10">
+          <div className="bg-yellow-400 rounded-xl p-3 shadow-lg flex-shrink-0">
+            <Megaphone className="w-5 h-5 text-blue-900" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight leading-none">{t('admin.barista.title')}</h2>
+            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">{t('admin.barista.subtitle')}</p>
+          </div>
         </div>
-        <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} data-testid="button-add-announcement">
+        <Button
+          onClick={() => { resetForm(); setIsDialogOpen(true); }}
+          className="bg-yellow-400 text-blue-900 font-black uppercase text-xs px-6 h-11 rounded-xl shadow-lg z-10"
+          data-testid="button-add-announcement"
+        >
           <Plus className="w-4 h-4 mr-2" />
           {t('admin.barista.addAnnouncement')}
         </Button>
@@ -138,43 +148,47 @@ export function BaristaHubManager() {
           {announcements
             .sort((a, b) => b.priority - a.priority)
             .map((announcement) => (
-              <Card key={announcement.id} className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-4 flex-1">
-                    <Megaphone className="w-5 h-5 text-muted-foreground mt-1" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{announcement.title}</h3>
-                        <Badge variant={announcement.type === 'promotion' ? 'default' : announcement.type === 'incentive' ? 'secondary' : 'outline'}>
-                          {announcement.type}
-                        </Badge>
-                        {!announcement.isActive && <Badge variant="destructive">{t('admin.barista.inactive')}</Badge>}
+              <Card key={announcement.id} className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex gap-4 flex-1">
+                      <div className={`rounded-xl p-2.5 shadow-md shrink-0 ${announcement.isActive ? "bg-yellow-400" : "bg-slate-100"}`}>
+                        <Megaphone className={`w-4 h-4 ${announcement.isActive ? "text-blue-900" : "text-slate-400"}`} />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">{announcement.content}</p>
-                      {announcement.expiresAt && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t('admin.barista.expires')}: {new Date(announcement.expiresAt).toLocaleDateString()}
-                        </p>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="font-black text-blue-900 uppercase tracking-tight leading-none">{announcement.title}</h3>
+                          <Badge className="bg-blue-900/10 text-blue-900 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
+                            {announcement.type}
+                          </Badge>
+                          {!announcement.isActive && <Badge variant="destructive" className="text-[8px] font-black uppercase">{t('admin.barista.inactive')}</Badge>}
+                        </div>
+                        <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{announcement.content}</p>
+                        {announcement.expiresAt && (
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
+                            {t('admin.barista.expires')}: {new Date(announcement.expiresAt).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleActiveMutation.mutate({ id: announcement.id, isActive: !announcement.isActive })}
+                        data-testid={`button-toggle-announcement-${announcement.id}`}
+                      >
+                        {announcement.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(announcement)} data-testid={`button-edit-announcement-${announcement.id}`}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(announcement.id)} data-testid={`button-delete-announcement-${announcement.id}`}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleActiveMutation.mutate({ id: announcement.id, isActive: !announcement.isActive })}
-                      data-testid={`button-toggle-announcement-${announcement.id}`}
-                    >
-                      {announcement.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(announcement)} data-testid={`button-edit-announcement-${announcement.id}`}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(announcement.id)} data-testid={`button-delete-announcement-${announcement.id}`}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                </CardContent>
               </Card>
             ))}
         </div>

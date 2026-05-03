@@ -382,28 +382,38 @@ function AutomationCard({
   return (
     <Card
       data-testid={`card-automation-${automation.id}`}
-      className={`transition-opacity duration-150 ${automation.isActive ? "" : "opacity-60"}`}
+      className={`border-none shadow-xl rounded-[2.5rem] bg-white hover:shadow-2xl transition-all duration-500 group overflow-hidden relative ${automation.isActive ? "" : "opacity-60"}`}
     >
-      <CardContent className="p-5 space-y-4">
-        {/* Row 1: name + badges + actions */}
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm">{automation.name}</span>
-              <ChannelBadge channel={automation.channel} />
-              {!automation.isActive && (
-                <Badge variant="outline" className="text-xs text-muted-foreground">Paused</Badge>
-              )}
-              {automation.triggerType === "one_time" && (
-                <Badge variant="outline" className="text-xs">One-time</Badge>
+      <CardContent className="p-6 space-y-4">
+        {/* Row 1: Icon vault + title + actions */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-blue-900/5 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-blue-900 transition-colors duration-300">
+              <Megaphone className="w-6 h-6 text-blue-900 group-hover:text-yellow-400 transition-colors" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <Badge className="bg-blue-900/10 text-blue-900 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
+                  {automation.triggerType.replace(/_/g, " ")}
+                </Badge>
+                <ChannelBadge channel={automation.channel} />
+                {!automation.isActive && (
+                  <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5">Paused</Badge>
+                )}
+              </div>
+              <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight truncate leading-tight">
+                {automation.name}
+              </h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                {filterLabel(automation.customerFilter)} · <span className="text-blue-900/60 font-black">{automation.runCount} runs</span>
+              </p>
+              {automation.description && (
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">{automation.description}</p>
               )}
             </div>
-            {automation.description && (
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{automation.description}</p>
-            )}
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex flex-col items-end gap-2 shrink-0">
             <Switch
               checked={automation.isActive}
               onCheckedChange={v => onToggle(automation.id, v)}
@@ -503,19 +513,24 @@ function AutomationCard({
           </p>
         </div>
 
-        {/* Row 4: history toggle */}
-        <Separator />
-        <button
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setShowHistory(v => !v)}
-          data-testid={`button-history-automation-${automation.id}`}
-        >
-          {showHistory ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          Run history
-          {automation.runCount > 0 && (
-            <span className="ml-1 text-muted-foreground">({automation.runCount} total)</span>
-          )}
-        </button>
+        {/* Row 4: footer + history toggle */}
+        <div className="pt-2 border-t border-slate-50 flex items-center justify-between">
+          <div className="flex -space-x-2">
+            <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white" />
+            <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white" />
+            <div className="w-6 h-6 rounded-full bg-blue-900 text-yellow-400 text-[8px] font-black border-2 border-white flex items-center justify-center">
+              {automation.runCount > 99 ? "99+" : automation.runCount > 0 ? `${automation.runCount}x` : "0"}
+            </div>
+          </div>
+          <button
+            className="flex items-center gap-1.5 text-blue-900 font-black uppercase text-[10px] tracking-widest hover:bg-blue-900/5 px-3 py-1.5 rounded-lg transition-colors"
+            onClick={() => setShowHistory(v => !v)}
+            data-testid={`button-history-automation-${automation.id}`}
+          >
+            Run History
+            <ChevronRight className={`w-3 h-3 ml-0.5 transition-transform ${showHistory ? "rotate-90" : ""}`} />
+          </button>
+        </div>
 
         {showHistory && <RunHistoryPanel automationId={automation.id} />}
       </CardContent>
@@ -985,23 +1000,32 @@ export default function AutomationsManager() {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Premium Header */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5">
-            <Zap className="w-5 h-5 text-blue-900" />
+      {/* ── PREMIUM CAMPAIGN COMMAND HEADER ── */}
+      <div className="bg-blue-900 rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="flex items-center gap-5 z-10">
+          <div className="bg-yellow-400 rounded-2xl p-3.5 shadow-lg transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+            <Zap className="w-6 h-6 text-blue-900" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white uppercase tracking-tight">Automation Engine</h1>
-            <p className="text-blue-300 text-sm">Rule-Based Engagement Systems</p>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">
+              Automation Engine
+            </h2>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+              <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em]">
+                Rule-Based Engagement Systems Online
+              </p>
+            </div>
           </div>
         </div>
         <Button
           onClick={() => { setEditing(null); setPrefill(null); setDialogOpen(true); }}
-          className="bg-yellow-400 text-blue-900 font-black rounded-lg px-6 hover:bg-yellow-300"
+          className="bg-yellow-400 hover:bg-white text-blue-900 font-black uppercase text-xs px-8 h-14 rounded-2xl shadow-xl transition-all active:scale-95 group z-10"
           data-testid="button-create-automation"
         >
-          <Plus className="w-4 h-4 mr-2" /> NEW AUTOMATION
+          <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
+          New Automation
         </Button>
       </div>
 
@@ -1071,11 +1095,27 @@ export default function AutomationsManager() {
             Synchronizing Engine Rules...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="col-span-full p-20 text-center bg-slate-50 rounded-3xl border-4 border-dashed border-slate-200">
-            <Activity className="w-16 h-16 mx-auto text-slate-200 mb-4" />
-            <p className="text-slate-400 font-black uppercase tracking-widest">
-              {automations.length === 0 ? "No automations yet — use a blueprint above to get started" : "No matching automations found"}
+          <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
+            <div className="w-20 h-20 bg-white rounded-[2rem] shadow-lg flex items-center justify-center mx-auto mb-6">
+              <Activity className="w-10 h-10 text-slate-200" />
+            </div>
+            <h3 className="text-xl font-black text-blue-900 uppercase tracking-tighter">
+              {automations.length === 0 ? "System Idle" : "No Matches Found"}
+            </h3>
+            <p className="max-w-xs mx-auto text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3 leading-relaxed">
+              {automations.length === 0
+                ? "No active automations detected. Use a blueprint above to launch your first rule."
+                : "No matching automations found. Try adjusting your filters."}
             </p>
+            {automations.length === 0 && (
+              <Button
+                onClick={() => { setEditing(null); setPrefill(null); setDialogOpen(true); }}
+                variant="outline"
+                className="mt-8 border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest px-8 h-12 rounded-xl"
+              >
+                Initialize Automation Sequence
+              </Button>
+            )}
           </div>
         ) : (
           filtered.map(a => (

@@ -36,13 +36,13 @@ export default function CustomerDetailsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-customer-details">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Customer Details</DialogTitle>
+          <DialogTitle className="text-xl font-black text-blue-900 uppercase tracking-tight">Customer Details</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Basic Information</h3>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Basic Information</h3>
               <div className="space-y-3">
                 <DetailRow icon={User} label="Name" value={customer.name} />
                 <DetailRow icon={Phone} label="Phone" value={customer.phone} />
@@ -51,7 +51,7 @@ export default function CustomerDetailsDialog({
             </div>
 
             <div className="col-span-2">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">CSV Import Fields</h3>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">CSV Import Fields</h3>
               <div className="grid grid-cols-2 gap-3">
                 <DetailRow 
                   icon={User} 
@@ -95,26 +95,26 @@ export default function CustomerDetailsDialog({
               </div>
             </div>
 
-            <div className="col-span-2 border-t pt-4">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Loyalty Status</h3>
+            <div className="col-span-2 pt-4">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Loyalty Status</h3>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1" data-testid="detail-tier">
-                  <span className="text-sm text-muted-foreground">Tier</span>
-                  <div>
-                    <Badge className="capitalize">{customer.tier}</Badge>
+                <div className="bg-slate-50 rounded-xl p-3" data-testid="detail-tier">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tier</span>
+                  <div className="mt-1.5">
+                    <Badge className="capitalize font-black">{customer.tier}</Badge>
                   </div>
                 </div>
-                <div className="space-y-1" data-testid="detail-points">
-                  <span className="text-sm text-muted-foreground">Points</span>
-                  <div className="font-semibold text-primary text-lg">{customer.points}</div>
+                <div className="bg-amber-50 rounded-xl p-3" data-testid="detail-points">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Points</span>
+                  <div className="text-2xl font-black text-blue-900 mt-0.5">{customer.points}</div>
                 </div>
-                <div className="space-y-1" data-testid="detail-total-spent">
-                  <span className="text-sm text-muted-foreground">Total Spent</span>
-                  <div className="font-semibold text-lg">฿{Number(customer.totalSpent).toLocaleString()}</div>
+                <div className="bg-slate-50 rounded-xl p-3" data-testid="detail-total-spent">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Spent</span>
+                  <div className="text-xl font-black text-blue-900 mt-0.5">฿{Number(customer.totalSpent).toLocaleString()}</div>
                 </div>
-                <div className="space-y-1" data-testid="detail-referral-code">
-                  <span className="text-sm text-muted-foreground">Referral Code</span>
-                  <div className="font-mono text-sm">{customer.referralCode}</div>
+                <div className="bg-slate-50 rounded-xl p-3" data-testid="detail-referral-code">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Referral Code</span>
+                  <div className="font-mono text-sm font-bold text-blue-900 mt-0.5">{customer.referralCode}</div>
                 </div>
               </div>
             </div>

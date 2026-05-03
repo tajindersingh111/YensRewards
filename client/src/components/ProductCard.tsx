@@ -87,7 +87,7 @@ export function ProductCard({
         {/* Featured Star */}
         {product.featured && (
           <div className="absolute top-2 left-2">
-            <Badge variant="default" className="bg-yellow-500 text-black text-xs">
+            <Badge variant="default" className="bg-yellow-400 text-blue-900 font-black text-xs">
               {t('admin.products.featured')}
             </Badge>
           </div>
@@ -119,7 +119,7 @@ export function ProductCard({
       {/* Content */}
       <CardHeader className="pb-3">
         <div className="space-y-1">
-          <h3 className="font-semibold text-base leading-tight line-clamp-2" data-testid={`text-product-name-${product.id}`}>
+          <h3 className="font-bold text-base leading-tight line-clamp-2" data-testid={`text-product-name-${product.id}`}>
             {product.name}
           </h3>
           {product.description && variant !== "transaction" && variant !== "reference" && (
@@ -134,7 +134,7 @@ export function ProductCard({
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
             <span 
-              className={variant === "reference" ? "text-2xl font-bold text-chart-1" : "text-lg font-bold text-primary"} 
+              className="text-lg font-black text-blue-900"
               data-testid={`text-product-price-${product.id}`}
             >
               {formatPrice(product.price)}
