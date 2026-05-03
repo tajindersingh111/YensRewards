@@ -330,37 +330,40 @@ export default function SalesTrackerDashboard() {
         const bx = startX + ci * (cW + 4);
         doc.setFillColor(...WHITE); doc.setDrawColor(...YELLOW); doc.setLineWidth(0.5);
         doc.roundedRect(bx, cy, cW, 17, 2, 2, 'FD');
-        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GREY_TEXT);
+        doc.setFontSize(7); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...GREY_TEXT);
         doc.text(summaryItems[idx].label.toUpperCase(), bx + cW / 2, cy + 6, { align: 'center' });
-        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE_DARK);
+        doc.setFontSize(10); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...BLUE_DARK);
         doc.text(summaryItems[idx].value, bx + cW / 2, cy + 13, { align: 'center' });
       });
     });
 
+    const tblFont = 'Sarabun';
     let nextY = 100;
 
-    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE_DARK);
+    doc.setFontSize(12); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...BLUE_DARK);
     doc.text('Sales by Channel', 14, nextY);
     autoTable(doc, {
       startY: nextY + 3,
-      head: [['Channel', 'Revenue (THB)', 'Days']],
+      head: [['Channel', 'Revenue (฿)', 'Days']],
       body: data.channelBreakdown.map((c: any) => [c.channel, fmtPdf(c.revenue), c.count.toString()]),
-      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
-      bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
+      styles: { font: tblFont, fontSize: 9 },
+      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold' },
+      bodyStyles: { textColor: [30, 30, 30] },
       alternateRowStyles: { fillColor: GREY_ROW },
       columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
       margin: { left: 14, right: 14 },
     });
 
     nextY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE_DARK);
+    doc.setFontSize(12); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...BLUE_DARK);
     doc.text('Sales by Day of Week', 14, nextY);
     autoTable(doc, {
       startY: nextY + 3,
-      head: [['Day', 'Revenue (THB)', 'Days']],
+      head: [['Day', 'Revenue (฿)', 'Days']],
       body: data.dayBreakdown.map((d: any) => [d.day, fmtPdf(d.revenue), d.count.toString()]),
-      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
-      bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
+      styles: { font: tblFont, fontSize: 9 },
+      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold' },
+      bodyStyles: { textColor: [30, 30, 30] },
       alternateRowStyles: { fillColor: GREY_ROW },
       columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
       margin: { left: 14, right: 14 },
@@ -371,13 +374,14 @@ export default function SalesTrackerDashboard() {
     drawPageHeader("Transaction Details");
     autoTable(doc, {
       startY: 36,
-      head: [['Date', 'Day', 'Channel', 'Net Sales (THB)', 'Other (THB)', 'Note', 'Total (THB)']],
+      head: [['Date', 'Day', 'Channel', 'Net Sales (฿)', 'Other (฿)', 'Note', 'Total (฿)']],
       body: data.transactions.map((t: any) => [
         formatDateDDMMYY(t.date), t.dayOfWeek || '-', t.channel,
         fmtPdf(t.netSales), fmtPdf(t.otherSales), t.otherSalesNote || '-', fmtPdf(t.totalSales),
       ]),
-      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 8 },
-      bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
+      styles: { font: tblFont, fontSize: 8 },
+      headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold' },
+      bodyStyles: { textColor: [30, 30, 30] },
       alternateRowStyles: { fillColor: GREY_ROW },
       columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' }, 6: { halign: 'right' } },
       margin: { left: 14, right: 14 },
@@ -387,7 +391,7 @@ export default function SalesTrackerDashboard() {
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(7); doc.setTextColor(...GREY_TEXT);
+      doc.setFontSize(7); doc.setFont('Sarabun', 'normal'); doc.setTextColor(...GREY_TEXT);
       doc.text(`Page ${i} of ${pageCount}  |  Yen's Thai Ice Cream  |  Confidential`, W / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' });
     }
 
