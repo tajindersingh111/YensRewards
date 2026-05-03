@@ -1041,37 +1041,53 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
           </div>
         )}
 
-        {/* CUSTOMER SEARCH & TRANSACTION WORKFLOW - Show ONLY when clocked in */}
+        {/* CLOCK-OUT MODULE — shown when clocked in, step === "search" */}
         {isClockedIn && step === "search" && (
-          <>
-            {/* CLOCK OUT INFO CARD */}
-            <Card className="p-4 mb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Timer className="w-5 h-5 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium text-green-700">{t('barista.clockedIn')}</p>
-                    {currentTimeEntry && currentTimeEntry.clockInTime && (
-                      <p className="text-xs text-muted-foreground">
-                        {t('barista.since')} {new Date(currentTimeEntry.clockInTime).toLocaleTimeString()}
-                      </p>
-                    )}
-                  </div>
+          <Card className="p-6 border-none shadow-xl rounded-[2rem] bg-white overflow-hidden relative" data-testid="card-clocked-in-status">
+            {/* Subtle "Live" Background Aura */}
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <Timer className="w-16 h-16 text-emerald-500" />
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {/* Active Shift Icon Block */}
+                <div className="bg-blue-900 rounded-2xl p-3 shadow-lg relative">
+                  <Timer className="w-5 h-5 text-emerald-400" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
                 </div>
+
                 <div>
-                  <Button
-                    onClick={() => clockOutMutation.mutate()}
-                    disabled={clockOutMutation.isPending}
-                    variant="destructive"
-                    size="sm"
-                    data-testid="button-clock-out"
-                  >
-                    {clockOutMutation.isPending ? t('barista.clockOutting') : t('barista.clockOut')}
-                  </Button>
+                  <p className="text-sm font-black text-emerald-600 uppercase tracking-tight leading-none flex items-center gap-2">
+                    {t('barista.clockedIn')}
+                    <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                  </p>
+                  {currentTimeEntry && currentTimeEntry.clockInTime && (
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                      {t('barista.since')}: <span className="text-blue-900">{new Date(currentTimeEntry.clockInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </p>
+                  )}
                 </div>
               </div>
-            </Card>
-          </>
+
+              <Button
+                onClick={() => clockOutMutation.mutate()}
+                disabled={clockOutMutation.isPending}
+                variant="outline"
+                className="h-10 px-6 border-red-200 text-red-500 font-black uppercase text-[10px] rounded-xl"
+                data-testid="button-clock-out"
+              >
+                {clockOutMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                    {t('barista.clockOutting')}
+                  </span>
+                ) : (
+                  t('barista.clockOut')
+                )}
+              </Button>
+            </div>
+          </Card>
         )}
 
         {/* SEARCH STEP */}
