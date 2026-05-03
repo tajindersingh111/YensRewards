@@ -5475,9 +5475,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Handle unfollow event (customer blocks/removes bot)
         if (event.type === 'unfollow') {
-          console.log(`👋 User unfollowed: ${lineUserId}`);
-          // Optionally: Clear lineUid from customer record
-          // We'll keep it linked in case they re-follow later
+          console.log(`👋 User unfollowed: ${lineUserId} — clearing lineUid from customer record`);
+          try {
+            const customer = await storage.getCustomerByLineUid(lineUserId);
+            if (customer) {
+              await storage.updateCustomer(customer.id, { lineUid: null });
+              console.log(`✅ Cleared lineUid for customer ${customer.id} (${customer.name || customer.phone})`);
+            } else {
+              console.log(`⚠️  No customer found with lineUid ${lineUserId} — nothing to clear`);
+            }
+          } catch (unfollowErr) {
+            console.error(`❌ Failed to clear lineUid for unfollowed user ${lineUserId}:`, unfollowErr);
+          }
         }
       }
 
