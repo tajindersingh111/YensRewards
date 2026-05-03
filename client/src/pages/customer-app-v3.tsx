@@ -313,154 +313,191 @@ export default function CustomerAppV3() {
 
   if (!phone) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-yens-yellow/30 to-background flex flex-col">
-        <header className="bg-yens-yellow p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={logoUrl} alt="Yens" className="w-10 h-10 rounded-full" />
-            <span className="text-xl font-bold text-foreground">Yen's</span>
+      <div className="min-h-screen bg-slate-50 font-sans">
+        {/* PREMIER BLUE-900 HERO */}
+        <div className="bg-blue-900 pt-16 pb-24 text-center px-6 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_top_right,_#FCD34D_0%,_transparent_40%)]" />
+          {/* Language switcher - top right */}
+          <div className="absolute top-4 right-4">
+            <LanguageSwitcher />
           </div>
-          <LanguageSwitcher />
-        </header>
-
-        <main className="flex-1 flex flex-col items-center justify-center p-6">
-          <img src={logoUrl} alt="Yens Logo" className="w-28 h-28 rounded-full mb-6 shadow-lg" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">{t('customer.yensRewards')}</h1>
-          <p className="text-muted-foreground mb-6 text-center">
-            {otpStep ? t('customer.enterOtp') : t('customer.enterPhone')}
-          </p>
-
-          {otpStep ? (
-            <div className="w-full max-w-sm space-y-4">
-              <p className="text-sm text-muted-foreground text-center">
-                {t('customer.otpSentTo', { phone: phoneInput })}
+          <div className="relative z-10 animate-in fade-in slide-in-from-top-4 duration-700">
+            <img
+              src={logoUrl}
+              alt="Yen's Thai"
+              className="w-24 h-24 rounded-full mx-auto ring-4 ring-yellow-400 border-4 border-blue-900 mb-6 shadow-2xl object-cover"
+            />
+            <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+              {t('customer.yensRewards', "Yen's Rewards")}
+            </h1>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <span className="h-px w-6 bg-yellow-400/30" />
+              <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em]">
+                Loyalty &amp; Membership
               </p>
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="123456"
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleOtpVerify()}
-                className="text-lg tracking-widest text-center"
-                maxLength={6}
-                data-testid="input-otp"
-              />
-              {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
-              <Button
-                onClick={handleOtpVerify}
-                className="w-full bg-yens-yellow text-foreground font-semibold"
-                disabled={otpLoading}
-                data-testid="button-verify-otp"
-              >
-                {otpLoading ? t('common.loading') : t('customer.verifyCode')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => { setShowSignup(true); setOtpStep(false); setOtpError(null); setOtpInput(""); }}
-                data-testid="button-signup-instead"
-              >
-                {t('customer.newCustomer')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => { setOtpStep(false); setOtpError(null); setOtpInput(""); setShowSignup(false); }}
-                data-testid="button-back-to-phone"
-              >
-                {t('common.back')}
-              </Button>
+              <span className="h-px w-6 bg-yellow-400/30" />
             </div>
-          ) : !showSignup ? (
-            <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
-              <div>
-                <Label htmlFor="phone">{t('customer.phone')}</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="0812345678"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  className="text-lg"
-                  data-testid="input-phone"
-                />
-              </div>
-              {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
-              <Button
-                type="submit"
-                className="w-full bg-yens-yellow text-foreground font-semibold"
-                disabled={otpLoading}
-                data-testid="button-login"
-              >
-                {otpLoading ? t('common.loading') : t('customer.accessRewards')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => { setShowSignup(true); setOtpError(null); }}
-                data-testid="button-show-signup"
-              >
-                {t('customer.newCustomer')}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleSignup} className="w-full max-w-sm space-y-4">
-              <p className="text-sm text-center text-muted-foreground mb-4">
-                {t('customer.newCustomer')}
+          </div>
+        </div>
+
+        {/* OVERLAPPING ENTRY CARD */}
+        <div className="-mt-12 px-5 max-w-md mx-auto pb-12 relative z-20">
+          <Card className="p-8 shadow-2xl border-none rounded-[2rem] bg-white animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+            {/* Adaptive Subtitle Header */}
+            <div className="space-y-2 mb-6">
+              <p className="text-base font-bold text-slate-800 text-center">
+                {otpStep
+                  ? t('auth.verifyPhone', "Verify Your Identity")
+                  : showSignup
+                    ? t('auth.joinFamily', "Join the Yen's Family")
+                    : t('auth.welcomeBack', "Welcome Back")}
               </p>
-              <div>
-                <Label htmlFor="name">{t('customer.name')} *</Label>
+              <p className="text-xs text-slate-400 text-center leading-relaxed px-4 font-medium">
+                {otpStep
+                  ? t('auth.otpSent', "We've sent a 6-digit code to your handset.")
+                  : t('auth.loginDesc', "Experience the finest Thai Soft Serve with exclusive member benefits.")}
+              </p>
+            </div>
+
+            {otpStep ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  {t('customer.otpSentTo', { phone: phoneInput })}
+                </p>
                 <Input
-                  id="name"
-                  value={signupData.name}
-                  onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
-                  required
-                  data-testid="input-name"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="123456"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleOtpVerify()}
+                  className="text-lg tracking-widest text-center"
+                  maxLength={6}
+                  data-testid="input-otp"
                 />
+                {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
+                <Button
+                  onClick={handleOtpVerify}
+                  className="w-full bg-yens-yellow text-foreground font-semibold"
+                  disabled={otpLoading}
+                  data-testid="button-verify-otp"
+                >
+                  {otpLoading ? t('common.loading') : t('customer.verifyCode')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => { setShowSignup(true); setOtpStep(false); setOtpError(null); setOtpInput(""); }}
+                  data-testid="button-signup-instead"
+                >
+                  {t('customer.newCustomer')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => { setOtpStep(false); setOtpError(null); setOtpInput(""); setShowSignup(false); }}
+                  data-testid="button-back-to-phone"
+                >
+                  {t('common.back')}
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="email">{t('customer.email')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={signupData.email}
-                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                  data-testid="input-email"
-                />
-              </div>
-              <div>
-                <Label htmlFor="birthday">{t('customer.birthday')}</Label>
-                <Input
-                  id="birthday"
-                  type="date"
-                  value={signupData.birthday}
-                  onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
-                  data-testid="input-birthday"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-yens-yellow text-foreground font-semibold"
-                disabled={signupMutation.isPending}
-                data-testid="button-signup"
-              >
-                {signupMutation.isPending ? t('common.loading') : t('customer.createAccount')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setShowSignup(false)}
-                data-testid="button-back-to-login"
-              >
-                {t('common.back')}
-              </Button>
-            </form>
-          )}
-        </main>
+            ) : !showSignup ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="phone">{t('customer.phone')}</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="0812345678"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    className="text-lg"
+                    data-testid="input-phone"
+                  />
+                </div>
+                {otpError && <p className="text-sm text-destructive text-center">{otpError}</p>}
+                <Button
+                  type="submit"
+                  className="w-full bg-yens-yellow text-foreground font-semibold"
+                  disabled={otpLoading}
+                  data-testid="button-login"
+                >
+                  {otpLoading ? t('common.loading') : t('customer.accessRewards')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => { setShowSignup(true); setOtpError(null); }}
+                  data-testid="button-show-signup"
+                >
+                  {t('customer.newCustomer')}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleSignup} className="space-y-4">
+                <p className="text-sm text-center text-muted-foreground">
+                  {t('customer.newCustomer')}
+                </p>
+                <div>
+                  <Label htmlFor="name">{t('customer.name')} *</Label>
+                  <Input
+                    id="name"
+                    value={signupData.name}
+                    onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                    required
+                    data-testid="input-name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">{t('customer.email')}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={signupData.email}
+                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                    data-testid="input-email"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="birthday">{t('customer.birthday')}</Label>
+                  <Input
+                    id="birthday"
+                    type="date"
+                    value={signupData.birthday}
+                    onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
+                    data-testid="input-birthday"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-yens-yellow text-foreground font-semibold"
+                  disabled={signupMutation.isPending}
+                  data-testid="button-signup"
+                >
+                  {signupMutation.isPending ? t('common.loading') : t('customer.createAccount')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setShowSignup(false)}
+                  data-testid="button-back-to-login"
+                >
+                  {t('common.back')}
+                </Button>
+              </form>
+            )}
+          </Card>
+
+          {/* Footer Support Line */}
+          <p className="mt-8 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Nakhon Sawan · Established 2024
+          </p>
+        </div>
         <InstallPrompt />
       </div>
     );

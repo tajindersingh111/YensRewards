@@ -348,16 +348,47 @@ export default function CustomerApp() {
   // Login screen (phone entry or OTP verification)
   if (!phone) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="w-full lg:max-w-md p-6 sm:p-8 space-y-8">
-          <div className="text-center space-y-4">
-            <img src={logoUrl} alt="Yens Logo" className="w-24 h-24 rounded-full mx-auto" />
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-foreground">{t('customer.yensRewards')}</h1>
-              <p className="text-base text-muted-foreground">
-                {otpStep ? t('customer.enterOtp') : showSignup ? t('customer.createAccount') : t('customer.enterPhone')}
+      <div className="min-h-screen bg-slate-50 font-sans">
+        {/* PREMIER BLUE-900 HERO */}
+        <div className="bg-blue-900 pt-16 pb-24 text-center px-6 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_top_right,_#FCD34D_0%,_transparent_40%)]" />
+          <div className="relative z-10 animate-in fade-in slide-in-from-top-4 duration-700">
+            <img
+              src={logoUrl}
+              alt="Yen's Thai"
+              className="w-24 h-24 rounded-full mx-auto ring-4 ring-yellow-400 border-4 border-blue-900 mb-6 shadow-2xl object-cover"
+            />
+            <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+              {t('customer.yensRewards', "Yen's Rewards")}
+            </h1>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <span className="h-px w-6 bg-yellow-400/30" />
+              <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em]">
+                Loyalty &amp; Membership
               </p>
+              <span className="h-px w-6 bg-yellow-400/30" />
             </div>
+          </div>
+        </div>
+
+        {/* OVERLAPPING ENTRY CARD */}
+        <div className="-mt-12 px-5 max-w-md mx-auto pb-12 relative z-20">
+        <Card className="p-8 space-y-8 shadow-2xl border-none rounded-[2rem] bg-white animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+          {/* Adaptive Subtitle Header */}
+          <div className="space-y-2">
+            <p className="text-base font-bold text-slate-800 text-center">
+              {otpStep
+                ? t('auth.verifyPhone', "Verify Your Identity")
+                : showSignup
+                  ? t('auth.joinFamily', "Join the Yen's Family")
+                  : t('auth.welcomeBack', "Welcome Back")}
+            </p>
+            <p className="text-xs text-slate-400 text-center leading-relaxed px-4 font-medium">
+              {otpStep
+                ? t('auth.otpSent', "We've sent a 6-digit code to your handset.")
+                : t('auth.loginDesc', "Experience the finest Thai Soft Serve with exclusive member benefits.")}
+            </p>
           </div>
 
           {!otpStep && !showSignup ? (
@@ -488,6 +519,12 @@ export default function CustomerApp() {
             </div>
           )}
         </Card>
+
+        {/* Footer Support Line */}
+        <p className="mt-8 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Nakhon Sawan · Established 2024
+        </p>
+        </div>
       </div>
     );
   }
