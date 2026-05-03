@@ -3,7 +3,7 @@
 ## Overview
 A multi-interface loyalty management system (Customer App, Barista App, Admin Dashboard) for Yens Thai Ice Cream. Its primary purpose is to enhance customer engagement and streamline operations through loyalty programs, transaction processing, and promotional tools. The system aims to provide a seamless mobile-first experience for customers, efficient transaction processing for baristas with gamification, and comprehensive analytics for administrators. Key ambitions include boosting customer loyalty, motivating employees, and improving business efficiency.
 
-**Current Version: v3.28.0** - **Enhancement pass (9 fixes):** Registration rate limit (5/IP/hour); daily treasury cap (3 receipts / 500 pts per customer per 24h); sales log week-picker with prev/next/reset nav; customer tier + date-range filters with server-side pagination; LTV / Total Spent column in Customer List (emerald highlight >฿10k); redemption confirmation dialog ("Confirm Treasure" gateway with cost preview); barista week-over-week performance chart (last 6 weeks, Recharts grouped bars); LINE unfollow handling; app push notifications.
+**Current Version: v3.29.0** - **Enhancement pass (9 fixes):** Registration rate limit (5/IP/hour); daily treasury cap (3 receipts / 500 pts per customer per 24h); sales log week-picker with prev/next/reset nav; customer tier + date-range filters with server-side pagination; LTV / Total Spent column in Customer List (emerald highlight >฿10k); redemption confirmation dialog ("Confirm Treasure" gateway with cost preview); barista week-over-week performance chart (last 6 weeks, Recharts grouped bars); LINE unfollow handling; app push notifications.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
