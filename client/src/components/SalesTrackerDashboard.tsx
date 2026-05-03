@@ -290,10 +290,61 @@ export default function SalesTrackerDashboard() {
                   {reportStartDate === reportEndDate ? formatDateDDMMYY(reportStartDate) : `${formatDateDDMMYY(reportStartDate)} - ${formatDateDDMMYY(reportEndDate)}`}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
-                <div className="grid grid-cols-2 gap-2 p-2">
-                  <Input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} />
-                  <Input type="date" value={reportEndDate} onChange={e => setReportEndDate(e.target.value)} />
+              <PopoverContent className="w-72" align="end">
+                <div className="p-3 space-y-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Select</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: "This Week", fn: () => {
+                        const d = new Date(); const day = d.getDay(); const diff = day === 0 ? -6 : 1 - day;
+                        const mon = new Date(d); mon.setDate(d.getDate() + diff);
+                        setReportStartDate(mon.toISOString().split('T')[0]);
+                        setReportEndDate(new Date().toISOString().split('T')[0]);
+                      }},
+                      { label: "Last Week", fn: () => {
+                        const d = new Date(); const day = d.getDay(); const diff = day === 0 ? -6 : 1 - day;
+                        const mon = new Date(d); mon.setDate(d.getDate() + diff - 7);
+                        const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+                        setReportStartDate(mon.toISOString().split('T')[0]);
+                        setReportEndDate(sun.toISOString().split('T')[0]);
+                      }},
+                      { label: "This Month", fn: () => {
+                        const d = new Date();
+                        setReportStartDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`);
+                        setReportEndDate(d.toISOString().split('T')[0]);
+                      }},
+                      { label: "Last Month", fn: () => {
+                        const d = new Date();
+                        const first = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+                        const last = new Date(d.getFullYear(), d.getMonth(), 0);
+                        setReportStartDate(first.toISOString().split('T')[0]);
+                        setReportEndDate(last.toISOString().split('T')[0]);
+                      }},
+                      { label: "Last 30 Days", fn: () => {
+                        const end = new Date(); const start = new Date();
+                        start.setDate(end.getDate() - 29);
+                        setReportStartDate(start.toISOString().split('T')[0]);
+                        setReportEndDate(end.toISOString().split('T')[0]);
+                      }},
+                      { label: "This Year", fn: () => {
+                        const d = new Date();
+                        setReportStartDate(`${d.getFullYear()}-01-01`);
+                        setReportEndDate(d.toISOString().split('T')[0]);
+                      }},
+                    ].map(({ label, fn }) => (
+                      <Button key={label} variant="outline" size="sm"
+                        className="text-xs font-bold text-blue-900 border-slate-200 rounded-lg h-8"
+                        onClick={fn}
+                      >{label}</Button>
+                    ))}
+                  </div>
+                  <div className="border-t border-slate-100 pt-3 space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Custom Range</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} className="text-xs h-8" />
+                      <Input type="date" value={reportEndDate} onChange={e => setReportEndDate(e.target.value)} className="text-xs h-8" />
+                    </div>
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
