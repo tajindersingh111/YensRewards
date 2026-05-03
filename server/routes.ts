@@ -4932,7 +4932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid recipient configuration" });
       }
 
-      const customersWithLine = targetCustomers.filter(c => c && c.lineUid);
+      const customersWithLine = targetCustomers.filter(c => c && c.lineUid && c.isLineActive !== false);
 
       if (customersWithLine.length === 0) {
         return res.status(400).json({ message: "No customers found with LINE accounts" });
@@ -4953,7 +4953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (async () => {
         for (let i = 0; i < customersWithLine.length; i++) {
           const customer = customersWithLine[i];
-          if (!customer || !customer.lineUid) continue;
+          if (!customer || !customer.lineUid || customer.isLineActive === false) continue;
 
           if (i > 0) {
             await new Promise(resolve => setTimeout(resolve, 200));
@@ -5414,12 +5414,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     return;
                   }
 
-                  // Link LINE UID to customer and award bonus points
+                  // Link LINE UID to customer and award bonus points.
+                  // Also restore isLineActive in case they previously unfollowed and re-followed.
                   const LINE_BONUS_POINTS = 50;
                   const wasNotLinked = !customer.lineUid;
                   
                   await storage.updateCustomer(customer.id, {
                     lineUid: lineUserId,
+                    isLineActive: true,
+                    lastUnfollowAt: null,
                     points: wasNotLinked ? customer.points + LINE_BONUS_POINTS : customer.points
                   });
                   
@@ -5475,17 +5478,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Handle unfollow event (customer blocks/removes bot)
         if (event.type === 'unfollow') {
-          console.log(`👋 User unfollowed: ${lineUserId} — clearing lineUid from customer record`);
+          console.log(`⚠️ DISPATCH ALERT: User unfollowed: ${lineUserId}`);
           try {
             const customer = await storage.getCustomerByLineUid(lineUserId);
             if (customer) {
-              await storage.updateCustomer(customer.id, { lineUid: null });
-              console.log(`✅ Cleared lineUid for customer ${customer.id} (${customer.name || customer.phone})`);
+              // STRATEGY: Keep the lineUid for history, but deactivate the LINE dispatch flag.
+              // This preserves the identity bridge while stopping messages to blocked users.
+              await storage.updateCustomer(customer.id, {
+                isLineActive: false,
+                lastUnfollowAt: new Date(),
+              });
+              console.log(`✅ REGISTRY UPDATED: Member ${customer.name || customer.id} marked as LINE INACTIVE.`);
             } else {
-              console.log(`⚠️  No customer found with lineUid ${lineUserId} — nothing to clear`);
+              console.log(`🔍 LOGISTICS: No record found for ID ${lineUserId}. No action required.`);
             }
           } catch (unfollowErr) {
-            console.error(`❌ Failed to clear lineUid for unfollowed user ${lineUserId}:`, unfollowErr);
+            console.error(`❌ CRITICAL: Failed to update registry for unfollow event:`, unfollowErr);
           }
         }
       }

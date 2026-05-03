@@ -141,7 +141,7 @@ async function processScheduledMessage(message: any) {
             if (result.error) errors.push(result.error);
           }
         } else if (message.channel === 'line') {
-          if (!customer.lineUid) {
+          if (!customer.lineUid || customer.isLineActive === false) {
             failedCount++;
             continue;
           }
@@ -386,7 +386,7 @@ export async function processAutomation(automation: any) {
           });
           result.success ? sentCount++ : (failedCount++, result.error && errors.push(result.error));
         } else if (automation.channel === 'line') {
-          if (!customer.lineUid) { failedCount++; continue; }
+          if (!customer.lineUid || customer.isLineActive === false) { failedCount++; continue; }
           const result = await sendLineMessage(customer.lineUid, msg);
           await storage.createMessageLog({
             customerId: customer.id,

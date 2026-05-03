@@ -52,6 +52,8 @@ export const customers = pgTable("customers", {
   lastUse: timestamp("last_use"),
   tag: text("tag"),
   lineUid: text("line_uid"),
+  isLineActive: boolean("is_line_active").notNull().default(true), // false when customer unfollows LINE bot
+  lastUnfollowAt: timestamp("last_unfollow_at"), // audit trail of last unfollow event
 },
 (table) => [
   uniqueIndex("customers_line_uid_unique_idx").on(table.lineUid),
