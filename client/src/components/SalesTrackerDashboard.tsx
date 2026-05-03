@@ -475,7 +475,7 @@ export default function SalesTrackerDashboard() {
         3: { halign: 'right', cellWidth: 28 },
         4: { halign: 'right', cellWidth: 22 },
         5: { cellWidth: 32, textColor: GREY_MID, fontSize: 7 },
-        6: { halign: 'right', fontStyle: 'bold', textColor: NAVY },
+        6: { halign: 'right', textColor: NAVY },
       },
       margin: { left: 14, right: 14 },
       tableLineColor: RULE,
