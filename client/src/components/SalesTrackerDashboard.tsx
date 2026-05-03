@@ -40,7 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Loader2, ShieldCheck, Activity, Wallet, CalendarCheck } from "lucide-react";
+import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpreadsheet, Pencil, Trash2, Search, FileText, Loader2, ShieldCheck, Activity, Wallet, CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 import { format, parse } from "date-fns";
@@ -90,6 +90,7 @@ export default function SalesTrackerDashboard() {
   const [validationResult, setValidationResult] = useState<any>(null);
   const [showValidation, setShowValidation] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const handleValidate = async () => {
     setIsValidating(true);
@@ -111,16 +112,27 @@ export default function SalesTrackerDashboard() {
     return sites.filter(s => s.isActive && s.channelName).map(s => s.channelName).sort();
   }, [sites]);
 
-  const recentSales = useMemo(() => {
+  // Compute selected week boundaries from weekOffset (0 = current week, -1 = last week, etc.)
+  const { weekStart, weekEnd, weekLabel } = useMemo(() => {
     const now = new Date();
-    const currentDayUTC = now.getUTCDay();
-    let daysToSubtract = currentDayUTC === 0 ? 6 : currentDayUTC - 1;
-    const mondayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysToSubtract, 0, 0, 0, 0));
-    const startOfWeek = mondayUTC.toISOString().split('T')[0];
+    const daysToMonday = now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1;
+    const monday = new Date(Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(),
+      now.getUTCDate() - daysToMonday + weekOffset * 7,
+    ));
+    const sunday = new Date(Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 6));
+    return {
+      weekStart: monday.toISOString().split('T')[0],
+      weekEnd:   sunday.toISOString().split('T')[0],
+      weekLabel: `${format(monday, 'd MMM')} – ${format(sunday, 'd MMM yyyy')}`,
+    };
+  }, [weekOffset]);
+
+  const recentSales = useMemo(() => {
     return allSales
-      .filter(sale => sale.date >= startOfWeek)
+      .filter(sale => sale.date >= weekStart && sale.date <= weekEnd)
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [allSales]);
+  }, [allSales, weekStart, weekEnd]);
 
   const editSaleMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -317,11 +329,25 @@ export default function SalesTrackerDashboard() {
           {/* Weekly Log */}
           <Card className="lg:col-span-3 border-none shadow-xl rounded-2xl overflow-hidden bg-white">
             <CardHeader className="border-b border-slate-100 py-6 px-6 bg-slate-50/50">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <CardTitle className="text-xl font-bold text-blue-900 flex items-center gap-2">
                   <Activity className="h-5 w-5 text-amber-500" /> Weekly Activity Log
                 </CardTitle>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Week navigator */}
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="outline" onClick={() => setWeekOffset(o => o - 1)} data-testid="button-sales-week-prev">
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm font-bold text-blue-900 min-w-[168px] text-center" data-testid="text-sales-week-label">{weekLabel}</span>
+                    <Button size="icon" variant="outline" onClick={() => setWeekOffset(o => o + 1)} disabled={weekOffset >= 0} data-testid="button-sales-week-next">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    {weekOffset !== 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)} data-testid="button-sales-week-today">This week</Button>
+                    )}
+                  </div>
+                  {/* Actions */}
                   <Button size="sm" variant="outline" onClick={handleValidate} disabled={isValidating} className="font-bold border-slate-200 rounded-lg">
                     <ShieldCheck className="w-4 h-4 mr-2 text-green-600" /> {isValidating ? "Checking..." : "Validate"}
                   </Button>
