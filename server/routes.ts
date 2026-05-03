@@ -1323,10 +1323,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // LIFF seamless LINE linking — called from the customer app when running inside LINE browser.
-  // The client sends the lineUid obtained from liff.getProfile() and we link it to the
-  // authenticated customer session. No separate verification token is needed because:
-  //   (a) the customer must have an active session (OTP-verified phone)
-  //   (b) the lineUid is injected by LINE's own LIFF SDK and cannot be spoofed client-side
+  // SECURE IDENTITY VERIFICATION: The client sends a signed LIFF ID token instead of a raw
+  // lineUid. We verify the token server-side with LINE's API before trusting the identity.
+  // This prevents UID spoofing even if the client were compromised.
   app.post('/api/customers/liff-link', async (req, res) => {
     try {
       const session = req.session as any;
@@ -1334,10 +1333,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "No customer session" });
       }
 
-      const { lineUid, displayName } = req.body;
-      if (!lineUid || typeof lineUid !== 'string') {
-        return res.status(400).json({ message: "lineUid is required" });
+      const { idToken } = req.body;
+      if (!idToken || typeof idToken !== 'string') {
+        return res.status(400).json({ message: "idToken is required" });
       }
+
+      const liffId = process.env.VITE_LIFF_ID;
+      if (!liffId) {
+        console.error("VITE_LIFF_ID is not set — cannot verify LINE identity token");
+        return res.status(500).json({ message: "LINE integration is not configured" });
+      }
+
+      // Verify the ID token with LINE's API — extracts the verified lineUid from `sub`
+      const lineResponse = await fetch('https://api.line.me/oauth2/v2.1/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          id_token: idToken,
+          client_id: liffId,
+        }),
+      });
+
+      const verifiedProfile = await lineResponse.json() as { sub?: string; name?: string; error?: string };
+
+      if (!lineResponse.ok || !verifiedProfile.sub) {
+        console.warn('LINE ID token verification failed:', verifiedProfile.error);
+        return res.status(401).json({ message: "LINE identity verification failed — invalid or expired token" });
+      }
+
+      const lineUid = verifiedProfile.sub;
+      const displayName = verifiedProfile.name || 'Unknown';
 
       const customer = await storage.getCustomer(session.customerId);
       if (!customer) {
@@ -1366,7 +1391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         points: wasNotLinked ? customer.points + LINE_BONUS_POINTS : customer.points,
       });
 
-      console.log(`✨ LIFF LINK: Member ${customer.name || customer.phone} linked via LIFF${wasNotLinked ? ` (+${LINE_BONUS_POINTS} pts)` : ' (re-linked)'} — LINE name: ${displayName}`);
+      console.log(`✨ LIFF LINK: Member ${customer.name || customer.phone} verified & linked via LIFF${wasNotLinked ? ` (+${LINE_BONUS_POINTS} pts)` : ' (re-linked)'} — LINE name: ${displayName}`);
       res.json({ success: true, bonusAwarded: wasNotLinked ? LINE_BONUS_POINTS : 0 });
     } catch (error) {
       console.error("Error linking LINE via LIFF:", error);

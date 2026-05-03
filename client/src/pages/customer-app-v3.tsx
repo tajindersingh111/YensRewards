@@ -196,12 +196,12 @@ export default function CustomerAppV3() {
   const handleLiffConnect = useCallback(async () => {
     setLiffLinking(true);
     try {
-      const profile = await initializeSeamlessSignup();
-      if (!profile) return; // redirect in progress or LIFF not configured
+      const token = await initializeSeamlessSignup();
+      if (!token) return; // redirect in progress or LIFF not configured
 
+      // Send the signed ID token — backend verifies it with LINE's API (prevents UID spoofing)
       const res = await apiRequest('POST', '/api/customers/liff-link', {
-        lineUid: profile.lineUid,
-        displayName: profile.displayName,
+        idToken: token.idToken,
       });
       const data = await res.json();
 
