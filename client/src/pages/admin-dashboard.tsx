@@ -101,21 +101,21 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
     .slice(0, 5);
 
   const quickActions = [
-    { label: 'Sales Tracker', icon: TrendingUp, section: 'sales', tab: 'salesTracker', color: 'bg-amber-100 text-amber-700' },
-    { label: 'Send Message', icon: Send, section: 'marketing', tab: 'messages', color: 'bg-blue-100 text-blue-700' },
-    { label: 'Customer List', icon: Users, section: 'customers', tab: 'customers', color: 'bg-green-100 text-green-700' },
-    { label: 'Promotions', icon: Tag, section: 'marketing', tab: 'promotions', color: 'bg-purple-100 text-purple-700' },
+    { label: 'Sales Tracker', icon: TrendingUp, section: 'sales', tab: 'salesTracker', color: 'bg-yellow-400/20 text-yellow-600' },
+    { label: 'Send Message', icon: Send, section: 'marketing', tab: 'messages', color: 'bg-blue-900/10 text-blue-900' },
+    { label: 'Customer List', icon: Users, section: 'customers', tab: 'customers', color: 'bg-blue-900/10 text-blue-900' },
+    { label: 'Promotions', icon: Tag, section: 'marketing', tab: 'promotions', color: 'bg-yellow-400/20 text-yellow-600' },
   ];
 
   return (
     <div className="space-y-8">
       {todayBirthdays.length > 0 && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 shadow-sm">
-          <Gift className="w-4 h-4 text-amber-600 shrink-0" />
-          <p className="text-sm text-amber-800 font-medium">
+        <div className="flex items-center gap-3 bg-blue-900/5 border border-blue-100 rounded-lg px-4 py-3 shadow-sm">
+          <Gift className="w-4 h-4 text-yellow-500 shrink-0" />
+          <p className="text-sm text-blue-900 font-medium">
             {todayBirthdays.length === 1 ? `${todayBirthdays[0].name} has a birthday today` : `${todayBirthdays.length} customers have birthdays today`}
           </p>
-          <button onClick={() => onNavigate('customers', 'loyalty')} className="ml-auto text-xs text-amber-700 font-bold flex items-center gap-1 hover:underline shrink-0">
+          <button onClick={() => onNavigate('customers', 'loyalty')} className="ml-auto text-xs text-blue-900 font-bold flex items-center gap-1 hover:underline shrink-0">
             View <ChevronRight className="w-3 h-3" />
           </button>
         </div>
@@ -182,8 +182,8 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
               {metrics?.bestChannel && (
                 <Card className="hover:bg-accent/5 transition-colors">
                   <CardContent className="p-4 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center shrink-0 border border-amber-100">
-                      <Award className="w-5 h-5 text-amber-600" />
+                    <div className="w-10 h-10 bg-yellow-400/20 rounded-full flex items-center justify-center shrink-0 border border-yellow-200">
+                      <Award className="w-5 h-5 text-yellow-600" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] uppercase font-bold text-muted-foreground">Best Channel</p>
@@ -217,7 +217,7 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Recent Activity</h3>
-              <button onClick={() => onNavigate('sales', 'salesTracker')} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1">
+              <button onClick={() => onNavigate('sales', 'salesTracker')} className="text-xs font-bold text-blue-900 hover:text-blue-700 flex items-center gap-1">
                 Full Log <ChevronRight className="w-3 h-3" />
               </button>
             </div>
@@ -385,7 +385,7 @@ export default function AdminDashboard() {
                   key={group.id}
                   onClick={() => handlePrimaryNav(group.id)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all shrink-0 ${
-                    isActive ? 'text-amber-600 border-amber-500 bg-amber-50/50' : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/40'
+                    isActive ? 'text-white border-yellow-400 bg-blue-900' : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/40'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -408,7 +408,7 @@ export default function AdminDashboard() {
                     key={sub.id}
                     onClick={() => handleSecondaryNav(sub.id)}
                     className={`px-4 py-3 text-xs font-bold whitespace-nowrap border-b-2 transition-colors shrink-0 ${
-                      isActive ? 'text-foreground border-amber-400 bg-white' : 'text-muted-foreground border-transparent hover:text-foreground'
+                      isActive ? 'text-foreground border-yellow-400 bg-white' : 'text-muted-foreground border-transparent hover:text-foreground'
                     }`}
                   >
                     {sub.label}
