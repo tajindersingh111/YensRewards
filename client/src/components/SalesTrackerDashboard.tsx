@@ -44,6 +44,8 @@ import { Calendar as CalendarIcon, TrendingUp, BarChart3, Upload, Plus, FileSpre
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import type { DailySales, Site } from "@shared/schema";
 import { format, parse } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const formatDateDDMMYY = (dateStr: string) => {
   try {
@@ -227,59 +229,171 @@ export default function SalesTrackerDashboard() {
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
 
-      // Build CSV content
-      const lines: string[] = [];
+      // Theme colours
+      const YELLOW: [number, number, number] = [252, 211, 77];
+      const BLUE_DARK: [number, number, number] = [30, 58, 138];
+      const BLUE_MID: [number, number, number] = [37, 99, 235];
+      const WHITE: [number, number, number] = [255, 255, 255];
+      const GREY_ROW: [number, number, number] = [248, 250, 252];
+      const GREY_TEXT: [number, number, number] = [71, 85, 105];
 
-      // Header
-      lines.push(`"Yen's Sales Report"`);
-      lines.push(`"Period","${reportStartDate} to ${reportEndDate}"`);
-      lines.push('');
+      const fmt = (n: number) => `฿${n.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
-      // Summary
-      lines.push('"SUMMARY"');
-      lines.push('"Metric","Value"');
-      lines.push(`"Total Net Sales","฿${data.summary.totalNetSales.toLocaleString()}"`);
-      lines.push(`"Other Sales","฿${data.summary.totalOtherSales.toLocaleString()}"`);
-      lines.push(`"Total Sales","฿${data.summary.totalSales.toLocaleString()}"`);
-      lines.push(`"Days Logged","${data.summary.transactionCount}"`);
-      lines.push(`"Avg Net Sales / Day","฿${data.summary.avgTransaction.toLocaleString()}"`);
-      lines.push('');
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
 
-      // Channel breakdown
-      lines.push('"CHANNEL BREAKDOWN"');
-      lines.push('"Channel","Revenue (฿)","Days"');
-      data.channelBreakdown.forEach((c: { channel: string; revenue: number; count: number }) => {
-        lines.push(`"${c.channel}","${c.revenue.toLocaleString()}","${c.count}"`);
+      const drawPageHeader = (title: string) => {
+        // Yellow banner
+        doc.setFillColor(...YELLOW);
+        doc.rect(0, 0, W, 28, 'F');
+        // Blue accent stripe
+        doc.setFillColor(...BLUE_DARK);
+        doc.rect(0, 28, W, 2, 'F');
+        // Logo circle placeholder
+        doc.setFillColor(...BLUE_DARK);
+        doc.circle(20, 14, 10, 'F');
+        doc.setFontSize(9);
+        doc.setTextColor(...WHITE);
+        doc.setFont('helvetica', 'bold');
+        doc.text("YEN'S", 20, 13, { align: 'center' });
+        doc.text("THAI", 20, 17.5, { align: 'center' });
+        // Title text
+        doc.setFontSize(18);
+        doc.setTextColor(...BLUE_DARK);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 34, 12);
+        // Subtitle
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...GREY_TEXT);
+        doc.text('Yen\'s Thai Ice Cream · Nakhon Sawan', 34, 19);
+        doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 34, 24);
+      };
+
+      // ── PAGE 1 ────────────────────────────────────────────────────────
+      drawPageHeader("Sales Report");
+
+      // Period badge
+      doc.setFillColor(...BLUE_MID);
+      doc.roundedRect(14, 34, W - 28, 9, 2, 2, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...WHITE);
+      doc.text(`Period: ${formatDateDDMMYY(reportStartDate)}  –  ${formatDateDDMMYY(reportEndDate)}`, W / 2, 40, { align: 'center' });
+
+      // ── Summary cards ─────────────────────────────────────────────────
+      const summaryItems = [
+        { label: 'Total Net Sales', value: fmt(data.summary.totalNetSales) },
+        { label: 'Other Sales', value: fmt(data.summary.totalOtherSales) },
+        { label: 'Total Sales', value: fmt(data.summary.totalSales) },
+        { label: 'Days Logged', value: String(data.summary.transactionCount) },
+        { label: 'Avg / Day', value: fmt(data.summary.avgTransaction) },
+      ];
+      const cardW = (W - 28 - 8) / 3;
+      let cx = 14;
+      let cy = 48;
+      summaryItems.forEach((item, i) => {
+        if (i === 3) { cx = 14 + cardW + 4; cy = 48 + 22; }
+        if (i === 4) { cx = 14 + (cardW + 4) * 2; cy = 48 + 22; }
+        doc.setFillColor(...WHITE);
+        doc.setDrawColor(...YELLOW);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(cx + (i < 3 ? (cardW + 4) * i : 0), cy, cardW, 18, 2, 2, 'FD');
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...GREY_TEXT);
+        const bx = cx + (i < 3 ? (cardW + 4) * i : 0) + cardW / 2;
+        doc.text(item.label.toUpperCase(), bx, cy + 6, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...BLUE_DARK);
+        doc.text(item.value, bx, cy + 13, { align: 'center' });
       });
-      lines.push('');
 
-      // Day of week breakdown
-      lines.push('"DAY OF WEEK BREAKDOWN"');
-      lines.push('"Day","Revenue (฿)","Days"');
-      data.dayBreakdown.forEach((d: { day: string; revenue: number; count: number }) => {
-        lines.push(`"${d.day}","${d.revenue.toLocaleString()}","${d.count}"`);
+      let nextY = 96;
+
+      // ── Channel breakdown ─────────────────────────────────────────────
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...BLUE_DARK);
+      doc.text('Sales by Channel', 14, nextY);
+
+      autoTable(doc, {
+        startY: nextY + 3,
+        head: [['Channel', 'Revenue (THB)', 'Days']],
+        body: data.channelBreakdown.map((c: { channel: string; revenue: number; count: number }) => [
+          c.channel,
+          fmt(c.revenue),
+          c.count.toString(),
+        ]),
+        headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
+        bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
+        alternateRowStyles: { fillColor: GREY_ROW },
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
+        margin: { left: 14, right: 14 },
       });
-      lines.push('');
 
-      // Transaction log
-      lines.push('"TRANSACTION LOG"');
-      lines.push('"Date","Day","Channel","Net Sales (฿)","Other Sales (฿)","Note","Total (฿)"');
-      data.transactions.forEach((t: { date: string; dayOfWeek?: string; channel: string; netSales: number; otherSales: number; otherSalesNote?: string; totalSales: number }) => {
-        lines.push(`"${t.date}","${t.dayOfWeek || ''}","${t.channel}","${t.netSales}","${t.otherSales}","${t.otherSalesNote || ''}","${t.totalSales}"`);
+      nextY = (doc as any).lastAutoTable.finalY + 10;
+
+      // ── Day of week breakdown ─────────────────────────────────────────
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...BLUE_DARK);
+      doc.text('Sales by Day of Week', 14, nextY);
+
+      autoTable(doc, {
+        startY: nextY + 3,
+        head: [['Day', 'Revenue (THB)', 'Days']],
+        body: data.dayBreakdown.map((d: { day: string; revenue: number; count: number }) => [
+          d.day,
+          fmt(d.revenue),
+          d.count.toString(),
+        ]),
+        headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 9 },
+        bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
+        alternateRowStyles: { fillColor: GREY_ROW },
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
+        margin: { left: 14, right: 14 },
       });
 
-      // Trigger download
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `yens-sales-report-${reportStartDate}-to-${reportEndDate}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // ── PAGE 2: Transaction log ───────────────────────────────────────
+      doc.addPage();
+      drawPageHeader("Transaction Details");
 
-      toast({ title: "Report downloaded", description: `${data.summary.transactionCount} days, ฿${data.summary.totalSales.toLocaleString()} total` });
+      autoTable(doc, {
+        startY: 34,
+        head: [['Date', 'Day', 'Channel', 'Net Sales', 'Other', 'Note', 'Total']],
+        body: data.transactions.map((t: { date: string; dayOfWeek?: string; channel: string; netSales: number; otherSales: number; otherSalesNote?: string; totalSales: number }) => [
+          formatDateDDMMYY(t.date),
+          t.dayOfWeek || '-',
+          t.channel,
+          fmt(t.netSales),
+          fmt(t.otherSales),
+          t.otherSalesNote || '-',
+          fmt(t.totalSales),
+        ]),
+        headStyles: { fillColor: YELLOW, textColor: BLUE_DARK, fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
+        alternateRowStyles: { fillColor: GREY_ROW },
+        columnStyles: {
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+          6: { halign: 'right' },
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // Footer on each page
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(...GREY_TEXT);
+        doc.text(`Page ${i} of ${pageCount}  ·  Yen's Thai Ice Cream  ·  Confidential`, W / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' });
+      }
+
+      doc.save(`yens-sales-report-${reportStartDate}-to-${reportEndDate}.pdf`);
+      toast({ title: "PDF downloaded", description: `${data.summary.transactionCount} days · ${fmt(data.summary.totalSales)}` });
     } catch (err: any) {
       toast({ title: "Report failed", description: err?.message || "Could not generate report", variant: "destructive" });
     } finally {
