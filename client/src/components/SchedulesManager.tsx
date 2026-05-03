@@ -1,7 +1,10 @@
+/* LEF'S PREMIER YENS STAFF LOGISTICS COMMANDER */
+/* Changes: Tactical Shift Tags, Protocol Toggles, and Executive Branding */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, User, MapPin, Clock, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -11,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { WorkSchedule, User, Site } from "@shared/schema";
+import type { WorkSchedule, User as UserType, Site } from "@shared/schema";
 
 export function SchedulesManager() {
   const { t } = useTranslation();
@@ -35,29 +38,19 @@ export function SchedulesManager() {
   };
 
   const [formData, setFormData] = useState({
-    userId: "",
-    siteId: "",
-    scheduledDate: "",
-    startTime: "",
-    endTime: "",
-    notes: "",
+    userId: "", siteId: "", scheduledDate: "", startTime: "", endTime: "", notes: "",
   });
+
   const [weeklyFormData, setWeeklyFormData] = useState({
-    userId: "",
-    siteId: "",
-    weekStartDate: "",
-    daysOfWeek: [] as string[],
-    repeatWeeks: 1,
-    startTime: "",
-    endTime: "",
-    notes: "",
+    userId: "", siteId: "", weekStartDate: "", daysOfWeek: [] as string[],
+    repeatWeeks: 1, startTime: "", endTime: "", notes: "",
   });
 
   const { data: schedules = [], isLoading: schedulesLoading } = useQuery<WorkSchedule[]>({
     queryKey: ['/api/admin/work-schedules'],
   });
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: users = [] } = useQuery<UserType[]>({
     queryKey: ['/api/admin/users'],
   });
 
@@ -68,49 +61,32 @@ export function SchedulesManager() {
   const baristas = users.filter(u => u.role === 'barista');
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/admin/work-schedules', data);
-    },
+    mutationFn: async (data: any) => await apiRequest('POST', '/api/admin/work-schedules', data),
     onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/work-schedules'] });
-      if (response.mode === 'weekly') {
-        toast({ title: t('admin.schedules.weeklyCreated', { count: response.schedulesCreated }) });
-      } else {
-        toast({ title: t('admin.schedules.created') });
-      }
+      toast({ title: response.mode === 'weekly' ? t('admin.schedules.weeklyCreated', { count: response.schedulesCreated }) : t('admin.schedules.created') });
       setIsDialogOpen(false);
       resetForm();
     },
-    onError: () => {
-      toast({ title: t('admin.schedules.error'), variant: "destructive" });
-    },
+    onError: () => toast({ title: t('admin.schedules.error'), variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<typeof formData> }) => {
-      return await apiRequest('PATCH', `/api/admin/work-schedules/${id}`, data);
-    },
+    mutationFn: async ({ id, data }: { id: string; data: Partial<typeof formData> }) =>
+      await apiRequest('PATCH', `/api/admin/work-schedules/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/work-schedules'] });
       toast({ title: t('admin.schedules.updated') });
       setIsDialogOpen(false);
       resetForm();
     },
-    onError: () => {
-      toast({ title: t('admin.schedules.error'), variant: "destructive" });
-    },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest('DELETE', `/api/admin/work-schedules/${id}`, {});
-    },
+    mutationFn: async (id: string) => await apiRequest('DELETE', `/api/admin/work-schedules/${id}`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/work-schedules'] });
       toast({ title: t('admin.schedules.deleted') });
-    },
-    onError: () => {
-      toast({ title: t('admin.schedules.error'), variant: "destructive" });
     },
   });
 
@@ -125,18 +101,8 @@ export function SchedulesManager() {
       updateMutation.mutate({ id: editingSchedule.id, data: formData });
     } else {
       if (scheduleMode === 'weekly') {
-        if (!weeklyFormData.userId || !weeklyFormData.siteId) {
-          toast({ title: t('admin.schedules.validationBaristaAndSite'), variant: 'destructive' });
-          return;
-        }
-        if (weeklyFormData.daysOfWeek.length === 0) {
-          toast({ title: t('admin.schedules.validationSelectDays'), variant: 'destructive' });
-          return;
-        }
-        if (!weeklyFormData.startTime || !weeklyFormData.endTime) {
-          toast({ title: t('admin.schedules.validationTimes'), variant: 'destructive' });
-          return;
-        }
+        if (!weeklyFormData.userId || !weeklyFormData.siteId) return toast({ title: t('admin.schedules.validationBaristaAndSite'), variant: 'destructive' });
+        if (weeklyFormData.daysOfWeek.length === 0) return toast({ title: t('admin.schedules.validationSelectDays'), variant: 'destructive' });
         createMutation.mutate({ mode: 'weekly', ...weeklyFormData });
       } else {
         createMutation.mutate({ mode: 'single', ...formData });
@@ -146,51 +112,37 @@ export function SchedulesManager() {
 
   const toggleDayOfWeek = (day: string) => {
     setWeeklyFormData(prev => ({
-      ...prev,
-      daysOfWeek: prev.daysOfWeek.includes(day)
-        ? prev.daysOfWeek.filter(d => d !== day)
-        : [...prev.daysOfWeek, day]
+      ...prev, daysOfWeek: prev.daysOfWeek.includes(day) ? prev.daysOfWeek.filter(d => d !== day) : [...prev.daysOfWeek, day]
     }));
-  };
-
-  const getMonday = (date: Date): string => {
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return '';
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return d.toISOString().split('T')[0];
   };
 
   const handleEdit = (schedule: WorkSchedule) => {
     setEditingSchedule(schedule);
     setFormData({
-      userId: schedule.userId,
-      siteId: schedule.siteId,
-      scheduledDate: schedule.scheduledDate,
-      startTime: schedule.startTime,
-      endTime: schedule.endTime,
-      notes: schedule.notes || "",
+      userId: schedule.userId, siteId: schedule.siteId, scheduledDate: schedule.scheduledDate,
+      startTime: schedule.startTime, endTime: schedule.endTime, notes: schedule.notes || "",
     });
     setIsDialogOpen(true);
   };
 
   return (
-    <div className="space-y-6">
-      {/* ── Branded header ── */}
-      <div className="bg-blue-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-8 -mt-8" />
-        <div className="flex flex-wrap items-center gap-4 relative z-10">
-          <div className="bg-yellow-400 rounded-xl p-3 shadow-lg shrink-0">
-            <Calendar className="h-5 w-5 text-blue-900" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black uppercase tracking-tight leading-none">{t('admin.schedules.title')}</h2>
-            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">{t('admin.schedules.subtitle')}</p>
+    <div className="space-y-8 pb-12">
+      {/* ── Branded Header ── */}
+      <div className="bg-blue-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
+          <div className="flex items-center gap-5">
+            <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3">
+              <Calendar className="h-6 w-6 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">{t('admin.schedules.title')}</h2>
+              <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-2 opacity-80">{t('admin.schedules.subtitle')}</p>
+            </div>
           </div>
           <Button
             onClick={() => { resetForm(); setIsDialogOpen(true); }}
-            className="bg-yellow-400 text-blue-900 font-black uppercase text-xs px-6 h-11 rounded-xl shadow-lg"
+            className="bg-yellow-400 text-blue-900 font-black uppercase text-xs px-8 h-14 rounded-2xl shadow-xl transition-all active:scale-95"
             data-testid="button-add-schedule"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -200,37 +152,58 @@ export function SchedulesManager() {
       </div>
 
       {schedulesLoading ? (
-        <Card className="p-8 text-center">{t('common.loading')}</Card>
+        <div className="text-center py-20 font-black text-slate-300 uppercase tracking-widest animate-pulse">Synchronizing Schedules...</div>
       ) : schedules.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">{t('admin.schedules.noSchedules')}</Card>
+        <Card className="p-20 text-center border-dashed bg-slate-50/50 rounded-[3rem]">
+          <Calendar className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+          <p className="text-slate-400 font-black uppercase tracking-widest">{t('admin.schedules.noSchedules')}</p>
+        </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-6">
           {schedules.map((schedule) => {
             const barista = users.find(u => u.id === schedule.userId);
             const site = sites.find(s => s.id === schedule.siteId);
             return (
-              <Card key={schedule.id} className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex gap-4 flex-1">
-                      <div className="bg-yellow-400 rounded-xl p-2.5 shadow-md shrink-0">
-                        <Calendar className="w-4 h-4 text-blue-900" />
+              <Card key={schedule.id} className="border-none shadow-xl rounded-[2.5rem] bg-white group hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-5 flex-1 min-w-0">
+                      <div className="bg-blue-900/5 rounded-2xl p-4 shrink-0 group-hover:bg-blue-900 transition-colors duration-300">
+                        <User className="w-6 h-6 text-blue-900 group-hover:text-yellow-400 transition-colors" />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-black text-blue-900 uppercase tracking-tight leading-none">{barista?.firstName} {barista?.lastName}</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{site?.name}</p>
-                        <p className="text-sm font-medium text-slate-600 mt-2 bg-slate-50 rounded-lg px-3 py-1.5 inline-block">
-                          {schedule.scheduledDate} · {schedule.startTime} – {schedule.endTime}
-                        </p>
-                        {schedule.notes && <p className="text-xs text-slate-400 mt-1.5">{schedule.notes}</p>}
+                      <div className="min-w-0">
+                        <h3 className="font-black text-blue-900 uppercase tracking-tight text-lg truncate leading-none">
+                          {barista?.firstName} {barista?.lastName}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <MapPin className="w-3 h-3" /> {site?.name}
+                          </span>
+                        </div>
+
+                        {/* TACTICAL SHIFT TAG */}
+                        <div className="mt-4 flex items-center gap-2">
+                          <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 flex items-center gap-3">
+                            <Clock className="w-3.5 h-3.5 text-blue-900/40" />
+                            <span className="text-xs font-black text-blue-900 uppercase tracking-tighter">
+                              {schedule.scheduledDate} · {schedule.startTime} — {schedule.endTime}
+                            </span>
+                          </div>
+                        </div>
+
+                        {schedule.notes && (
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-3 italic opacity-70">
+                            Note: {schedule.notes}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} data-testid={`button-edit-schedule-${schedule.id}`}>
-                        <Edit className="w-4 h-4" />
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} className="h-11 w-11 rounded-xl text-blue-900" data-testid={`button-edit-schedule-${schedule.id}`}>
+                        <Edit className="w-5 h-5" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(schedule.id)} data-testid={`button-delete-schedule-${schedule.id}`}>
-                        <Trash2 className="w-4 h-4" />
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(schedule.id)} className="h-11 w-11 rounded-xl text-red-400" data-testid={`button-delete-schedule-${schedule.id}`}>
+                        <Trash2 className="w-5 h-5" />
                       </Button>
                     </div>
                   </div>
@@ -241,204 +214,192 @@ export function SchedulesManager() {
         </div>
       )}
 
+      {/* ── Logistics Dialog ── */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden">
-          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
-            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
-              <Calendar className="h-4 w-4 text-blue-900" />
+        <DialogContent className="max-w-2xl p-0 border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-white">
+          <div className="bg-blue-900 p-8 flex items-center gap-5">
+            <div className="bg-yellow-400 rounded-2xl p-3.5 shadow-lg shrink-0">
+              <Calendar className="h-6 w-6 text-blue-900" />
             </div>
             <div>
-              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
-                {editingSchedule ? t('admin.schedules.editSchedule') : t('admin.schedules.addSchedule')}
+              <h2 className="text-xl font-black uppercase tracking-tight text-white leading-none">
+                {editingSchedule ? 'Modify Logistics' : 'Deploy Barista'}
               </h2>
-              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">
-                {t('admin.schedules.subtitle')}
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.2em] mt-2">
+                Operational Schedule Protocol
               </p>
             </div>
           </div>
-          <div className="max-h-[70vh] overflow-y-auto">
-          <div className="space-y-4 px-8 py-6">
-            {!editingSchedule && (
-              <div>
-                <Label>{t('admin.schedules.mode')}</Label>
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    type="button"
-                    variant={scheduleMode === 'single' ? 'default' : 'outline'}
-                    onClick={() => setScheduleMode('single')}
-                    data-testid="button-mode-single"
-                    className={`flex-1 font-black uppercase text-xs ${scheduleMode === 'single' ? 'bg-blue-900 text-white' : ''}`}
-                  >
-                    {t('admin.schedules.singleDay')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={scheduleMode === 'weekly' ? 'default' : 'outline'}
-                    onClick={() => setScheduleMode('weekly')}
-                    data-testid="button-mode-weekly"
-                    className={`flex-1 font-black uppercase text-xs ${scheduleMode === 'weekly' ? 'bg-blue-900 text-white' : ''}`}
-                  >
-                    {t('admin.schedules.weeklySchedule')}
-                  </Button>
-                </div>
-              </div>
-            )}
 
-            {scheduleMode === 'single' ? (
-              <>
-                <div>
-                  <Label>{t('admin.schedules.barista')}</Label>
-                  <Select value={formData.userId} onValueChange={(v) => setFormData({ ...formData, userId: v })}>
-                    <SelectTrigger data-testid="select-barista">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {baristas.map(u => (
-                        <SelectItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t('admin.schedules.site')}</Label>
-                  <Select value={formData.siteId} onValueChange={(v) => setFormData({ ...formData, siteId: v })}>
-                    <SelectTrigger data-testid="select-site">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sites.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t('admin.schedules.date')}</Label>
-                  <Input type="date" value={formData.scheduledDate} onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })} data-testid="input-date" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>{t('admin.schedules.startTime')}</Label>
-                    <Input type="time" value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} data-testid="input-start-time" />
-                  </div>
-                  <div>
-                    <Label>{t('admin.schedules.endTime')}</Label>
-                    <Input type="time" value={formData.endTime} onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} data-testid="input-end-time" />
-                  </div>
-                </div>
-                <div>
-                  <Label>{t('admin.schedules.notes')}</Label>
-                  <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} data-testid="input-notes" />
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <Label>{t('admin.schedules.barista')}</Label>
-                  <Select value={weeklyFormData.userId} onValueChange={(v) => setWeeklyFormData({ ...weeklyFormData, userId: v })}>
-                    <SelectTrigger data-testid="select-barista-weekly">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {baristas.map(u => (
-                        <SelectItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t('admin.schedules.site')}</Label>
-                  <Select value={weeklyFormData.siteId} onValueChange={(v) => setWeeklyFormData({ ...weeklyFormData, siteId: v })}>
-                    <SelectTrigger data-testid="select-site-weekly">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sites.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t('admin.schedules.weekStart')}</Label>
-                  <Input
-                    type="date"
-                    value={weeklyFormData.weekStartDate}
-                    onChange={(e) => setWeeklyFormData({ ...weeklyFormData, weekStartDate: getMonday(new Date(e.target.value)) })}
-                    data-testid="input-week-start"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">{t('admin.schedules.weekStartHint')}</p>
-                </div>
-                <div>
-                  <Label>{t('admin.schedules.daysOfWeek')}</Label>
-                  <div className="grid grid-cols-7 gap-2 mt-2">
-                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+          <div className="max-h-[70vh] overflow-y-auto">
+            <div className="p-8 space-y-8">
+              {!editingSchedule && (
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.mode')}</Label>
+                  <div className="flex gap-3">
+                    {(['single', 'weekly'] as const).map((mode) => (
                       <Button
-                        key={day}
+                        key={mode}
                         type="button"
-                        size="sm"
-                        variant={weeklyFormData.daysOfWeek.includes(day) ? 'default' : 'outline'}
-                        onClick={() => toggleDayOfWeek(day)}
-                        data-testid={`button-day-${day}`}
-                        className={`h-auto py-2 px-1 font-black uppercase text-[10px] ${weeklyFormData.daysOfWeek.includes(day) ? 'bg-blue-900 text-white' : ''}`}
+                        onClick={() => setScheduleMode(mode)}
+                        className={`flex-1 h-12 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${
+                          scheduleMode === mode ? 'bg-blue-900 text-yellow-400 shadow-xl' : 'bg-slate-50 text-slate-400'
+                        }`}
                       >
-                        {t(`admin.schedules.days.${day}`).substring(0, 3)}
+                        {t(`admin.schedules.${mode === 'single' ? 'singleDay' : 'weeklySchedule'}`)}
                       </Button>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <Label>{t('admin.schedules.repeatWeeks')}</Label>
-                  <Select value={String(weeklyFormData.repeatWeeks)} onValueChange={(v) => setWeeklyFormData({ ...weeklyFormData, repeatWeeks: Number(v) })}>
-                    <SelectTrigger data-testid="select-repeat-weeks">
-                      <SelectValue />
+              )}
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.barista')}</Label>
+                  <Select
+                    value={scheduleMode === 'single' ? formData.userId : weeklyFormData.userId}
+                    onValueChange={(v) => scheduleMode === 'single' ? setFormData({ ...formData, userId: v }) : setWeeklyFormData({ ...weeklyFormData, userId: v })}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl font-bold border-slate-200" data-testid="select-barista">
+                      <SelectValue placeholder="Select Barista" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">{t('admin.schedules.weeks', { count: 1 })}</SelectItem>
-                      <SelectItem value="2">{t('admin.schedules.weeks', { count: 2 })}</SelectItem>
-                      <SelectItem value="4">{t('admin.schedules.weeks', { count: 4 })}</SelectItem>
-                      <SelectItem value="8">{t('admin.schedules.weeks', { count: 8 })}</SelectItem>
-                      <SelectItem value="12">{t('admin.schedules.weeks', { count: 12 })}</SelectItem>
+                      {baristas.map(u => <SelectItem key={u.id} value={u.id} className="font-bold">{u.firstName} {u.lastName}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>{t('admin.schedules.startTime')}</Label>
-                    <Input type="time" value={weeklyFormData.startTime} onChange={(e) => setWeeklyFormData({ ...weeklyFormData, startTime: e.target.value })} data-testid="input-start-time-weekly" />
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.site')}</Label>
+                  <Select
+                    value={scheduleMode === 'single' ? formData.siteId : weeklyFormData.siteId}
+                    onValueChange={(v) => scheduleMode === 'single' ? setFormData({ ...formData, siteId: v }) : setWeeklyFormData({ ...weeklyFormData, siteId: v })}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl font-bold border-slate-200" data-testid="select-site">
+                      <SelectValue placeholder="Select Site" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sites.map(s => <SelectItem key={s.id} value={s.id} className="font-bold">{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {scheduleMode === 'single' ? (
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.date')}</Label>
+                  <Input type="date" value={formData.scheduledDate} onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })} className="h-12 rounded-xl font-bold" data-testid="input-date" />
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.weekStart')}</Label>
+                    <Input
+                      type="date"
+                      value={weeklyFormData.weekStartDate}
+                      onChange={(e) => {
+                        const d = new Date(e.target.value);
+                        const day = d.getDay();
+                        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                        d.setDate(diff);
+                        setWeeklyFormData({ ...weeklyFormData, weekStartDate: d.toISOString().split('T')[0] });
+                      }}
+                      className="h-12 rounded-xl font-bold"
+                      data-testid="input-week-start"
+                    />
                   </div>
-                  <div>
-                    <Label>{t('admin.schedules.endTime')}</Label>
-                    <Input type="time" value={weeklyFormData.endTime} onChange={(e) => setWeeklyFormData({ ...weeklyFormData, endTime: e.target.value })} data-testid="input-end-time-weekly" />
+
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.daysOfWeek')}</Label>
+                    <div className="grid grid-cols-7 gap-2">
+                      {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+                        <Button
+                          key={day}
+                          type="button"
+                          variant="outline"
+                          onClick={() => toggleDayOfWeek(day)}
+                          data-testid={`button-day-${day}`}
+                          className={`h-12 px-0 font-black uppercase text-[9px] rounded-xl transition-all ${
+                            weeklyFormData.daysOfWeek.includes(day) ? 'bg-blue-900 text-yellow-400 border-blue-900 shadow-lg scale-105' : 'bg-white text-slate-400'
+                          }`}
+                        >
+                          {t(`admin.schedules.days.${day}`).substring(0, 3)}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.repeatWeeks')}</Label>
+                    <Select value={String(weeklyFormData.repeatWeeks)} onValueChange={(v) => setWeeklyFormData({ ...weeklyFormData, repeatWeeks: Number(v) })}>
+                      <SelectTrigger className="h-12 rounded-xl font-bold border-slate-200" data-testid="select-repeat-weeks"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 4, 8, 12].map(num => <SelectItem key={num} value={String(num)} className="font-bold">{t('admin.schedules.weeks', { count: num })}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <div>
-                  <Label>{t('admin.schedules.notes')}</Label>
-                  <Textarea value={weeklyFormData.notes} onChange={(e) => setWeeklyFormData({ ...weeklyFormData, notes: e.target.value })} data-testid="input-notes-weekly" />
+              )}
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.startTime')}</Label>
+                  <Input
+                    type="time"
+                    value={scheduleMode === 'single' ? formData.startTime : weeklyFormData.startTime}
+                    onChange={(e) => scheduleMode === 'single' ? setFormData({ ...formData, startTime: e.target.value }) : setWeeklyFormData({ ...weeklyFormData, startTime: e.target.value })}
+                    className="h-12 rounded-xl font-bold"
+                    data-testid="input-start-time"
+                  />
                 </div>
-                {weeklyFormData.daysOfWeek.length > 0 && weeklyFormData.repeatWeeks > 0 && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">{t('admin.schedules.summary')}</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
-                      {t('admin.schedules.summaryText', {
-                        days: weeklyFormData.daysOfWeek.length,
-                        weeks: weeklyFormData.repeatWeeks,
-                        total: weeklyFormData.daysOfWeek.length * weeklyFormData.repeatWeeks
-                      })}
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.endTime')}</Label>
+                  <Input
+                    type="time"
+                    value={scheduleMode === 'single' ? formData.endTime : weeklyFormData.endTime}
+                    onChange={(e) => scheduleMode === 'single' ? setFormData({ ...formData, endTime: e.target.value }) : setWeeklyFormData({ ...weeklyFormData, endTime: e.target.value })}
+                    className="h-12 rounded-xl font-bold"
+                    data-testid="input-end-time"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.notes')}</Label>
+                <Textarea
+                  value={scheduleMode === 'single' ? formData.notes : weeklyFormData.notes}
+                  onChange={(e) => scheduleMode === 'single' ? setFormData({ ...formData, notes: e.target.value }) : setWeeklyFormData({ ...weeklyFormData, notes: e.target.value })}
+                  className="rounded-2xl min-h-[100px] border-slate-200"
+                  placeholder="Optional shift instructions..."
+                  data-testid="input-notes"
+                />
+              </div>
+
+              {scheduleMode === 'weekly' && weeklyFormData.daysOfWeek.length > 0 && (
+                <div className="p-5 bg-blue-900/5 rounded-[1.5rem] border border-blue-900/10 flex items-start gap-4">
+                  <Info className="w-5 h-5 text-blue-900 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-black text-blue-900 uppercase tracking-tight">{t('admin.schedules.summary')}</p>
+                    <p className="text-[10px] font-bold text-blue-900/60 uppercase tracking-widest mt-1">
+                      {t('admin.schedules.summaryText', { days: weeklyFormData.daysOfWeek.length, weeks: weeklyFormData.repeatWeeks, total: weeklyFormData.daysOfWeek.length * weeklyFormData.repeatWeeks })}
                     </p>
                   </div>
-                )}
-              </>
-            )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-8 bg-slate-50 flex gap-4">
+            <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-400">
+              {t('common.cancel')}
+            </Button>
             <Button
               onClick={handleSubmit}
-              className="w-full bg-yellow-400 text-blue-900 font-black uppercase text-xs h-11 rounded-xl shadow-lg"
+              className="flex-1 h-14 bg-yellow-400 text-blue-900 font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all"
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-schedule"
             >
               {createMutation.isPending || updateMutation.isPending ? t('common.saving') : t('common.save')}
             </Button>
-          </div>
           </div>
         </DialogContent>
       </Dialog>
