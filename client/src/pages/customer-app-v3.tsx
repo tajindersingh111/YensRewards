@@ -573,25 +573,43 @@ export default function CustomerAppV3() {
         {activeTab === "home" && (
           <>
             {/* Points Progress Card */}
-        <Card className="p-4 rounded-2xl border-0 shadow-md bg-white">
-          <div className="flex items-center gap-4">
-            {/* Points Badge Icon */}
-            <div className="relative w-14 h-14 flex-shrink-0 bg-blue-900/10 rounded-xl flex items-center justify-center border border-blue-900/5 shadow-inner">
-              <span className="text-2xl font-bold text-blue-900">{pointsToNextReward}</span>
-              <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-blue-900 text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-md uppercase tracking-tighter">
-                pts
+        <Card className="p-6 rounded-[2rem] border-none shadow-xl bg-white relative overflow-hidden group" data-testid="card-reward-milestone">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <Gift className="w-16 h-16 text-blue-900" />
+          </div>
+
+          <div className="flex items-center gap-5 relative z-10">
+            <div className="relative w-16 h-16 flex-shrink-0 bg-blue-900 rounded-2xl flex items-center justify-center shadow-lg -rotate-2">
+              <span className="text-3xl font-black text-yellow-400 tracking-tighter">
+                {pointsToNextReward}
+              </span>
+              <div className="absolute -bottom-2 -right-2 bg-white text-blue-900 text-[8px] font-black px-2 py-1 rounded-lg shadow-md border border-slate-100 uppercase tracking-tighter">
+                to go
               </div>
             </div>
-            
-            {/* Points Text */}
+
             <div className="flex-1">
-              <p className="text-lg font-semibold text-foreground">
+              <div className="flex items-center gap-2 mb-1">
+                <Star className="w-3 h-3 text-yellow-500" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                  Next Milestone
+                </p>
+              </div>
+              <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight leading-tight">
                 {t('customer.pointsAway', { points: pointsToNextReward })}
-              </p>
-              <p className="text-sm text-muted-foreground">
+                <span className="text-yellow-500 ml-1">to a Free Treat</span>
+              </h3>
+              <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest opacity-80">
                 {t('customer.pointsUntilReward', { points: 50 })}
               </p>
             </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-slate-100">
+            <div
+              className="h-full bg-yellow-400 transition-all duration-1000 ease-out"
+              style={{ width: `${Math.min(100, ((50 - pointsToNextReward) / 50) * 100)}%` }}
+            />
           </div>
         </Card>
 
