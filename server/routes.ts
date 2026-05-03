@@ -70,6 +70,45 @@ function clearAuthFailures(ip: string): void {
   authRateMap.delete(ip);
 }
 
+// ============ In-memory rate limiter for public customer registration ============
+// Limits new account creation per IP address.
+// Max 5 registrations per hour per IP — generous for legitimate walk-in signups,
+// tight enough to prevent bulk fake-account creation flooding the customer table.
+const REG_WINDOW_MS  = 60 * 60 * 1000; // 1 hour sliding window
+const REG_MAX_PER_IP = 5;
+const REG_LOCKOUT_MS = 60 * 60 * 1000; // 1 hour lockout
+
+interface RegRateEntry { count: number; windowStart: number; lockedUntil?: number; }
+const regIpRateMap = new Map<string, RegRateEntry>();
+
+function checkRegRateLimit(ip: string): { allowed: boolean; retryAfterSecs?: number } {
+  const now = Date.now();
+  const entry = regIpRateMap.get(ip);
+  if (entry?.lockedUntil && now < entry.lockedUntil) {
+    return { allowed: false, retryAfterSecs: Math.ceil((entry.lockedUntil - now) / 1000) };
+  }
+  return { allowed: true };
+}
+
+function recordRegAttempt(ip: string): void {
+  const now = Date.now();
+  const entry = regIpRateMap.get(ip) ?? { count: 0, windowStart: now };
+
+  if (now - entry.windowStart > REG_WINDOW_MS) {
+    entry.count = 0;
+    entry.windowStart = now;
+    delete entry.lockedUntil;
+  }
+
+  entry.count += 1;
+  if (entry.count >= REG_MAX_PER_IP) {
+    entry.lockedUntil = now + REG_LOCKOUT_MS;
+    console.warn(`🔒 Registration rate limit: IP ${ip} locked out for 1 hour after ${entry.count} sign-up attempts`);
+  }
+
+  regIpRateMap.set(ip, entry);
+}
+
 // ============ In-memory rate limiter for customer OTP endpoints ============
 // Limits OTP requests per IP address and per phone number independently.
 // Per-IP: max 10 requests per 15 minutes (prevents mass enumeration/flooding from one source)
@@ -1702,6 +1741,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create customer (public registration — only safe profile fields accepted)
   app.post('/api/customers', async (req, res) => {
     try {
+      // Rate limit by IP — max 5 registrations per hour to prevent spam account creation
+      const regIp = getClientIp(req);
+      const regCheck = checkRegRateLimit(regIp);
+      if (!regCheck.allowed) {
+        res.setHeader('Retry-After', String(regCheck.retryAfterSecs));
+        return res.status(429).json({ message: "Too many sign-up attempts from this device. Please try again later." });
+      }
+
       const validatedData = publicInsertCustomerSchema.parse(req.body);
       
       // Check if customer with this phone already exists
@@ -1711,6 +1758,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "A customer with this phone number already exists" });
       }
       
+      // Record the attempt only on a genuine new-account creation (not on duplicates/validation errors)
+      recordRegAttempt(regIp);
       const customer = await storage.createCustomer(validatedData);
       res.status(201).json(customer);
     } catch (error: any) {
