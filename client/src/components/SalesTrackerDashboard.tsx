@@ -339,7 +339,7 @@ export default function SalesTrackerDashboard() {
                     <Button size="icon" variant="outline" onClick={() => setWeekOffset(o => o - 1)} data-testid="button-sales-week-prev">
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm font-bold text-blue-900 min-w-[168px] text-center" data-testid="text-sales-week-label">{weekLabel}</span>
+                    <span className="text-sm font-bold text-blue-900 min-w-[168px] text-center tabular-nums" data-testid="text-sales-week-label">{weekLabel}</span>
                     <Button size="icon" variant="outline" onClick={() => setWeekOffset(o => o + 1)} disabled={weekOffset >= 0} data-testid="button-sales-week-next">
                       <ChevronRight className="h-4 w-4" />
                     </Button>

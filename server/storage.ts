@@ -656,8 +656,10 @@ export class DbStorage implements IStorage {
     sortBy?: 'name' | 'totalSpent' | 'points' | 'createdAt';
     sortOrder?: 'asc' | 'desc';
     tierFilter?: string;
+    joinAfter?: string;
+    joinBefore?: string;
   }): Promise<{ data: Customer[]; totalCount: number }> {
-    const { page, pageSize, search, sortBy = 'createdAt', sortOrder = 'desc', tierFilter } = params;
+    const { page, pageSize, search, sortBy = 'createdAt', sortOrder = 'desc', tierFilter, joinAfter, joinBefore } = params;
     const offset = (page - 1) * pageSize;
 
     // Build base query with optional search
@@ -677,6 +679,15 @@ export class DbStorage implements IStorage {
 
     if (tierFilter && tierFilter !== 'all') {
       conditions.push(sql`${customers.tier} = ${tierFilter}`);
+    }
+
+    if (joinAfter) {
+      conditions.push(sql`${customers.createdAt} >= ${joinAfter}`);
+    }
+
+    if (joinBefore) {
+      // Add 1 day so "before 2025-05-03" is inclusive of that full day
+      conditions.push(sql`${customers.createdAt} < (${joinBefore}::date + interval '1 day')`);
     }
 
     if (conditions.length > 0) {

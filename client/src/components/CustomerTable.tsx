@@ -1,41 +1,92 @@
 /* LEF'S PREMIER YENS MEMBER LEDGER — BOUTIQUE REGISTRY MODULE */
-/* Changes: Executive Table Architecture, Tactical Member Chips, and High-Contrast Filtering */
+/* Changes: Server-side tier filter chips, join-date range, pagination */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Search, Filter, 
-  Phone, Download,
-  MoreVertical
+import {
+  Search, Filter, Phone, Download, MoreVertical, ChevronLeft, ChevronRight, X
 } from "lucide-react";
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  DropdownMenu, DropdownMenuContent, 
-  DropdownMenuItem, DropdownMenuTrigger 
+import {
+  DropdownMenu, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import type { Customer } from "@shared/schema";
 
-export default function CustomerTable({ customers: customersProp, onEdit, onMessage }: any) {
-  const [search, setSearch] = useState("");
+const PAGE_SIZE = 50;
 
-  const { data: fetchedCustomers = [], isLoading } = useQuery<Customer[]>({
-    queryKey: ['/api/admin/customers/all'],
+const TIERS = ['all', 'bronze', 'silver', 'gold', 'platinum'] as const;
+type Tier = typeof TIERS[number];
+
+const TIER_STYLES: Record<Tier, string> = {
+  all:      'border-slate-200 text-slate-500',
+  bronze:   'border-amber-400 text-amber-700',
+  silver:   'border-slate-400 text-slate-600',
+  gold:     'border-yellow-400 text-yellow-700',
+  platinum: 'border-purple-400 text-purple-700',
+};
+
+const TIER_ACTIVE: Record<Tier, string> = {
+  all:      'bg-blue-900 border-blue-900 text-yellow-400',
+  bronze:   'bg-amber-600 border-amber-600 text-white',
+  silver:   'bg-slate-500 border-slate-500 text-white',
+  gold:     'bg-yellow-500 border-yellow-500 text-blue-900',
+  platinum: 'bg-purple-600 border-purple-600 text-white',
+};
+
+export default function CustomerTable({ customers: customersProp, onEdit, onMessage }: any) {
+  const [search, setSearch]           = useState("");
+  const [debouncedSearch, setDebounced] = useState("");
+  const [tierFilter, setTierFilter]   = useState<Tier>("all");
+  const [joinAfter, setJoinAfter]     = useState("");
+  const [joinBefore, setJoinBefore]   = useState("");
+  const [page, setPage]               = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Debounce search 350 ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset to page 1 whenever any filter changes
+  useEffect(() => { setPage(1); }, [debouncedSearch, tierFilter, joinAfter, joinBefore]);
+
+  const { data, isLoading } = useQuery<{ data: Customer[]; totalCount: number }>({
+    queryKey: ['/api/admin/customers', page, PAGE_SIZE, debouncedSearch, tierFilter, joinAfter, joinBefore],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page:     String(page),
+        pageSize: String(PAGE_SIZE),
+        ...(debouncedSearch           ? { search:    debouncedSearch } : {}),
+        ...(tierFilter !== 'all'      ? { tier:      tierFilter      } : {}),
+        ...(joinAfter                 ? { joinAfter                  } : {}),
+        ...(joinBefore                ? { joinBefore                 } : {}),
+      });
+      const res = await fetch(`/api/admin/customers?${params}`, { credentials: 'include' });
+      return res.json();
+    },
     enabled: !customersProp,
   });
 
-  const customers = customersProp ?? fetchedCustomers;
+  const customers   = customersProp ?? data?.data ?? [];
+  const totalCount  = data?.totalCount ?? 0;
+  const totalPages  = Math.ceil(totalCount / PAGE_SIZE);
 
-  const filtered = customers.filter((c: any) => 
-    c.name?.toLowerCase().includes(search.toLowerCase()) || 
-    c.phone?.includes(search)
-  );
+  const activeFilterCount = [
+    tierFilter !== 'all',
+    !!joinAfter,
+    !!joinBefore,
+  ].filter(Boolean).length;
+
+  const clearDateFilters = () => { setJoinAfter(""); setJoinBefore(""); };
 
   if (isLoading && !customersProp) return (
     <div className="py-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-widest">
@@ -44,27 +95,102 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+
       {/* ── TACTICAL FILTER BAR ── */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-[2rem] shadow-sm border border-slate-50">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input 
-            placeholder="SEARCH REGISTRY..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-11 rounded-xl border-none bg-slate-50 font-bold text-xs tracking-widest focus-visible:ring-blue-900"
-            data-testid="input-customer-search"
-          />
+      <div className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-50 space-y-3">
+
+        {/* Row 1: search + filter toggle + export */}
+        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="SEARCH REGISTRY..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-11 rounded-xl border-none bg-slate-50 font-bold text-xs tracking-widest focus-visible:ring-blue-900"
+              data-testid="input-customer-search"
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Button
+              variant="outline"
+              className={`flex-1 md:flex-none rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest ${showFilters ? 'bg-blue-900 text-yellow-400 border-blue-900' : ''}`}
+              onClick={() => setShowFilters(f => !f)}
+              data-testid="button-filter"
+            >
+              <Filter className="w-3.5 h-3.5 mr-2" />
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge className="ml-2 text-[9px] px-1.5 py-0 bg-yellow-400 text-blue-900 font-black">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+            <Button
+              className="flex-1 md:flex-none bg-blue-900 text-yellow-400 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg"
+              data-testid="button-export"
+            >
+              <Download className="w-3.5 h-3.5 mr-2" /> Export
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Button variant="outline" className="flex-1 md:flex-none rounded-xl border-slate-100 font-black text-[10px] uppercase tracking-widest" data-testid="button-filter">
-            <Filter className="w-3.5 h-3.5 mr-2" /> Filters
-          </Button>
-          <Button className="flex-1 md:flex-none bg-blue-900 text-yellow-400 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg" data-testid="button-export">
-            <Download className="w-3.5 h-3.5 mr-2" /> Export
-          </Button>
+
+        {/* Row 2: Tier chips (always visible) */}
+        <div className="flex flex-wrap gap-2">
+          {TIERS.map(tier => {
+            const isActive = tierFilter === tier;
+            return (
+              <button
+                key={tier}
+                onClick={() => setTierFilter(tier)}
+                className={`px-3 py-1 rounded-full border-2 font-black text-[9px] uppercase tracking-widest transition-all ${
+                  isActive ? TIER_ACTIVE[tier] : `${TIER_STYLES[tier]} bg-white`
+                }`}
+                data-testid={`filter-tier-${tier}`}
+              >
+                {tier === 'all' ? 'All Tiers' : tier}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Row 3: Date range panel (collapsible) */}
+        {showFilters && (
+          <div className="flex flex-wrap items-end gap-3 pt-1 border-t border-slate-100">
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Joined After</label>
+              <Input
+                type="date"
+                value={joinAfter}
+                onChange={e => setJoinAfter(e.target.value)}
+                className="h-9 rounded-xl border-slate-100 font-bold text-xs w-44"
+                data-testid="filter-join-after"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Joined Before</label>
+              <Input
+                type="date"
+                value={joinBefore}
+                onChange={e => setJoinBefore(e.target.value)}
+                className="h-9 rounded-xl border-slate-100 font-bold text-xs w-44"
+                data-testid="filter-join-before"
+              />
+            </div>
+            {(joinAfter || joinBefore) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearDateFilters}
+                className="text-red-500 font-bold text-[10px] uppercase"
+                data-testid="button-clear-dates"
+              >
+                <X className="w-3 h-3 mr-1" /> Clear dates
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── THE MEMBER REGISTRY ── */}
@@ -79,7 +205,7 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((customer: any) => (
+            {customers.map((customer: any) => (
               <TableRow key={customer.id} className="group border-slate-50 hover:bg-blue-50/30 transition-colors" data-testid={`row-customer-${customer.id}`}>
 
                 {/* MEMBER CHIP */}
@@ -102,8 +228,9 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
                 {/* TIER STATUS */}
                 <TableCell>
                   <Badge variant="outline" className={`font-black text-[9px] uppercase px-2.5 py-0.5 border-2 ${
-                    customer.tier === 'gold' ? 'border-yellow-400 text-yellow-600' :
+                    customer.tier === 'gold'     ? 'border-yellow-400 text-yellow-600' :
                     customer.tier === 'platinum' ? 'border-purple-400 text-purple-600' :
+                    customer.tier === 'silver'   ? 'border-slate-400  text-slate-500'  :
                     'border-slate-200 text-slate-400'
                   }`}>
                     {customer.tier || 'BRONZE'}
@@ -121,8 +248,8 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
                 {/* ACTION HUD */}
                 <TableCell className="text-right pr-8">
                   <div className="flex items-center justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => onMessage(customer)}
                       className="rounded-xl font-black text-[9px] uppercase tracking-widest text-blue-900"
@@ -153,9 +280,40 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
           </TableBody>
         </Table>
 
-        {filtered.length === 0 && (
+        {customers.length === 0 && !isLoading && (
           <div className="py-20 text-center">
             <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">No Registry Matches Found</p>
+          </div>
+        )}
+
+        {/* ── PAGINATION FOOTER ── */}
+        {!customersProp && totalCount > 0 && (
+          <div className="flex items-center justify-between px-8 py-4 border-t border-slate-50 bg-slate-50/30">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest tabular-nums">
+              {totalCount.toLocaleString()} members &middot; page {page}/{totalPages || 1}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="rounded-xl"
+                data-testid="button-customers-page-prev"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="rounded-xl"
+                data-testid="button-customers-page-next"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         )}
       </Card>

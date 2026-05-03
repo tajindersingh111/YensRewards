@@ -1993,6 +1993,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sortBy = req.query.sortBy as 'name' | 'totalSpent' | 'points' | 'createdAt' | undefined;
       const sortOrder = req.query.sortOrder as 'asc' | 'desc' | undefined;
       const tierFilter = req.query.tier as string | undefined;
+      const joinAfter  = req.query.joinAfter  as string | undefined;
+      const joinBefore = req.query.joinBefore as string | undefined;
 
       // If pagination params provided, use paginated query
       if (page !== undefined && pageSize !== undefined) {
@@ -2001,7 +2003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Invalid pagination parameters" });
         }
 
-        const result = await storage.listCustomers({ page, pageSize, search, sortBy, sortOrder, tierFilter });
+        const result = await storage.listCustomers({ page, pageSize, search, sortBy, sortOrder, tierFilter, joinAfter, joinBefore });
         res.json(result);
       } else {
         // Legacy behavior: return all customers
