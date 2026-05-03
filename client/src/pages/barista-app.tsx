@@ -774,7 +774,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50 font-sans pb-20">
       {/* ── PREMIER BARISTA COCKPIT HEADER ── */}
       <header className="bg-blue-900 text-white p-4 sticky top-0 z-50 shadow-2xl border-b border-white/5">
         <div className="max-w-md md:max-w-4xl mx-auto flex items-center justify-between">
@@ -860,8 +860,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-md md:max-w-3xl mx-auto p-4">
+      <main className="max-w-md md:max-w-2xl mx-auto px-6 pt-6 space-y-6">
         {/* Sites Loading/Error States */}
         {sitesLoading && (
           <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
@@ -880,41 +879,45 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
           </Card>
         )}
 
-        {/* CLOCK IN DASHBOARD - Show when NOT clocked in */}
+        {/* SECTION 2: SHIFT AUTH (CLOCK-IN) */}
         {!isClockedIn && (
-          <>
-            {/* CLOCK IN SECTION */}
-            <Card className="p-4 mb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-chart-1" />
-                  <div>
-                    <p className="text-sm font-medium">{t('barista.notClockedIn')}</p>
-                    <p className="text-xs text-muted-foreground">{t('barista.clockInToStart')}</p>
-                  </div>
+          <Card className="p-6 border-none shadow-xl rounded-[2rem] bg-white overflow-hidden relative">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-900 rounded-2xl p-3 shadow-lg">
+                  <Clock className="w-5 h-5 text-yellow-400 animate-pulse" />
                 </div>
                 <div>
-                  <Button
-                    onClick={() => clockInMutation.mutate()}
-                    disabled={clockInMutation.isPending || activeSites.length === 0}
-                    size="sm"
-                    data-testid="button-clock-in"
-                  >
-                    {clockInMutation.isPending ? t('barista.clockingIn') : t('barista.clockIn')}
-                  </Button>
+                  <p className="text-sm font-black text-blue-900 uppercase tracking-tight">{t('barista.notClockedIn')}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('barista.clockInToStart')}</p>
                 </div>
               </div>
-            </Card>
+              <Button
+                onClick={() => clockInMutation.mutate()}
+                disabled={clockInMutation.isPending || activeSites.length === 0}
+                className="bg-yellow-400 text-blue-900 font-black uppercase text-xs px-6 h-12 rounded-xl shadow-lg"
+                data-testid="button-clock-in"
+              >
+                {clockInMutation.isPending ? t('barista.clockingIn') : t('barista.clockIn')}
+              </Button>
+            </div>
+          </Card>
+        )}
 
-            {/* WORK SCHEDULE SECTION */}
-            <Card className="p-4 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="w-5 h-5 text-chart-2" />
-                <h3 className="font-semibold">{t('barista.mySchedule')}</h3>
+        {/* SECTIONS 3 & 4: DUTY ROSTER & ALERTS — only when not clocked in */}
+        {!isClockedIn && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Duty Roster */}
+            <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white">
+              <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+                <div className="bg-yellow-400 rounded-xl p-2">
+                  <Calendar className="w-4 h-4 text-blue-900" />
+                </div>
+                <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.mySchedule')}</h3>
               </div>
-              {workSchedules.length > 0 ? (
-                <div className="space-y-2">
-                  {workSchedules.slice(0, 3).map((schedule) => (
+              <div className="p-6 space-y-3">
+                {workSchedules.length > 0 ? (
+                  workSchedules.slice(0, 3).map((schedule) => (
                     <div key={schedule.id} className="text-sm flex justify-between items-center p-2 bg-muted rounded">
                       <div>
                         <p className="font-medium">{new Date(schedule.scheduledDate).toLocaleDateString()}</p>
@@ -924,22 +927,24 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                         <p>{schedule.startTime} - {schedule.endTime}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t('barista.noSchedules')}</p>
-              )}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('barista.noSchedules')}</p>
+                )}
+              </div>
             </Card>
 
-            {/* ANNOUNCEMENTS SECTION */}
-            <Card className="p-4 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Bell className="w-5 h-5 text-chart-3" />
-                <h3 className="font-semibold">{t('barista.announcements')}</h3>
+            {/* Announcements */}
+            <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white">
+              <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+                <div className="bg-yellow-400 rounded-xl p-2">
+                  <Bell className="w-4 h-4 text-blue-900" />
+                </div>
+                <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.announcements')}</h3>
               </div>
-              {announcements.length > 0 ? (
-                <div className="space-y-2">
-                  {announcements.slice(0, 2).map((announcement) => (
+              <div className="p-6 space-y-3">
+                {announcements.length > 0 ? (
+                  announcements.slice(0, 2).map((announcement) => (
                     <div key={announcement.id} className="text-sm p-3 bg-muted rounded">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <p className="font-medium">{announcement.title}</p>
@@ -949,82 +954,91 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                       </div>
                       <p className="text-xs text-muted-foreground">{announcement.content}</p>
                     </div>
-                  ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('barista.noAnnouncements')}</p>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* SECTIONS 5 & 6: PERFORMANCE & LEADERBOARD — only when not clocked in */}
+        {!isClockedIn && (
+          <div className="grid grid-cols-1 gap-6">
+            {/* My Performance */}
+            <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white" data-testid="performance-stats">
+              <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+                <div className="bg-yellow-400 rounded-xl p-2">
+                  <Sparkles className="w-4 h-4 text-blue-900" />
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t('barista.noAnnouncements')}</p>
-              )}
+                <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.myPerformance')}</h3>
+                <Badge variant="outline" className="ml-auto text-xs border-blue-400 text-blue-300">{t('barista.thisWeek')}</Badge>
+              </div>
+              <div className="p-6 grid grid-cols-2 gap-4">
+                {myPerformance ? (
+                  <>
+                    <div className="text-center p-3 bg-muted rounded">
+                      <p className="text-2xl font-bold text-blue-900">{myPerformance.transactionCount}</p>
+                      <p className="text-xs text-muted-foreground">{t('barista.totalTransactions')}</p>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded">
+                      <p className="text-2xl font-bold text-yellow-500">{myPerformance.totalPoints}</p>
+                      <p className="text-xs text-muted-foreground">{t('barista.totalPoints')}</p>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded">
+                      <p className="text-2xl font-bold text-blue-900">{myPerformance.specialOffersSold}</p>
+                      <p className="text-xs text-muted-foreground">{t('barista.specialsSold')}</p>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded">
+                      <p className="text-2xl font-bold text-blue-900">{myPerformance.newCustomerSignups}</p>
+                      <p className="text-xs text-muted-foreground">{t('barista.newSignups')}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="col-span-2 text-center py-4">
+                    <p className="text-sm text-muted-foreground">{t('barista.noPerformanceData')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('barista.startSellingToEarnPoints')}</p>
+                  </div>
+                )}
+              </div>
             </Card>
 
-            {/* MY PERFORMANCE SECTION */}
-            <Card className="p-4 mb-4" data-testid="performance-stats">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-yellow-600" />
-                <h3 className="font-semibold">{t('barista.myPerformance')}</h3>
-                <Badge variant="outline" className="ml-auto text-xs">{t('barista.thisWeek')}</Badge>
-              </div>
-              {myPerformance ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 bg-muted rounded">
-                    <p className="text-2xl font-bold text-chart-1">{myPerformance.transactionCount}</p>
-                    <p className="text-xs text-muted-foreground">{t('barista.totalTransactions')}</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded">
-                    <p className="text-2xl font-bold text-yellow-600">{myPerformance.totalPoints}</p>
-                    <p className="text-xs text-muted-foreground">{t('barista.totalPoints')}</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded">
-                    <p className="text-2xl font-bold text-chart-3">{myPerformance.specialOffersSold}</p>
-                    <p className="text-xs text-muted-foreground">{t('barista.specialsSold')}</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded">
-                    <p className="text-2xl font-bold text-chart-4">{myPerformance.newCustomerSignups}</p>
-                    <p className="text-xs text-muted-foreground">{t('barista.newSignups')}</p>
-                  </div>
+            {/* Champions Circle / Leaderboard */}
+            <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white" data-testid="leaderboard">
+              <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+                <div className="bg-yellow-400 rounded-xl p-2">
+                  <Trophy className="w-4 h-4 text-blue-900" />
                 </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">{t('barista.noPerformanceData')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t('barista.startSellingToEarnPoints')}</p>
-                </div>
-              )}
-            </Card>
-
-            {/* LEADERBOARD SECTION */}
-            <Card className="p-4 mb-4" data-testid="leaderboard">
-              <div className="flex items-center gap-2 mb-3">
-                <Trophy className="w-5 h-5 text-yellow-600" />
-                <h3 className="font-semibold">{t('barista.leaderboard')}</h3>
-                <Badge variant="outline" className="ml-auto text-xs">{t('barista.top')} 5</Badge>
+                <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.leaderboard')}</h3>
+                <Badge variant="outline" className="ml-auto text-xs border-blue-400 text-blue-300">{t('barista.top')} 5</Badge>
               </div>
-              {leaderboard.length > 0 ? (
-                <div className="space-y-2">
-                  {leaderboard.slice(0, 5).map((entry: any, index: number) => (
+              <div className="p-6 space-y-3">
+                {leaderboard.length > 0 ? (
+                  leaderboard.slice(0, 5).map((entry: any, index: number) => (
                     <div key={entry.id} className="flex items-center gap-3 p-2 bg-muted rounded" data-testid={`leaderboard-entry-${index}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                        index === 0 ? 'bg-yellow-500 text-white' :
+                        index === 0 ? 'bg-yellow-400 text-blue-900' :
                         index === 1 ? 'bg-gray-400 text-white' :
                         index === 2 ? 'bg-orange-600 text-white' :
                         'bg-muted-foreground/20 text-muted-foreground'
-                      }`}>
-                        {index + 1}
-                      </div>
+                      }`}>{index + 1}</div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">{entry.user?.firstName} {entry.user?.lastName}</p>
                         <p className="text-xs text-muted-foreground">{entry.transactionCount} {t('barista.totalTransactions').toLowerCase()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-yellow-600">{entry.totalPoints}</p>
+                        <p className="text-sm font-bold text-yellow-500">{entry.totalPoints}</p>
                         <p className="text-xs text-muted-foreground">{t('barista.totalPoints').toLowerCase()}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">{t('barista.noPerformanceData')}</p>
-              )}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">{t('barista.noPerformanceData')}</p>
+                )}
+              </div>
             </Card>
-          </>
+          </div>
         )}
 
         {/* CUSTOMER SEARCH & TRANSACTION WORKFLOW - Show ONLY when clocked in */}
