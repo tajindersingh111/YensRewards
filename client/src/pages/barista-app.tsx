@@ -978,21 +978,21 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
               <div className="p-6 grid grid-cols-2 gap-4">
                 {myPerformance ? (
                   <>
-                    <div className="text-center p-3 bg-muted rounded">
-                      <p className="text-2xl font-bold text-blue-900">{myPerformance.transactionCount}</p>
-                      <p className="text-xs text-muted-foreground">{t('barista.totalTransactions')}</p>
+                    <div className="text-center p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-2xl font-black text-blue-900">{myPerformance.transactionCount}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('barista.totalTransactions')}</p>
                     </div>
-                    <div className="text-center p-3 bg-muted rounded">
-                      <p className="text-2xl font-bold text-yellow-500">{myPerformance.totalPoints}</p>
-                      <p className="text-xs text-muted-foreground">{t('barista.totalPoints')}</p>
+                    <div className="text-center p-3 bg-amber-50 rounded-2xl">
+                      <p className="text-2xl font-black text-yellow-600">{myPerformance.totalPoints}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('barista.totalPoints')}</p>
                     </div>
-                    <div className="text-center p-3 bg-muted rounded">
-                      <p className="text-2xl font-bold text-blue-900">{myPerformance.specialOffersSold}</p>
-                      <p className="text-xs text-muted-foreground">{t('barista.specialsSold')}</p>
+                    <div className="text-center p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-2xl font-black text-blue-900">{myPerformance.specialOffersSold}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('barista.specialsSold')}</p>
                     </div>
-                    <div className="text-center p-3 bg-muted rounded">
-                      <p className="text-2xl font-bold text-blue-900">{myPerformance.newCustomerSignups}</p>
-                      <p className="text-xs text-muted-foreground">{t('barista.newSignups')}</p>
+                    <div className="text-center p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-2xl font-black text-blue-900">{myPerformance.newCustomerSignups}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('barista.newSignups')}</p>
                     </div>
                   </>
                 ) : (
@@ -1016,7 +1016,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
               <div className="p-6 space-y-3">
                 {leaderboard.length > 0 ? (
                   leaderboard.slice(0, 5).map((entry: any, index: number) => (
-                    <div key={entry.id} className="flex items-center gap-3 p-2 bg-muted rounded" data-testid={`leaderboard-entry-${index}`}>
+                    <div key={entry.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl" data-testid={`leaderboard-entry-${index}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
                         index === 0 ? 'bg-yellow-400 text-blue-900' :
                         index === 1 ? 'bg-gray-400 text-white' :
@@ -1147,7 +1147,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                                 {customer.photo ? (
                                   <AvatarImage src={customer.photo} alt={customer.name} />
                                 ) : (
-                                  <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+                                  <AvatarFallback className="bg-blue-900 text-white text-lg font-black">
                                     {customer.name.charAt(0)}
                                   </AvatarFallback>
                                 )}
@@ -1633,7 +1633,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         <DialogContent className="sm:max-w-md" data-testid="dialog-quick-register">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-chart-1" />
+              <UserPlus className="w-5 h-5 text-blue-900" />
               {t('barista.quickRegister')}
             </DialogTitle>
           </DialogHeader>
@@ -1680,7 +1680,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
               {t('common.cancel')}
             </Button>
             <Button 
-              className="bg-chart-1 hover:bg-chart-1/90 text-white"
+              className="bg-yellow-400 text-blue-900 font-black uppercase text-xs"
               onClick={handleQuickRegisterSubmit}
               disabled={quickRegisterMutation.isPending}
               data-testid="button-submit-register"

@@ -30,10 +30,10 @@ export default function ReferralCard({ referralCode, referralCount }: ReferralCa
   };
 
   return (
-    <Card className="overflow-hidden" data-testid="card-referral">
+    <Card className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden" data-testid="card-referral">
       {/* Blue-900 header block */}
       <div className="bg-blue-900 px-4 py-3 flex items-center gap-3">
-        <div className="bg-yellow-400 rounded-lg p-2 flex-shrink-0">
+        <div className="bg-yellow-400 rounded-xl p-3 shadow-lg flex-shrink-0">
           <Users className="w-4 h-4 text-blue-900" />
         </div>
         <h3 className="text-base font-black text-white uppercase tracking-tight">
