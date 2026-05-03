@@ -35,14 +35,18 @@ export default function SendMessageForm() {
       {/* Campaign Settings (Left/Center) */}
       <div className="lg:col-span-2 space-y-6">
         <Card className="border-none shadow-sm rounded-3xl bg-white overflow-hidden">
-          <div className="bg-blue-900 p-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-yellow-400 rounded-xl p-2 shadow-lg">
+          <div className="bg-blue-900 p-6 flex items-center justify-between relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-12 -mt-12" />
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3">
                 <Megaphone className="h-5 w-5 text-blue-900" />
               </div>
-              <h3 className="text-white font-black uppercase tracking-tight">Campaign Dispatch</h3>
+              <div>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Campaign Dispatch</h3>
+                <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-1.5 opacity-80">Compose &amp; broadcast messages</p>
+              </div>
             </div>
-            <Badge className="bg-white/10 text-white border-none font-black text-[9px] uppercase">Secure Channel</Badge>
+            <Badge className="bg-white/10 text-white border-none font-black text-[9px] uppercase relative z-10">Secure Channel</Badge>
           </div>
 
           <CardContent className="p-8">

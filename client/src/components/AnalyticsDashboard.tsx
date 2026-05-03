@@ -33,17 +33,18 @@ export default function AnalyticsDashboard() {
     <div className="min-h-screen bg-slate-50/30 pb-12">
       {/* Branded Header */}
       <div className="max-w-7xl mx-auto px-6 pt-6 mb-8">
-        <div className="bg-blue-900 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center gap-4">
-            <div className="bg-yellow-400 rounded-xl p-3 shadow-lg">
+        <div className="bg-blue-900 rounded-[2rem] p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3">
               <Activity className="w-5 h-5 text-blue-900" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-white uppercase tracking-tight leading-none">Performance Analytics</h1>
-              <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-90">Growth &amp; Projections</p>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Performance Analytics</h1>
+              <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-1.5 opacity-80">Growth &amp; Projections</p>
             </div>
           </div>
-          <Badge variant="outline" className="bg-white/10 border-white/20 text-white font-black px-4 py-2 text-sm">
+          <Badge variant="outline" className="bg-white/10 border-white/20 text-white font-black px-4 py-2 text-sm relative z-10">
             {summary.totalTransactions} TOTAL SALES LOGGED
           </Badge>
         </div>
