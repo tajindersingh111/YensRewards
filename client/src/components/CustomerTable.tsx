@@ -200,6 +200,7 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
             <TableRow className="hover:bg-transparent border-none">
               <TableHead className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] h-14 px-8">Member Identity</TableHead>
               <TableHead className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] h-14">Tier Status</TableHead>
+              <TableHead className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] h-14 text-right">Total Spent</TableHead>
               <TableHead className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] h-14 text-center">Point Balance</TableHead>
               <TableHead className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] h-14 text-right pr-8">Actions</TableHead>
             </TableRow>
@@ -235,6 +236,13 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
                   }`}>
                     {customer.tier || 'BRONZE'}
                   </Badge>
+                </TableCell>
+
+                {/* LTV / TOTAL SPENT */}
+                <TableCell className="text-right">
+                  <span className="text-sm font-black text-blue-900 tabular-nums">
+                    ฿{Number(customer.totalSpent || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </span>
                 </TableCell>
 
                 {/* POINT BALANCE */}
