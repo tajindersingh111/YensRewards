@@ -16,24 +16,24 @@ export default function MessagesPage() {
   return (
     <div className="space-y-6">
       {/* PREMIER BLUE-900 HEADER BLOCK */}
-      <div className="bg-blue-900 rounded-2xl p-6 text-white flex items-center justify-between shadow-xl">
-        <div className="flex items-center gap-4">
-          {/* Yellow Icon Box */}
-          <div className="bg-yellow-400 rounded-xl p-3 shadow-lg transform -rotate-3 group-hover:rotate-0 transition-transform">
+      <div className="bg-blue-900 rounded-[2rem] p-6 flex items-center justify-between shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3">
             <Megaphone className="w-6 h-6 text-blue-900" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white uppercase tracking-tight leading-none">
+            <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">
               {t('messages.title', 'Marketing Hub')}
             </h1>
-            <p className="text-blue-300 text-[11px] font-bold uppercase tracking-[0.15em] mt-2 opacity-90">
+            <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-1.5 opacity-80">
               {t('messages.subtitle', 'Campaign Commander & Engagement Engine')}
             </p>
           </div>
         </div>
 
         {/* System Status HUD */}
-        <div className="hidden md:flex gap-2">
+        <div className="hidden md:flex gap-2 relative z-10">
           <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-md flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-[10px] font-black text-white uppercase tracking-widest">

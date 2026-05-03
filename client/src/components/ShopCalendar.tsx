@@ -161,15 +161,16 @@ function EventDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg p-0 border-none shadow-2xl rounded-[2rem]">
-        <div className="bg-blue-900 px-8 py-6 rounded-t-[2rem] flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+        <div className="bg-blue-900 px-8 py-6 rounded-t-[2rem] flex items-center gap-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-12 -mt-12" />
+          <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3 relative z-10">
             <Calendar className="w-5 h-5 text-blue-900" />
           </div>
-          <div>
-            <h2 className="text-sm font-black text-white uppercase tracking-widest leading-none" data-testid="dialog-event-title">
+          <div className="relative z-10">
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none" data-testid="dialog-event-title">
               {isEdit ? "Edit Event" : "Add Event"}
             </h2>
-            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">
+            <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-1.5 opacity-80">
               {isEdit ? "Update event details" : "Schedule a new shop event"}
             </p>
           </div>
@@ -612,14 +613,15 @@ export default function ShopCalendar() {
   return (
     <div className="flex flex-col h-full gap-4">
       {/* Header */}
-      <div className="bg-blue-900 rounded-2xl p-6 text-white flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg">
+      <div className="bg-blue-900 rounded-[2rem] p-6 flex flex-wrap items-center justify-between gap-3 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3">
             <CalendarDays className="h-5 w-5 text-blue-900" />
           </div>
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tight">Shop Calendar</h2>
-            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">Plan events, expos, promotions and more</p>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Shop Calendar</h2>
+            <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-1.5 opacity-80">Plan events, expos, promotions and more</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
