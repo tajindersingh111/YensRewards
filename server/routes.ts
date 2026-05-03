@@ -1996,6 +1996,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const joinAfter  = req.query.joinAfter  as string | undefined;
       const joinBefore = req.query.joinBefore as string | undefined;
 
+      // Validate date params before hitting the storage layer
+      const isValidDate = (d: string | undefined) => !d || !isNaN(Date.parse(d));
+      if (!isValidDate(joinAfter) || !isValidDate(joinBefore)) {
+        return res.status(400).json({ message: "PROTOCOL ERROR: Invalid date format. Please use YYYY-MM-DD." });
+      }
+
       // If pagination params provided, use paginated query
       if (page !== undefined && pageSize !== undefined) {
         // Validate pagination params
