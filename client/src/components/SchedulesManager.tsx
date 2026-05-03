@@ -243,14 +243,19 @@ export function SchedulesManager() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="bg-blue-900 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
-            <DialogTitle className="flex items-center gap-3 text-white">
-              <div className="bg-yellow-400 rounded-md p-1.5">
+          <DialogHeader className="bg-blue-900 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-2xl">
+            <DialogTitle className="flex items-center gap-4 text-white">
+              <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
                 <Calendar className="h-4 w-4 text-blue-900" />
               </div>
-              <span className="font-black uppercase tracking-tight">
-                {editingSchedule ? t('admin.schedules.editSchedule') : t('admin.schedules.addSchedule')}
-              </span>
+              <div>
+                <span className="font-black uppercase tracking-tight leading-none block">
+                  {editingSchedule ? t('admin.schedules.editSchedule') : t('admin.schedules.addSchedule')}
+                </span>
+                <span className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1 opacity-90 block">
+                  {editingSchedule ? t('admin.schedules.subtitle') : t('admin.schedules.subtitle')}
+                </span>
+              </div>
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
@@ -263,7 +268,7 @@ export function SchedulesManager() {
                     variant={scheduleMode === 'single' ? 'default' : 'outline'}
                     onClick={() => setScheduleMode('single')}
                     data-testid="button-mode-single"
-                    className={`flex-1 ${scheduleMode === 'single' ? 'bg-blue-900 hover:bg-blue-800 text-white' : ''}`}
+                    className={`flex-1 font-black uppercase text-xs ${scheduleMode === 'single' ? 'bg-blue-900 text-white' : ''}`}
                   >
                     {t('admin.schedules.singleDay')}
                   </Button>
@@ -272,7 +277,7 @@ export function SchedulesManager() {
                     variant={scheduleMode === 'weekly' ? 'default' : 'outline'}
                     onClick={() => setScheduleMode('weekly')}
                     data-testid="button-mode-weekly"
-                    className={`flex-1 ${scheduleMode === 'weekly' ? 'bg-blue-900 hover:bg-blue-800 text-white' : ''}`}
+                    className={`flex-1 font-black uppercase text-xs ${scheduleMode === 'weekly' ? 'bg-blue-900 text-white' : ''}`}
                   >
                     {t('admin.schedules.weeklySchedule')}
                   </Button>
@@ -376,7 +381,7 @@ export function SchedulesManager() {
                         variant={weeklyFormData.daysOfWeek.includes(day) ? 'default' : 'outline'}
                         onClick={() => toggleDayOfWeek(day)}
                         data-testid={`button-day-${day}`}
-                        className={`h-auto py-2 px-1 ${weeklyFormData.daysOfWeek.includes(day) ? 'bg-blue-900 hover:bg-blue-800 text-white' : ''}`}
+                        className={`h-auto py-2 px-1 font-black uppercase text-[10px] ${weeklyFormData.daysOfWeek.includes(day) ? 'bg-blue-900 text-white' : ''}`}
                       >
                         {t(`admin.schedules.days.${day}`).substring(0, 3)}
                       </Button>
@@ -428,7 +433,7 @@ export function SchedulesManager() {
             )}
             <Button
               onClick={handleSubmit}
-              className="w-full bg-blue-900 hover:bg-blue-800 text-white"
+              className="w-full bg-yellow-400 text-blue-900 font-black uppercase text-xs h-11 rounded-xl shadow-lg"
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-schedule"
             >
