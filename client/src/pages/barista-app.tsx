@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, ArrowRight, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown, Smartphone, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown, Smartphone, Users, UserCheck, ShieldCheck, Check, X } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -1265,59 +1265,98 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
 
         {/* VERIFY STEP */}
         {isClockedIn && step === "verify" && selectedCustomer && (
-          <div className="pt-8">
-            <Card className="p-6 space-y-6">
-              <div className="text-center space-y-4">
-                <Avatar className="w-24 h-24 mx-auto">
+          <Card className="overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white" data-testid="card-verify-profile">
+            {/* Identity Header Block */}
+            <div className="bg-blue-900 px-8 py-5 flex items-center gap-4">
+              <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg">
+                <UserCheck className="w-5 h-5 text-blue-900" />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-white uppercase tracking-tighter">
+                  {t('barista.verifyIdentity')}
+                </h2>
+                <p className="text-blue-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
+                  Confirm Member Profile
+                </p>
+              </div>
+            </div>
+
+            <div className="p-8 flex flex-col items-center text-center">
+              {/* Golden-ringed Avatar */}
+              <div className="relative mb-6">
+                <Avatar className="w-24 h-24 rounded-3xl ring-4 ring-yellow-400 border-4 border-white shadow-2xl">
                   {selectedCustomer.photo ? (
-                    <AvatarImage src={selectedCustomer.photo} alt={selectedCustomer.name} />
+                    <AvatarImage src={selectedCustomer.photo} className="object-cover" alt={selectedCustomer.name} />
                   ) : (
-                    <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
-                      {selectedCustomer.name.charAt(0)}
+                    <AvatarFallback className="bg-blue-900 text-white text-2xl font-black">
+                      {selectedCustomer.name?.charAt(0)}
                     </AvatarFallback>
                   )}
                 </Avatar>
-                
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">{selectedCustomer.name}</h2>
-                  <p className="text-3xl font-bold text-foreground mt-2">{selectedCustomer.phone}</p>
-                  
-                  <div className="flex items-center justify-center gap-4 mt-4">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">{t('customer.points')}</p>
-                      <p className="text-2xl font-bold text-chart-1">{selectedCustomer.points}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">{t('customer.tier')}</p>
-                      <Badge className={getTierColor(selectedCustomer.tier)}>
-                        {t(`customer.tiers.${selectedCustomer.tier}`)}
-                      </Badge>
-                    </div>
-                  </div>
+                <div className="absolute -bottom-2 -right-2 bg-blue-900 text-yellow-400 p-1.5 rounded-xl border-2 border-white shadow-lg">
+                  <ShieldCheck className="w-4 h-4" />
                 </div>
               </div>
 
-              <div className="space-y-3">
+              {/* Customer Info */}
+              <div className="space-y-1 mb-8">
+                <h3 className="text-2xl font-black text-blue-900 uppercase tracking-tighter">
+                  {selectedCustomer.name}
+                </h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                  {selectedCustomer.phone || 'No Handset Linked'}
+                </p>
+              </div>
+
+              {/* Points Vault Pod */}
+              <div className="w-full bg-slate-50 border border-slate-100 rounded-[2rem] p-6 mb-8 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-yellow-400" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                  Member Point Balance
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-4xl font-black text-blue-900 tracking-tighter">
+                    {selectedCustomer.points || 0}
+                  </span>
+                  <span className="text-lg font-black text-yellow-500 uppercase">Pts</span>
+                </div>
+                <div className="mt-3">
+                  <Badge className={getTierColor(selectedCustomer.tier)}>
+                    {t(`customer.tiers.${selectedCustomer.tier}`)}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="w-full space-y-3">
                 <Button
                   onClick={handleVerifyConfirm}
-                  className="w-full"
-                  size="lg"
                   disabled={!canTransact}
+                  className="w-full h-14 bg-yellow-400 text-blue-900 font-black uppercase text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2"
                   data-testid="button-confirm-customer"
                 >
+                  <Check className="w-5 h-5" />
                   {t('barista.confirmCustomer')}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleVerifyReject}
-                  className="w-full"
+                  className="w-full h-12 border-slate-200 text-slate-400 font-black uppercase text-[10px] rounded-2xl"
                   data-testid="button-wrong-customer"
                 >
+                  <X className="w-3.5 h-3.5 mr-2" />
                   {t('barista.wrongCustomer')}
                 </Button>
               </div>
-            </Card>
-          </div>
+            </div>
+
+            {/* Security Footer */}
+            <div className="px-8 py-4 bg-slate-50/50 text-center border-t border-slate-50">
+              <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                Data Privacy: Profile access logged for audit
+              </p>
+            </div>
+          </Card>
         )}
 
         {/* ENTER AMOUNT STEP */}
