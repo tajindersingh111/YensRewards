@@ -425,20 +425,28 @@ export default function AdminDashboard() {
       </div>
 
       {showSecondaryNav && (
-        <div className={`bg-background border-b border-border/50 sticky ${secondaryNavTop} z-30`}>
+        <div className={`bg-white border-b border-slate-100 sticky ${secondaryNavTop} z-30 shadow-sm overflow-hidden`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto scrollbar-none">
-            <nav className="flex items-center w-max min-w-full">
+            <nav className="flex items-center w-max min-w-full h-[48px]">
               {currentSubs.map((sub) => {
                 const isActive = activeTab === sub.id;
                 return (
                   <button
                     key={sub.id}
                     onClick={() => handleSecondaryNav(sub.id)}
-                    className={`px-4 py-3 text-xs font-bold whitespace-nowrap border-b-2 transition-colors shrink-0 ${
-                      isActive ? 'text-foreground border-yellow-400 bg-white' : 'text-muted-foreground border-transparent hover:text-foreground'
+                    className={`px-6 h-full text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap border-b-2 transition-all shrink-0 flex items-center justify-center ${
+                      isActive
+                        ? 'text-blue-900 border-yellow-400 bg-blue-900/5'
+                        : 'text-slate-400 border-transparent hover:text-blue-900 hover:bg-slate-50'
                     }`}
+                    data-testid={`sub-nav-${sub.id}`}
                   >
-                    {sub.label}
+                    <span className="relative">
+                      {sub.label}
+                      {isActive && (
+                        <span className="absolute -top-1 -right-2 w-1 h-1 bg-yellow-400 rounded-full" />
+                      )}
+                    </span>
                   </button>
                 );
               })}
