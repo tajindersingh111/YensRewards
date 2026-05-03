@@ -188,9 +188,8 @@ export function ProductCard({
           {variant === "transaction" && product.available && (
             <Button
               onClick={() => onAddToCart?.(product)}
-              variant="default"
               size="sm"
-              className="w-full"
+              className="w-full bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
               data-testid={`button-add-cart-${product.id}`}
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
@@ -203,7 +202,7 @@ export function ProductCard({
               onClick={() => onView?.(product)}
               variant="outline"
               size="sm"
-              className="w-full"
+              className="w-full font-black uppercase text-[10px] tracking-widest rounded-xl border-blue-900/10 text-blue-900"
               data-testid={`button-view-product-${product.id}`}
             >
               <Eye className="w-4 h-4 mr-2" />
