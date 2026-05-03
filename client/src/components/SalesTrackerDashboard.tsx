@@ -243,8 +243,7 @@ export default function SalesTrackerDashboard() {
     if (!reportData) return;
     const data = reportData;
 
-    // jsPDF helvetica cannot render ฿ (Thai Unicode) — use "THB" prefix in PDF
-    const fmtPdf = (n: number) => `THB ${n.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    const fmtPdf = (n: number) => `฿${n.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     const YELLOW: [number, number, number] = [252, 211, 77];
     const BLUE_DARK: [number, number, number] = [30, 58, 138];
     const BLUE_MID: [number, number, number] = [37, 99, 235];
@@ -255,6 +254,23 @@ export default function SalesTrackerDashboard() {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const W = doc.internal.pageSize.getWidth();
 
+    // Load Sarabun Thai font (supports ฿ and all Thai characters)
+    try {
+      const fontRes = await fetch('/fonts/Sarabun-Regular.ttf');
+      const fontBuf = await fontRes.arrayBuffer();
+      const fontBytes = new Uint8Array(fontBuf);
+      let fontB64 = '';
+      for (let i = 0; i < fontBytes.length; i += 1024) {
+        fontB64 += String.fromCharCode(...fontBytes.subarray(i, i + 1024));
+      }
+      fontB64 = btoa(fontB64);
+      doc.addFileToVFS('Sarabun-Regular.ttf', fontB64);
+      doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal');
+      doc.setFont('Sarabun', 'normal');
+    } catch {
+      doc.setFont('helvetica', 'normal');
+    }
+
     // Pre-load logo image
     let logoImg: HTMLImageElement | null = null;
     try {
@@ -264,24 +280,27 @@ export default function SalesTrackerDashboard() {
       await new Promise<void>((res, rej) => { logoImg!.onload = () => res(); logoImg!.onerror = () => rej(); });
     } catch { logoImg = null; }
 
+    const setHeadingFont = () => doc.setFont('Sarabun', 'normal');
+    const setBodyFont = () => doc.setFont('Sarabun', 'normal');
+
     const drawPageHeader = (title: string) => {
       doc.setFillColor(...YELLOW);
       doc.rect(0, 0, W, 30, 'F');
       doc.setFillColor(...BLUE_DARK);
       doc.rect(0, 30, W, 2, 'F');
-      // Real logo or fallback circle
       if (logoImg) {
         doc.addImage(logoImg, 'PNG', 5, 3, 24, 24);
       } else {
         doc.setFillColor(...BLUE_DARK);
         doc.circle(17, 15, 11, 'F');
-        doc.setFontSize(8); doc.setTextColor(...WHITE); doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8); doc.setTextColor(...WHITE);
+        setHeadingFont();
         doc.text("YEN'S", 17, 14, { align: 'center' });
         doc.text("THAI", 17, 19, { align: 'center' });
       }
-      doc.setFontSize(20); doc.setTextColor(...BLUE_DARK); doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20); doc.setTextColor(...BLUE_DARK); setHeadingFont();
       doc.text(title, 33, 13);
-      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GREY_TEXT);
+      doc.setFontSize(9); setBodyFont(); doc.setTextColor(...GREY_TEXT);
       doc.text("Yen's Thai Ice Cream  -  Nakhon Sawan", 33, 20);
       doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 33, 26);
     };
