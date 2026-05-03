@@ -192,8 +192,7 @@ export default function SalesTrackerDashboard() {
   };
 
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: '#FCD34D' }}>
-      <div className="bg-[#FCD34D] h-48 w-full absolute top-0 z-0 shadow-sm" />
+    <div className="min-h-screen pb-12">
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
