@@ -110,46 +110,53 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
   return (
     <div className="space-y-8">
       {todayBirthdays.length > 0 && (
-        <div className="flex items-center gap-3 bg-blue-900/5 border border-blue-100 rounded-lg px-4 py-3 shadow-sm">
-          <Gift className="w-4 h-4 text-yellow-500 shrink-0" />
-          <p className="text-sm text-blue-900 font-medium">
-            {todayBirthdays.length === 1 ? `${todayBirthdays[0].name} has a birthday today` : `${todayBirthdays.length} customers have birthdays today`}
+        <div className="flex items-center gap-3 bg-blue-900 rounded-[1.5rem] px-5 py-4 shadow-xl">
+          <div className="w-9 h-9 bg-yellow-400 rounded-xl flex items-center justify-center shrink-0">
+            <Gift className="w-4 h-4 text-blue-900" />
+          </div>
+          <p className="text-sm font-black text-white uppercase tracking-tight flex-1">
+            {todayBirthdays.length === 1
+              ? `${todayBirthdays[0].name} has a birthday today`
+              : `${todayBirthdays.length} customers have birthdays today`}
           </p>
-          <button onClick={() => onNavigate('customers', 'loyalty')} className="ml-auto text-xs text-blue-900 font-bold flex items-center gap-1 hover:underline shrink-0">
+          <button
+            onClick={() => onNavigate('customers', 'loyalty')}
+            className="text-[9px] font-black text-yellow-400 uppercase tracking-widest flex items-center gap-1 shrink-0"
+          >
             View <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       )}
 
-      <div>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Performance</h3>
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] pl-1">Performance</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="shadow-sm border-border/60">
-            <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground">This Week</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{fmt(metrics?.currentWeekSales)}</p>
+          <Card className="rounded-[1.5rem] border-none shadow-xl bg-white">
+            <CardContent className="p-5">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">This Week</p>
+              <p className="text-2xl font-black text-blue-900 mt-2 tracking-tighter">{fmt(metrics?.currentWeekSales)}</p>
               {renderTrend(metrics?.currentWeekSales, metrics?.lastWeekSales, 'last week')}
             </CardContent>
           </Card>
-          <Card className="shadow-sm border-border/60">
-            <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground">This Month</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{fmt(metrics?.currentMonthSales)}</p>
+          <Card className="rounded-[1.5rem] border-none shadow-xl bg-white">
+            <CardContent className="p-5">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">This Month</p>
+              <p className="text-2xl font-black text-blue-900 mt-2 tracking-tighter">{fmt(metrics?.currentMonthSales)}</p>
               {renderTrend(metrics?.currentMonthSales, metrics?.lastMonthSales, 'last month')}
             </CardContent>
           </Card>
-          <Card className="shadow-sm border-border/60">
-            <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground">Year to Date</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{fmt(metrics?.ytdSales)}</p>
-              <p className="text-xs text-muted-foreground mt-1.5">Running total</p>
+          <Card className="rounded-[1.5rem] border-none shadow-xl bg-white">
+            <CardContent className="p-5">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Year to Date</p>
+              <p className="text-2xl font-black text-blue-900 mt-2 tracking-tighter">{fmt(metrics?.ytdSales)}</p>
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2">Running total</p>
             </CardContent>
           </Card>
-          <Card className="shadow-sm border-border/60">
-            <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground">Loyalty Members</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{customers.length}</p>
-              <p className="text-xs text-muted-foreground mt-1.5">Total Database</p>
+          <Card className="rounded-[1.5rem] border-none shadow-xl bg-white">
+            <CardContent className="p-5">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Loyalty Members</p>
+              <p className="text-2xl font-black text-blue-900 mt-2 tracking-tighter">{customers.length}</p>
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2">Total Database</p>
             </CardContent>
           </Card>
         </div>
@@ -186,37 +193,55 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {(metrics?.bestChannel || metrics?.bestDay || metrics?.bestMonth) && (
-          <div>
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Top Performers</h3>
+        {(metrics?.bestChannel || metrics?.bestDay) && (
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] pl-1">Top Performers</h3>
             <div className="space-y-3">
               {metrics?.bestChannel && (
-                <Card className="hover:bg-accent/5 transition-colors">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-yellow-400/20 rounded-full flex items-center justify-center shrink-0 border border-yellow-200">
-                      <Award className="w-5 h-5 text-yellow-600" />
+                <Card className="border-none shadow-xl rounded-[2rem] bg-white hover:bg-blue-900/5 transition-all duration-300 group overflow-hidden relative">
+                  <div className="absolute -right-2 -top-2 p-4 opacity-5 pointer-events-none">
+                    <Award className="w-12 h-12 text-blue-900" />
+                  </div>
+                  <CardContent className="p-5 flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center shrink-0 shadow-lg group-hover:rotate-6 transition-transform">
+                      <Award className="w-6 h-6 text-yellow-400" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Best Channel</p>
-                      <p className="text-sm font-bold text-foreground truncate">{metrics.bestChannel.name}</p>
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1">Best Channel</p>
+                      <p className="text-sm font-black text-blue-900 uppercase tracking-tight truncate">{metrics.bestChannel.name}</p>
                     </div>
-                    <p className="text-sm font-bold text-amber-700 shrink-0">{fmt(metrics.bestChannel.total)}</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-lg font-black text-yellow-600 tracking-tighter">{fmt(metrics.bestChannel.total)}</p>
+                      <div className="flex items-center justify-end gap-1 mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Live Lead</span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )}
               {metrics?.bestDay && (
-                <Card className="hover:bg-accent/5 transition-colors">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center shrink-0 border border-blue-100">
-                      <TrendingUp className="w-5 h-5 text-blue-600" />
+                <Card className="border-none shadow-xl rounded-[2rem] bg-white hover:bg-blue-900/5 transition-all duration-300 group overflow-hidden relative">
+                  <div className="absolute -right-2 -top-2 p-4 opacity-5 pointer-events-none">
+                    <TrendingUp className="w-12 h-12 text-blue-900" />
+                  </div>
+                  <CardContent className="p-5 flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center shrink-0 shadow-lg group-hover:rotate-6 transition-transform">
+                      <TrendingUp className="w-6 h-6 text-blue-900" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Best Sales Day</p>
-                      <p className="text-sm font-bold text-foreground truncate">
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1">Best Sales Day</p>
+                      <p className="text-sm font-black text-blue-900 uppercase tracking-tight truncate">
                         {new Date(metrics.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ({metrics.bestDay.dayOfWeek?.substring(0, 3)})
                       </p>
                     </div>
-                    <p className="text-sm font-bold text-blue-700 shrink-0">{fmt(metrics.bestDay.total)}</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-lg font-black text-yellow-600 tracking-tighter">{fmt(metrics.bestDay.total)}</p>
+                      <div className="flex items-center justify-end gap-1 mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Peak Day</span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -225,25 +250,28 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
         )}
 
         {recentSales.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Recent Activity</h3>
-              <button onClick={() => onNavigate('sales', 'salesTracker')} className="text-xs font-bold text-blue-900 hover:text-blue-700 flex items-center gap-1">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pl-1">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Recent Activity</h3>
+              <button
+                onClick={() => onNavigate('sales', 'salesTracker')}
+                className="text-[9px] font-black text-blue-900 uppercase tracking-widest flex items-center gap-1"
+              >
                 Full Log <ChevronRight className="w-3 h-3" />
               </button>
             </div>
-            <Card className="shadow-sm">
+            <Card className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
               <CardContent className="p-0">
-                <div className="divide-y divide-border/60">
+                <div className="divide-y divide-slate-50">
                   {recentSales.map((sale: any, i: number) => (
-                    <div key={sale.id || i} className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
+                    <div key={sale.id || i} className="flex items-center justify-between px-6 py-4 hover:bg-blue-900/5 transition-colors">
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-foreground truncate">{sale.salesChannel || sale.channel || 'Sale'}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs font-black text-blue-900 uppercase tracking-tight truncate">{sale.salesChannel || sale.channel || 'Sale'}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                           {sale.date ? new Date(sale.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : ''}
                         </p>
                       </div>
-                      <p className="text-sm font-black text-foreground shrink-0 ml-3">{fmt(Number(sale.netSales || sale.totalSales || sale.total || 0))}</p>
+                      <p className="text-sm font-black text-yellow-600 tracking-tighter shrink-0 ml-3">{fmt(Number(sale.netSales || sale.totalSales || sale.total || 0))}</p>
                     </div>
                   ))}
                 </div>
