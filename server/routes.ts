@@ -5418,13 +5418,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   // Also restore isLineActive in case they previously unfollowed and re-followed.
                   const LINE_BONUS_POINTS = 50;
                   const wasNotLinked = !customer.lineUid;
-                  
+
                   await storage.updateCustomer(customer.id, {
                     lineUid: lineUserId,
                     isLineActive: true,
                     lastUnfollowAt: null,
-                    points: wasNotLinked ? customer.points + LINE_BONUS_POINTS : customer.points
+                    // Anti-farming point yield — bonus only on first-ever link
+                    points: wasNotLinked ? customer.points + LINE_BONUS_POINTS : customer.points,
+                    // Audit increment — tracks how many times this member has re-linked
+                    relinkCount: (customer.relinkCount || 0) + 1,
                   });
+
+                  console.log(`✨ BOUTIQUE ALERT: Member ${customer.name || customer.id} has re-entered the Registry.`);
                   
                   // Consume the code so it can't be reused
                   await consumeLinkingCode(fullCode);
