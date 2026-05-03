@@ -431,6 +431,20 @@ export class DbStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<void> {
+    // 1. NULL out nullable foreign key references so the delete doesn't hit a constraint
+    await db.update(transactions).set({ baristaId: null }).where(eq(transactions.baristaId, id));
+    await db.update(automations).set({ createdBy: null }).where(eq(automations.createdBy, id));
+    await db.update(sites).set({ managerId: null }).where(eq(sites.managerId, id));
+    await db.update(workScheduleSeries).set({ createdBy: null }).where(eq(workScheduleSeries.createdBy, id));
+    await db.update(dailySales).set({ importedBy: null }).where(eq(dailySales.importedBy, id));
+
+    // 2. Delete rows that have a NOT NULL userId FK — order matters (workSchedules first, then series)
+    await db.delete(workSchedules).where(eq(workSchedules.userId, id));
+    await db.delete(workScheduleSeries).where(eq(workScheduleSeries.userId, id));
+    await db.delete(timeEntries).where(eq(timeEntries.userId, id));
+    await db.delete(baristaPerformance).where(eq(baristaPerformance.userId, id));
+
+    // 3. Now safe to delete the user
     await db.delete(users).where(eq(users.id, id));
   }
 
