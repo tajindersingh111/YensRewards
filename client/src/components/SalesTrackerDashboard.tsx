@@ -232,7 +232,7 @@ export default function SalesTrackerDashboard() {
           {/* Add Sale Form */}
           <Card className="lg:col-span-2 border-none shadow-xl rounded-2xl overflow-hidden bg-white">
             <CardHeader className="bg-blue-900 text-white pb-6 pt-6 px-6">
-              <CardTitle className="text-xl font-bold flex items-center gap-2">
+              <CardTitle className="text-xl font-black flex items-center gap-2">
                 <Plus className="text-yellow-400 h-5 w-5" /> New Daily Log Entry
               </CardTitle>
             </CardHeader>
@@ -284,7 +284,7 @@ export default function SalesTrackerDashboard() {
                   <Input type="text" value={formData.otherSalesNote} onChange={e => setFormData({ ...formData, otherSalesNote: e.target.value })} className="h-11 rounded-lg" placeholder="Optional reference" />
                 </div>
 
-                <Button type="submit" disabled={addSaleMutation.isPending} className="w-full h-12 bg-blue-900 hover:bg-black active:scale-95 transition-all shadow-lg hover:shadow-blue-900/20 text-white font-black text-lg rounded-xl">
+                <Button type="submit" disabled={addSaleMutation.isPending} className="w-full h-12 bg-yellow-400 text-blue-900 font-black text-base rounded-xl uppercase tracking-widest">
                   {addSaleMutation.isPending ? <Loader2 className="animate-spin" /> : "COMPLETE LOG"}
                 </Button>
               </form>

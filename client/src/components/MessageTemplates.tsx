@@ -314,20 +314,23 @@ export default function MessageTemplates() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">{t('admin.messages.templates')}</h2>
-          <p className="text-xs text-muted-foreground">{t('admin.messages.manageTemplates')}</p>
+      <div className="bg-blue-900 rounded-2xl p-5 flex flex-wrap items-center gap-4 shadow-xl">
+        <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+          <FileText className="w-4 h-4 text-blue-900" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-black uppercase tracking-tight text-white leading-none">{t('admin.messages.templates')}</h2>
+          <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{t('admin.messages.manageTemplates')}</p>
+        </div>
+        <div className="flex gap-2 flex-wrap shrink-0">
           {templates.length === 0 && !isCreating && (
-            <Button onClick={() => seedDefaultsMutation.mutate()} variant="outline" size="sm" disabled={seedDefaultsMutation.isPending} data-testid="button-seed-defaults">
+            <Button onClick={() => seedDefaultsMutation.mutate()} variant="outline" size="sm" className="border-white/30 text-white bg-transparent" disabled={seedDefaultsMutation.isPending} data-testid="button-seed-defaults">
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               {seedDefaultsMutation.isPending ? "Creating..." : "Create Defaults"}
             </Button>
           )}
           {!isCreating && (
-            <Button onClick={() => setIsCreating(true)} size="sm" data-testid="button-create-template">
+            <Button onClick={() => setIsCreating(true)} size="sm" className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" data-testid="button-create-template">
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               {t('admin.messages.addTemplate')}
             </Button>
@@ -380,11 +383,18 @@ export default function MessageTemplates() {
       )}
 
       {isCreating && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingTemplate ? t('admin.messages.editTemplate') : t('admin.messages.addNewTemplate')}</CardTitle>
-            <CardDescription>{t('admin.messages.placeholdersDesc')}</CardDescription>
-          </CardHeader>
+        <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <FileText className="w-4 h-4 text-blue-900" />
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+                {editingTemplate ? t('admin.messages.editTemplate') : t('admin.messages.addNewTemplate')}
+              </h2>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{t('admin.messages.placeholdersDesc')}</p>
+            </div>
+          </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent className="space-y-4">
@@ -582,11 +592,11 @@ export default function MessageTemplates() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex gap-2">
-                <Button type="submit" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} data-testid="button-save-template">
+              <CardFooter className="flex gap-2 px-8 pb-8">
+                <Button type="submit" className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} data-testid="button-save-template">
                   {editingTemplate ? t('admin.messages.update') : t('admin.messages.create')}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm} data-testid="button-cancel-template">
+                <Button type="button" variant="outline" className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" onClick={resetForm} data-testid="button-cancel-template">
                   {t('admin.messages.cancel')}
                 </Button>
               </CardFooter>

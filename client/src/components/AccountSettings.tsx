@@ -4,55 +4,47 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, DatabaseBackup, Github } from "lucide-react";
+import { CheckCircle2, AlertCircle, Key, Shield, Download, FileText, DatabaseBackup, Github, Settings } from "lucide-react";
+
+const labelCls = "text-[10px] font-black text-slate-400 uppercase tracking-widest";
+const inputCls = "rounded-xl border-slate-100 bg-slate-50";
+const ctaBtnCls = "bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl";
 
 export default function AccountSettings() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
 
-  // Check if user has password set
   const { data: userStatus } = useQuery<{ hasPassword: boolean; twoFactorEnabled: boolean; qrCode?: string }>({
     queryKey: ['/api/auth/account-status'],
   });
 
-  // Set/update password mutation
   const passwordMutation = useMutation({
     mutationFn: async (data: { currentPassword?: string; newPassword: string }) => {
       return await apiRequest("POST", "/api/auth/set-password", data);
     },
     onSuccess: () => {
-      toast({
-        title: t('common.success'),
-        description: userStatus?.hasPassword ? t('admin.settings.passwordUpdated') : t('admin.settings.passwordSet'),
-      });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      toast({ title: t('common.success'), description: userStatus?.hasPassword ? t('admin.settings.passwordUpdated') : t('admin.settings.passwordSet') });
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
       queryClient.invalidateQueries({ queryKey: ['/api/auth/account-status'] });
     },
     onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || t('admin.settings.passwordFailed'),
-        variant: "destructive",
-      });
+      toast({ title: t('common.error'), description: error.message || t('admin.settings.passwordFailed'), variant: "destructive" });
     },
   });
 
-  // Enable 2FA mutation
   const enable2FAMutation = useMutation({
     mutationFn: async () => {
       const response: any = await apiRequest("POST", "/api/auth/setup-2fa", {});
@@ -60,89 +52,51 @@ export default function AccountSettings() {
     },
     onSuccess: (data) => {
       setShowQRCode(true);
-      queryClient.setQueryData(['/api/auth/account-status'], (old: any) => ({
-        ...old,
-        qrCode: data.qrCode,
-      }));
+      queryClient.setQueryData(['/api/auth/account-status'], (old: any) => ({ ...old, qrCode: data.qrCode }));
     },
     onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || t('admin.settings.twoFactorFailed'),
-        variant: "destructive",
-      });
+      toast({ title: t('common.error'), description: error.message || t('admin.settings.twoFactorFailed'), variant: "destructive" });
     },
   });
 
-  // Verify 2FA mutation
   const verify2FAMutation = useMutation({
     mutationFn: async (token: string) => {
       return await apiRequest("POST", "/api/auth/verify-2fa-setup", { token });
     },
     onSuccess: () => {
-      toast({
-        title: t('common.success'),
-        description: t('admin.settings.twoFactorEnabled'),
-      });
-      setShowQRCode(false);
-      setTwoFactorCode("");
+      toast({ title: t('common.success'), description: t('admin.settings.twoFactorEnabled') });
+      setShowQRCode(false); setTwoFactorCode("");
       queryClient.invalidateQueries({ queryKey: ['/api/auth/account-status'] });
     },
     onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || t('admin.settings.twoFactorFailed'),
-        variant: "destructive",
-      });
+      toast({ title: t('common.error'), description: error.message || t('admin.settings.twoFactorFailed'), variant: "destructive" });
     },
   });
 
-  // Disable 2FA mutation
   const disable2FAMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", "/api/auth/disable-2fa", {});
     },
     onSuccess: () => {
-      toast({
-        title: t('common.success'),
-        description: t('admin.settings.twoFactorDisabled'),
-      });
+      toast({ title: t('common.success'), description: t('admin.settings.twoFactorDisabled') });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/account-status'] });
     },
     onError: (error: any) => {
-      toast({
-        title: t('common.error'),
-        description: error.message || t('admin.settings.twoFactorFailed'),
-        variant: "destructive",
-      });
+      toast({ title: t('common.error'), description: error.message || t('admin.settings.twoFactorFailed'), variant: "destructive" });
     },
   });
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (newPassword !== confirmPassword) {
-      toast({
-        title: t('common.error'),
-        description: t('admin.settings.passwordMismatch'),
-        variant: "destructive",
-      });
+      toast({ title: t('common.error'), description: t('admin.settings.passwordMismatch'), variant: "destructive" });
       return;
     }
-
     if (newPassword.length < 8) {
-      toast({
-        title: t('common.error'),
-        description: t('admin.settings.passwordTooShort'),
-        variant: "destructive",
-      });
+      toast({ title: t('common.error'), description: t('admin.settings.passwordTooShort'), variant: "destructive" });
       return;
     }
-
-    passwordMutation.mutate({
-      currentPassword: userStatus?.hasPassword ? currentPassword : undefined,
-      newPassword,
-    });
+    passwordMutation.mutate({ currentPassword: userStatus?.hasPassword ? currentPassword : undefined, newPassword });
   };
 
   const handleVerify2FA = (e: React.FormEvent) => {
@@ -152,10 +106,7 @@ export default function AccountSettings() {
 
   const handleDownloadFile = (filename: string) => {
     window.location.href = `/api/admin/downloads/${filename}`;
-    toast({
-      title: "Download Started",
-      description: "Your file download has started.",
-    });
+    toast({ title: "Download Started", description: "Your file download has started." });
   };
 
   const backupMutation = useMutation({
@@ -164,232 +115,174 @@ export default function AccountSettings() {
       return res as { success: boolean; message: string };
     },
     onSuccess: (data) => {
-      toast({
-        title: "Backup Complete",
-        description: data.message,
-      });
+      toast({ title: "Backup Complete", description: data.message });
     },
     onError: (error: any) => {
-      toast({
-        title: "Backup Failed",
-        description: error.message || "Could not back up data to GitHub",
-        variant: "destructive",
-      });
+      toast({ title: "Backup Failed", description: error.message || "Could not back up data to GitHub", variant: "destructive" });
     },
   });
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h2 className="text-base font-semibold text-foreground">{t('admin.settings.account')}</h2>
-        <p className="text-xs text-muted-foreground">{t('admin.settings.accountSubtitle')}</p>
+    <div className="space-y-6">
+      {/* Branded Header */}
+      <div className="bg-blue-900 rounded-2xl p-5 flex items-center gap-4 shadow-xl">
+        <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+          <Settings className="w-5 h-5 text-blue-900" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-white uppercase tracking-tight leading-none">{t('admin.settings.account')}</h2>
+          <p className="text-blue-300 text-[10px] font-bold uppercase tracking-widest mt-1.5">{t('admin.settings.accountSubtitle')}</p>
+        </div>
       </div>
 
-      {/* GitHub Backup Section */}
-      <Card>
+      {/* GitHub Backup */}
+      <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DatabaseBackup className="h-5 w-5" />
+          <CardTitle className="text-base font-black text-blue-900 uppercase tracking-tight flex items-center gap-2">
+            <DatabaseBackup className="h-5 w-5 text-yellow-500" />
             Automatic Data Backup
           </CardTitle>
-          <CardDescription>
+          <p className="text-[10px] font-medium text-slate-400 mt-1">
             All sales and customer data is backed up daily at 2:00 AM — to GitHub and two Google Sheets in your Drive. You can also trigger a backup manually at any time.
-          </CardDescription>
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <Github className="h-8 w-8 text-foreground" />
+              <Github className="h-8 w-8 text-blue-900" />
               <div>
-                <p className="font-medium">GitHub + Google Sheets Backup</p>
-                <p className="text-sm text-muted-foreground">
-                  Sales &amp; customers → GitHub <span className="font-mono text-xs">backups/</span> + Google Sheets in your Drive
+                <p className="font-black text-blue-900 text-sm uppercase tracking-tight">GitHub + Google Sheets Backup</p>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                  Sales &amp; customers → GitHub <span className="font-mono text-[10px]">backups/</span> + Google Sheets in your Drive
                 </p>
               </div>
             </div>
             <Button
               onClick={() => backupMutation.mutate()}
               disabled={backupMutation.isPending}
-              size="sm"
+              className={ctaBtnCls}
               data-testid="button-run-backup"
             >
-              {backupMutation.isPending ? (
-                "Backing up..."
-              ) : (
-                <>
-                  <DatabaseBackup className="h-4 w-4 mr-2" />
-                  Back Up Now
-                </>
-              )}
+              <DatabaseBackup className="h-4 w-4 mr-2" />
+              {backupMutation.isPending ? "Backing up..." : "Back Up Now"}
             </Button>
           </div>
-
-          <Alert>
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertDescription>
+          <Alert className="rounded-xl border-blue-100 bg-blue-50">
+            <CheckCircle2 className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-xs text-slate-600 font-medium">
               GitHub stores CSVs with full version history. Google Sheets creates two live spreadsheets in your Drive — <em>YensThai Daily Sales Backup</em> and <em>YensThai Customers Backup</em> — that refresh on every backup.
             </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
 
-      {/* Data Downloads Section */}
-      <Card>
+      {/* Data Downloads */}
+      <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
+          <CardTitle className="text-base font-black text-blue-900 uppercase tracking-tight flex items-center gap-2">
+            <Download className="h-5 w-5 text-yellow-500" />
             Data Downloads
           </CardTitle>
-          <CardDescription>
-            Export and download customer data files for analysis or backup
-          </CardDescription>
+          <p className="text-[10px] font-medium text-slate-400 mt-1">Export and download customer data files for analysis or backup</p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg hover-elevate">
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <FileText className="h-8 w-8 text-yellow-500" />
               <div>
-                <p className="font-medium">Failed Customer Records</p>
-                <p className="text-sm text-muted-foreground">
-                  133 customer records that failed to import
-                </p>
+                <p className="font-black text-blue-900 text-sm uppercase tracking-tight">Failed Customer Records</p>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">133 customer records that failed to import</p>
               </div>
             </div>
             <Button
               onClick={() => handleDownloadFile('failed_customers_export.csv')}
-              size="sm"
+              className={ctaBtnCls}
               data-testid="button-download-failed-customers"
             >
               <Download className="h-4 w-4 mr-2" />
               Download CSV
             </Button>
           </div>
-          
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
+          <Alert className="rounded-xl border-amber-100 bg-amber-50">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-xs text-slate-600 font-medium">
               Download the CSV file, fix any errors (phone numbers, email typos, etc.), and re-upload via the Customers tab → CSV Import feature.
             </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
 
-      {/* Password Section */}
-      <Card>
+      {/* Password */}
+      <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
+              <CardTitle className="text-base font-black text-blue-900 uppercase tracking-tight flex items-center gap-2">
+                <Key className="h-5 w-5 text-yellow-500" />
                 {t('admin.settings.baristaAccess')}
               </CardTitle>
-              <CardDescription>{t('admin.settings.baristaAccessDesc')}</CardDescription>
+              <p className="text-[10px] font-medium text-slate-400 mt-1">{t('admin.settings.baristaAccessDesc')}</p>
             </div>
             {userStatus?.hasPassword && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3" />
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-black text-[9px] uppercase border-2">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
                 {t('admin.settings.passwordIsSet')}
               </Badge>
             )}
           </div>
         </CardHeader>
         <CardContent>
-          <Alert className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {userStatus?.hasPassword 
+          <Alert className="mb-6 rounded-xl border-blue-100 bg-blue-50">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-xs text-slate-600 font-medium">
+              {userStatus?.hasPassword
                 ? `Use this email and password to sign into the Barista app: ${user?.email || ''}`
-                : `Set a password to access the Barista app with your email: ${user?.email || ''}`
-              }
+                : `Set a password to access the Barista app with your email: ${user?.email || ''}`}
             </AlertDescription>
           </Alert>
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            {/* Email Display (Read-only) */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={user?.email || ''}
-                disabled
-                className="bg-muted"
-                data-testid="input-email-readonly"
-              />
-              <p className="text-xs text-muted-foreground">
-                {t('admin.settings.emailHelp')}
-              </p>
+              <Label className={labelCls}>Email</Label>
+              <Input type="email" value={user?.email || ''} disabled className="rounded-xl border-slate-100 bg-slate-100 text-slate-400" data-testid="input-email-readonly" />
+              <p className="text-[10px] font-medium text-slate-400">{t('admin.settings.emailHelp')}</p>
             </div>
             {userStatus?.hasPassword && (
               <div className="space-y-2">
-                <Label htmlFor="current-password">{t('admin.settings.currentPassword')}</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required={userStatus?.hasPassword}
-                  data-testid="input-current-password"
-                />
+                <Label className={labelCls}>{t('admin.settings.currentPassword')}</Label>
+                <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required={userStatus?.hasPassword} className={inputCls} data-testid="input-current-password" />
               </div>
             )}
-
             <div className="space-y-2">
-              <Label htmlFor="new-password">{t('admin.settings.newPassword')}</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={8}
-                data-testid="input-new-password"
-              />
+              <Label className={labelCls}>{t('admin.settings.newPassword')}</Label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} className={inputCls} data-testid="input-new-password" />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">{t('admin.settings.confirmPassword')}</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={8}
-                data-testid="input-confirm-password"
-              />
+              <Label className={labelCls}>{t('admin.settings.confirmPassword')}</Label>
+              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} className={inputCls} data-testid="input-confirm-password" />
             </div>
-
-            <Button
-              type="submit"
-              disabled={passwordMutation.isPending}
-              data-testid="button-save-password"
-            >
-              {passwordMutation.isPending
-                ? t('common.loading')
-                : userStatus?.hasPassword
-                ? t('admin.settings.updatePassword')
-                : t('admin.settings.setPassword')}
+            <Button type="submit" disabled={passwordMutation.isPending} className={ctaBtnCls} data-testid="button-save-password">
+              {passwordMutation.isPending ? t('common.loading') : userStatus?.hasPassword ? t('admin.settings.updatePassword') : t('admin.settings.setPassword')}
             </Button>
           </form>
         </CardContent>
       </Card>
 
-      {/* 2FA Section - Only show if password is set */}
+      {/* 2FA */}
       {userStatus?.hasPassword && (
-        <Card>
+        <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
+                <CardTitle className="text-base font-black text-blue-900 uppercase tracking-tight flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-yellow-500" />
                   {t('admin.settings.twoFactorSetup')}
                 </CardTitle>
-                <CardDescription>{t('admin.settings.enable2FA')}</CardDescription>
+                <p className="text-[10px] font-medium text-slate-400 mt-1">{t('admin.settings.enable2FA')}</p>
               </div>
               {userStatus?.twoFactorEnabled && (
-                <Badge variant="default" className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-black text-[9px] uppercase border-2">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
                   Enabled
                 </Badge>
               )}
@@ -397,42 +290,23 @@ export default function AccountSettings() {
           </CardHeader>
           <CardContent className="space-y-4">
             {!userStatus?.twoFactorEnabled && !showQRCode && (
-              <Button
-                onClick={() => enable2FAMutation.mutate()}
-                disabled={enable2FAMutation.isPending}
-                data-testid="button-enable-2fa"
-              >
+              <Button onClick={() => enable2FAMutation.mutate()} disabled={enable2FAMutation.isPending} className={ctaBtnCls} data-testid="button-enable-2fa">
                 {enable2FAMutation.isPending ? t('common.loading') : t('admin.settings.enable2FA')}
               </Button>
             )}
 
             {showQRCode && userStatus?.qrCode && (
               <div className="space-y-4">
-                <div className="flex justify-center p-4 bg-white rounded-lg">
+                <div className="flex justify-center p-6 bg-slate-50 rounded-xl">
                   <img src={userStatus.qrCode} alt="2FA QR Code" className="w-48 h-48" />
                 </div>
-                <p className="text-sm text-center text-muted-foreground">
-                  {t('admin.settings.scanQR')}
-                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">{t('admin.settings.scanQR')}</p>
                 <form onSubmit={handleVerify2FA} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="2fa-code">{t('admin.settings.enterCode')}</Label>
-                    <Input
-                      id="2fa-code"
-                      type="text"
-                      value={twoFactorCode}
-                      onChange={(e) => setTwoFactorCode(e.target.value)}
-                      required
-                      maxLength={6}
-                      placeholder="000000"
-                      data-testid="input-2fa-code"
-                    />
+                    <Label className={labelCls}>{t('admin.settings.enterCode')}</Label>
+                    <Input type="text" value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value)} required maxLength={6} placeholder="000000" className={`${inputCls} font-mono text-center text-2xl tracking-[0.5em]`} data-testid="input-2fa-code" />
                   </div>
-                  <Button
-                    type="submit"
-                    disabled={verify2FAMutation.isPending}
-                    data-testid="button-verify-2fa"
-                  >
+                  <Button type="submit" disabled={verify2FAMutation.isPending} className={ctaBtnCls} data-testid="button-verify-2fa">
                     {verify2FAMutation.isPending ? t('common.loading') : t('admin.settings.verify')}
                   </Button>
                 </form>
@@ -440,12 +314,7 @@ export default function AccountSettings() {
             )}
 
             {userStatus?.twoFactorEnabled && (
-              <Button
-                variant="destructive"
-                onClick={() => disable2FAMutation.mutate()}
-                disabled={disable2FAMutation.isPending}
-                data-testid="button-disable-2fa"
-              >
+              <Button variant="destructive" onClick={() => disable2FAMutation.mutate()} disabled={disable2FAMutation.isPending} className="font-black uppercase text-[10px] tracking-widest rounded-xl" data-testid="button-disable-2fa">
                 {disable2FAMutation.isPending ? t('common.loading') : t('admin.settings.disable2FA')}
               </Button>
             )}

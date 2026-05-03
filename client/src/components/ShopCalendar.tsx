@@ -160,14 +160,22 @@ function EventDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle data-testid="dialog-event-title">
-            {isEdit ? "Edit Event" : "Add Event"}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-lg p-0 border-none shadow-2xl rounded-[2rem]">
+        <div className="bg-blue-900 px-8 py-6 rounded-t-[2rem] flex items-center gap-4">
+          <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+            <Calendar className="w-5 h-5 text-blue-900" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-white uppercase tracking-widest leading-none" data-testid="dialog-event-title">
+              {isEdit ? "Edit Event" : "Add Event"}
+            </h2>
+            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">
+              {isEdit ? "Update event details" : "Schedule a new shop event"}
+            </p>
+          </div>
+        </div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-8">
             <FormField control={form.control} name="title" render={({ field }) => (
               <FormItem>
                 <FormLabel>Title</FormLabel>
@@ -278,8 +286,8 @@ function EventDialog({
                 </Button>
               )}
               <div className="flex gap-2 ml-auto">
-                <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel-event">Cancel</Button>
-                <Button type="submit" disabled={isPending} data-testid="button-save-event">
+                <Button type="button" variant="outline" onClick={onClose} className="font-black uppercase text-[10px] tracking-widest rounded-xl border-blue-900/10 text-blue-900" data-testid="button-cancel-event">Cancel</Button>
+                <Button type="submit" disabled={isPending} className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" data-testid="button-save-event">
                   {isPending ? "Saving…" : isEdit ? "Save Changes" : "Add Event"}
                 </Button>
               </div>
@@ -363,7 +371,7 @@ function MonthView({
               data-testid={`calendar-day-${format(day, "yyyy-MM-dd")}`}
               className={`min-h-[90px] p-1 cursor-pointer transition-colors hover:bg-muted/40 ${!inMonth ? "bg-muted/20" : ""}`}
             >
-              <div className={`w-7 h-7 flex items-center justify-center text-sm font-medium mb-1 rounded-full ${isCurrentDay ? "bg-primary text-primary-foreground" : inMonth ? "text-foreground" : "text-muted-foreground"}`}>
+              <div className={`w-7 h-7 flex items-center justify-center text-sm font-medium mb-1 rounded-full ${isCurrentDay ? "bg-blue-900 text-white" : inMonth ? "text-foreground" : "text-muted-foreground"}`}>
                 {format(day, "d")}
               </div>
               <div className="space-y-0.5">
@@ -461,14 +469,14 @@ function UpcomingSidebar({
 
   return (
     <div className="flex flex-col gap-4 w-64 shrink-0">
-      <Button onClick={onAdd} data-testid="button-add-event" className="w-full bg-yellow-400 text-blue-900 font-bold hover:bg-yellow-300">
+      <Button onClick={onAdd} data-testid="button-add-event" className="w-full bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl">
         <Plus className="h-4 w-4 mr-1.5" />Add Event
       </Button>
 
-      <Card>
+      <Card className="border-none shadow-xl rounded-2xl overflow-hidden">
         <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-sm flex items-center gap-1.5">
-            <CalendarDays className="h-4 w-4 text-primary" />Upcoming
+          <CardTitle className="text-sm font-black text-blue-900 uppercase tracking-tight flex items-center gap-1.5">
+            <CalendarDays className="h-4 w-4 text-yellow-500" />Upcoming
           </CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3">
@@ -520,9 +528,9 @@ function UpcomingSidebar({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-none shadow-xl rounded-2xl overflow-hidden">
         <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-sm">Event Types</CardTitle>
+          <CardTitle className="text-sm font-black text-blue-900 uppercase tracking-tight">Event Types</CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3">
           <div className="space-y-1.5">
@@ -604,14 +612,14 @@ export default function ShopCalendar() {
   return (
     <div className="flex flex-col h-full gap-4">
       {/* Header */}
-      <div className="bg-blue-900 rounded-lg p-6 text-white flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-blue-900 rounded-2xl p-6 text-white flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-lg p-2.5">
+          <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg">
             <CalendarDays className="h-5 w-5 text-blue-900" />
           </div>
           <div>
             <h2 className="text-xl font-black uppercase tracking-tight">Shop Calendar</h2>
-            <p className="text-blue-300 text-sm">Plan events, expos, promotions and more</p>
+            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">Plan events, expos, promotions and more</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -664,7 +672,7 @@ export default function ShopCalendar() {
                 Today
               </Button>
             </div>
-            <span className="font-semibold text-sm" data-testid="text-period-label">{periodLabel}</span>
+            <span className="font-black text-sm text-blue-900 uppercase tracking-tight" data-testid="text-period-label">{periodLabel}</span>
             <div className="w-32" />
           </div>
 

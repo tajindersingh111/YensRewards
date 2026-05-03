@@ -246,18 +246,17 @@ export default function SitesManager() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="bg-blue-900 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
-            <DialogTitle className="flex items-center gap-3 text-white">
-              <div className="bg-yellow-400 rounded-md p-1.5">
-                <MapPin className="h-4 w-4 text-blue-900" />
-              </div>
-              <span className="font-black uppercase tracking-tight">
-                {editingSite ? t('sites.editSite') : t('sites.addNewSite')}
-              </span>
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <DialogContent className="p-0 border-none shadow-2xl rounded-[2rem] max-w-2xl overflow-hidden">
+          <div className="bg-blue-900 rounded-t-[2rem] p-6 flex items-center gap-4">
+            <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+              <MapPin className="h-4 w-4 text-blue-900" />
+            </div>
+            <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
+              {editingSite ? t('sites.editSite') : t('sites.addNewSite')}
+            </h2>
+          </div>
+          <div className="max-h-[75vh] overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-8 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">{t('sites.siteName')} *</Label>
@@ -396,6 +395,7 @@ export default function SitesManager() {
               <Button
                 type="button"
                 variant="outline"
+                className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
                 onClick={() => setIsDialogOpen(false)}
                 data-testid="button-cancel"
               >
@@ -403,7 +403,7 @@ export default function SitesManager() {
               </Button>
               <Button
                 type="submit"
-                className="bg-blue-900 hover:bg-blue-800 text-white"
+                className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save-site"
               >
@@ -411,6 +411,7 @@ export default function SitesManager() {
               </Button>
             </DialogFooter>
           </form>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -62,8 +62,8 @@ function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
       <div>
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
-        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+        <h2 className="text-base font-black uppercase tracking-tight text-blue-900">{title}</h2>
+        {subtitle && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mt-1">{subtitle}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

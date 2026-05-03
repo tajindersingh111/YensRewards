@@ -251,8 +251,8 @@ function AttendanceTab({ users, timeEntries, sites, isLoading }: {
         <span className="text-sm text-muted-foreground">{filtered.length} records</span>
       </div>
 
-      <div className="border rounded-md overflow-hidden">
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900/5 dark:bg-blue-900/20 px-4 py-2 text-xs font-semibold text-blue-900 dark:text-blue-300 border-b border-blue-100 dark:border-blue-800">
+      <div className="rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900">
+        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900 px-4 py-2.5 text-xs font-black text-white uppercase tracking-widest">
           <div>Date</div>
           <div>Barista</div>
           <div>Site</div>
@@ -377,8 +377,8 @@ function HoursSummaryTab({ users, schedules, timeEntries, sites }: {
         </Card>
       </div>
 
-      <div className="border rounded-md overflow-hidden">
-        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900/5 dark:bg-blue-900/20 px-4 py-2 text-xs font-semibold text-blue-900 dark:text-blue-300 border-b border-blue-100 dark:border-blue-800">
+      <div className="rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900">
+        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900 px-4 py-2.5 text-xs font-black text-white uppercase tracking-widest">
           <div>Barista</div>
           <div>Scheduled</div>
           <div>Worked</div>
@@ -479,8 +479,8 @@ function PerformanceTab({ users }: { users: User[] }) {
         </CardContent></Card>
       </div>
 
-      <div className="border rounded-md overflow-hidden">
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900/5 dark:bg-blue-900/20 px-4 py-2 text-xs font-semibold text-blue-900 dark:text-blue-300 border-b border-blue-100 dark:border-blue-800">
+      <div className="rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900">
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900 px-4 py-2.5 text-xs font-black text-white uppercase tracking-widest">
           <div>Barista</div>
           <div>Rank</div>
           <div>Transactions</div>
