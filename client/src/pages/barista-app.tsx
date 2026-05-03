@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
-import { ArrowLeft, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, UserPlus, CheckCircle2, LogOut, Lock, Clock, Timer, Calendar, Bell, Eye, EyeOff, Sparkles, Trophy, Menu, Package, Star, Zap, Heart, Gift, TrendingUp, Target, Award, Rocket, Crown, Smartphone, Users } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -1048,90 +1048,142 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
         {/* SEARCH STEP */}
         {isClockedIn && step === "search" && (
           <div className="pt-8 space-y-6">
-            {/* Customer Search Card - Now at the top */}
-            <Card className="p-6 space-y-4">
-              <div className="text-center space-y-2">
-                <Search className="w-12 h-12 mx-auto text-chart-1" />
-                <h2 className="text-2xl font-bold text-foreground">{t('barista.findCustomer')}</h2>
-                <p className="text-sm text-muted-foreground">{t('barista.searchByPhone')}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Input
-                  type="tel"
-                  placeholder={t('barista.enterPhone')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="text-lg h-12"
-                  autoFocus
-                  data-testid="input-search-phone"
-                />
-                <p className="text-xs text-muted-foreground">{t('barista.searchHint')}</p>
+            {/* ── IDENTIFY MEMBER MODULE ── */}
+            <Card className="overflow-hidden mb-6 border-none shadow-2xl rounded-[2.5rem] bg-white relative">
+              <div className="bg-blue-900 px-8 py-6 flex items-center gap-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                  <Users className="w-16 h-16 text-yellow-400" />
+                </div>
+                <div className="bg-yellow-400 rounded-2xl p-3 shadow-lg z-10">
+                  <Search className="w-6 h-6 text-blue-900" />
+                </div>
+                <div className="z-10">
+                  <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none">
+                    {t('barista.findCustomer')}
+                  </h2>
+                  <p className="text-blue-300 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">
+                    {t('barista.searchByPhone')}
+                  </p>
+                </div>
               </div>
 
-              {/* Search Results */}
-              {searchQuery.length >= 3 && (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {searchResults.length > 0 ? (
-                    searchResults.map((customer: Customer) => (
-                      <Card
-                        key={customer.id}
-                        className="p-4 hover-elevate cursor-pointer"
-                        onClick={() => handleSelectCustomer(customer)}
-                        data-testid={`customer-result-${customer.id}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-12 h-12">
-                            {customer.photo ? (
-                              <AvatarImage src={customer.photo} alt={customer.name} />
-                            ) : (
-                              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
-                                {customer.name.charAt(0)}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div className="flex-1">
-                            <p className="font-semibold text-foreground">{customer.name}</p>
-                            <p className="text-2xl font-bold text-foreground">{customer.phone}</p>
-                          </div>
-                          <div className="text-right">
-                            <Badge className={getTierColor(customer.tier)}>
-                              {t(`customer.tiers.${customer.tier}`)}
-                            </Badge>
-                            <p className="text-xs text-muted-foreground mt-1">{customer.points} {t('customer.pointsAbbr')}</p>
-                          </div>
-                        </div>
-                      </Card>
-                    ))
+              <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-4">
+                    Enter mobile number or scan rewards QR to access the points vault.
+                  </p>
+
+                  <div className="space-y-2">
+                    <Input
+                      type="tel"
+                      placeholder={t('barista.enterPhone')}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="text-lg h-12 rounded-2xl"
+                      autoFocus
+                      data-testid="input-search-phone"
+                    />
+                    <p className="text-xs text-muted-foreground text-center">{t('barista.searchHint')}</p>
+                  </div>
+
+                  {/* Search Results */}
+                  {searchQuery.length >= 3 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {searchResults.length > 0 ? (
+                        searchResults.map((customer: Customer) => (
+                          <Card
+                            key={customer.id}
+                            className="p-4 hover-elevate cursor-pointer"
+                            onClick={() => handleSelectCustomer(customer)}
+                            data-testid={`customer-result-${customer.id}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-12 h-12">
+                                {customer.photo ? (
+                                  <AvatarImage src={customer.photo} alt={customer.name} />
+                                ) : (
+                                  <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+                                    {customer.name.charAt(0)}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              <div className="flex-1">
+                                <p className="font-semibold text-foreground">{customer.name}</p>
+                                <p className="text-2xl font-bold text-foreground">{customer.phone}</p>
+                              </div>
+                              <div className="text-right">
+                                <Badge className={getTierColor(customer.tier)}>
+                                  {t(`customer.tiers.${customer.tier}`)}
+                                </Badge>
+                                <p className="text-xs text-muted-foreground mt-1">{customer.points} {t('customer.pointsAbbr')}</p>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      ) : (
+                        <Card className="p-6 text-center">
+                          <p className="text-muted-foreground">{t('barista.noCustomers')}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{t('barista.tryDifferentPhone')}</p>
+                        </Card>
+                      )}
+                    </div>
                   ) : (
-                    <Card className="p-6 text-center">
-                      <p className="text-muted-foreground">{t('barista.noCustomers')}</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {t('barista.tryDifferentPhone')}
-                      </p>
-                    </Card>
+                    <div className="bg-slate-50 border-2 border-dashed border-slate-100 rounded-3xl p-10 text-center">
+                      <Smartphone className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                      <p className="text-[10px] font-bold text-slate-400 uppercase italic">Awaiting Input...</p>
+                    </div>
                   )}
                 </div>
-              )}
+
+                <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                  <p className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">
+                    Privacy Protocol: Geostamp Audit Active
+                  </p>
+                  <Badge className="bg-blue-900/5 text-blue-900 border-none text-[8px] font-black uppercase px-2">
+                    v2.4 Secure
+                  </Badge>
+                </div>
+              </div>
             </Card>
 
-            {/* Quick Register - Yellow Yens Button */}
-            <Card className="p-6 bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-              <div className="flex items-center gap-4">
-                <div className="flex-shrink-0 w-14 h-14 bg-chart-1 rounded-xl flex items-center justify-center">
-                  <UserPlus className="w-7 h-7 text-white" />
+            {/* ── MEMBER ONBOARDING MODULE ── */}
+            <Card className="overflow-hidden mb-6 border-none shadow-2xl rounded-[2.5rem] bg-white relative">
+              <div className="bg-blue-900 px-8 py-6 flex items-center justify-between relative overflow-hidden">
+                <div className="absolute -right-4 -top-4 p-8 opacity-10 pointer-events-none">
+                  <UserPlus className="w-20 h-20 text-yellow-400 rotate-12" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg text-foreground mb-1">{t('barista.quickRegister')}</h3>
-                  <p className="text-sm text-muted-foreground">{t('barista.quickRegisterDesc')}</p>
+                <div className="flex items-center gap-4 z-10">
+                  <div className="bg-yellow-400 rounded-2xl p-3 shadow-lg">
+                    <UserPlus className="w-6 h-6 text-blue-900" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">
+                      {t('barista.quickRegister')}
+                    </h3>
+                    <p className="text-blue-300 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">
+                      {t('barista.quickRegisterDesc')}
+                    </p>
+                  </div>
                 </div>
-                <Button 
-                  className="bg-chart-1 hover:bg-chart-1/90 text-white"
+                <Button
+                  className="bg-yellow-400 hover:bg-white text-blue-900 font-black uppercase text-xs px-8 h-12 rounded-xl shadow-lg transition-all active:scale-95 z-10 group"
                   onClick={() => setQuickRegisterOpen(true)}
                   data-testid="button-quick-register"
                 >
-                  {t('barista.register')}
+                  <span className="flex items-center gap-2">
+                    {t('barista.register')}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
                 </Button>
+              </div>
+              <div className="px-8 py-4 bg-slate-50/50 flex items-center justify-between">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                  Growth Protocol: Secure 60-Second Enrollment Active
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[8px] font-black text-slate-400 uppercase">Database Link Live</span>
+                </div>
               </div>
             </Card>
 
