@@ -674,11 +674,16 @@ function AutomationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 overflow-hidden">
-        <div className="bg-blue-900 p-6 text-white">
-          <h2 className="text-xl font-black uppercase tracking-tight">{editing ? "Edit Automation" : "New Automation"}</h2>
-          <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1">
-            {editing ? "Update the automation settings below." : "Configure a rule-based message that sends automatically."}
-          </p>
+        <div className="bg-blue-900 p-6 text-white flex items-center gap-4">
+          <div className="bg-yellow-400 rounded-xl p-2.5 shadow-lg shrink-0">
+            <Zap className="w-5 h-5 text-blue-900" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black uppercase tracking-tight leading-none">{editing ? "Edit Automation" : "New Automation"}</h2>
+            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1.5 opacity-90">
+              {editing ? "Update the automation settings below." : "Configure a rule-based message that sends automatically."}
+            </p>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[65vh]">
@@ -933,13 +938,13 @@ function QuickstartCard({ template, onSelect }: { template: typeof QUICKSTART_TE
   const Icon = template.icon;
   return (
     <button
-      className="group text-left w-full rounded-2xl bg-white border border-slate-100 p-5 hover:border-blue-200 hover:shadow-xl transition-all duration-300"
+      className="group text-left w-full rounded-2xl bg-white border-none shadow-md p-5 hover:shadow-xl transition-all duration-300"
       onClick={() => onSelect(template.defaults as unknown as Partial<FormValues>)}
       data-testid={`button-quickstart-${template.key}`}
     >
       <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-900 transition-colors">
-          <Icon className="w-5 h-5 text-blue-900 group-hover:text-[#FCD34D] transition-colors" />
+        <div className="w-10 h-10 rounded-xl bg-blue-900/10 flex items-center justify-center shrink-0 group-hover:bg-blue-900 transition-colors duration-300">
+          <Icon className="w-5 h-5 text-blue-900 group-hover:text-yellow-400 transition-colors" />
         </div>
         <div>
           <p className="font-black text-sm text-slate-800 uppercase tracking-tight">{template.label}</p>
