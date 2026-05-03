@@ -1740,34 +1740,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create customer (public registration — only safe profile fields accepted)
   app.post('/api/customers', async (req, res) => {
-    try {
-      // Rate limit by IP — max 5 registrations per hour to prevent spam account creation
-      const regIp = getClientIp(req);
-      const regCheck = checkRegRateLimit(regIp);
-      if (!regCheck.allowed) {
-        res.setHeader('Retry-After', String(regCheck.retryAfterSecs));
-        return res.status(429).json({ message: "Too many sign-up attempts from this device. Please try again later." });
-      }
+    // Step 1 — Rate limit check (before any DB work)
+    const regIp = getClientIp(req);
+    const regCheck = checkRegRateLimit(regIp);
+    if (!regCheck.allowed) {
+      res.setHeader('Retry-After', String(regCheck.retryAfterSecs));
+      return res.status(429).json({ message: "Too many sign-up attempts from this device. Please try again later." });
+    }
 
-      const validatedData = publicInsertCustomerSchema.parse(req.body);
-      
-      // Check if customer with this phone already exists
-      const existingCustomer = await storage.getCustomerByPhone(validatedData.phone);
-      if (existingCustomer) {
-        // Do not return customer data — prevents data disclosure via signup probing
-        return res.status(409).json({ message: "A customer with this phone number already exists" });
-      }
-      
-      // Record the attempt only on a genuine new-account creation (not on duplicates/validation errors)
-      recordRegAttempt(regIp);
-      const customer = await storage.createCustomer(validatedData);
-      res.status(201).json(customer);
+    // Step 2 — Validation
+    let validatedData: any;
+    try {
+      validatedData = publicInsertCustomerSchema.parse(req.body);
     } catch (error: any) {
-      if (error.name === 'ZodError') {
-        return res.status(400).json({ message: fromError(error).toString() });
-      }
-      console.error("Error creating customer:", error);
-      res.status(500).json({ message: "Failed to create customer" });
+      return res.status(400).json({ message: fromError(error).toString() });
+    }
+
+    // Step 3 — Duplicate check (quota not consumed for existing phones)
+    const existingCustomer = await storage.getCustomerByPhone(validatedData.phone);
+    if (existingCustomer) {
+      // Do not return customer data — prevents data disclosure via signup probing
+      return res.status(409).json({ message: "A customer with this phone number already exists" });
+    }
+
+    // Step 4 — THE COMMIT: quota only recorded on a clean DB write
+    try {
+      const customer = await storage.createCustomer(validatedData);
+      recordRegAttempt(regIp); // SUCCESS: now tick the IP counter
+      return res.status(201).json(customer);
+    } catch (dbErr) {
+      // DB failure does not consume the IP quota
+      console.error("Registry Vault Error:", dbErr);
+      return res.status(500).json({ message: "Internal Vault Error" });
     }
   });
 
