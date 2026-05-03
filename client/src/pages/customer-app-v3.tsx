@@ -6,11 +6,13 @@ import type { Customer, Promotion, Product } from "@shared/schema";
 import InstallPrompt from "@/components/InstallPrompt";
 import Celebration from "@/components/Celebration";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Home, User, RefreshCw, Gift, ChevronRight, IceCream, Check, Copy, ExternalLink, Star, LogOut, X, QrCode, Smartphone } from "lucide-react";
+import { Home, User, RefreshCw, Gift, ChevronRight, IceCream, Check, Copy, ExternalLink, Star, LogOut, X, QrCode, Smartphone, ShieldCheck, Cake, Coins } from "lucide-react";
 import { SiLine } from "react-icons/si";
 import TransactionList from "@/components/TransactionList";
 import CustomerReviewPage from "@/components/CustomerReviewPage";
@@ -755,91 +757,129 @@ export default function CustomerAppV3() {
         {/* PROFILE TAB */}
         {activeTab === "profile" && (
           <div className="space-y-4">
-            <div className="text-center space-y-4">
-              {customer?.photo ? (
-                <img src={customer.photo} alt={customer.name} className="w-24 h-24 rounded-full mx-auto object-cover" />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-4xl font-bold">
-                  {customer?.name?.charAt(0) || "?"}
+            {/* VIP Portrait & Identity */}
+            <div className="flex flex-col items-center pt-8 pb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-yellow-400/20 rounded-full blur-2xl animate-pulse" />
+                <Avatar className="w-28 h-28 rounded-full ring-4 ring-yellow-400 border-4 border-white shadow-2xl relative z-10">
+                  <AvatarImage src={customer?.photo} alt={customer?.name} className="object-cover" />
+                  <AvatarFallback className="bg-blue-900 text-white text-3xl font-black">
+                    {customer?.name?.charAt(0) || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-2 -right-2 bg-blue-900 p-2 rounded-xl border-2 border-white shadow-lg z-20">
+                  <ShieldCheck className="w-4 h-4 text-yellow-400" />
                 </div>
-              )}
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">{customer?.name}</h2>
-                <p className="text-muted-foreground">{customer?.phone}</p>
+              </div>
+
+              <div className="text-center mt-6">
+                <h2 className="text-2xl font-black text-blue-900 uppercase tracking-tighter">
+                  {customer?.name}
+                </h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">
+                  {customer?.phone}
+                </p>
                 {customer?.birthday && (
-                  <p className="text-sm text-muted-foreground mt-2">{t('customer.birthday')}: {customer.birthday}</p>
+                  <Badge variant="outline" className="mt-3 border-blue-900/10 text-blue-900/50 text-[8px] font-black uppercase tracking-widest px-3 py-1">
+                    <Cake className="w-3 h-3 mr-1.5 opacity-50" />
+                    {t('customer.birthday')}: {customer.birthday}
+                  </Badge>
                 )}
               </div>
             </div>
-            
-            {/* Points Summary */}
-            <Card className="p-4 rounded-xl border-0 shadow-md bg-white">
-              <div className="text-center">
-                <p className="text-4xl font-bold text-blue-900">{currentPoints}</p>
-                <p className="text-muted-foreground">{t('customer.points')}</p>
+
+            {/* Balance Vault */}
+            <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-blue-900 relative">
+              <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                <Coins className="w-12 h-12 text-yellow-400" />
+              </div>
+              <div className="p-8 text-center relative z-10">
+                <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.3em] mb-2">
+                  Current Points Vault
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-5xl font-black text-yellow-400 tracking-tighter">
+                    {currentPoints}
+                  </span>
+                  <span className="text-lg font-black text-white uppercase mt-2">Pts</span>
+                </div>
+              </div>
+              <div className="h-1.5 w-full bg-white/10">
+                <div className="h-full bg-yellow-400 opacity-50" style={{ width: `${Math.min(100, (currentPoints / 50) * 100)}%` }} />
               </div>
             </Card>
-            
-            {/* Rate Us Card - Above LINE since LINE is one-time setup */}
-            <Card 
-              className="p-4 border-2 border-yens-yellow bg-yens-yellow/10 hover-elevate cursor-pointer"
+
+            {/* Golden Review CTA */}
+            <Card
+              className="p-6 border-none bg-yellow-400 shadow-xl rounded-[2rem] hover:scale-[1.02] transition-all cursor-pointer group overflow-hidden relative"
               onClick={() => setShowReviewPage(true)}
               data-testid="card-rate-us"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-yens-yellow flex items-center justify-center">
-                  <Star className="w-7 h-7 text-yens-blue fill-yens-blue" />
+              <div className="absolute -right-4 -top-4 p-8 opacity-10 pointer-events-none">
+                <Star className="w-16 h-16 text-blue-900" />
+              </div>
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-14 h-14 rounded-2xl bg-blue-900 flex items-center justify-center shadow-lg">
+                  <Star className="w-7 h-7 text-yellow-400 fill-yellow-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-foreground">{t('review.title')}</h3>
-                  <p className="text-sm text-muted-foreground">{t('review.rateExperience')}</p>
+                  <h3 className="font-black text-blue-900 uppercase tracking-tight">
+                    {t('review.title')}
+                  </h3>
+                  <p className="text-[10px] font-bold text-blue-900/60 uppercase tracking-widest mt-1">
+                    {t('review.rateExperience')}
+                  </p>
                 </div>
-                <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                <ChevronRight className="w-5 h-5 text-blue-900 opacity-30" />
               </div>
             </Card>
-            
-            {/* LINE Connection Card - One-time setup, at bottom */}
+
+            {/* LINE Connection Card */}
             {customer?.lineUid ? (
-              <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/10" data-testid="card-line-connected">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-[#06C755] flex items-center justify-center">
-                    <Check className="w-7 h-7 text-white" />
+              <Card className="p-6 border-none bg-white shadow-lg rounded-[2rem] relative overflow-hidden" data-testid="card-line-connected">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#06C755] flex items-center justify-center shadow-md flex-shrink-0">
+                    <Check className="w-8 h-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-foreground flex items-center gap-2">
-                      <SiLine className="w-5 h-5 text-[#06C755]" />
-                      {t('customer.lineConnected')}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{t('customer.lineConnectedDesc')}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-[#06C755] animate-pulse" />
+                      <h3 className="font-black text-slate-800 uppercase text-xs tracking-tight">
+                        {t('customer.lineConnected')}
+                      </h3>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {t('customer.lineConnectedDesc')}
+                    </p>
                   </div>
                 </div>
               </Card>
             ) : (
-              <Card className="p-4 border-2 border-[#06C755] bg-[#06C755]/5" data-testid="card-connect-line">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#06C755] flex items-center justify-center">
-                    <SiLine className="w-6 h-6 text-white" />
+              <Card className="p-6 border-none bg-white shadow-lg rounded-[2rem]" data-testid="card-connect-line">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#06C755] flex items-center justify-center shadow-md flex-shrink-0">
+                    <SiLine className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">{t('customer.connectLine')}</h3>
-                    <p className="text-xs text-muted-foreground">{t('customer.lineGetBonusPoints')}</p>
+                    <h3 className="font-black text-slate-800 uppercase text-xs tracking-tight">{t('customer.connectLine')}</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('customer.lineGetBonusPoints')}</p>
                   </div>
                 </div>
-                
+
                 {linkCodeData?.linkCode && (
                   <div className="space-y-3">
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground mb-2">{t('customer.lineLinkingCode')}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('customer.lineLinkingCode')}</p>
                       <div className="flex items-center justify-center gap-2">
-                        <div className="px-4 py-2 bg-white border-2 border-[#06C755] rounded-lg">
-                          <span className="text-xl font-mono font-bold text-[#06C755] tracking-wider">
+                        <div className="px-4 py-2 bg-[#06C755]/5 border-2 border-[#06C755] rounded-xl">
+                          <span className="text-xl font-mono font-black text-[#06C755] tracking-wider">
                             {linkCodeData.linkCode}
                           </span>
                         </div>
                         <Button
                           size="icon"
                           variant="outline"
-                          className="border-[#06C755] text-[#06C755] hover:bg-[#06C755]/10"
+                          className="border-[#06C755] text-[#06C755]"
                           onClick={handleCopyLinkCode}
                           data-testid="button-copy-link-code"
                         >
@@ -847,9 +887,9 @@ export default function CustomerAppV3() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <Button
-                      className="w-full bg-[#06C755] hover:bg-[#05a648] text-white font-medium"
+                      className="w-full bg-[#06C755] text-white font-black uppercase tracking-tight"
                       onClick={() => window.open('https://line.me/R/oaMessage/@752afsdq', '_blank')}
                       data-testid="button-open-line-chat"
                     >
