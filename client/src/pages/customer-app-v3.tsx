@@ -926,49 +926,48 @@ export default function CustomerAppV3() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border bottom-nav-safe" style={{ zIndex: 9999 }}>
-        <div className="mx-auto w-full grid grid-cols-4 py-2 max-w-[480px] md:max-w-[680px]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-blue-900 border-t border-white/5 bottom-nav-safe shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)]" style={{ zIndex: 9999 }}>
+        <div className="mx-auto w-full grid grid-cols-4 py-3 max-w-[480px] md:max-w-[680px]">
           <button
             onClick={() => { enableAudio(); setActiveTab("home"); }}
-            className={`flex flex-col items-center justify-center gap-1 py-2 hover-elevate active-elevate-2 ${
-              activeTab === "home" ? "text-yens-yellow" : "text-muted-foreground"
+            className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${
+              activeTab === "home" ? "text-yellow-400 scale-110" : "text-blue-300/40 hover:text-blue-200"
             }`}
-            aria-label={t('customer.home')}
             data-testid="button-nav-home"
           >
-            <Home className="w-6 h-6" />
-            <span className="text-xs font-medium">{t('customer.home')}</span>
+            <Home className={`w-5 h-5 ${activeTab === "home" ? "drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]" : ""}`} />
+            <span className="text-[9px] font-black uppercase tracking-widest">{t('customer.home')}</span>
+            {activeTab === "home" && <div className="w-1 h-1 bg-yellow-400 rounded-full mt-0.5 animate-pulse" />}
           </button>
           <button
             onClick={() => setLocation("/menu")}
-            className="flex flex-col items-center justify-center gap-1 py-2 hover-elevate active-elevate-2 text-muted-foreground"
-            aria-label={t('customer.menuNav')}
+            className="flex flex-col items-center justify-center gap-1.5 text-blue-300/40 hover:text-blue-200 transition-all duration-300"
             data-testid="button-nav-menu"
           >
-            <IceCream className="w-6 h-6" />
-            <span className="text-xs font-medium">{t('customer.menuNav')}</span>
+            <IceCream className="w-5 h-5" />
+            <span className="text-[9px] font-black uppercase tracking-widest">{t('customer.menuNav')}</span>
           </button>
           <button
             onClick={() => setActiveTab("rewards")}
-            className={`flex flex-col items-center justify-center gap-1 py-2 hover-elevate active-elevate-2 ${
-              activeTab === "rewards" ? "text-yens-yellow" : "text-muted-foreground"
+            className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${
+              activeTab === "rewards" ? "text-yellow-400 scale-110" : "text-blue-300/40 hover:text-blue-200"
             }`}
-            aria-label={t('customer.rewards')}
             data-testid="button-nav-rewards"
           >
-            <Gift className="w-6 h-6" />
-            <span className="text-xs font-medium">{t('customer.rewards')}</span>
+            <Gift className={`w-5 h-5 ${activeTab === "rewards" ? "drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]" : ""}`} />
+            <span className="text-[9px] font-black uppercase tracking-widest">{t('customer.rewards')}</span>
+            {activeTab === "rewards" && <div className="w-1 h-1 bg-yellow-400 rounded-full mt-0.5 animate-pulse" />}
           </button>
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex flex-col items-center justify-center gap-1 py-2 hover-elevate active-elevate-2 ${
-              activeTab === "profile" ? "text-yens-yellow" : "text-muted-foreground"
+            className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 ${
+              activeTab === "profile" ? "text-yellow-400 scale-110" : "text-blue-300/40 hover:text-blue-200"
             }`}
-            aria-label={t('customer.profileNav')}
             data-testid="button-nav-profile"
           >
-            <User className="w-6 h-6" />
-            <span className="text-xs font-medium">{t('customer.profileNav')}</span>
+            <User className={`w-5 h-5 ${activeTab === "profile" ? "drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]" : ""}`} />
+            <span className="text-[9px] font-black uppercase tracking-widest">{t('customer.profileNav')}</span>
+            {activeTab === "profile" && <div className="w-1 h-1 bg-yellow-400 rounded-full mt-0.5 animate-pulse" />}
           </button>
         </div>
       </nav>
