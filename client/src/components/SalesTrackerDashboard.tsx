@@ -83,7 +83,14 @@ export default function SalesTrackerDashboard() {
   const [editFormData, setEditFormData] = useState<any>({});
 
   const today = new Date().toISOString().split('T')[0];
-  const [reportStartDate, setReportStartDate] = useState(today);
+  const getMonday = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split('T')[0];
+  };
+  const [reportStartDate, setReportStartDate] = useState(getMonday);
   const [reportEndDate, setReportEndDate] = useState(today);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
