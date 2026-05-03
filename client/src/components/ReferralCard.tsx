@@ -30,13 +30,18 @@ export default function ReferralCard({ referralCode, referralCount }: ReferralCa
   };
 
   return (
-    <Card className="p-6" data-testid="card-referral">
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          <h3 className="text-xl font-semibold text-foreground">{t('referral.title')}</h3>
+    <Card className="overflow-hidden" data-testid="card-referral">
+      {/* Blue-900 header block */}
+      <div className="bg-blue-900 px-4 py-3 flex items-center gap-3">
+        <div className="bg-yellow-400 rounded-lg p-2 flex-shrink-0">
+          <Users className="w-4 h-4 text-blue-900" />
         </div>
-        
+        <h3 className="text-base font-black text-white uppercase tracking-tight">
+          {t('referral.title')}
+        </h3>
+      </div>
+
+      <div className="p-4 space-y-4">
         <p className="text-sm text-muted-foreground">
           {t('referral.description')}
         </p>
@@ -59,7 +64,7 @@ export default function ReferralCard({ referralCode, referralCount }: ReferralCa
         </div>
 
         <p className="text-sm text-center text-muted-foreground">
-          <span className="font-semibold text-chart-3" data-testid="text-referral-count">{referralCount}</span> {t('referral.friendsReferred')}
+          <span className="font-semibold text-yellow-500" data-testid="text-referral-count">{referralCount}</span> {t('referral.friendsReferred')}
         </p>
       </div>
     </Card>
