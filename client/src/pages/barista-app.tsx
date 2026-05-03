@@ -173,31 +173,45 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-chart-1 to-chart-2">
-      <header className="bg-gradient-to-r from-chart-1 to-chart-2 text-white p-4 shadow-lg">
-        <div className="max-w-md md:max-w-xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={logoUrl} alt="Yens Logo" className="w-10 h-10 object-cover rounded-full" />
-            <div>
-              <h1 className="text-sm font-bold">{t('barista.title')}</h1>
-              <span className="text-xs opacity-70">{t('common.version')}</span>
-            </div>
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* Blue-900 hero header */}
+      <div className="bg-blue-900 pt-16 pb-24 text-center px-6 relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_bottom_left,_#4F46E5_0%,_transparent_50%)]" />
+        <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_top_right,_#FCD34D_0%,_transparent_50%)]" />
+        <div className="relative z-10">
+          <img
+            src={logoUrl}
+            alt="Yen's Thai"
+            className="w-24 h-24 rounded-full mx-auto ring-4 ring-yellow-400 border-4 border-blue-900 mb-6 shadow-2xl object-cover"
+          />
+          <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+            {t('barista.title')}
+          </h1>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <span className="h-px w-6 bg-blue-400/30" />
+            <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em]">
+              Authorized Staff Only
+            </p>
+            <span className="h-px w-6 bg-blue-400/30" />
           </div>
-          <LanguageSwitcher />
+          <div className="absolute top-4 right-4 z-20">
+            <LanguageSwitcher />
+          </div>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-md md:max-w-xl mx-auto p-4 pt-12">
-        <Card className="p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-chart-1/10 mb-4">
-              <Lock className="w-8 h-8 text-chart-1" />
+      {/* Overlapping login card */}
+      <div className="-mt-12 px-5 max-w-md mx-auto pb-12 relative z-20">
+        <Card className="p-8 space-y-6 shadow-2xl border-none rounded-[2.5rem] bg-white">
+          <div className="flex flex-col items-center gap-2 mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-blue-900/5 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-blue-900" />
             </div>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
               {requires2FA ? t('users.enter2FACode') : t('common.login')}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              {requires2FA 
+            <p className="text-sm text-muted-foreground text-center">
+              {requires2FA
                 ? "Enter the 6-digit code from your authenticator app"
                 : "Sign in to access the barista app"}
             </p>
@@ -305,8 +319,13 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
               </div>
             </form>
           )}
+          <div className="pt-4 border-t border-slate-100">
+            <p className="text-[10px] text-center text-slate-400 font-bold uppercase leading-relaxed">
+              Security Notice: All login attempts and transactions are geostamped for audit.
+            </p>
+          </div>
         </Card>
-      </main>
+      </div>
     </div>
   );
 }

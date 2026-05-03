@@ -10,7 +10,8 @@ import {
   Calendar,
   MapPin,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  BarChart3
 } from "lucide-react";
 import { 
   LineChart, 
@@ -150,9 +151,19 @@ export default function YensOverview() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t('overview.title')}</h2>
-        <p className="text-muted-foreground">{t('overview.subtitle')}</p>
+      {/* Premium branded header block */}
+      <div className="bg-blue-900 rounded-2xl p-5 flex items-center gap-4 shadow-md">
+        <div className="bg-yellow-400 rounded-xl p-2.5 shadow-inner transform rotate-3 flex-shrink-0">
+          <BarChart3 className="w-5 h-5 text-blue-900" />
+        </div>
+        <div>
+          <h2 className="text-lg font-black text-white uppercase tracking-tight leading-none">
+            {t('overview.title')}
+          </h2>
+          <p className="text-blue-300 text-[10px] font-bold uppercase tracking-widest mt-2">
+            {t('overview.subtitle')}
+          </p>
+        </div>
       </div>
 
       {/* Key Metrics Grid */}
@@ -259,7 +270,7 @@ export default function YensOverview() {
                 />
                 <Bar 
                   dataKey="transactions" 
-                  fill="#3B82F6"
+                  fill="#1e3a8a"
                   radius={[8, 8, 0, 0]}
                 />
               </BarChart>

@@ -515,7 +515,7 @@ export default function CustomerAppV3() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100/50 pb-20">
+    <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header - Compact yellow banner same width as content */}
       <div className="sticky top-0 z-50 px-4 pt-2 max-w-[480px] md:max-w-[680px] mx-auto">
         <header className="bg-primary text-primary-foreground py-2 px-3 flex items-center justify-between gap-1">
@@ -569,10 +569,10 @@ export default function CustomerAppV3() {
         <Card className="p-4 rounded-2xl border-0 shadow-md bg-white">
           <div className="flex items-center gap-4">
             {/* Points Badge Icon */}
-            <div className="relative w-14 h-14 flex-shrink-0 bg-orange-100 rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold text-orange-500">50</span>
-              <div className="absolute -top-1 -left-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center">
-                <span className="text-xs text-white font-bold">$</span>
+            <div className="relative w-14 h-14 flex-shrink-0 bg-blue-900/10 rounded-xl flex items-center justify-center border border-blue-900/5 shadow-inner">
+              <span className="text-2xl font-bold text-blue-900">{pointsToNextReward}</span>
+              <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-blue-900 text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-md uppercase tracking-tighter">
+                pts
               </div>
             </div>
             
@@ -628,7 +628,7 @@ export default function CustomerAppV3() {
               data-testid={`card-reward-${product.id}`}
             >
               {/* Product Image */}
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-orange-100 flex-shrink-0">
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-blue-900/10 flex-shrink-0">
                 {product.imageUrl ? (
                   <img
                     src={product.imageUrl}
@@ -637,7 +637,7 @@ export default function CustomerAppV3() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <IceCream className="w-8 h-8 text-orange-300" />
+                    <IceCream className="w-8 h-8 text-blue-300 opacity-50" />
                   </div>
                 )}
               </div>
@@ -655,7 +655,7 @@ export default function CustomerAppV3() {
                     key={i}
                     className={`w-2 h-2 rounded-full ${
                       i < Math.min(3, Math.floor(currentPoints / 17))
-                        ? "bg-orange-400"
+                        ? "bg-yellow-400"
                         : "bg-gray-200"
                     }`}
                   />
@@ -678,12 +678,12 @@ export default function CustomerAppV3() {
                   className="p-4 rounded-xl border-0 shadow-sm bg-white flex items-center gap-4"
                   data-testid={`card-product-${product.id}`}
                 >
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-orange-100 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-blue-900/10 flex-shrink-0">
                     {product.imageUrl ? (
                       <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <IceCream className="w-8 h-8 text-orange-300" />
+                        <IceCream className="w-8 h-8 text-blue-300 opacity-50" />
                       </div>
                     )}
                   </div>
@@ -720,7 +720,7 @@ export default function CustomerAppV3() {
             {/* Points Summary */}
             <Card className="p-4 rounded-xl border-0 shadow-md bg-white">
               <div className="text-center">
-                <p className="text-4xl font-bold text-orange-500">{currentPoints}</p>
+                <p className="text-4xl font-bold text-blue-900">{currentPoints}</p>
                 <p className="text-muted-foreground">{t('customer.points')}</p>
               </div>
             </Card>
