@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./replitAuth";
-import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products } from "@shared/schema";
+import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products, transactions as transactionsTable } from "@shared/schema";
 import { calculateNextRunAt, processAutomation, triggerBackupNow } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
@@ -11,7 +11,7 @@ import { sendVonageSMS, isVonageConfigured } from "./vonage";
 import { sendEmail, sendHtmlEmail, sendHtmlEmailsSequentially, sendBatchEmails } from "./resend";
 import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMessage, getLineProfile, LineWebhookBody, WebhookEvent, replyLineTemplatedMessage, sendLineTemplatedMessage } from "./line";
 import { db } from "./db";
-import { eq, sql, and, gt, lt, desc, asc } from "drizzle-orm";
+import { eq, sql, and, gt, lt, gte, desc, asc } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import multer from "multer";
 import ExcelJS from "exceljs";
@@ -107,6 +107,54 @@ function recordRegAttempt(ip: string): void {
   }
 
   regIpRateMap.set(ip, entry);
+}
+
+// ============ Daily Treasury Cap — per-customer transaction limits ============
+// Prevents a single customer from accumulating unlimited points in one day.
+// Counts only purchase-type transactions in the rolling 24-hour window.
+const MAX_DAILY_RECEIPTS = 3;
+const MAX_DAILY_POINTS   = 500;
+
+async function checkDailyTreasuryCap(customerId: string): Promise<{
+  allowed: boolean;
+  reason?: string;
+  message?: string;
+}> {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const [stats] = await db
+    .select({
+      count:       sql<number>`cast(count(*) as int)`,
+      totalPoints: sql<number>`cast(coalesce(sum(${transactionsTable.points}), 0) as int)`,
+    })
+    .from(transactionsTable)
+    .where(
+      and(
+        eq(transactionsTable.customerId, customerId),
+        gte(transactionsTable.createdAt, twentyFourHoursAgo),
+      )
+    );
+
+  const count       = stats?.count       ?? 0;
+  const totalPoints = stats?.totalPoints ?? 0;
+
+  if (count >= MAX_DAILY_RECEIPTS) {
+    return {
+      allowed: false,
+      reason:  "RECEIPT_CAP_REACHED",
+      message: "Daily receipt limit reached. Please keep your receipt and scan again tomorrow!",
+    };
+  }
+
+  if (totalPoints >= MAX_DAILY_POINTS) {
+    return {
+      allowed: false,
+      reason:  "POINTS_CAP_REACHED",
+      message: "Daily point accumulation limit reached. Your loyalty is incredible — save some for tomorrow!",
+    };
+  }
+
+  return { allowed: true };
 }
 
 // ============ In-memory rate limiter for customer OTP endpoints ============
@@ -1864,7 +1912,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/transactions', isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertTransactionSchema.parse(req.body);
-      
+
+      // Daily treasury cap — block if customer already hit 3 receipts or 500 pts in 24 h
+      const cap = await checkDailyTreasuryCap(validatedData.customerId);
+      if (!cap.allowed) {
+        return res.status(429).json({ message: cap.message, reason: cap.reason });
+      }
+
       // Add barista ID from authenticated user
       const transactionData = {
         ...validatedData,
