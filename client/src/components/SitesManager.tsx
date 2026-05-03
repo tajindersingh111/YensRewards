@@ -51,7 +51,7 @@ const PREDEFINED_LOCATIONS = [
   "Yens Head Office",
   "River",
   "Market",
-  "custom", // Option to enter custom location
+  "custom",
 ] as const;
 
 export default function SitesManager() {
@@ -124,16 +124,16 @@ export default function SitesManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sites'] });
-      toast({ 
-        title: t('sites.success'), 
-        description: t('sites.seedSuccess')
+      toast({
+        title: t('sites.success'),
+        description: t('sites.seedSuccess'),
       });
     },
     onError: (error: any) => {
-      toast({ 
-        title: t('sites.error'), 
+      toast({
+        title: t('sites.error'),
         description: error.message || t('sites.seedFailed'),
-        variant: "destructive" 
+        variant: "destructive",
       });
     },
   });
@@ -155,7 +155,6 @@ export default function SitesManager() {
 
   const handleEdit = (site: Site) => {
     setEditingSite(site);
-    // Check if location matches a predefined option
     const isPredefined = PREDEFINED_LOCATIONS.slice(0, -1).includes(site.location as any);
     setSelectedLocation(isPredefined ? site.location : "custom");
     setFormData({
@@ -204,48 +203,61 @@ export default function SitesManager() {
   }
 
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">{t('sites.title')}</h2>
-          <p className="text-xs text-muted-foreground">{t('sites.subtitle')}</p>
-        </div>
-        <div className="flex gap-2">
-          {sites.length < 5 && (
+    <div className="space-y-6 p-6">
+      {/* ── Branded header ── */}
+      <div className="bg-blue-900 rounded-lg p-6 text-white">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+            <MapPin className="h-5 w-5 text-blue-900" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-black uppercase tracking-tight">{t('sites.title')}</h2>
+            <p className="text-blue-300 text-sm">{t('sites.subtitle')}</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {sites.length < 5 && (
+              <Button
+                onClick={() => {
+                  if (confirm(t('sites.seedConfirm'))) {
+                    seedDefaultsMutation.mutate();
+                  }
+                }}
+                variant="outline"
+                className="border-white/30 text-white bg-transparent gap-2"
+                disabled={seedDefaultsMutation.isPending}
+                data-testid="button-seed-defaults"
+              >
+                {seedDefaultsMutation.isPending ? t('common.loading') : t('sites.seedDefaults')}
+              </Button>
+            )}
             <Button
               onClick={() => {
-                if (confirm(t('sites.seedConfirm'))) {
-                  seedDefaultsMutation.mutate();
-                }
+                resetForm();
+                setIsDialogOpen(true);
               }}
-              variant="outline"
-              className="gap-2"
-              disabled={seedDefaultsMutation.isPending}
-              data-testid="button-seed-defaults"
+              className="bg-yellow-400 text-blue-900 font-bold gap-2"
+              data-testid="button-add-site"
             >
-              {seedDefaultsMutation.isPending ? t('common.loading') : t('sites.seedDefaults')}
+              <Plus className="w-4 h-4" />
+              {t('sites.addSite')}
             </Button>
-          )}
-          <Button
-            onClick={() => {
-              resetForm();
-              setIsDialogOpen(true);
-            }}
-            className="gap-2"
-            data-testid="button-add-site"
-          >
-            <Plus className="w-4 h-4" />
-            {t('sites.addSite')}
-          </Button>
+          </div>
         </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingSite ? t('sites.editSite') : t('sites.addNewSite')}</DialogTitle>
+          <DialogHeader className="bg-blue-900 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
+            <DialogTitle className="flex items-center gap-3 text-white">
+              <div className="bg-yellow-400 rounded-md p-1.5">
+                <MapPin className="h-4 w-4 text-blue-900" />
+              </div>
+              <span className="font-black uppercase tracking-tight">
+                {editingSite ? t('sites.editSite') : t('sites.addNewSite')}
+              </span>
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">{t('sites.siteName')} *</Label>
@@ -299,7 +311,6 @@ export default function SitesManager() {
                 value={selectedLocation}
                 onValueChange={(value) => {
                   setSelectedLocation(value);
-                  // Auto-populate location field for predefined options
                   if (value !== "custom") {
                     setFormData({ ...formData, location: value });
                   }
@@ -353,9 +364,7 @@ export default function SitesManager() {
                   id="startTime"
                   type="time"
                   value={formData.openTime}
-                  onChange={(e) =>
-                    setFormData({ ...formData, openTime: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, openTime: e.target.value })}
                   required
                   data-testid="input-hours-start"
                 />
@@ -366,9 +375,7 @@ export default function SitesManager() {
                   id="endTime"
                   type="time"
                   value={formData.closeTime}
-                  onChange={(e) =>
-                    setFormData({ ...formData, closeTime: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, closeTime: e.target.value })}
                   required
                   data-testid="input-hours-end"
                 />
@@ -379,9 +386,7 @@ export default function SitesManager() {
               <Switch
                 id="isActive"
                 checked={formData.isActive}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, isActive: checked })
-                }
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 data-testid="switch-is-active"
               />
               <Label htmlFor="isActive">{t('sites.isActive')}</Label>
@@ -398,6 +403,7 @@ export default function SitesManager() {
               </Button>
               <Button
                 type="submit"
+                className="bg-blue-900 hover:bg-blue-800 text-white"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save-site"
               >
@@ -418,18 +424,21 @@ export default function SitesManager() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sites.map((site) => (
-            <Card key={site.id} className="overflow-hidden border-2 border-yellow-400" data-testid={`site-card-${site.id}`}>
-              <CardHeader className="pb-3">
+            <Card key={site.id} className="overflow-hidden" data-testid={`site-card-${site.id}`}>
+              <CardHeader className="pb-3 bg-blue-900/5 border-b border-blue-100 dark:border-blue-900/30">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <CardTitle className="text-lg" data-testid={`text-site-name-${site.id}`}>
                       {site.name}
                     </CardTitle>
-                    <Badge variant="outline" className="mt-1 bg-yellow-100 text-yellow-800 border-yellow-300">
+                    <Badge
+                      variant="outline"
+                      className="mt-1 bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700"
+                    >
                       {site.channelName}
                     </Badge>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 flex-wrap justify-end">
                     <Badge
                       variant={site.type === "stall" ? "default" : "secondary"}
                       className="text-xs"
@@ -437,18 +446,18 @@ export default function SitesManager() {
                       {t(`sites.type${site.type === "stall" ? "Stall" : "MobileVan"}`)}
                     </Badge>
                     {site.isActive ? (
-                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
                         {t('sites.active')}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200">
+                      <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800/40 dark:text-gray-400">
                         {t('sites.inactive')}
                       </Badge>
                     )}
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 pt-3">
                 <div className="flex items-start gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">{site.location}</span>
@@ -474,7 +483,7 @@ export default function SitesManager() {
                     onClick={() => handleEdit(site)}
                     variant="outline"
                     size="sm"
-                    className="flex-1 hover-elevate active-elevate-2"
+                    className="flex-1"
                     data-testid={`button-edit-${site.id}`}
                   >
                     <Edit className="w-3 h-3 mr-1" />
@@ -484,7 +493,7 @@ export default function SitesManager() {
                     onClick={() => handleDelete(site)}
                     variant="outline"
                     size="sm"
-                    className="flex-1 hover-elevate active-elevate-2"
+                    className="flex-1"
                     data-testid={`button-delete-${site.id}`}
                   >
                     <Trash2 className="w-3 h-3 mr-1" />

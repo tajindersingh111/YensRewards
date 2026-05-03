@@ -154,7 +154,7 @@ function OverviewTab({ users, schedules, timeEntries, sites }: {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">{userInitials(u)}</AvatarFallback>
+                      <AvatarFallback className="bg-blue-900/10 text-blue-900 dark:text-blue-300 font-semibold">{userInitials(u)}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="font-medium" data-testid={`text-barista-name-${u.id}`}>{userName(u)}</div>
@@ -197,9 +197,9 @@ function OverviewTab({ users, schedules, timeEntries, sites }: {
                 {mySchedules.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {mySchedules.map(s => (
-                      <div key={s.id} className="text-xs bg-muted rounded-md px-2 py-1">
-                        <span className="font-medium">{format(parseISO(s.scheduledDate), "EEE d")}</span>
-                        <span className="text-muted-foreground ml-1">{s.startTime}–{s.endTime} · {siteName(s.siteId)}</span>
+                      <div key={s.id} className="text-xs bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-md px-2 py-1">
+                        <span className="font-medium text-blue-900 dark:text-blue-300">{format(parseISO(s.scheduledDate), "EEE d")}</span>
+                        <span className="text-blue-700 dark:text-blue-400 ml-1">{s.startTime}–{s.endTime} · {siteName(s.siteId)}</span>
                       </div>
                     ))}
                   </div>
@@ -250,7 +250,7 @@ function AttendanceTab({ users, timeEntries, sites, isLoading }: {
       </div>
 
       <div className="border rounded-md overflow-hidden">
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900/5 dark:bg-blue-900/20 px-4 py-2 text-xs font-semibold text-blue-900 dark:text-blue-300 border-b border-blue-100 dark:border-blue-800">
           <div>Date</div>
           <div>Barista</div>
           <div>Site</div>
@@ -355,13 +355,13 @@ function HoursSummaryTab({ users, schedules, timeEntries, sites }: {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{minutesToHours(totalScheduled)}</div>
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-300">{minutesToHours(totalScheduled)}</div>
             <div className="text-xs text-muted-foreground mt-1">Total Scheduled</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{minutesToHours(totalWorked)}</div>
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-300">{minutesToHours(totalWorked)}</div>
             <div className="text-xs text-muted-foreground mt-1">Total Worked</div>
           </CardContent>
         </Card>
@@ -376,7 +376,7 @@ function HoursSummaryTab({ users, schedules, timeEntries, sites }: {
       </div>
 
       <div className="border rounded-md overflow-hidden">
-        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900/5 dark:bg-blue-900/20 px-4 py-2 text-xs font-semibold text-blue-900 dark:text-blue-300 border-b border-blue-100 dark:border-blue-800">
           <div>Barista</div>
           <div>Scheduled</div>
           <div>Worked</div>
@@ -391,7 +391,7 @@ function HoursSummaryTab({ users, schedules, timeEntries, sites }: {
           <div key={user.id} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr] gap-0 px-4 py-3 border-b last:border-0 text-sm hover-elevate" data-testid={`row-hours-${user.id}`}>
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{userInitials(user)}</AvatarFallback>
+                <AvatarFallback className="text-[10px] bg-blue-900/10 text-blue-900 dark:text-blue-300">{userInitials(user)}</AvatarFallback>
               </Avatar>
               <span className="font-medium">{userName(user)}</span>
             </div>
@@ -464,21 +464,21 @@ function PerformanceTab({ users }: { users: User[] }) {
 
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="pt-4">
-          <div className="flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-muted-foreground" /><div className="text-xl font-bold">{totalTransactions}</div></div>
+          <div className="flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-blue-900 dark:text-blue-400" /><div className="text-xl font-bold text-blue-900 dark:text-blue-300">{totalTransactions}</div></div>
           <div className="text-xs text-muted-foreground mt-1">Total Transactions</div>
         </CardContent></Card>
         <Card><CardContent className="pt-4">
-          <div className="flex items-center gap-2"><UserPlus className="h-4 w-4 text-muted-foreground" /><div className="text-xl font-bold">{totalSignups}</div></div>
+          <div className="flex items-center gap-2"><UserPlus className="h-4 w-4 text-blue-900 dark:text-blue-400" /><div className="text-xl font-bold text-blue-900 dark:text-blue-300">{totalSignups}</div></div>
           <div className="text-xs text-muted-foreground mt-1">New Signups</div>
         </CardContent></Card>
         <Card><CardContent className="pt-4">
-          <div className="flex items-center gap-2"><Star className="h-4 w-4 text-muted-foreground" /><div className="text-xl font-bold">{totalSpecials}</div></div>
+          <div className="flex items-center gap-2"><Star className="h-4 w-4 text-yellow-500" /><div className="text-xl font-bold text-blue-900 dark:text-blue-300">{totalSpecials}</div></div>
           <div className="text-xs text-muted-foreground mt-1">Specials Sold</div>
         </CardContent></Card>
       </div>
 
       <div className="border rounded-md overflow-hidden">
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-0 bg-blue-900/5 dark:bg-blue-900/20 px-4 py-2 text-xs font-semibold text-blue-900 dark:text-blue-300 border-b border-blue-100 dark:border-blue-800">
           <div>Barista</div>
           <div>Rank</div>
           <div>Transactions</div>
@@ -501,13 +501,16 @@ function PerformanceTab({ users }: { users: User[] }) {
           <div key={user.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] gap-0 px-4 py-3 border-b last:border-0 text-sm hover-elevate" data-testid={`row-perf-${user.id}`}>
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{userInitials(user)}</AvatarFallback>
+                <AvatarFallback className="text-[10px] bg-blue-900/10 text-blue-900 dark:text-blue-300">{userInitials(user)}</AvatarFallback>
               </Avatar>
               <span className="font-medium">{userName(user)}</span>
             </div>
             <div>
               {perf?.weeklyRank ? (
-                <Badge variant={perf.weeklyRank === 1 ? "default" : "secondary"} className="text-xs">
+                <Badge
+                  variant={perf.weeklyRank === 1 ? "default" : "secondary"}
+                  className={perf.weeklyRank === 1 ? "bg-yellow-400 text-blue-900 text-xs" : "text-xs"}
+                >
                   #{perf.weeklyRank}
                 </Badge>
               ) : <span className="text-muted-foreground">—</span>}
@@ -559,11 +562,9 @@ function StaffCalendarTab({ users, schedules, sites }: {
   const colorMap = Object.fromEntries(baristas.map((u, i) => [u.id, i % BARISTA_COLORS.length]));
   const siteName = (id: string) => sites.find(s => s.id === id)?.name ?? "";
 
-  // ── Week helpers ────────────────────────────────────────────────────────────
   const weekStart = startOfWeek(anchor, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // ── Month helpers ───────────────────────────────────────────────────────────
   const monthStart = startOfMonth(anchor);
   const monthEnd = endOfMonth(anchor);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -575,7 +576,6 @@ function StaffCalendarTab({ users, schedules, sites }: {
     return schedules.filter(s => s.scheduledDate === d);
   }
 
-  // ── Legend ──────────────────────────────────────────────────────────────────
   const legend = (
     <div className="flex flex-wrap gap-2">
       {baristas.map((u, i) => (
@@ -586,14 +586,12 @@ function StaffCalendarTab({ users, schedules, sites }: {
     </div>
   );
 
-  // ── Week View ────────────────────────────────────────────────────────────────
   const weekView = (
     <div className="overflow-x-auto">
       <div className="min-w-[600px]">
-        {/* Day headers */}
         <div className="grid grid-cols-7 gap-1 mb-1">
           {weekDays.map(day => (
-            <div key={day.toISOString()} className={`text-center py-2 rounded-md text-sm font-medium ${isToday(day) ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+            <div key={day.toISOString()} className={`text-center py-2 rounded-md text-sm font-medium ${isToday(day) ? "bg-blue-900 text-white" : "text-muted-foreground"}`}>
               <div className="text-xs font-semibold uppercase tracking-wide">{format(day, "EEE")}</div>
               <div className={`text-lg font-bold leading-tight ${isToday(day) ? "" : "text-foreground"}`}>{format(day, "d")}</div>
               <div className="text-[10px] opacity-70">{format(day, "MMM")}</div>
@@ -601,12 +599,11 @@ function StaffCalendarTab({ users, schedules, sites }: {
           ))}
         </div>
 
-        {/* Shift cells */}
         <div className="grid grid-cols-7 gap-1">
           {weekDays.map(day => {
             const shifts = getShifts(day);
             return (
-              <div key={day.toISOString()} className={`min-h-[120px] rounded-md border p-1.5 space-y-1 ${isToday(day) ? "border-primary/40 bg-primary/5" : "bg-muted/20"}`} data-testid={`cal-day-${format(day, "yyyy-MM-dd")}`}>
+              <div key={day.toISOString()} className={`min-h-[120px] rounded-md border p-1.5 space-y-1 ${isToday(day) ? "border-blue-400/40 bg-blue-50 dark:bg-blue-900/10" : "bg-muted/20"}`} data-testid={`cal-day-${format(day, "yyyy-MM-dd")}`}>
                 {shifts.length === 0 && (
                   <div className="h-full flex items-center justify-center">
                     <span className="text-xs text-muted-foreground/50">—</span>
@@ -632,26 +629,23 @@ function StaffCalendarTab({ users, schedules, sites }: {
     </div>
   );
 
-  // ── Month View ────────────────────────────────────────────────────────────────
   const dayHeaders = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const monthView = (
     <div>
-      {/* Day-of-week header row */}
       <div className="grid grid-cols-7 gap-1 mb-1">
         {dayHeaders.map(d => (
           <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1 uppercase tracking-wide">{d}</div>
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {calDays.map(day => {
           const shifts = getShifts(day);
           const inMonth = isSameMonth(day, anchor);
           const today = isToday(day);
           return (
-            <div key={day.toISOString()} className={`rounded-md border p-1 min-h-[80px] ${today ? "border-primary/60 bg-primary/5" : inMonth ? "bg-background" : "bg-muted/10 opacity-50"}`} data-testid={`cal-month-day-${format(day, "yyyy-MM-dd")}`}>
-              <div className={`text-xs font-semibold mb-1 w-5 h-5 flex items-center justify-center rounded-full ${today ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+            <div key={day.toISOString()} className={`rounded-md border p-1 min-h-[80px] ${today ? "border-blue-400/60 bg-blue-50 dark:bg-blue-900/10" : inMonth ? "bg-background" : "bg-muted/10 opacity-50"}`} data-testid={`cal-month-day-${format(day, "yyyy-MM-dd")}`}>
+              <div className={`text-xs font-semibold mb-1 w-5 h-5 flex items-center justify-center rounded-full ${today ? "bg-blue-900 text-white" : "text-muted-foreground"}`}>
                 {format(day, "d")}
               </div>
               <div className="space-y-0.5">
@@ -679,7 +673,6 @@ function StaffCalendarTab({ users, schedules, sites }: {
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button size="icon" variant="outline" onClick={() => setAnchor(a => viewMode === "week" ? subWeeks(a, 1) : subMonths(a, 1))} data-testid="button-cal-prev">
@@ -696,15 +689,13 @@ function StaffCalendarTab({ users, schedules, sites }: {
           <Button variant="ghost" size="sm" onClick={() => setAnchor(new Date())} data-testid="button-cal-today">Today</Button>
         </div>
         <div className="flex rounded-md border overflow-hidden">
-          <button onClick={() => setViewMode("week")} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === "week" ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted"}`} data-testid="button-view-week">Week</button>
-          <button onClick={() => setViewMode("month")} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === "month" ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted"}`} data-testid="button-view-month">Month</button>
+          <button onClick={() => setViewMode("week")} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === "week" ? "bg-blue-900 text-white font-medium" : "hover:bg-muted"}`} data-testid="button-view-week">Week</button>
+          <button onClick={() => setViewMode("month")} className={`px-3 py-1.5 text-sm transition-colors ${viewMode === "month" ? "bg-blue-900 text-white font-medium" : "hover:bg-muted"}`} data-testid="button-view-month">Month</button>
         </div>
       </div>
 
-      {/* Legend */}
       {baristas.length > 0 && legend}
 
-      {/* Calendar */}
       {viewMode === "week" ? weekView : monthView}
 
       {schedules.length === 0 && (
@@ -735,7 +726,6 @@ export default function BaristaManager() {
     queryKey: ["/api/admin/work-schedules"],
   });
 
-  // Fetch last 90 days of time entries by default
   const startDate = format(subDays(today, 90), "yyyy-MM-dd");
   const { data: timeEntries = [], isLoading: entriesLoading } = useQuery<TimeEntry[]>({
     queryKey: ["/api/admin/time-entries", startDate],
@@ -752,21 +742,27 @@ export default function BaristaManager() {
   const isLoading = usersLoading || schedulesLoading || entriesLoading;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Barista Management</h2>
-          <p className="text-sm text-muted-foreground">Schedules, hours, attendance and performance</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {currentlyIn.length > 0 && (
-            <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-0 gap-1 no-default-active-elevate" data-testid="badge-currently-clocked-in">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              {currentlyIn.length} clocked in now
-            </Badge>
-          )}
-          <div className="flex gap-2 text-sm text-muted-foreground">
-            <span data-testid="text-barista-count"><span className="font-medium text-foreground">{baristas.length}</span> staff</span>
+    <div className="space-y-6">
+      {/* ── Branded header ── */}
+      <div className="bg-blue-900 rounded-lg p-6 text-white">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+            <Users className="h-5 w-5 text-blue-900" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-black uppercase tracking-tight">Barista Management</h2>
+            <p className="text-blue-300 text-sm">Schedules, hours, attendance and performance</p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            {currentlyIn.length > 0 && (
+              <Badge className="bg-green-500/20 text-green-300 border-green-500/30 gap-1 no-default-active-elevate" data-testid="badge-currently-clocked-in">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                {currentlyIn.length} clocked in now
+              </Badge>
+            )}
+            <span className="text-blue-300 text-sm" data-testid="text-barista-count">
+              <span className="font-bold text-white">{baristas.length}</span> staff
+            </span>
           </div>
         </div>
       </div>

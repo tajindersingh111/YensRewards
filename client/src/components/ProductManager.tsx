@@ -240,221 +240,246 @@ export default function ProductManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">{t('products.title')}</h2>
-          <p className="text-xs text-muted-foreground">{t('products.subtitle')}</p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {products.length > 0 && (
-            <Dialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+      {/* ── Branded header ── */}
+      <div className="bg-blue-900 rounded-lg p-6 text-white">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+            <Package className="h-5 w-5 text-blue-900" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-black uppercase tracking-tight">{t('products.title')}</h2>
+            <p className="text-blue-300 text-sm">{t('products.subtitle')}</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {products.length > 0 && (
+              <Dialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-white/30 text-white bg-transparent"
+                    data-testid="button-delete-all-products"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('products.deleteAll')}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-red-600">
+                      <AlertTriangle className="w-5 h-5" />
+                      {t('products.deleteAllTitle')}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <p className="text-sm text-muted-foreground py-4">
+                    {t('products.deleteAllWarning', { count: products.length })}
+                  </p>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowDeleteAllDialog(false)} data-testid="button-cancel-delete-all">
+                      {t('products.cancel')}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteAllMutation.mutate()}
+                      disabled={deleteAllMutation.isPending}
+                      data-testid="button-confirm-delete-all"
+                    >
+                      {deleteAllMutation.isPending ? t('common.deleting') : t('products.deleteAllConfirm')}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+            <ProductCSVImport />
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) resetForm();
+            }}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="text-red-600 border-red-200" data-testid="button-delete-all-products">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {t('products.deleteAll')}
+                <Button
+                  className="bg-yellow-400 text-blue-900 font-bold"
+                  data-testid="button-add-product"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t('products.addProduct')}
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-red-600">
-                    <AlertTriangle className="w-5 h-5" />
-                    {t('products.deleteAllTitle')}
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader className="bg-blue-900 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
+                  <DialogTitle className="flex items-center gap-3 text-white">
+                    <div className="bg-yellow-400 rounded-md p-1.5">
+                      <Package className="h-4 w-4 text-blue-900" />
+                    </div>
+                    <span className="font-black uppercase tracking-tight">
+                      {editingProduct ? t('products.editProduct') : t('products.addNewProduct')}
+                    </span>
                   </DialogTitle>
                 </DialogHeader>
-                <p className="text-sm text-muted-foreground py-4">
-                  {t('products.deleteAllWarning', { count: products.length })}
-                </p>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowDeleteAllDialog(false)} data-testid="button-cancel-delete-all">
-                    {t('products.cancel')}
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => deleteAllMutation.mutate()}
-                    disabled={deleteAllMutation.isPending}
-                    data-testid="button-confirm-delete-all"
-                  >
-                    {deleteAllMutation.isPending ? t('common.deleting') : t('products.deleteAllConfirm')}
-                  </Button>
-                </DialogFooter>
+                <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+
+                  {/* ── Photo first ── */}
+                  <div>
+                    <Label>{t('products.productImage')}</Label>
+                    <ProductPhotoUpload
+                      currentImageUrl={formData.imageUrl}
+                      onImageChange={(url) => setFormData({ ...formData, imageUrl: url })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="productCode">{t('products.productCode')}</Label>
+                      <Input
+                        id="productCode"
+                        value={formData.productCode}
+                        onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
+                        placeholder="0010001"
+                        data-testid="input-product-code"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cost">{t('products.productCost')} (฿)</Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        value={formData.cost}
+                        onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                        placeholder="0.00"
+                        data-testid="input-product-cost"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="name">{t('products.productName')} *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      data-testid="input-product-name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">{t('products.productDescription')}</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={3}
+                      data-testid="input-product-description"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="price">{t('products.productPrice')} (฿) *</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        required
+                        data-testid="input-product-price"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="category">{t('products.productCategory')} *</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      >
+                        <SelectTrigger id="category" data-testid="select-product-category">
+                          <SelectValue placeholder={t('products.selectCategory')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORY_VALUES.map((catValue) => (
+                            <SelectItem key={catValue} value={catValue}>
+                              {t(`menu.categories.${catValue}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="badge">{t('products.promotionalBadge')}</Label>
+                      <Select
+                        value={formData.badge || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, badge: value === "none" ? "" : value })}
+                      >
+                        <SelectTrigger id="badge" data-testid="select-product-badge">
+                          <SelectValue placeholder={t('products.none')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t('products.none')}</SelectItem>
+                          {BADGE_CONFIG.map((badge) => (
+                            <SelectItem key={badge.value} value={badge.value}>
+                              {t(`menu.badges.${badge.value}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="sortOrder">{t('products.sortOrder')}</Label>
+                      <Input
+                        id="sortOrder"
+                        type="number"
+                        value={formData.sortOrder}
+                        onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                        data-testid="input-product-sort"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-4 flex-wrap">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({ ...formData, featured: e.target.checked })} className="w-4 h-4" data-testid="checkbox-product-featured" />
+                      <span className="text-sm">{t('products.featured')}</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={formData.promoFocus} onChange={(e) => setFormData({ ...formData, promoFocus: e.target.checked })} className="w-4 h-4 accent-orange-500" data-testid="checkbox-product-promo-focus" />
+                      <span className="text-sm text-orange-600 font-medium">{t('products.promoFocus')}</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={formData.available} onChange={(e) => setFormData({ ...formData, available: e.target.checked })} className="w-4 h-4" data-testid="checkbox-product-available" />
+                      <span className="text-sm">{t('products.productAvailable')}</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={formData.isRedeemable} onChange={(e) => setFormData({ ...formData, isRedeemable: e.target.checked })} className="w-4 h-4 accent-green-600" data-testid="checkbox-product-redeemable" />
+                      <span className="text-sm text-green-700 dark:text-green-400 font-medium">{t('products.redeemable', 'Redeemable with points')}</span>
+                    </label>
+                  </div>
+                  {formData.isRedeemable && (
+                    <div className="space-y-2">
+                      <Label htmlFor="pointCost">{t('products.pointCost', 'Point Cost for Redemption')}</Label>
+                      <Input
+                        id="pointCost"
+                        type="number"
+                        min="1"
+                        value={formData.pointCost}
+                        onChange={(e) => setFormData({ ...formData, pointCost: parseInt(e.target.value) || 100 })}
+                        data-testid="input-product-point-cost"
+                      />
+                    </div>
+                  )}
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel-product">
+                      {t('products.cancel')}
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-blue-900 hover:bg-blue-800 text-white"
+                      disabled={createMutation.isPending || updateMutation.isPending}
+                      data-testid="button-save-product"
+                    >
+                      {editingProduct ? t('products.update') : t('products.create')}
+                    </Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
-          )}
-          <ProductCSVImport />
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-product">
-                <Plus className="w-4 h-4 mr-2" />
-                {t('products.addProduct')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingProduct ? t('products.editProduct') : t('products.addNewProduct')}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-
-                {/* ── Photo first ── */}
-                <div>
-                  <Label>{t('products.productImage')}</Label>
-                  <ProductPhotoUpload
-                    currentImageUrl={formData.imageUrl}
-                    onImageChange={(url) => setFormData({ ...formData, imageUrl: url })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="productCode">{t('products.productCode')}</Label>
-                    <Input
-                      id="productCode"
-                      value={formData.productCode}
-                      onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
-                      placeholder="0010001"
-                      data-testid="input-product-code"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cost">{t('products.productCost')} (฿)</Label>
-                    <Input
-                      id="cost"
-                      type="number"
-                      step="0.01"
-                      value={formData.cost}
-                      onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                      placeholder="0.00"
-                      data-testid="input-product-cost"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="name">{t('products.productName')} *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    data-testid="input-product-name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">{t('products.productDescription')}</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    data-testid="input-product-description"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="price">{t('products.productPrice')} (฿) *</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      required
-                      data-testid="input-product-price"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="category">{t('products.productCategory')} *</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
-                    >
-                      <SelectTrigger id="category" data-testid="select-product-category">
-                        <SelectValue placeholder={t('products.selectCategory')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORY_VALUES.map((catValue) => (
-                          <SelectItem key={catValue} value={catValue}>
-                            {t(`menu.categories.${catValue}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="badge">{t('products.promotionalBadge')}</Label>
-                    <Select
-                      value={formData.badge || "none"}
-                      onValueChange={(value) => setFormData({ ...formData, badge: value === "none" ? "" : value })}
-                    >
-                      <SelectTrigger id="badge" data-testid="select-product-badge">
-                        <SelectValue placeholder={t('products.none')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">{t('products.none')}</SelectItem>
-                        {BADGE_CONFIG.map((badge) => (
-                          <SelectItem key={badge.value} value={badge.value}>
-                            {t(`menu.badges.${badge.value}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="sortOrder">{t('products.sortOrder')}</Label>
-                    <Input
-                      id="sortOrder"
-                      type="number"
-                      value={formData.sortOrder}
-                      onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                      data-testid="input-product-sort"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-4 flex-wrap">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({ ...formData, featured: e.target.checked })} className="w-4 h-4" data-testid="checkbox-product-featured" />
-                    <span className="text-sm">{t('products.featured')}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={formData.promoFocus} onChange={(e) => setFormData({ ...formData, promoFocus: e.target.checked })} className="w-4 h-4 accent-orange-500" data-testid="checkbox-product-promo-focus" />
-                    <span className="text-sm text-orange-600 font-medium">{t('products.promoFocus')}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={formData.available} onChange={(e) => setFormData({ ...formData, available: e.target.checked })} className="w-4 h-4" data-testid="checkbox-product-available" />
-                    <span className="text-sm">{t('products.productAvailable')}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={formData.isRedeemable} onChange={(e) => setFormData({ ...formData, isRedeemable: e.target.checked })} className="w-4 h-4 accent-green-600" data-testid="checkbox-product-redeemable" />
-                    <span className="text-sm text-green-700 dark:text-green-400 font-medium">{t('products.redeemable', 'Redeemable with points')}</span>
-                  </label>
-                </div>
-                {formData.isRedeemable && (
-                  <div className="space-y-2">
-                    <Label htmlFor="pointCost">{t('products.pointCost', 'Point Cost for Redemption')}</Label>
-                    <Input
-                      id="pointCost"
-                      type="number"
-                      min="1"
-                      value={formData.pointCost}
-                      onChange={(e) => setFormData({ ...formData, pointCost: parseInt(e.target.value) || 100 })}
-                      data-testid="input-product-point-cost"
-                    />
-                  </div>
-                )}
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel-product">
-                    {t('products.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-save-product">
-                    {editingProduct ? t('products.update') : t('products.create')}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          </div>
         </div>
       </div>
 
@@ -487,7 +512,7 @@ export default function ProductManager() {
               {quickPhotoUrl && (
                 <img src={quickPhotoUrl} alt={quickPhotoProduct?.name} className="w-full max-h-48 object-contain rounded-md border" />
               )}
-              <Button onClick={closeQuickPhoto} className="w-full" data-testid="button-quick-photo-done">Done</Button>
+              <Button onClick={closeQuickPhoto} className="w-full bg-blue-900 hover:bg-blue-800 text-white" data-testid="button-quick-photo-done">Done</Button>
             </div>
           ) : (
             <div className="space-y-4">

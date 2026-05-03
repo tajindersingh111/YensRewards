@@ -18,8 +18,7 @@ export function SchedulesManager() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<WorkSchedule | null>(null);
-  
-  // Initialize mode from localStorage for persistence (with SSR guard)
+
   const [scheduleMode, setScheduleModeState] = useState<'single' | 'weekly'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('scheduleMode');
@@ -27,14 +26,14 @@ export function SchedulesManager() {
     }
     return 'single';
   });
-  
-  // Wrapper to persist mode changes to localStorage (with SSR guard)
+
   const setScheduleMode = (mode: 'single' | 'weekly') => {
     setScheduleModeState(mode);
     if (typeof window !== 'undefined') {
       localStorage.setItem('scheduleMode', mode);
     }
   };
+
   const [formData, setFormData] = useState({
     userId: "",
     siteId: "",
@@ -118,7 +117,6 @@ export function SchedulesManager() {
   const resetForm = () => {
     setFormData({ userId: "", siteId: "", scheduledDate: "", startTime: "", endTime: "", notes: "" });
     setWeeklyFormData({ userId: "", siteId: "", weekStartDate: "", daysOfWeek: [], repeatWeeks: 1, startTime: "", endTime: "", notes: "" });
-    // Don't reset scheduleMode - preserve last used mode for better UX
     setEditingSchedule(null);
   };
 
@@ -127,7 +125,6 @@ export function SchedulesManager() {
       updateMutation.mutate({ id: editingSchedule.id, data: formData });
     } else {
       if (scheduleMode === 'weekly') {
-        // Frontend validation
         if (!weeklyFormData.userId || !weeklyFormData.siteId) {
           toast({ title: t('admin.schedules.validationBaristaAndSite'), variant: 'destructive' });
           return;
@@ -158,7 +155,6 @@ export function SchedulesManager() {
 
   const getMonday = (date: Date): string => {
     const d = new Date(date);
-    // Validate date object before processing
     if (isNaN(d.getTime())) return '';
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -180,16 +176,26 @@ export function SchedulesManager() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">{t('admin.schedules.title')}</h2>
-          <p className="text-xs text-muted-foreground">{t('admin.schedules.subtitle')}</p>
+    <div className="space-y-6">
+      {/* ── Branded header ── */}
+      <div className="bg-blue-900 rounded-lg p-6 text-white">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5 shrink-0">
+            <Calendar className="h-5 w-5 text-blue-900" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-black uppercase tracking-tight">{t('admin.schedules.title')}</h2>
+            <p className="text-blue-300 text-sm">{t('admin.schedules.subtitle')}</p>
+          </div>
+          <Button
+            onClick={() => { resetForm(); setIsDialogOpen(true); }}
+            className="bg-yellow-400 text-blue-900 font-bold"
+            data-testid="button-add-schedule"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t('admin.schedules.addSchedule')}
+          </Button>
         </div>
-        <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} data-testid="button-add-schedule">
-          <Plus className="w-4 h-4 mr-2" />
-          {t('admin.schedules.addSchedule')}
-        </Button>
       </div>
 
       {schedulesLoading ? (
@@ -205,7 +211,9 @@ export function SchedulesManager() {
               <Card key={schedule.id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4 flex-1">
-                    <Calendar className="w-5 h-5 text-muted-foreground mt-1" />
+                    <div className="bg-blue-900/10 rounded-md p-2 shrink-0">
+                      <Calendar className="w-4 h-4 text-blue-900 dark:text-blue-400" />
+                    </div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{barista?.firstName} {barista?.lastName}</h3>
                       <p className="text-sm text-muted-foreground">{site?.name}</p>
@@ -232,10 +240,17 @@ export function SchedulesManager() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingSchedule ? t('admin.schedules.editSchedule') : t('admin.schedules.addSchedule')}</DialogTitle>
+          <DialogHeader className="bg-blue-900 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
+            <DialogTitle className="flex items-center gap-3 text-white">
+              <div className="bg-yellow-400 rounded-md p-1.5">
+                <Calendar className="h-4 w-4 text-blue-900" />
+              </div>
+              <span className="font-black uppercase tracking-tight">
+                {editingSchedule ? t('admin.schedules.editSchedule') : t('admin.schedules.addSchedule')}
+              </span>
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-2">
             {!editingSchedule && (
               <div>
                 <Label>{t('admin.schedules.mode')}</Label>
@@ -245,7 +260,7 @@ export function SchedulesManager() {
                     variant={scheduleMode === 'single' ? 'default' : 'outline'}
                     onClick={() => setScheduleMode('single')}
                     data-testid="button-mode-single"
-                    className="flex-1"
+                    className={`flex-1 ${scheduleMode === 'single' ? 'bg-blue-900 hover:bg-blue-800 text-white' : ''}`}
                   >
                     {t('admin.schedules.singleDay')}
                   </Button>
@@ -254,7 +269,7 @@ export function SchedulesManager() {
                     variant={scheduleMode === 'weekly' ? 'default' : 'outline'}
                     onClick={() => setScheduleMode('weekly')}
                     data-testid="button-mode-weekly"
-                    className="flex-1"
+                    className={`flex-1 ${scheduleMode === 'weekly' ? 'bg-blue-900 hover:bg-blue-800 text-white' : ''}`}
                   >
                     {t('admin.schedules.weeklySchedule')}
                   </Button>
@@ -358,7 +373,7 @@ export function SchedulesManager() {
                         variant={weeklyFormData.daysOfWeek.includes(day) ? 'default' : 'outline'}
                         onClick={() => toggleDayOfWeek(day)}
                         data-testid={`button-day-${day}`}
-                        className="h-auto py-2 px-1"
+                        className={`h-auto py-2 px-1 ${weeklyFormData.daysOfWeek.includes(day) ? 'bg-blue-900 hover:bg-blue-800 text-white' : ''}`}
                       >
                         {t(`admin.schedules.days.${day}`).substring(0, 3)}
                       </Button>
@@ -395,9 +410,9 @@ export function SchedulesManager() {
                   <Textarea value={weeklyFormData.notes} onChange={(e) => setWeeklyFormData({ ...weeklyFormData, notes: e.target.value })} data-testid="input-notes-weekly" />
                 </div>
                 {weeklyFormData.daysOfWeek.length > 0 && weeklyFormData.repeatWeeks > 0 && (
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm font-medium">{t('admin.schedules.summary')}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">{t('admin.schedules.summary')}</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
                       {t('admin.schedules.summaryText', {
                         days: weeklyFormData.daysOfWeek.length,
                         weeks: weeklyFormData.repeatWeeks,
@@ -408,7 +423,12 @@ export function SchedulesManager() {
                 )}
               </>
             )}
-            <Button onClick={handleSubmit} className="w-full" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-save-schedule">
+            <Button
+              onClick={handleSubmit}
+              className="w-full bg-blue-900 hover:bg-blue-800 text-white"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-schedule"
+            >
               {createMutation.isPending || updateMutation.isPending ? t('common.saving') : t('common.save')}
             </Button>
           </div>
