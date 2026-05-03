@@ -986,22 +986,22 @@ export default function AutomationsManager() {
   return (
     <div className="space-y-8 pb-20">
       {/* Premium Header */}
-      <div className="bg-white p-8 rounded-3xl shadow-sm border-t-8 border-blue-900 flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-blue-900 flex items-center justify-center shadow-2xl">
-            <Zap className="w-7 h-7 text-[#FCD34D]" />
+      <div className="bg-blue-900 rounded-lg p-6 text-white flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-yellow-400 rounded-lg p-2.5">
+            <Zap className="w-5 h-5 text-blue-900" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Automation Engine</h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Rule-Based Engagement Systems</p>
+            <h1 className="text-xl font-black text-white uppercase tracking-tight">Automation Engine</h1>
+            <p className="text-blue-300 text-sm">Rule-Based Engagement Systems</p>
           </div>
         </div>
         <Button
           onClick={() => { setEditing(null); setPrefill(null); setDialogOpen(true); }}
-          className="h-14 bg-blue-900 text-white font-black rounded-2xl px-8 shadow-lg"
+          className="bg-yellow-400 text-blue-900 font-black rounded-lg px-6 hover:bg-yellow-300"
           data-testid="button-create-automation"
         >
-          <Plus className="w-5 h-5 mr-2" /> NEW AUTOMATION
+          <Plus className="w-4 h-4 mr-2" /> NEW AUTOMATION
         </Button>
       </div>
 

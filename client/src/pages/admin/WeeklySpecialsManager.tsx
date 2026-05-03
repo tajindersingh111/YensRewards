@@ -155,17 +155,17 @@ export default function WeeklySpecialsManager() {
   return (
     <div className="space-y-8">
       {/* Premium Header */}
-      <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border-t-4 border-blue-900">
+      <div className="bg-blue-900 rounded-lg p-6 text-white flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-900 flex items-center justify-center shadow-lg">
-            <Megaphone className="w-6 h-6 text-[#FCD34D]" />
+          <div className="bg-yellow-400 rounded-lg p-2.5">
+            <Megaphone className="w-5 h-5 text-blue-900" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Campaign Manager</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Weekly Loyalty Incentives</p>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight">Campaign Manager</h2>
+            <p className="text-blue-300 text-sm">Weekly Loyalty Incentives</p>
           </div>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)} className="bg-blue-900 text-white font-black rounded-xl px-6 h-12" data-testid="button-add-special">
+        <Button onClick={() => setAddDialogOpen(true)} className="bg-yellow-400 text-blue-900 font-black rounded-lg px-6 hover:bg-yellow-300" data-testid="button-add-special">
           <Plus className="w-4 h-4 mr-2" /> CREATE NEW SPECIAL
         </Button>
       </div>

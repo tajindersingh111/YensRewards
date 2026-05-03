@@ -143,7 +143,7 @@ export default function SendMessageForm() {
 
       {/* Live Preview (Right Side) */}
       <div className="space-y-6">
-        <Card className="border-none shadow-xl rounded-3xl bg-slate-900 text-white overflow-hidden sticky top-6">
+        <Card className="border-none shadow-xl rounded-3xl bg-blue-900 text-white overflow-hidden sticky top-6">
           <div className="p-4 bg-white/5 border-b border-white/5 flex items-center gap-2">
             <Eye className="w-3 h-3 text-blue-400" />
             <span className="text-[10px] font-black uppercase tracking-widest text-blue-300">Live Handset Preview</span>
