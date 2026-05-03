@@ -659,43 +659,50 @@ export default function CustomerAppV3() {
         </Card>
 
         {/* Rewards List */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {rewardProducts.map((product) => (
             <Card
               key={product.id}
-              className="p-3 rounded-xl border-0 shadow-sm bg-white flex items-center gap-3 hover-elevate cursor-pointer"
+              className="p-4 rounded-[2rem] border-none shadow-xl bg-white flex items-center gap-4 hover:scale-[1.02] transition-all cursor-pointer group"
               data-testid={`card-reward-${product.id}`}
             >
-              {/* Product Image */}
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-blue-900/10 flex-shrink-0">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-blue-900/5 border border-blue-900/10 flex-shrink-0 relative">
                 {product.imageUrl ? (
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <IceCream className="w-8 h-8 text-blue-300 opacity-50" />
+                    <IceCream className="w-8 h-8 text-blue-900 opacity-20" />
                   </div>
                 )}
-              </div>
-              
-              {/* Product Info */}
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-foreground truncate">{product.name}</h4>
-                <p className="text-sm text-muted-foreground">50 Points</p>
+                <div className="absolute top-0 left-0 w-2 h-2 bg-yellow-400 rounded-br-md" />
               </div>
 
-              {/* Points indicator dots */}
-              <div className="flex gap-1">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge className="bg-yellow-400 text-blue-900 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5 shadow-sm">
+                    50 {t('customer.points', 'Points')}
+                  </Badge>
+                </div>
+                <h4 className="font-black text-blue-900 uppercase tracking-tighter truncate leading-tight">
+                  {product.name}
+                </h4>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-70">
+                  Premium Selection
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5 pr-2">
                 {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
-                    className={`w-2 h-2 rounded-full ${
+                    className={`w-2 h-2 rounded-full transition-all duration-500 ${
                       i < Math.min(3, Math.floor(currentPoints / 17))
-                        ? "bg-yellow-400"
-                        : "bg-gray-200"
+                        ? "bg-yellow-400 scale-110"
+                        : "bg-blue-900/10"
                     }`}
                   />
                 ))}
@@ -709,26 +716,35 @@ export default function CustomerAppV3() {
         {/* REWARDS TAB */}
         {activeTab === "rewards" && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold text-foreground">{t('customer.rewards')}</h2>
-            <div className="space-y-3">
+            <div className="bg-blue-900 rounded-[1.5rem] px-5 py-4">
+              <h2 className="text-base font-black text-white uppercase tracking-tighter">{t('customer.rewards')}</h2>
+              <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] mt-0.5">Redeem with your points</p>
+            </div>
+            <div className="space-y-4">
               {products.map((product) => (
                 <Card
                   key={product.id}
-                  className="p-4 rounded-xl border-0 shadow-sm bg-white flex items-center gap-4"
+                  className="p-4 rounded-[2rem] border-none shadow-xl bg-white flex items-center gap-4 group cursor-pointer hover:scale-[1.02] transition-all"
                   data-testid={`card-product-${product.id}`}
                 >
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-blue-900/10 flex-shrink-0">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-blue-900/5 border border-blue-900/10 flex-shrink-0 relative">
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <IceCream className="w-8 h-8 text-blue-300 opacity-50" />
+                        <IceCream className="w-8 h-8 text-blue-900 opacity-20" />
                       </div>
                     )}
+                    <div className="absolute top-0 left-0 w-2 h-2 bg-yellow-400 rounded-br-md" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-foreground truncate">{product.name}</h4>
-                    <p className="text-sm text-muted-foreground">50 {t('customer.points')}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge className="bg-yellow-400 text-blue-900 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5 shadow-sm">
+                        50 {t('customer.points', 'Points')}
+                      </Badge>
+                    </div>
+                    <h4 className="font-black text-blue-900 uppercase tracking-tighter truncate leading-tight">{product.name}</h4>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-70">Premium Selection</p>
                   </div>
                 </Card>
               ))}
