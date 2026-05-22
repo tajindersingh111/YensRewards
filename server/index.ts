@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { setupAuth } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
@@ -10,6 +11,7 @@ import { storage } from "./storage";
 import fs from "fs";
 import path from "path";
 import { db } from "./db";
+import { env } from "./env";
 import { eq, and, gte, lt, lte, inArray, sql } from "drizzle-orm";
 import { dailySales, users, sites, customers as customersTable } from "@shared/schema";
 import crypto from "crypto";
@@ -32,11 +34,11 @@ async function ensureDefaultAdmin() {
         role: "admin",
         isActive: true,
       });
-      log("Default admin created: admin@yensrewards.com / 123456");
+      log("Default admin credentials created.");
     } else {
       log(`Admin user found, force-updating password for ${admins[0].email}...`);
       await db.update(users).set({ password: hashedPassword }).where(eq(users.id, admins[0].id));
-      log("Admin password updated to: 123456");
+      log("Admin password updated successfully.");
     }
   } catch (err) {
     log("Error ensuring default admin: " + String(err));
@@ -56,7 +58,7 @@ async function restoreMissingCustomers() {
 
     const fsModule = await import('fs');
     const pathModule = await import('path');
-    const csvPath = pathModule.resolve(process.cwd(), 'attached_assets/member-active-2026-01-16_1768629832619.csv');
+    const csvPath = pathModule.resolve(process.cwd(), 'server/assets/member-active-2026-01-16_1768629832619.csv');
     if (!fsModule.existsSync(csvPath)) {
       log('Customer restoration: CSV file not found, skipping');
       return;
@@ -806,13 +808,20 @@ const app = express();
 // trivially spoofed by a direct client.
 app.set('trust proxy', 1);
 
-// Log startup info
-log(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
+// Integrate helmet for HTTP headers hardening
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 
-log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
-log(`SESSION_SECRET: ${process.env.SESSION_SECRET ? 'set' : 'not set'}`);
-log(`VONAGE_API_KEY: ${process.env.VONAGE_API_KEY ? 'set' : 'NOT SET'}`);
-log(`VONAGE_API_SECRET: ${process.env.VONAGE_API_SECRET ? 'set' : 'NOT SET'}`);
+// Ensure the local attached_assets folder exists
+if (!fs.existsSync("./attached_assets")) {
+  fs.mkdirSync("./attached_assets", { recursive: true });
+  log("Created missing attached_assets directory");
+}
+
+// Log startup info
+log(`Starting server in ${env.NODE_ENV} mode`);
 
 // Extend Request type to include rawBody
 declare global {
@@ -868,6 +877,18 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    // Run database migrations/sync in production
+    if (env.NODE_ENV === "production") {
+      try {
+        log("Production mode: Running database schema sync via drizzle-kit push...");
+        const { execSync } = await import("child_process");
+        execSync("npx drizzle-kit push", { stdio: "inherit" });
+        log("Database schema sync completed successfully.");
+      } catch (err) {
+        log("Database schema sync warning: " + (err instanceof Error ? err.message : String(err)));
+      }
+    }
+
     // Ensure default admin exists first thing
     await ensureDefaultAdmin();
 
@@ -1002,20 +1023,29 @@ app.use((req, res, next) => {
     // Global error handler - logs error but doesn't rethrow to prevent crashes
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
+      const message = env.NODE_ENV === "production" && status === 500
+        ? "Internal Server Error"
+        : err.message || "Internal Server Error";
 
       log(`Error: ${status} - ${message}`);
-      console.error('Request error:', err);
+      if (env.NODE_ENV !== "production") {
+        console.error('Request error:', err);
+      } else {
+        console.error('Request error:', err.message || err);
+      }
 
       if (!res.headersSent) {
-        res.status(status).json({ message });
+        res.status(status).json({
+          message,
+          ...(env.NODE_ENV !== "production" ? { stack: err.stack } : {})
+        });
       }
     });
 
     // importantly only setup vite in development and after
     // setting up all the other routes so the catch-all route
     // doesn't interfere with the other routes
-    if (app.get("env") === "development") {
+    if (env.NODE_ENV !== "production") {
       // Serve static files from public directory in development mode
       const path = await import("path");
       app.use(express.static(path.resolve(import.meta.dirname, "..", "public")));

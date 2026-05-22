@@ -5,14 +5,15 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { storage } from "./storage";
+import { env } from "./env";
 import { User } from "@shared/schema";
+import { storage } from "./storage";
 
 const MemoryStore = createMemoryStore(session);
 
 // Constants for JWT
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "yens_rewards_access_secret_2026";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "yens_rewards_refresh_secret_2026";
+const JWT_ACCESS_SECRET = env.JWT_ACCESS_SECRET;
+const JWT_REFRESH_SECRET = env.JWT_REFRESH_SECRET;
 const ACCESS_TOKEN_EXPIRY = "1h";
 const REFRESH_TOKEN_EXPIRY = "7d";
 
@@ -25,7 +26,7 @@ export function setupAuth(app: Express) {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   
   app.use(session({
-    secret: process.env.SESSION_SECRET || "standalone_secret",
+    secret: env.SESSION_SECRET,
     store: new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     }),
@@ -33,7 +34,7 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production",
       sameSite: 'lax',
       maxAge: sessionTtl,
     },

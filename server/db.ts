@@ -1,16 +1,17 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as schema from "@shared/schema";
+import { env } from "./env";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set");
-}
+const isProduction = env.NODE_ENV === "production";
+const useSSL = !env.DATABASE_URL.includes("localhost") && !env.DATABASE_URL.includes("127.0.0.1");
 
 export const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  connectionString: env.DATABASE_URL,
+  ssl: useSSL ? { rejectUnauthorized: false } : undefined,
+  max: isProduction ? 15 : 3,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 export const db = drizzle(pool, { schema });

@@ -409,7 +409,7 @@ export class ObjectStorageService {
   // Ensure Yens logo is uploaded
   async ensureYensLogoUploaded(): Promise<string> {
     return this.ensureEmailAssetUploaded(
-      './attached_assets/Yens_logo_high_res_1766925576641.png',
+      './server/assets/Yens_logo_high_res_1766925576641.png',
       'yens-logo-official-hires.png'
     );
   }
@@ -417,7 +417,7 @@ export class ObjectStorageService {
   // Ensure birthday graphic is uploaded
   async ensureBirthdayGraphicUploaded(): Promise<string> {
     return this.ensureEmailAssetUploaded(
-      './attached_assets/WhatsApp_Image_2026-01-20_at_12.12.50_1768965601005.jpeg',
+      './server/assets/WhatsApp_Image_2026-01-20_at_12.12.50_1768965601005.jpeg',
       'birthday-graphic-2026.jpeg'
     );
   }
