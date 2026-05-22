@@ -1,0 +1,63 @@
+import { useTranslation } from "react-i18next";
+import { Card } from "@/components/ui/card";
+import { IceCream, Star, Gift } from "lucide-react";
+
+export default function CustomerDashboard({ currentPoints, progressCount, totalNeeded }: any) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
+      {/* ── Points Header ── */}
+      <div className="p-8 text-center">
+        <div className="relative w-20 h-20 mx-auto bg-blue-900/10 rounded-3xl flex items-center justify-center mb-4 border border-blue-900/5 shadow-inner">
+          <Star className="w-10 h-10 text-blue-900 opacity-20 absolute" />
+          <p className="text-3xl font-black text-blue-900 relative z-10">{currentPoints}</p>
+          <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-blue-900 text-[8px] font-black px-2 py-1 rounded-lg shadow-md uppercase tracking-tighter">
+            Points
+          </div>
+        </div>
+        <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Current Balance</h2>
+      </div>
+
+      {/* ── Progress Tracker (Reward Dots) ── */}
+      <Card className="mx-6 p-6 rounded-[2rem] border-none shadow-xl bg-white">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xs font-black text-blue-900 uppercase tracking-widest flex items-center gap-2">
+            <Gift className="w-4 h-4" /> Next Reward Progress
+          </h3>
+          <span className="text-[10px] font-bold text-slate-400 uppercase italic">
+            {progressCount} / {totalNeeded}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center gap-2">
+          {Array.from({ length: totalNeeded }).map((_, i) => (
+            <div 
+              key={i}
+              className={`h-10 flex-1 rounded-xl transition-all duration-500 shadow-sm ${
+                i < progressCount 
+                  ? "bg-yellow-400 border-b-4 border-amber-500 scale-105" 
+                  : "bg-slate-100 border-b-4 border-slate-200"
+              } flex items-center justify-center`}
+            >
+              <IceCream className={`w-5 h-5 ${i < progressCount ? "text-blue-900" : "text-slate-300"}`} />
+            </div>
+          ))}
+        </div>
+      </Card>
+      
+      {/* Product Placeholders */}
+      <div className="mt-8 px-6 grid grid-cols-2 gap-4">
+        {[1, 2].map((item) => (
+          <div key={item} className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 group transition-transform">
+             <div className="aspect-square rounded-2xl bg-blue-900/10 flex items-center justify-center mb-3 overflow-hidden">
+                <IceCream className="w-10 h-10 text-blue-300 opacity-50" />
+             </div>
+             <div className="h-3 w-2/3 bg-slate-100 rounded-full mb-2" />
+             <div className="h-2 w-1/2 bg-slate-50 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

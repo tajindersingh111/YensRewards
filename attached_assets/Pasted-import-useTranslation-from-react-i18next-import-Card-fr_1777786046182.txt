@@ -1,0 +1,55 @@
+import { useTranslation } from "react-i18next";
+import { Card } from "@/components/ui/card";
+import { Lock } from "lucide-react";
+
+export default function BaristaAuth({ logoUrl }: { logoUrl: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* STAFF COMMAND HEADER */}
+      <div className="bg-blue-900 pt-16 pb-24 text-center px-6 relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_bottom_left,_#4F46E5_0%,_transparent_50%)]" />
+
+        <div className="relative z-10">
+          <img 
+            src={logoUrl} 
+            alt="Yen's Thai"
+            className="w-24 h-24 rounded-full mx-auto ring-4 ring-yellow-400 border-4 border-blue-900 mb-6 shadow-2xl object-cover" 
+          />
+          <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+            {t('barista.title', "Barista Hub")}
+          </h1>
+          
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <span className="h-px w-6 bg-blue-400/30" />
+            <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em]">
+              Authorized Staff Only
+            </p>
+            <span className="h-px w-6 bg-blue-400/30" />
+          </div>
+        </div>
+      </div>
+
+      {/* OVERLAPPING LOGIN CARD */}
+      <div className="-mt-12 px-5 max-w-md mx-auto pb-12 relative z-20">
+        <Card className="p-8 space-y-8 shadow-2xl border-none rounded-[2.5rem] bg-white">
+          <div className="flex flex-col items-center gap-2 mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-blue-900/5 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-blue-900" />
+            </div>
+            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">Staff Login</h2>
+          </div>
+
+          {/* Form fields stay here */}
+          
+          <div className="pt-4 border-t border-slate-100">
+            <p className="text-[10px] text-center text-slate-400 font-bold uppercase leading-relaxed">
+              Security Notice: All login attempts and transactions are geostamped for audit.
+            </p>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}

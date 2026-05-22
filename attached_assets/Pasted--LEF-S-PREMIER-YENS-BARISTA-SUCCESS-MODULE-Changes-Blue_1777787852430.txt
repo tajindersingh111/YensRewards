@@ -1,0 +1,66 @@
+/* LEF'S PREMIER YENS BARISTA SUCCESS MODULE */
+/* Changes: Blue-900 Celebration UI, Pulsing Golden Seal, and Vaulted Points Branding */
+
+{isClockedIn && step === "success" && (
+  <div className="pt-8 animate-in fade-in zoom-in duration-500">
+    <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-blue-900 text-white relative">
+      
+      {/* Decorative Brand Sparkle Background */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+        <div className="absolute top-10 left-10 w-32 h-32 bg-yellow-400 rounded-full blur-[80px]" />
+        <div className="absolute bottom-10 right-10 w-32 h-32 bg-blue-400 rounded-full blur-[80px]" />
+      </div>
+
+      <div className="p-12 text-center space-y-8 relative z-10">
+        {/* The Golden Seal of Success */}
+        <div className="relative mx-auto w-24 h-24">
+          <div className="absolute inset-0 bg-yellow-400 rounded-full animate-ping opacity-20" />
+          <div className="relative w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-[0_0_40px_rgba(252,211,77,0.3)]">
+            <CheckCircle2 className="w-14 h-14 text-yellow-500" />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black uppercase tracking-tighter italic">
+            {t('common.success', 'Transaction Verified')}!
+          </h2>
+          <div className="flex items-center justify-center gap-2">
+            <span className="h-px w-6 bg-yellow-400/50" />
+            <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em]">
+              Loyalty Sequence Complete
+            </p>
+            <span className="h-px w-6 bg-yellow-400/30" />
+          </div>
+        </div>
+
+        {/* The Points Vault Display */}
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-inner">
+          <p className="text-4xl font-black text-yellow-400 tracking-tighter">
+            +{points}
+          </p>
+          <p className="text-[10px] font-black text-white uppercase tracking-widest mt-1">
+            {t('barista.pointsAdded', 'Points Vaulted')}
+          </p>
+        </div>
+
+        <div className="space-y-4 pt-4">
+          <p className="text-xs font-bold text-blue-200 uppercase tracking-tight opacity-70">
+            {t('barista.startingNew', 'Preparing for the next customer...')}
+          </p>
+          
+          {/* Automatic Reset Progress Bar */}
+          <div className="w-32 h-1 bg-white/10 mx-auto rounded-full overflow-hidden">
+            <div className="h-full bg-yellow-400 animate-[progress_3s_linear_infinite]" style={{ width: '100%' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Secure Transaction Log Footer */}
+      <div className="px-8 py-4 bg-black/20 text-center">
+        <p className="text-[8px] font-black text-blue-300 uppercase tracking-widest">
+          Auth Code: YEN-{Math.random().toString(36).substr(2, 6).toUpperCase()} · Secure Protocol Active
+        </p>
+      </div>
+    </Card>
+  </div>
+)}

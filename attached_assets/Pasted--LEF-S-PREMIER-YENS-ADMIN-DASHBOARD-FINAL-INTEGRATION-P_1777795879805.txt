@@ -1,0 +1,167 @@
+/* LEF'S PREMIER YENS ADMIN DASHBOARD - FINAL INTEGRATION */
+/* Picking up from the Quick Actions icon color... */
+
+                <Icon className="w-5 h-5 text-yellow-400" />
+              </div>
+
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-xs font-black text-blue-900 uppercase tracking-tight leading-tight truncate">
+                  {label}
+                </span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Open Module
+                </span>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-blue-900 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* RECENT ACTIVITY LEDGER */}
+        <div className="space-y-4">
+          <SectionHeader title="Recent Ledger" subtitle="Live Transaction Feed" />
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
+            <CardContent className="p-0">
+              {recentSales.map((sale: any, idx) => (
+                <div key={idx} className="flex items-center justify-between p-5 hover:bg-blue-900/5 transition-all border-b border-slate-50 last:border-0">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-900/5 flex items-center justify-center text-blue-900 font-black text-xs">
+                      {sale.customerName?.charAt(0) || 'G'}
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-blue-900 uppercase">{sale.customerName || 'Guest'}</p>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">{format(new Date(sale.date), "MMM dd, HH:mm")}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-blue-900">฿{sale.totalAmount}</p>
+                    <p className="text-[9px] font-black text-yellow-600 uppercase">+{sale.pointsEarned} PTS</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* REVENUE INSIGHTS */}
+        <div className="space-y-4">
+          <SectionHeader title="Revenue Insights" subtitle="Top Performing Channels" />
+          <Card className="border-none shadow-xl rounded-[2rem] bg-white p-6">
+             <AnalyticsDashboard compact={true} />
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN DASHBOARD COMPONENT ───────────────────────────────────────────────────
+
+export default function AdminDashboard() {
+  const { t } = useTranslation();
+  const [, setLocation] = useLocation();
+  const { logoutMutation } = useAuth();
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('overview');
+
+  const handleNavigate = (sectionId: string, tabId: string) => {
+    setActiveSection(sectionId);
+    setActiveTab(tabId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const currentSection = NAV_GROUPS.find(g => g.id === activeSection) || NAV_GROUPS[0];
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] pb-24">
+      {/* EXECUTIVE HEADER */}
+      <header className="bg-blue-900 text-white sticky top-0 z-50 shadow-2xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[64px] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <img src={logoUrl} className="w-9 h-9 rounded-full ring-2 ring-yellow-400 border-2 border-blue-900 shadow-lg" />
+             <div className="hidden sm:block">
+               <h1 className="text-sm font-black uppercase tracking-tight">Executive Hub</h1>
+               <p className="text-[8px] font-bold text-blue-300 uppercase tracking-[0.2em] mt-0.5">Yen's Thai Protocol v2.4</p>
+             </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            <div className="h-6 w-px bg-white/10" />
+            <Button 
+              onClick={() => logoutMutation.mutate()} 
+              variant="ghost" 
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-black uppercase text-[10px] tracking-widest"
+            >
+              <LogOut className="w-4 h-4 mr-2" /> {t('auth.logout')}
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* PRIMARY SECTOR NAV */}
+      <nav className="bg-blue-900/95 backdrop-blur-md sticky top-[64px] z-40 border-b border-white/5 shadow-xl">
+        <div className="max-w-7xl mx-auto px-4 overflow-x-auto scrollbar-none">
+          <div className="flex items-center h-[52px]">
+            {NAV_GROUPS.map((group) => {
+              const Icon = group.icon;
+              const isActive = activeSection === group.id;
+              return (
+                <button
+                  key={group.id}
+                  onClick={() => { setActiveSection(group.id); setActiveTab(group.subs[0].id); }}
+                  className={`flex items-center gap-2.5 px-6 h-full text-[10px] font-black uppercase tracking-[0.15em] border-b-2 transition-all shrink-0 ${
+                    isActive ? 'text-yellow-400 border-yellow-400 bg-white/5' : 'text-blue-300/40 border-transparent hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" /> {group.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      {/* SECONDARY ACTION NAV */}
+      <div className="bg-white sticky top-[116px] z-30 border-b border-slate-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 overflow-x-auto scrollbar-none">
+          <div className="flex items-center h-[48px]">
+            {currentSection.subs.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => setActiveTab(sub.id)}
+                className={`px-6 h-full text-[9px] font-black uppercase tracking-[0.2em] border-b-2 transition-all shrink-0 ${
+                  activeTab === sub.id ? 'text-blue-900 border-yellow-400 bg-blue-900/5' : 'text-slate-400 border-transparent hover:text-blue-900'
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* MAIN VIEWPORT */}
+      <main className="max-w-7xl mx-auto px-4 py-10 animate-in fade-in duration-700">
+        {activeTab === 'overview' && <AdminOverview onNavigate={handleNavigate} />}
+        {activeTab === 'salesTracker' && <SalesTrackerDashboard />}
+        {activeTab === 'analytics' && <AnalyticsDashboard />}
+        {activeTab === 'customers' && <CustomerTable />}
+        {activeTab === 'loyalty' && <CustomerInsights />}
+        {activeTab === 'messages' && <MessagesPage />}
+        {activeTab === 'promotions' && <PromotionCreator />}
+        {activeTab === 'specials' && <WeeklySpecialsManager />}
+        {activeTab === 'automations' && <AutomationsManager />}
+        {activeTab === 'products' && <ProductManager />}
+        {activeTab === 'sites' && <SitesManager />}
+        {activeTab === 'schedules' && <SchedulesManager />}
+        {activeTab === 'barista' && <BaristaManager />}
+        {activeTab === 'shopCalendar' && <ShopCalendar />}
+        {activeTab === 'users' && <UsersPage />}
+        {activeTab === 'settings' && <SettingsPage />}
+      </main>
+    </div>
+  );
+}

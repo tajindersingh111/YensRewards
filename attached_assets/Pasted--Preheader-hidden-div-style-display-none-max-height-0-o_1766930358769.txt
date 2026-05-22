@@ -1,0 +1,144 @@
+<!-- Preheader (hidden) -->
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
+  สุขสันต์วันเกิด {name} 🎂 ของขวัญสมาชิก Yens รอคุณอยู่
+</div>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F7F6F2;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+
+      <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+        style="width:600px; max-width:600px; background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 10px 28px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#FCD014; padding:16px 20px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td align="left" style="vertical-align:middle;">
+                  <!-- If you have a logo URL, replace the badge below with an <img> -->
+                  <div style="background:#024AAA; color:#ffffff; font-family:Arial, Helvetica, sans-serif; font-weight:900;
+                              font-size:14px; padding:10px 12px; border-radius:12px; display:inline-block;">
+                    Yens
+                  </div>
+                </td>
+                <td align="right" style="vertical-align:middle; font-family:Arial, Helvetica, sans-serif;">
+                  <div style="color:#024AAA; font-size:14px; font-weight:900; letter-spacing:0.2px;">
+                    ICE CREAM &amp; DRINK
+                  </div>
+                  <div style="color:#024AAA; font-size:12px; opacity:0.9;">
+                    Member Rewards
+                  </div>
+                </td>
+              </tr>
+            </table><tr>
+  <td style="padding:0;">
+    <img
+      src=https://app.yensthai.com/email-assets/email_1766847837048_d9ec07af-e49b-45be-a62c-b6aa7f2b1b28.jpeg
+      alt="Happy Birthday from Yens"
+      style="width:100%; max-width:600px; height:auto; display:block; border:0;">
+  </td>
+</tr>
+          </td>
+        </tr>
+
+        <!-- HERO IMAGE (THIS IS THE ONLY LINE YOU CHANGE EACH TIME) -->
+        <tr>
+          <td style="padding:0;">
+            <img
+              src="PUT_IMAGE_URL_FROM_GALLERY_HERE"
+              width="600"
+              alt=""
+              style="width:100%; max-width:600px; height:auto; display:block; border:0; outline:none; text-decoration:none;">
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:22px 22px 10px 22px; font-family:Arial, Helvetica, sans-serif; color:#111827;">
+
+            <div style="font-size:22px; line-height:1.25; font-weight:900; color:#024AAA; margin:0 0 10px 0;">
+              สุขสันต์วันเกิด {name}! 🎉
+            </div>
+
+            <div style="font-size:15px; line-height:1.75; margin:0 0 14px 0;">
+              วันนี้เป็นวันพิเศษของคุณ — ทีม <strong>Yens</strong> ขอส่งความสุขแบบ “หวานพอดี เย็นกำลังดี”
+              และขอบคุณที่คุณเป็นสมาชิกคนสำคัญของเรา 💛
+            </div>
+
+            <!-- Loyalty Card -->
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+              style="background:#F7F6F2; border:1px solid rgba(2,74,170,0.14); border-radius:16px;">
+              <tr>
+                <td style="padding:16px;">
+                  <div style="font-size:14px; color:#024AAA; font-weight:900; margin:0 0 8px 0;">
+                    🎁 สิทธิพิเศษสำหรับคุณ
+                  </div>
+
+                  <div style="font-size:14px; line-height:1.7; margin:0;">
+                    ระดับสมาชิกของคุณ: <strong>{tier}</strong><br>
+                    คะแนนสะสมปัจจุบัน: <strong>{points}</strong> คะแนน
+                  </div>
+
+                  <div style="font-size:12px; line-height:1.6; color:#4b5563; margin-top:10px;">
+                    ใช้คะแนนเพื่อแลกรับสิทธิพิเศษ/ของรางวัลตามเงื่อนไขสมาชิกของคุณ
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <div style="font-size:15px; line-height:1.75; margin:14px 0 16px 0;">
+              แวะมาหาเราเมื่อไหร่ก็ได้ — เราพร้อมเสิร์ฟความอร่อยและรอยยิ้มให้คุณเสมอ 😊
+            </div>
+
+            <!-- CTA -->
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
+              <tr>
+                <td align="center" bgcolor="#024AAA" style="border-radius:14px;">
+                  <a href="{{cta_url}}" target="_blank"
+                    style="display:inline-block; padding:14px 18px; font-size:15px; font-weight:900; color:#ffffff; text-decoration:none;">
+                    ใช้สิทธิ์ของคุณตอนนี้
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <div style="font-size:12px; line-height:1.7; color:#6b7280; margin:0 0 8px 0;">
+              หากปุ่มไม่แสดงผล ให้คัดลอกลิงก์นี้ไปวางในเบราว์เซอร์:
+              <span style="word-break:break-all;">{{cta_url}}</span>
+            </div>
+
+            <hr style="border:none; border-top:1px solid rgba(0,0,0,0.08); margin:16px 0;">
+
+            <!-- English -->
+            <div style="font-size:14px; line-height:1.7; color:#111827; font-weight:900; margin:0 0 6px 0;">
+              English (for your convenience)
+            </div>
+            <div style="font-size:13px; line-height:1.7; color:#374151; margin:0;">
+              Happy Birthday, {name}! 🎂<br>
+              Tier: <strong>{tier}</strong> • Points: <strong>{points}</strong><br>
+              Tap above to view and redeem your member benefits.
+            </div>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:14px 22px 22px 22px; font-family:Arial, Helvetica, sans-serif; background:#ffffff;">
+            <div style="font-size:12px; line-height:1.6; color:#6b7280;">
+              Yens Thailand • Crafted with love in Nakhon Sawan<br>
+              <a href="#" style="color:#024AAA; text-decoration:underline;">Facebook</a> •
+              <a href="#" style="color:#024AAA; text-decoration:underline;">LINE</a> •
+              <a href="{{unsubscribe_url}}" style="color:#6b7280; text-decoration:underline;">Unsubscribe</a>
+            </div>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+ 
+<img src=alt="email_1766847837048_d9ec07af-e49b-45be-a62c-b6aa7f2b1b28.jpeg" style="max-width: 100%; height: auto; border-radius: 8px;">

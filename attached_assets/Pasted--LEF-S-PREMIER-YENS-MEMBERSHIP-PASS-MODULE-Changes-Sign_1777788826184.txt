@@ -1,0 +1,57 @@
+/* LEF'S PREMIER YENS MEMBERSHIP PASS MODULE */
+/* Changes: Signature QR Vault, VIP Identity Hierarchy, and Tactical Scan CTA */
+
+<Card className="p-6 rounded-[2rem] border-none shadow-2xl bg-white relative overflow-hidden group" data-testid="card-membership-pass">
+  {/* Subtle "Key" Background Aura */}
+  <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform duration-700">
+    <QrCode className="w-20 h-20 text-blue-900" />
+  </div>
+
+  <div className="flex items-center gap-6 relative z-10">
+    {/* The Signature QR Vault */}
+    <div className="relative w-24 h-24 flex-shrink-0 bg-white rounded-2xl ring-4 ring-yellow-400 border-4 border-blue-900 p-2 shadow-xl overflow-hidden flex items-center justify-center">
+      {customer?.id ? (
+        <QRCode 
+          value={customer.id} 
+          size={80} 
+          level="H" 
+          includeMargin={false}
+          className="rounded-sm"
+        />
+      ) : (
+        <div className="w-full h-full bg-slate-50 animate-pulse rounded-lg" />
+      )}
+      
+      {/* Micro-Verification Corner */}
+      <div className="absolute top-0 right-0 w-3 h-3 bg-blue-900 rounded-bl-lg flex items-center justify-center">
+        <div className="w-1 h-1 rounded-full bg-yellow-400" />
+      </div>
+    </div>
+
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 mb-1">
+        <Badge className="bg-blue-900/10 text-blue-900 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
+          Verified Member
+        </Badge>
+      </div>
+      
+      <h4 className="font-black text-xl text-blue-900 uppercase tracking-tighter truncate">
+        {customer?.name || "Premium Guest"}
+      </h4>
+      
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate mt-1">
+        ID: {customer?.id?.substring(0, 12).toUpperCase()}
+      </p>
+
+      {/* High-Contrast Action Link */}
+      <button
+        onClick={() => setActiveTab("profile")}
+        className="flex items-center gap-2 text-[10px] font-black text-yellow-500 uppercase tracking-[0.2em] mt-4 hover:text-blue-900 transition-colors group/btn"
+        data-testid="button-show-barista"
+      >
+        <Smartphone className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+        {t('customer.showToBarista', 'Display Scan Key')}
+      </button>
+    </div>
+  </div>
+</Card>

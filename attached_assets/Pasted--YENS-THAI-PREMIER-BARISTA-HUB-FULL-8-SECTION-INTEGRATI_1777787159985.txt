@@ -1,0 +1,138 @@
+/* YENS THAI PREMIER BARISTA HUB - FULL 8-SECTION INTEGRATION */
+
+export default function BaristaDashboard() {
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans pb-20">
+      
+      {/* SECTION 1: THE COCKPIT HEADER */}
+      <header className="bg-blue-900 text-white p-4 sticky top-0 z-50 shadow-2xl border-b border-white/5">
+        <div className="max-w-md md:max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button onClick={() => setLocationPath("/")} variant="ghost" size="icon" className="text-white hover:bg-white/10 h-10 w-10 rounded-xl">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <img src={logoUrl} className="w-10 h-10 rounded-full ring-2 ring-yellow-400 border-2 border-blue-900" />
+              <div className="flex flex-col">
+                <h1 className="text-xs font-black uppercase tracking-tight leading-none">{t('barista.title')}</h1>
+                <span className="text-[8px] font-black text-blue-300 uppercase tracking-[0.2em] mt-1 opacity-70">SYSTEM v2.4</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Button onClick={onLogout} variant="ghost" size="icon" className="text-red-400 hover:bg-red-500/20 h-9 w-9 rounded-lg"><LogOut className="w-4 h-4" /></Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-md md:max-w-2xl mx-auto px-6 pt-6 space-y-6">
+
+        {/* SECTION 2: SHIFT AUTH (CLOCK-IN) */}
+        {!isClockedIn && (
+          <Card className="p-6 border-none shadow-xl rounded-[2rem] bg-white overflow-hidden relative">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-900 rounded-2xl p-3 shadow-lg relative">
+                  <Clock className="w-5 h-5 text-yellow-400 animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-blue-900 uppercase tracking-tight">{t('barista.notClockedIn')}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('barista.clockInToStart')}</p>
+                </div>
+              </div>
+              <Button onClick={() => clockInMutation.mutate()} className="bg-yellow-400 text-blue-900 font-black uppercase text-xs px-6 h-12 rounded-xl shadow-lg">
+                {t('barista.clockIn')}
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* SECTION 7: CUSTOMER LOOKUP (IDENTIFY) */}
+        <Card className="overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white relative">
+          <div className="bg-blue-900 px-8 py-6 flex items-center gap-4 relative">
+            <div className="bg-yellow-400 rounded-2xl p-3 shadow-lg"><Search className="w-6 h-6 text-blue-900" /></div>
+            <div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">{t('barista.findCustomer')}</h2>
+              <p className="text-blue-300 text-[10px] font-bold uppercase tracking-[0.2em]">{t('barista.searchByPhone')}</p>
+            </div>
+          </div>
+          <div className="p-8">
+            {/* Search Input Logic Here */}
+            <div className="bg-slate-50 border-2 border-dashed border-slate-100 rounded-3xl p-10 text-center">
+               <Smartphone className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+               <p className="text-[10px] font-bold text-slate-400 uppercase italic">Ready for Customer Identification...</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* SECTION 8: MEMBER ONBOARDING (QUICK REGISTER) */}
+        <Card className="overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white">
+          <div className="bg-blue-900 px-8 py-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-yellow-400 rounded-2xl p-3 shadow-lg"><UserPlus className="w-6 h-6 text-blue-900" /></div>
+              <div>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('barista.quickRegister')}</h3>
+                <p className="text-blue-300 text-[10px] font-bold uppercase tracking-[0.2em]">Instant Enrollment</p>
+              </div>
+            </div>
+            <Button className="bg-yellow-400 text-blue-900 font-black uppercase text-xs px-8 h-12 rounded-xl shadow-lg" onClick={() => setQuickRegisterOpen(true)}>
+              {t('barista.register')}
+            </Button>
+          </div>
+        </Card>
+
+        {/* SECTION 3 & 4: SCHEDULE & ALERTS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Duty Roster */}
+          <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white">
+            <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+              <div className="bg-yellow-400 rounded-xl p-2"><Calendar className="w-4 h-4 text-blue-900" /></div>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.mySchedule')}</h3>
+            </div>
+            <div className="p-6 space-y-3">
+              {/* Schedule Mapping Here */}
+            </div>
+          </Card>
+
+          {/* Announcements */}
+          <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white">
+            <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+              <div className="bg-yellow-400 rounded-xl p-2"><Bell className="w-4 h-4 text-blue-900" /></div>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.announcements')}</h3>
+            </div>
+            <div className="p-6 space-y-3">
+              {/* Announcements Mapping Here */}
+            </div>
+          </Card>
+        </div>
+
+        {/* SECTION 5 & 6: PERFORMANCE & LEADERBOARD */}
+        <div className="grid grid-cols-1 gap-6">
+          {/* My Performance */}
+          <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white">
+            <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+              <div className="bg-yellow-400 rounded-xl p-2"><Sparkles className="w-4 h-4 text-blue-900" /></div>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.myPerformance')}</h3>
+            </div>
+            <div className="p-6 grid grid-cols-2 gap-4">
+              {/* Stat Pods Here */}
+            </div>
+          </Card>
+
+          {/* Champions Circle */}
+          <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white">
+            <div className="bg-blue-900 px-6 py-4 flex items-center gap-3">
+              <div className="bg-yellow-400 rounded-xl p-2"><Trophy className="w-4 h-4 text-blue-900" /></div>
+              <h3 className="text-sm font-black text-white uppercase tracking-tight">{t('barista.leaderboard')}</h3>
+            </div>
+            <div className="p-6 space-y-3">
+              {/* Leaderboard Entries Here */}
+            </div>
+          </Card>
+        </div>
+
+      </main>
+    </div>
+  );
+}

@@ -1,0 +1,59 @@
+/* LEF'S PREMIER YENS REWARD CATALOG MODULE */
+/* Changes: Display Case Framing, Golden Price Tags, and Vault Status Indicators */
+
+<div className="space-y-4">
+  {rewardProducts.map((product) => (
+    <Card
+      key={product.id}
+      className="p-4 rounded-[2rem] border-none shadow-xl bg-white flex items-center gap-4 hover:scale-[1.02] transition-all cursor-pointer group"
+      data-testid={`card-reward-${product.id}`}
+    >
+      {/* The Display Case (Image Container) */}
+      <div className="w-20 h-20 rounded-2xl overflow-hidden bg-blue-900/5 border border-blue-900/10 flex-shrink-0 relative">
+        {product.imageUrl ? (
+          <img 
+            src={product.imageUrl} 
+            alt={product.name} 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <IceCream className="w-8 h-8 text-blue-900 opacity-20" />
+          </div>
+        )}
+        {/* Micro-Brand Corner */}
+        <div className="absolute top-0 left-0 w-2 h-2 bg-yellow-400 rounded-br-md" />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <Badge className="bg-yellow-400 text-blue-900 border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5 shadow-sm">
+            50 {t('customer.points', 'Points')}
+          </Badge>
+        </div>
+        
+        <h4 className="font-black text-blue-900 uppercase tracking-tighter truncate leading-tight">
+          {product.name}
+        </h4>
+        
+        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-70">
+          {t('customer.artisanalReward', 'Premium Selection')}
+        </p>
+      </div>
+
+      {/* Vault Status Indicators (Progress Dots) */}
+      <div className="flex flex-col gap-1.5 pr-2">
+        {[...Array(3)].map((_, i) => (
+          <div 
+            key={i} 
+            className={`w-2 h-2 rounded-full transition-all duration-500 ${
+              i < Math.min(3, Math.floor(currentPoints / 17)) 
+                ? "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)] scale-110" 
+                : "bg-blue-900/10"
+            }`} 
+          />
+        ))}
+      </div>
+    </Card>
+  ))}
+</div>

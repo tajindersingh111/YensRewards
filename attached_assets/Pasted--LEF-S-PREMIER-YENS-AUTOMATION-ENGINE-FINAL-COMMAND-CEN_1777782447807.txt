@@ -1,0 +1,181 @@
+/* LEF'S PREMIER YENS AUTOMATION ENGINE: FINAL COMMAND CENTER */
+/* Changes: Full Yens Blue branding, Premium Filter Suite, and Senior Staff Dashboard */
+
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import {
+  Zap, Plus, Pencil, Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
+  Clock, Mail, MessageSquare, Smartphone, Hash, FlaskConical, Search,
+  Filter, Calendar, RotateCcw, Cake, Layers, Play, Megaphone, Activity, Sparkles
+} from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+
+// ... [Keep constants and interfaces from previous parts] ...
+
+const CHANNEL_OPTIONS = [
+  { value: "app",   label: "App Push",   icon: Smartphone,   cls: "bg-blue-50 text-blue-700 border-blue-100" },
+  { value: "line",  label: "LINE",       icon: MessageSquare, cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+  { value: "sms",   label: "SMS",        icon: Hash,          cls: "bg-slate-50 text-slate-700 border-slate-100" },
+  { value: "email", label: "Email",      icon: Mail,          cls: "bg-indigo-50 text-indigo-700 border-indigo-100" },
+] as const;
+
+// ... [Keep RunHistoryPanel, TestSendDialog, AutomationCard, AutomationDialog from previous parts] ...
+
+// ── Refined Quickstart Card ──────────────────────────────────────────────────
+
+function QuickstartCard({ template, onSelect }: any) {
+  const Icon = template.icon;
+  return (
+    <button
+      className="group text-left w-full rounded-2xl bg-white border border-slate-100 p-5 hover:border-blue-200 hover:shadow-xl transition-all duration-300"
+      onClick={() => onSelect(template.defaults)}
+    >
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-900 transition-colors">
+          <Icon className="w-5 h-5 text-blue-900 group-hover:text-[#FCD34D]" />
+        </div>
+        <div>
+          <p className="font-black text-sm text-slate-800 uppercase tracking-tight">{template.label}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{template.description}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ── Main Automations Command Center ──────────────────────────────────────────
+
+export default function AutomationsPage() {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [prefill, setPrefill] = useState<any | null>(null);
+  const [filters, setFilters] = useState({ status: "all", channel: "all", triggerType: "all", search: "" });
+
+  const { data: automations = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/automations"],
+  });
+
+  const activeCount = automations.filter(a => a.isActive).length;
+  const pausedCount = automations.length - activeCount;
+
+  const filtered = useMemo(() => {
+    return automations.filter(a => {
+      if (filters.status === "active" && !a.isActive) return false;
+      if (filters.status === "paused" && a.isActive) return false;
+      if (filters.channel !== "all" && a.channel !== filters.channel) return false;
+      if (filters.search && !a.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      return true;
+    });
+  }, [automations, filters]);
+
+  return (
+    <div className="space-y-8 pb-20">
+      {/* Premium Header Branding */}
+      <div className="bg-white p-8 rounded-3xl shadow-sm border-t-8 border-blue-900 flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <div className="w-14 h-14 rounded-2xl bg-blue-900 flex items-center justify-center shadow-2xl">
+            <Zap className="w-7 h-7 text-[#FCD34D]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Automation Engine</h1>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Rule-Based Engagement Systems</p>
+          </div>
+        </div>
+        <Button 
+          onClick={() => { setEditing(null); setPrefill(null); setDialogOpen(true); }}
+          className="h-14 bg-blue-900 hover:bg-black text-white font-black rounded-2xl px-8 shadow-lg transition-all active:scale-95"
+        >
+          <Plus className="w-5 h-5 mr-2" /> NEW AUTOMATION
+        </Button>
+      </div>
+
+      {/* Quickstart Launchpad */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 ml-1">
+          <Sparkles className="w-4 h-4 text-blue-600" />
+          <h2 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Recommended Blueprints</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {QUICKSTART_TEMPLATES.map(tmpl => (
+            <QuickstartCard 
+              key={tmpl.key} 
+              template={tmpl} 
+              onSelect={(defaults: any) => { setPrefill(defaults); setEditing(null); setDialogOpen(true); }} 
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Control Bar */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <div className="relative w-64">
+             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+             <Input 
+                placeholder="Search engine rules..." 
+                className="pl-10 h-10 rounded-xl border-slate-100 bg-slate-50 font-bold text-xs" 
+                value={filters.search}
+                onChange={e => setFilters({...filters, search: e.target.value})}
+             />
+          </div>
+          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+             {["all", "active", "paused"].map((s) => (
+               <button
+                 key={s}
+                 onClick={() => setFilters({...filters, status: s})}
+                 className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${filters.status === s ? 'bg-blue-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+               >
+                 {s} {s === 'all' ? `(${automations.length})` : s === 'active' ? `(${activeCount})` : `(${pausedCount})`}
+               </button>
+             ))}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+           <Select value={filters.channel} onValueChange={(v) => setFilters({...filters, channel: v})}>
+              <SelectTrigger className="w-32 h-10 rounded-xl font-black text-[10px] uppercase border-slate-100 bg-slate-50"><SelectValue placeholder="Channel" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Channels</SelectItem>
+                <SelectItem value="sms">SMS</SelectItem>
+                <SelectItem value="line">LINE</SelectItem>
+                <SelectItem value="app">Mobile App</SelectItem>
+              </SelectContent>
+           </Select>
+        </div>
+      </div>
+
+      {/* Automation Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {isLoading ? (
+          <div className="col-span-full py-20 text-center font-black text-slate-300 uppercase tracking-widest animate-pulse">Synchronizing Engine Rules...</div>
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full p-20 text-center bg-slate-50 rounded-[3rem] border-4 border-dashed border-slate-200">
+             <Activity className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+             <p className="text-slate-400 font-black uppercase tracking-widest">No matching automations found</p>
+          </div>
+        ) : (
+          filtered.map(a => (
+            <AutomationCard 
+              key={a.id} 
+              automation={a} 
+              onEdit={(a: any) => { setEditing(a); setPrefill(null); setDialogOpen(true); }}
+              onDelete={(a: any) => {/* delete logic */}}
+              onToggle={(id:

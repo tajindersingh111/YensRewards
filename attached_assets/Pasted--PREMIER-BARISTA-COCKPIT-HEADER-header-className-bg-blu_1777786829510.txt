@@ -1,0 +1,68 @@
+{/* ── PREMIER BARISTA COCKPIT HEADER ── */}
+<header className="bg-blue-900 text-white p-4 sticky top-0 z-50 shadow-2xl border-b border-white/5">
+  <div className="max-w-md md:max-w-4xl mx-auto flex items-center justify-between">
+    
+    <div className="flex items-center gap-3">
+      <Button 
+        onClick={() => setLocationPath("/")} 
+        variant="ghost" 
+        size="icon"
+        className="text-white hover:bg-white/10 h-10 w-10 rounded-xl" 
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </Button>
+      
+      <div className="flex items-center gap-3">
+        <img 
+          src={logoUrl} 
+          className="w-10 h-10 rounded-full ring-2 ring-yellow-400 border-2 border-blue-900 object-cover" 
+        />
+        <div className="flex flex-col">
+          <h1 className="text-xs font-black uppercase tracking-tight leading-none">
+            {t('barista.title', 'Barista Hub')}
+          </h1>
+          <span className="text-[8px] font-black text-blue-300 uppercase tracking-[0.2em] mt-1 opacity-70">
+            {t('common.version')} v2.4
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <LanguageSwitcher />
+
+      <div className="hidden sm:flex items-center bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-md">
+        <select 
+          value={location} 
+          onChange={(e) => setLocation(e.target.value)}
+          className="bg-transparent border-none outline-none text-[10px] font-black uppercase text-white appearance-none cursor-pointer"
+        >
+          {activeSites.map((site) => (
+            <option key={site.id} value={site.name} className="text-slate-900 font-bold">
+              {site.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex items-center gap-1 border-l border-white/10 ml-2 pl-2">
+        <Button 
+          onClick={() => setMenuOpen(true)} 
+          variant="ghost" 
+          size="icon"
+          className="text-white hover:bg-white/10 h-9 w-9 rounded-lg"
+        >
+          <Menu className="w-4 h-4" />
+        </Button>
+        <Button 
+          onClick={onLogout} 
+          variant="ghost" 
+          size="icon"
+          className="text-red-400 hover:bg-red-500/20 h-9 w-9 rounded-lg transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  </div>
+</header>
