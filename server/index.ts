@@ -82,16 +82,16 @@ async function restoreMissingCustomers() {
       const id = uuidv4();
       const name = get('Crm Name').trim() || 'Unknown';
       const tierRaw = (get('Membership Tier') || '').toLowerCase().trim();
-      const tier = ['gold','silver','bronze'].includes(tierRaw) ? tierRaw : 'member';
+      const tier = ['gold', 'silver', 'bronze'].includes(tierRaw) ? tierRaw : 'member';
       const email = get('Email').trim() || null;
       const gender = get('Gender').trim() || null;
 
       const bdParts = (get('Birthdate') || '').split('/');
-      const birthday = bdParts.length >= 2 ? `${bdParts[1].padStart(2,'0')}-${bdParts[0].padStart(2,'0')}` : null;
+      const birthday = bdParts.length >= 2 ? `${bdParts[1].padStart(2, '0')}-${bdParts[0].padStart(2, '0')}` : null;
 
       const parseDate = (raw: string) => {
         const dp = raw.split(' ')[0].split('/');
-        if (dp.length === 3) return new Date(`${dp[2]}-${dp[1].padStart(2,'0')}-${dp[0].padStart(2,'0')}`);
+        if (dp.length === 3) return new Date(`${dp[2]}-${dp[1].padStart(2, '0')}-${dp[0].padStart(2, '0')}`);
         return null;
       };
       const registerDate = parseDate(get('Register Date'));
@@ -165,206 +165,206 @@ async function restoreMissingPdfSalesData() {
     // Each entry: date, day-of-week, channel, net_sales, other_sales (optional)
     const transactions: { date: string; day: string; channel: string; net: number; other?: number }[] = [
       // ── 29 Dec 2025 – 04 Jan 2026 ──────────────────────────────────────────
-      { date: '2025-12-29', day: 'Mon', channel: 'LIGHTFESTIVAL',   net: 6380.00 },
-      { date: '2025-12-29', day: 'Mon', channel: 'SHOP',            net: 1289.00 },
-      { date: '2025-12-30', day: 'Tue', channel: 'LIGHTFESTIVAL',   net: 6366.00 },
-      { date: '2025-12-30', day: 'Tue', channel: 'SHOP',            net: 1253.00 },
-      { date: '2025-12-31', day: 'Wed', channel: 'LIGHTFESTIVAL',   net: 8125.00 },
-      { date: '2025-12-31', day: 'Wed', channel: 'SHOP',            net: 1540.00 },
-      { date: '2026-01-01', day: 'Thu', channel: 'LIGHTFESTIVAL',   net: 6105.00 },
-      { date: '2026-01-01', day: 'Thu', channel: 'SHOP',            net: 1253.00 },
-      { date: '2026-01-02', day: 'Fri', channel: 'LIGHTFESTIVAL',   net: 6940.00 },
-      { date: '2026-01-02', day: 'Fri', channel: 'SHOP',            net:  999.00 },
-      { date: '2026-01-03', day: 'Sat', channel: 'LIGHTFESTIVAL',   net: 6852.00 },
-      { date: '2026-01-03', day: 'Sat', channel: 'SHOP',            net: 1195.00 },
-      { date: '2026-01-04', day: 'Sun', channel: 'SHOP',            net:  944.00 },
+      { date: '2025-12-29', day: 'Mon', channel: 'LIGHTFESTIVAL', net: 6380.00 },
+      { date: '2025-12-29', day: 'Mon', channel: 'SHOP', net: 1289.00 },
+      { date: '2025-12-30', day: 'Tue', channel: 'LIGHTFESTIVAL', net: 6366.00 },
+      { date: '2025-12-30', day: 'Tue', channel: 'SHOP', net: 1253.00 },
+      { date: '2025-12-31', day: 'Wed', channel: 'LIGHTFESTIVAL', net: 8125.00 },
+      { date: '2025-12-31', day: 'Wed', channel: 'SHOP', net: 1540.00 },
+      { date: '2026-01-01', day: 'Thu', channel: 'LIGHTFESTIVAL', net: 6105.00 },
+      { date: '2026-01-01', day: 'Thu', channel: 'SHOP', net: 1253.00 },
+      { date: '2026-01-02', day: 'Fri', channel: 'LIGHTFESTIVAL', net: 6940.00 },
+      { date: '2026-01-02', day: 'Fri', channel: 'SHOP', net: 999.00 },
+      { date: '2026-01-03', day: 'Sat', channel: 'LIGHTFESTIVAL', net: 6852.00 },
+      { date: '2026-01-03', day: 'Sat', channel: 'SHOP', net: 1195.00 },
+      { date: '2026-01-04', day: 'Sun', channel: 'SHOP', net: 944.00 },
       // ── 05 Jan – 11 Jan 2026 ───────────────────────────────────────────────
-      { date: '2026-01-05', day: 'Mon', channel: 'SHOP',            net: 1209.00 },
-      { date: '2026-01-05', day: 'Mon', channel: 'MISC',            net: 2841.00 },
-      { date: '2026-01-06', day: 'Tue', channel: 'SHOP',            net: 1103.00 },
-      { date: '2026-01-07', day: 'Wed', channel: 'SHOP',            net: 1312.00 },
-      { date: '2026-01-08', day: 'Thu', channel: 'SHOP',            net: 1304.00 },
-      { date: '2026-01-09', day: 'Fri', channel: 'SHOP',            net: 1100.00 },
-      { date: '2026-01-09', day: 'Fri', channel: 'RIVER',           net: 1943.00 },
-      { date: '2026-01-10', day: 'Sat', channel: 'SHOP',            net:  890.00 },
-      { date: '2026-01-10', day: 'Sat', channel: 'RIVER',           net: 1906.00 },
-      { date: '2026-01-10', day: 'Sat', channel: 'MISC',            net: 6543.00 },
-      { date: '2026-01-11', day: 'Sun', channel: 'SHOP',            net: 1478.00 },
+      { date: '2026-01-05', day: 'Mon', channel: 'SHOP', net: 1209.00 },
+      { date: '2026-01-05', day: 'Mon', channel: 'MISC', net: 2841.00 },
+      { date: '2026-01-06', day: 'Tue', channel: 'SHOP', net: 1103.00 },
+      { date: '2026-01-07', day: 'Wed', channel: 'SHOP', net: 1312.00 },
+      { date: '2026-01-08', day: 'Thu', channel: 'SHOP', net: 1304.00 },
+      { date: '2026-01-09', day: 'Fri', channel: 'SHOP', net: 1100.00 },
+      { date: '2026-01-09', day: 'Fri', channel: 'RIVER', net: 1943.00 },
+      { date: '2026-01-10', day: 'Sat', channel: 'SHOP', net: 890.00 },
+      { date: '2026-01-10', day: 'Sat', channel: 'RIVER', net: 1906.00 },
+      { date: '2026-01-10', day: 'Sat', channel: 'MISC', net: 6543.00 },
+      { date: '2026-01-11', day: 'Sun', channel: 'SHOP', net: 1478.00 },
       // ── 12 Jan – 18 Jan 2026 ───────────────────────────────────────────────
-      { date: '2026-01-12', day: 'Mon', channel: 'SHOP',            net: 1870.00 },
-      { date: '2026-01-13', day: 'Tue', channel: 'SHOP',            net: 1413.00 },
-      { date: '2026-01-14', day: 'Wed', channel: 'SHOP',            net:  710.00 },
-      { date: '2026-01-15', day: 'Thu', channel: 'SHOP',            net:  875.00 },
-      { date: '2026-01-16', day: 'Fri', channel: 'SHOP',            net: 1086.00 },
-      { date: '2026-01-16', day: 'Fri', channel: 'RIVER',           net: 1924.00 },
-      { date: '2026-01-17', day: 'Sat', channel: 'SHOP',            net: 2158.00 },
-      { date: '2026-01-17', day: 'Sat', channel: 'RIVER',           net: 2169.00 },
-      { date: '2026-01-18', day: 'Sun', channel: 'SHOP',            net: 1533.00 },
+      { date: '2026-01-12', day: 'Mon', channel: 'SHOP', net: 1870.00 },
+      { date: '2026-01-13', day: 'Tue', channel: 'SHOP', net: 1413.00 },
+      { date: '2026-01-14', day: 'Wed', channel: 'SHOP', net: 710.00 },
+      { date: '2026-01-15', day: 'Thu', channel: 'SHOP', net: 875.00 },
+      { date: '2026-01-16', day: 'Fri', channel: 'SHOP', net: 1086.00 },
+      { date: '2026-01-16', day: 'Fri', channel: 'RIVER', net: 1924.00 },
+      { date: '2026-01-17', day: 'Sat', channel: 'SHOP', net: 2158.00 },
+      { date: '2026-01-17', day: 'Sat', channel: 'RIVER', net: 2169.00 },
+      { date: '2026-01-18', day: 'Sun', channel: 'SHOP', net: 1533.00 },
       // ── 19 Jan – 25 Jan 2026 ───────────────────────────────────────────────
-      { date: '2026-01-19', day: 'Mon', channel: 'SHOP',            net: 1195.00 },
-      { date: '2026-01-20', day: 'Tue', channel: 'SHOP',            net: 1220.00 },
-      { date: '2026-01-21', day: 'Wed', channel: 'SHOP',            net: 1009.00 },
-      { date: '2026-01-22', day: 'Thu', channel: 'SHOP',            net: 1189.00 },
-      { date: '2026-01-23', day: 'Fri', channel: 'SHOP',            net: 1451.00 },
-      { date: '2026-01-23', day: 'Fri', channel: 'RIVER',           net: 2876.00 },
-      { date: '2026-01-24', day: 'Sat', channel: 'SUCHADA',         net: 2738.99 },
-      { date: '2026-01-24', day: 'Sat', channel: 'SHOP',            net: 1078.00 },
-      { date: '2026-01-25', day: 'Sun', channel: 'SUCHADA',         net: 4573.00 },
-      { date: '2026-01-25', day: 'Sun', channel: 'SHOP',            net: 1342.99 },
+      { date: '2026-01-19', day: 'Mon', channel: 'SHOP', net: 1195.00 },
+      { date: '2026-01-20', day: 'Tue', channel: 'SHOP', net: 1220.00 },
+      { date: '2026-01-21', day: 'Wed', channel: 'SHOP', net: 1009.00 },
+      { date: '2026-01-22', day: 'Thu', channel: 'SHOP', net: 1189.00 },
+      { date: '2026-01-23', day: 'Fri', channel: 'SHOP', net: 1451.00 },
+      { date: '2026-01-23', day: 'Fri', channel: 'RIVER', net: 2876.00 },
+      { date: '2026-01-24', day: 'Sat', channel: 'SUCHADA', net: 2738.99 },
+      { date: '2026-01-24', day: 'Sat', channel: 'SHOP', net: 1078.00 },
+      { date: '2026-01-25', day: 'Sun', channel: 'SUCHADA', net: 4573.00 },
+      { date: '2026-01-25', day: 'Sun', channel: 'SHOP', net: 1342.99 },
       // ── 26 Jan – 01 Feb 2026 ───────────────────────────────────────────────
-      { date: '2026-01-26', day: 'Mon', channel: 'SHOP',            net:  863.00 },
-      { date: '2026-01-27', day: 'Tue', channel: 'SHOP',            net:  804.00 },
-      { date: '2026-01-28', day: 'Wed', channel: 'SHOP',            net:  745.00 },
-      { date: '2026-01-29', day: 'Thu', channel: 'SHOP',            net: 1240.00 },
-      { date: '2026-01-30', day: 'Fri', channel: 'SHOP',            net: 1714.00 },
-      { date: '2026-01-31', day: 'Sat', channel: 'SHOP',            net: 1400.00 },
-      { date: '2026-02-01', day: 'Sun', channel: 'SHOP',            net: 1728.00 },
+      { date: '2026-01-26', day: 'Mon', channel: 'SHOP', net: 863.00 },
+      { date: '2026-01-27', day: 'Tue', channel: 'SHOP', net: 804.00 },
+      { date: '2026-01-28', day: 'Wed', channel: 'SHOP', net: 745.00 },
+      { date: '2026-01-29', day: 'Thu', channel: 'SHOP', net: 1240.00 },
+      { date: '2026-01-30', day: 'Fri', channel: 'SHOP', net: 1714.00 },
+      { date: '2026-01-31', day: 'Sat', channel: 'SHOP', net: 1400.00 },
+      { date: '2026-02-01', day: 'Sun', channel: 'SHOP', net: 1728.00 },
       // ── 09 Feb 2026 (from Feb 9-15 report; Feb 2-8 not available) ──────────
-      { date: '2026-02-09', day: 'Mon', channel: 'SHOP',            net: 1474.00 },
+      { date: '2026-02-09', day: 'Mon', channel: 'SHOP', net: 1474.00 },
       // ── 10 Feb – 21 Feb 2026 ───────────────────────────────────────────────
-      { date: '2026-02-10', day: 'Tue', channel: 'SHOP',            net: 1935.00 },
-      { date: '2026-02-10', day: 'Tue', channel: 'COCA COLA',       net: 4975.00 },
-      { date: '2026-02-10', day: 'Tue', channel: 'CNY',             net: 5452.00 },
-      { date: '2026-02-10', day: 'Tue', channel: 'CARAVAN TRUCK',   net: 2202.00 },
-      { date: '2026-02-11', day: 'Wed', channel: 'SHOP',            net:  260.00 },
-      { date: '2026-02-11', day: 'Wed', channel: 'COCA COLA',       net: 8910.00 },
-      { date: '2026-02-11', day: 'Wed', channel: 'CNY',             net: 7673.00 },
-      { date: '2026-02-11', day: 'Wed', channel: 'CARAVAN TRUCK',   net: 3270.00 },
-      { date: '2026-02-12', day: 'Thu', channel: 'SHOP',            net:  465.00 },
-      { date: '2026-02-12', day: 'Thu', channel: 'COCA COLA',       net: 8320.00 },
-      { date: '2026-02-12', day: 'Thu', channel: 'CNY',             net: 8381.00 },
-      { date: '2026-02-12', day: 'Thu', channel: 'CARAVAN TRUCK',   net: 3869.00 },
-      { date: '2026-02-13', day: 'Fri', channel: 'SHOP',            net:  349.00 },
-      { date: '2026-02-13', day: 'Fri', channel: 'COCA COLA',       net: 8465.00 },
-      { date: '2026-02-13', day: 'Fri', channel: 'CNY',             net: 7790.00 },
-      { date: '2026-02-13', day: 'Fri', channel: 'CARAVAN TRUCK',   net: 3980.00 },
-      { date: '2026-02-14', day: 'Sat', channel: 'SHOP',            net:  620.00 },
-      { date: '2026-02-14', day: 'Sat', channel: 'COCA COLA',       net: 15500.00 },
-      { date: '2026-02-14', day: 'Sat', channel: 'CNY',             net: 10183.00 },
-      { date: '2026-02-14', day: 'Sat', channel: 'CARAVAN TRUCK',   net: 5206.00 },
-      { date: '2026-02-15', day: 'Sun', channel: 'SHOP',            net:  679.00 },
-      { date: '2026-02-15', day: 'Sun', channel: 'COCA COLA',       net: 7090.00 },
-      { date: '2026-02-15', day: 'Sun', channel: 'CNY',             net: 6866.00 },
-      { date: '2026-02-15', day: 'Sun', channel: 'CARAVAN TRUCK',   net: 2856.00 },
-      { date: '2026-02-16', day: 'Mon', channel: 'CNY',             net: 7384.00 },
-      { date: '2026-02-16', day: 'Mon', channel: 'COCA COLA',       net: 8850.00 },
-      { date: '2026-02-16', day: 'Mon', channel: 'CARAVAN TRUCK',   net: 3860.00 },
-      { date: '2026-02-17', day: 'Tue', channel: 'CARAVAN TRUCK',   net: 5497.00 },
-      { date: '2026-02-17', day: 'Tue', channel: 'SHOP',            net:  235.00 },
-      { date: '2026-02-17', day: 'Tue', channel: 'CNY',             net: 6028.00 },
-      { date: '2026-02-17', day: 'Tue', channel: 'COCA COLA',       net: 15620.00 },
-      { date: '2026-02-18', day: 'Wed', channel: 'CARAVAN TRUCK',   net: 6238.00 },
-      { date: '2026-02-18', day: 'Wed', channel: 'CNY',             net: 8169.00 },
-      { date: '2026-02-18', day: 'Wed', channel: 'COCA COLA',       net: 18380.00 },
-      { date: '2026-02-18', day: 'Wed', channel: 'SHOP',            net:  570.00 },
-      { date: '2026-02-19', day: 'Thu', channel: 'CNY',             net: 8128.00 },
-      { date: '2026-02-19', day: 'Thu', channel: 'CARAVAN TRUCK',   net: 9771.00 },
-      { date: '2026-02-19', day: 'Thu', channel: 'COCA COLA',       net: 28540.00 },
-      { date: '2026-02-20', day: 'Fri', channel: 'SHOP',            net:   59.95 },
-      { date: '2026-02-20', day: 'Fri', channel: 'CARAVAN TRUCK',   net: 3404.00 },
-      { date: '2026-02-20', day: 'Fri', channel: 'COCA COLA',       net: 10607.00 },
-      { date: '2026-02-20', day: 'Fri', channel: 'CNY',             net: 6965.00 },
-      { date: '2026-02-21', day: 'Sat', channel: 'CARAVAN TRUCK',   net: 1718.00 },
-      { date: '2026-02-21', day: 'Sat', channel: 'CNY',             net: 7503.00 },
-      { date: '2026-02-21', day: 'Sat', channel: 'COCA COLA',       net: 6990.00 },
+      { date: '2026-02-10', day: 'Tue', channel: 'SHOP', net: 1935.00 },
+      { date: '2026-02-10', day: 'Tue', channel: 'COCA COLA', net: 4975.00 },
+      { date: '2026-02-10', day: 'Tue', channel: 'CNY', net: 5452.00 },
+      { date: '2026-02-10', day: 'Tue', channel: 'CARAVAN TRUCK', net: 2202.00 },
+      { date: '2026-02-11', day: 'Wed', channel: 'SHOP', net: 260.00 },
+      { date: '2026-02-11', day: 'Wed', channel: 'COCA COLA', net: 8910.00 },
+      { date: '2026-02-11', day: 'Wed', channel: 'CNY', net: 7673.00 },
+      { date: '2026-02-11', day: 'Wed', channel: 'CARAVAN TRUCK', net: 3270.00 },
+      { date: '2026-02-12', day: 'Thu', channel: 'SHOP', net: 465.00 },
+      { date: '2026-02-12', day: 'Thu', channel: 'COCA COLA', net: 8320.00 },
+      { date: '2026-02-12', day: 'Thu', channel: 'CNY', net: 8381.00 },
+      { date: '2026-02-12', day: 'Thu', channel: 'CARAVAN TRUCK', net: 3869.00 },
+      { date: '2026-02-13', day: 'Fri', channel: 'SHOP', net: 349.00 },
+      { date: '2026-02-13', day: 'Fri', channel: 'COCA COLA', net: 8465.00 },
+      { date: '2026-02-13', day: 'Fri', channel: 'CNY', net: 7790.00 },
+      { date: '2026-02-13', day: 'Fri', channel: 'CARAVAN TRUCK', net: 3980.00 },
+      { date: '2026-02-14', day: 'Sat', channel: 'SHOP', net: 620.00 },
+      { date: '2026-02-14', day: 'Sat', channel: 'COCA COLA', net: 15500.00 },
+      { date: '2026-02-14', day: 'Sat', channel: 'CNY', net: 10183.00 },
+      { date: '2026-02-14', day: 'Sat', channel: 'CARAVAN TRUCK', net: 5206.00 },
+      { date: '2026-02-15', day: 'Sun', channel: 'SHOP', net: 679.00 },
+      { date: '2026-02-15', day: 'Sun', channel: 'COCA COLA', net: 7090.00 },
+      { date: '2026-02-15', day: 'Sun', channel: 'CNY', net: 6866.00 },
+      { date: '2026-02-15', day: 'Sun', channel: 'CARAVAN TRUCK', net: 2856.00 },
+      { date: '2026-02-16', day: 'Mon', channel: 'CNY', net: 7384.00 },
+      { date: '2026-02-16', day: 'Mon', channel: 'COCA COLA', net: 8850.00 },
+      { date: '2026-02-16', day: 'Mon', channel: 'CARAVAN TRUCK', net: 3860.00 },
+      { date: '2026-02-17', day: 'Tue', channel: 'CARAVAN TRUCK', net: 5497.00 },
+      { date: '2026-02-17', day: 'Tue', channel: 'SHOP', net: 235.00 },
+      { date: '2026-02-17', day: 'Tue', channel: 'CNY', net: 6028.00 },
+      { date: '2026-02-17', day: 'Tue', channel: 'COCA COLA', net: 15620.00 },
+      { date: '2026-02-18', day: 'Wed', channel: 'CARAVAN TRUCK', net: 6238.00 },
+      { date: '2026-02-18', day: 'Wed', channel: 'CNY', net: 8169.00 },
+      { date: '2026-02-18', day: 'Wed', channel: 'COCA COLA', net: 18380.00 },
+      { date: '2026-02-18', day: 'Wed', channel: 'SHOP', net: 570.00 },
+      { date: '2026-02-19', day: 'Thu', channel: 'CNY', net: 8128.00 },
+      { date: '2026-02-19', day: 'Thu', channel: 'CARAVAN TRUCK', net: 9771.00 },
+      { date: '2026-02-19', day: 'Thu', channel: 'COCA COLA', net: 28540.00 },
+      { date: '2026-02-20', day: 'Fri', channel: 'SHOP', net: 59.95 },
+      { date: '2026-02-20', day: 'Fri', channel: 'CARAVAN TRUCK', net: 3404.00 },
+      { date: '2026-02-20', day: 'Fri', channel: 'COCA COLA', net: 10607.00 },
+      { date: '2026-02-20', day: 'Fri', channel: 'CNY', net: 6965.00 },
+      { date: '2026-02-21', day: 'Sat', channel: 'CARAVAN TRUCK', net: 1718.00 },
+      { date: '2026-02-21', day: 'Sat', channel: 'CNY', net: 7503.00 },
+      { date: '2026-02-21', day: 'Sat', channel: 'COCA COLA', net: 6990.00 },
       // ── 23 Feb – 01 Mar 2026 (Feb 22 not in any report) ───────────────────
-      { date: '2026-02-23', day: 'Mon', channel: 'SHOP',            net: 1598.00 },
-      { date: '2026-02-24', day: 'Tue', channel: 'SHOP',            net: 1514.00 },
-      { date: '2026-02-25', day: 'Wed', channel: 'SHOP',            net: 1117.00 },
-      { date: '2026-02-26', day: 'Thu', channel: 'SHOP',            net: 1659.00 },
-      { date: '2026-02-27', day: 'Fri', channel: 'SHOP',            net: 2769.00 },
-      { date: '2026-02-28', day: 'Sat', channel: 'SHOP',            net: 1498.00 },
-      { date: '2026-03-01', day: 'Sun', channel: 'SHOP',            net: 1350.00 },
+      { date: '2026-02-23', day: 'Mon', channel: 'SHOP', net: 1598.00 },
+      { date: '2026-02-24', day: 'Tue', channel: 'SHOP', net: 1514.00 },
+      { date: '2026-02-25', day: 'Wed', channel: 'SHOP', net: 1117.00 },
+      { date: '2026-02-26', day: 'Thu', channel: 'SHOP', net: 1659.00 },
+      { date: '2026-02-27', day: 'Fri', channel: 'SHOP', net: 2769.00 },
+      { date: '2026-02-28', day: 'Sat', channel: 'SHOP', net: 1498.00 },
+      { date: '2026-03-01', day: 'Sun', channel: 'SHOP', net: 1350.00 },
       // ── 02 Mar – 08 Mar 2026 ───────────────────────────────────────────────
-      { date: '2026-03-02', day: 'Mon', channel: 'SHOP',            net: 1439.00 },
-      { date: '2026-03-03', day: 'Tue', channel: 'SHOP',            net: 2110.00 },
-      { date: '2026-03-04', day: 'Wed', channel: 'SHOP',            net: 1312.00 },
-      { date: '2026-03-05', day: 'Thu', channel: 'SHOP',            net: 2619.00 },
-      { date: '2026-03-06', day: 'Fri', channel: 'SHOP',            net: 1589.00 },
+      { date: '2026-03-02', day: 'Mon', channel: 'SHOP', net: 1439.00 },
+      { date: '2026-03-03', day: 'Tue', channel: 'SHOP', net: 2110.00 },
+      { date: '2026-03-04', day: 'Wed', channel: 'SHOP', net: 1312.00 },
+      { date: '2026-03-05', day: 'Thu', channel: 'SHOP', net: 2619.00 },
+      { date: '2026-03-06', day: 'Fri', channel: 'SHOP', net: 1589.00 },
       { date: '2026-03-06', day: 'Fri', channel: 'MUSIC IN THE PARK', net: 7473.00 },
-      { date: '2026-03-07', day: 'Sat', channel: 'SHOP',            net: 2320.00 },
+      { date: '2026-03-07', day: 'Sat', channel: 'SHOP', net: 2320.00 },
       { date: '2026-03-07', day: 'Sat', channel: 'MUSIC IN THE PARK', net: 10870.00 },
-      { date: '2026-03-08', day: 'Sun', channel: 'SHOP',            net: 1603.00 },
+      { date: '2026-03-08', day: 'Sun', channel: 'SHOP', net: 1603.00 },
       { date: '2026-03-08', day: 'Sun', channel: 'MUSIC IN THE PARK', net: 16285.00 },
       // ── 09 Mar – 15 Mar 2026 ───────────────────────────────────────────────
-      { date: '2026-03-09', day: 'Mon', channel: 'SHOP',            net: 1559.00 },
-      { date: '2026-03-10', day: 'Tue', channel: 'SHOP',            net: 2080.00 },
-      { date: '2026-03-11', day: 'Wed', channel: 'SHOP',            net: 1437.00 },
-      { date: '2026-03-12', day: 'Thu', channel: 'SHOP',            net: 2484.00 },
-      { date: '2026-03-13', day: 'Fri', channel: 'SHOP',            net: 2009.00, other: 587.00 },
-      { date: '2026-03-13', day: 'Fri', channel: 'RIVER',           net: 2712.00 },
-      { date: '2026-03-13', day: 'Fri', channel: 'CARAVAN TRUCK',   net: 1526.00 },
-      { date: '2026-03-14', day: 'Sat', channel: 'SHOP',            net: 1963.00 },
-      { date: '2026-03-14', day: 'Sat', channel: 'RIVER',           net: 3427.00 },
-      { date: '2026-03-14', day: 'Sat', channel: 'CARAVAN TRUCK',   net: 1953.00 },
-      { date: '2026-03-15', day: 'Sun', channel: 'SHOP',            net: 7527.00 },
+      { date: '2026-03-09', day: 'Mon', channel: 'SHOP', net: 1559.00 },
+      { date: '2026-03-10', day: 'Tue', channel: 'SHOP', net: 2080.00 },
+      { date: '2026-03-11', day: 'Wed', channel: 'SHOP', net: 1437.00 },
+      { date: '2026-03-12', day: 'Thu', channel: 'SHOP', net: 2484.00 },
+      { date: '2026-03-13', day: 'Fri', channel: 'SHOP', net: 2009.00, other: 587.00 },
+      { date: '2026-03-13', day: 'Fri', channel: 'RIVER', net: 2712.00 },
+      { date: '2026-03-13', day: 'Fri', channel: 'CARAVAN TRUCK', net: 1526.00 },
+      { date: '2026-03-14', day: 'Sat', channel: 'SHOP', net: 1963.00 },
+      { date: '2026-03-14', day: 'Sat', channel: 'RIVER', net: 3427.00 },
+      { date: '2026-03-14', day: 'Sat', channel: 'CARAVAN TRUCK', net: 1953.00 },
+      { date: '2026-03-15', day: 'Sun', channel: 'SHOP', net: 7527.00 },
       // ── 16 Mar – 22 Mar 2026 ───────────────────────────────────────────────
-      { date: '2026-03-16', day: 'Mon', channel: 'SHOP',            net: 3416.00 },
-      { date: '2026-03-17', day: 'Tue', channel: 'SHOP',            net: 4510.96 },
-      { date: '2026-03-18', day: 'Wed', channel: 'SHOP',            net: 3481.00 },
-      { date: '2026-03-19', day: 'Thu', channel: 'SHOP',            net: 3292.00 },
-      { date: '2026-03-20', day: 'Fri', channel: 'SHOP',            net: 3005.00 },
-      { date: '2026-03-20', day: 'Fri', channel: 'RIVER',           net: 7064.00 },
-      { date: '2026-03-21', day: 'Sat', channel: 'SHOP',            net: 1983.00 },
-      { date: '2026-03-21', day: 'Sat', channel: 'RIVER',           net: 6640.00 },
-      { date: '2026-03-22', day: 'Sun', channel: 'SHOP',            net: 1977.00 },
+      { date: '2026-03-16', day: 'Mon', channel: 'SHOP', net: 3416.00 },
+      { date: '2026-03-17', day: 'Tue', channel: 'SHOP', net: 4510.96 },
+      { date: '2026-03-18', day: 'Wed', channel: 'SHOP', net: 3481.00 },
+      { date: '2026-03-19', day: 'Thu', channel: 'SHOP', net: 3292.00 },
+      { date: '2026-03-20', day: 'Fri', channel: 'SHOP', net: 3005.00 },
+      { date: '2026-03-20', day: 'Fri', channel: 'RIVER', net: 7064.00 },
+      { date: '2026-03-21', day: 'Sat', channel: 'SHOP', net: 1983.00 },
+      { date: '2026-03-21', day: 'Sat', channel: 'RIVER', net: 6640.00 },
+      { date: '2026-03-22', day: 'Sun', channel: 'SHOP', net: 1977.00 },
       // ── 23 Mar – 29 Mar 2026 ───────────────────────────────────────────────
-      { date: '2026-03-23', day: 'Mon', channel: 'SHOP',            net: 1787.00 },
-      { date: '2026-03-24', day: 'Tue', channel: 'SHOP',            net: 1429.00 },
-      { date: '2026-03-25', day: 'Wed', channel: 'SHOP',            net: 2340.00 },
-      { date: '2026-03-26', day: 'Thu', channel: 'SHOP',            net: 2583.00 },
-      { date: '2026-03-27', day: 'Fri', channel: 'SHOP',            net: 2583.00 },
-      { date: '2026-03-27', day: 'Fri', channel: 'RIVER',           net: 4769.00 },
-      { date: '2026-03-27', day: 'Fri', channel: 'CARAVAN TRUCK',   net: 1661.00 },
-      { date: '2026-03-28', day: 'Sat', channel: 'SHOP',            net: 3491.00 },
-      { date: '2026-03-28', day: 'Sat', channel: 'SUCHADA',         net: 4193.00 },
-      { date: '2026-03-28', day: 'Sat', channel: 'RIVER',           net: 3069.00 },
-      { date: '2026-03-29', day: 'Sun', channel: 'SHOP',            net: 2583.00 },
-      { date: '2026-03-29', day: 'Sun', channel: 'SUCHADA',         net: 4389.00 },
+      { date: '2026-03-23', day: 'Mon', channel: 'SHOP', net: 1787.00 },
+      { date: '2026-03-24', day: 'Tue', channel: 'SHOP', net: 1429.00 },
+      { date: '2026-03-25', day: 'Wed', channel: 'SHOP', net: 2340.00 },
+      { date: '2026-03-26', day: 'Thu', channel: 'SHOP', net: 2583.00 },
+      { date: '2026-03-27', day: 'Fri', channel: 'SHOP', net: 2583.00 },
+      { date: '2026-03-27', day: 'Fri', channel: 'RIVER', net: 4769.00 },
+      { date: '2026-03-27', day: 'Fri', channel: 'CARAVAN TRUCK', net: 1661.00 },
+      { date: '2026-03-28', day: 'Sat', channel: 'SHOP', net: 3491.00 },
+      { date: '2026-03-28', day: 'Sat', channel: 'SUCHADA', net: 4193.00 },
+      { date: '2026-03-28', day: 'Sat', channel: 'RIVER', net: 3069.00 },
+      { date: '2026-03-29', day: 'Sun', channel: 'SHOP', net: 2583.00 },
+      { date: '2026-03-29', day: 'Sun', channel: 'SUCHADA', net: 4389.00 },
       // ── 30 Mar – 05 Apr 2026 ───────────────────────────────────────────────
-      { date: '2026-03-30', day: 'Mon', channel: 'SHOP',            net: 1401.00 },
-      { date: '2026-03-31', day: 'Tue', channel: 'SHOP',            net: 2377.00 },
-      { date: '2026-04-01', day: 'Wed', channel: 'SHOP',            net: 2140.00 },
-      { date: '2026-04-02', day: 'Thu', channel: 'SHOP',            net: 2292.00 },
-      { date: '2026-04-03', day: 'Fri', channel: 'SHOP',            net: 1580.00 },
-      { date: '2026-04-04', day: 'Sat', channel: 'SHOP',            net: 1078.00 },
-      { date: '2026-04-05', day: 'Sun', channel: 'SHOP',            net: 1994.00 },
+      { date: '2026-03-30', day: 'Mon', channel: 'SHOP', net: 1401.00 },
+      { date: '2026-03-31', day: 'Tue', channel: 'SHOP', net: 2377.00 },
+      { date: '2026-04-01', day: 'Wed', channel: 'SHOP', net: 2140.00 },
+      { date: '2026-04-02', day: 'Thu', channel: 'SHOP', net: 2292.00 },
+      { date: '2026-04-03', day: 'Fri', channel: 'SHOP', net: 1580.00 },
+      { date: '2026-04-04', day: 'Sat', channel: 'SHOP', net: 1078.00 },
+      { date: '2026-04-05', day: 'Sun', channel: 'SHOP', net: 1994.00 },
       // ── 06 Apr – 12 Apr 2026 ───────────────────────────────────────────────
-      { date: '2026-04-06', day: 'Mon', channel: 'SHOP',            net: 2502.00 },
-      { date: '2026-04-07', day: 'Tue', channel: 'SHOP',            net: 3799.00 },
-      { date: '2026-04-08', day: 'Wed', channel: 'SHOP',            net: 2156.00 },
-      { date: '2026-04-09', day: 'Thu', channel: 'SHOP',            net: 1792.00 },
-      { date: '2026-04-10', day: 'Fri', channel: 'SHOP',            net: 2182.00 },
-      { date: '2026-04-10', day: 'Fri', channel: 'RIVER',           net: 2540.00 },
-      { date: '2026-04-10', day: 'Fri', channel: 'CARAVAN TRUCK',   net: 1514.00 },
-      { date: '2026-04-11', day: 'Sat', channel: 'SHOP',            net: 1412.00 },
-      { date: '2026-04-11', day: 'Sat', channel: 'RIVER',           net: 3194.00 },
-      { date: '2026-04-11', day: 'Sat', channel: 'CARAVAN TRUCK',   net: 1128.00 },
-      { date: '2026-04-12', day: 'Sun', channel: 'SHOP',            net: 1941.00 },
-      { date: '2026-04-12', day: 'Sun', channel: 'MISC',            net: 2041.00 },
+      { date: '2026-04-06', day: 'Mon', channel: 'SHOP', net: 2502.00 },
+      { date: '2026-04-07', day: 'Tue', channel: 'SHOP', net: 3799.00 },
+      { date: '2026-04-08', day: 'Wed', channel: 'SHOP', net: 2156.00 },
+      { date: '2026-04-09', day: 'Thu', channel: 'SHOP', net: 1792.00 },
+      { date: '2026-04-10', day: 'Fri', channel: 'SHOP', net: 2182.00 },
+      { date: '2026-04-10', day: 'Fri', channel: 'RIVER', net: 2540.00 },
+      { date: '2026-04-10', day: 'Fri', channel: 'CARAVAN TRUCK', net: 1514.00 },
+      { date: '2026-04-11', day: 'Sat', channel: 'SHOP', net: 1412.00 },
+      { date: '2026-04-11', day: 'Sat', channel: 'RIVER', net: 3194.00 },
+      { date: '2026-04-11', day: 'Sat', channel: 'CARAVAN TRUCK', net: 1128.00 },
+      { date: '2026-04-12', day: 'Sun', channel: 'SHOP', net: 1941.00 },
+      { date: '2026-04-12', day: 'Sun', channel: 'MISC', net: 2041.00 },
       // ── 13 Apr – 19 Apr 2026 (Songkran) ───────────────────────────────────
       { date: '2026-04-13', day: 'Mon', channel: 'SONGKRAN FESTIVAL', net: 5273.00 },
-      { date: '2026-04-13', day: 'Mon', channel: 'SHOP',            net:  904.00 },
+      { date: '2026-04-13', day: 'Mon', channel: 'SHOP', net: 904.00 },
       { date: '2026-04-14', day: 'Tue', channel: 'SONGKRAN FESTIVAL', net: 4690.00 },
-      { date: '2026-04-14', day: 'Tue', channel: 'SHOP',            net:  851.00 },
+      { date: '2026-04-14', day: 'Tue', channel: 'SHOP', net: 851.00 },
       { date: '2026-04-15', day: 'Wed', channel: 'SONGKRAN FESTIVAL', net: 2780.00 },
-      { date: '2026-04-15', day: 'Wed', channel: 'SHOP',            net: 1224.00 },
-      { date: '2026-04-16', day: 'Thu', channel: 'SHOP',            net: 2304.00 },
-      { date: '2026-04-17', day: 'Fri', channel: 'SHOP',            net: 1826.00 },
-      { date: '2026-04-17', day: 'Fri', channel: 'RIVER',           net: 4112.00 },
-      { date: '2026-04-17', day: 'Fri', channel: 'CARAVAN TRUCK',   net: 2196.00 },
-      { date: '2026-04-18', day: 'Sat', channel: 'SHOP',            net: 2238.00 },
-      { date: '2026-04-19', day: 'Sun', channel: 'SHOP',            net: 2093.00 },
+      { date: '2026-04-15', day: 'Wed', channel: 'SHOP', net: 1224.00 },
+      { date: '2026-04-16', day: 'Thu', channel: 'SHOP', net: 2304.00 },
+      { date: '2026-04-17', day: 'Fri', channel: 'SHOP', net: 1826.00 },
+      { date: '2026-04-17', day: 'Fri', channel: 'RIVER', net: 4112.00 },
+      { date: '2026-04-17', day: 'Fri', channel: 'CARAVAN TRUCK', net: 2196.00 },
+      { date: '2026-04-18', day: 'Sat', channel: 'SHOP', net: 2238.00 },
+      { date: '2026-04-19', day: 'Sun', channel: 'SHOP', net: 2093.00 },
       // ── 20 Apr – 26 Apr 2026 ───────────────────────────────────────────────
-      { date: '2026-04-20', day: 'Mon', channel: 'SHOP',            net: 1441.00 },
-      { date: '2026-04-21', day: 'Tue', channel: 'SHOP',            net: 1824.00 },
-      { date: '2026-04-22', day: 'Wed', channel: 'SHOP',            net: 1600.00 },
-      { date: '2026-04-23', day: 'Thu', channel: 'SHOP',            net: 1726.00 },
-      { date: '2026-04-24', day: 'Fri', channel: 'SHOP',            net: 1786.00 },
-      { date: '2026-04-24', day: 'Fri', channel: 'RIVER',           net: 2964.00 },
-      { date: '2026-04-25', day: 'Sat', channel: 'SHOP',            net: 1089.00 },
-      { date: '2026-04-25', day: 'Sat', channel: 'RIVER',           net: 2064.00 },
-      { date: '2026-04-26', day: 'Sun', channel: 'UNIVERSITY',      net: 16087.00 },
+      { date: '2026-04-20', day: 'Mon', channel: 'SHOP', net: 1441.00 },
+      { date: '2026-04-21', day: 'Tue', channel: 'SHOP', net: 1824.00 },
+      { date: '2026-04-22', day: 'Wed', channel: 'SHOP', net: 1600.00 },
+      { date: '2026-04-23', day: 'Thu', channel: 'SHOP', net: 1726.00 },
+      { date: '2026-04-24', day: 'Fri', channel: 'SHOP', net: 1786.00 },
+      { date: '2026-04-24', day: 'Fri', channel: 'RIVER', net: 2964.00 },
+      { date: '2026-04-25', day: 'Sat', channel: 'SHOP', net: 1089.00 },
+      { date: '2026-04-25', day: 'Sat', channel: 'RIVER', net: 2064.00 },
+      { date: '2026-04-26', day: 'Sun', channel: 'UNIVERSITY', net: 16087.00 },
     ];
 
     let inserted = 0;
@@ -446,66 +446,66 @@ async function restoreMissing2025SalesData() {
       { date: '2025-10-30', day: 'Thu', channel: 'Shop', net: 2370.00 },
       { date: '2025-10-31', day: 'Fri', channel: 'Shop', net: 2015.00 },
       // ── November 22–30 2025 (missing from DB) ──
-      { date: '2025-11-22', day: 'Sat', channel: 'River',     net: 1412.00 },
-      { date: '2025-11-22', day: 'Sat', channel: 'Shop',      net: 1309.00 },
-      { date: '2025-11-23', day: 'Sun', channel: 'BOX',       net: 1615.00 },
-      { date: '2025-11-23', day: 'Sun', channel: 'Shop',      net: 1765.00 },
-      { date: '2025-11-24', day: 'Mon', channel: 'BOX',       net: 1075.00 },
-      { date: '2025-11-24', day: 'Mon', channel: 'Shop',      net: 1214.00 },
+      { date: '2025-11-22', day: 'Sat', channel: 'River', net: 1412.00 },
+      { date: '2025-11-22', day: 'Sat', channel: 'Shop', net: 1309.00 },
+      { date: '2025-11-23', day: 'Sun', channel: 'BOX', net: 1615.00 },
+      { date: '2025-11-23', day: 'Sun', channel: 'Shop', net: 1765.00 },
+      { date: '2025-11-24', day: 'Mon', channel: 'BOX', net: 1075.00 },
+      { date: '2025-11-24', day: 'Mon', channel: 'Shop', net: 1214.00 },
       { date: '2025-11-25', day: 'Tue', channel: 'RIVERBOAT', net: 4639.00 },
-      { date: '2025-11-25', day: 'Tue', channel: 'Shop',      net: 1420.00 },
-      { date: '2025-11-26', day: 'Wed', channel: 'Shop',      net: 1104.00 },
+      { date: '2025-11-25', day: 'Tue', channel: 'Shop', net: 1420.00 },
+      { date: '2025-11-26', day: 'Wed', channel: 'Shop', net: 1104.00 },
       { date: '2025-11-26', day: 'Wed', channel: 'RIVERBOAT', net: 3949.00 },
-      { date: '2025-11-27', day: 'Thu', channel: 'FOOD',      net: 5000.00 },
-      { date: '2025-11-27', day: 'Thu', channel: 'Shop',      net: 1616.00 },
+      { date: '2025-11-27', day: 'Thu', channel: 'FOOD', net: 5000.00 },
+      { date: '2025-11-27', day: 'Thu', channel: 'Shop', net: 1616.00 },
       { date: '2025-11-27', day: 'Thu', channel: 'RIVERBOAT', net: 2925.00 },
-      { date: '2025-11-28', day: 'Fri', channel: 'Shop',      net:  823.00 },
+      { date: '2025-11-28', day: 'Fri', channel: 'Shop', net: 823.00 },
       { date: '2025-11-28', day: 'Fri', channel: 'RIVERBOAT', net: 3746.00 },
-      { date: '2025-11-28', day: 'Fri', channel: 'FOOD',      net: 1600.00 },
+      { date: '2025-11-28', day: 'Fri', channel: 'FOOD', net: 1600.00 },
       { date: '2025-11-29', day: 'Sat', channel: 'RIVERBOAT', net: 3612.00 },
-      { date: '2025-11-29', day: 'Sat', channel: 'SUCHADA',   net: 2925.00 },
+      { date: '2025-11-29', day: 'Sat', channel: 'SUCHADA', net: 2925.00 },
       { date: '2025-11-30', day: 'Sun', channel: 'RIVERBOAT', net: 3192.00 },
-      { date: '2025-11-30', day: 'Sun', channel: 'SUCHADA',   net: 3596.00 },
+      { date: '2025-11-30', day: 'Sun', channel: 'SUCHADA', net: 3596.00 },
       // ── December 1–28 2025 (missing from DB; Dec 29-31 already restored) ──
-      { date: '2025-12-01', day: 'Mon', channel: 'Shop',             net: 1390.00 },
-      { date: '2025-12-02', day: 'Tue', channel: 'Shop',             net: 3499.00 },
-      { date: '2025-12-03', day: 'Wed', channel: 'Shop',             net:  980.00 },
-      { date: '2025-12-04', day: 'Thu', channel: 'Shop',             net: 1682.00 },
+      { date: '2025-12-01', day: 'Mon', channel: 'Shop', net: 1390.00 },
+      { date: '2025-12-02', day: 'Tue', channel: 'Shop', net: 3499.00 },
+      { date: '2025-12-03', day: 'Wed', channel: 'Shop', net: 980.00 },
+      { date: '2025-12-04', day: 'Thu', channel: 'Shop', net: 1682.00 },
       { date: '2025-12-04', day: 'Thu', channel: 'CHUM SEANT EVENT', net: 2501.00 },
-      { date: '2025-12-05', day: 'Fri', channel: 'Shop',             net: 1731.00 },
-      { date: '2025-12-05', day: 'Fri', channel: 'LATYAO',           net: 3526.00 },
-      { date: '2025-12-06', day: 'Sat', channel: 'Shop',             net: 1334.00 },
-      { date: '2025-12-06', day: 'Sat', channel: 'LATYAO',           net: 3447.00 },
-      { date: '2025-12-07', day: 'Sun', channel: 'Shop',             net: 2030.00 },
-      { date: '2025-12-07', day: 'Sun', channel: 'LATYAO',           net: 1452.00 },
-      { date: '2025-12-07', day: 'Sun', channel: 'UNIVERSITY',       net: 8666.00 },
-      { date: '2025-12-08', day: 'Mon', channel: 'Shop',             net: 1215.00 },
-      { date: '2025-12-09', day: 'Tue', channel: 'Shop',             net: 1139.00 },
-      { date: '2025-12-09', day: 'Tue', channel: 'LATYAO',           net: 2453.00 },
-      { date: '2025-12-10', day: 'Wed', channel: 'Shop',             net: 1318.00 },
-      { date: '2025-12-11', day: 'Thu', channel: 'Shop',             net:  685.00 },
-      { date: '2025-12-12', day: 'Fri', channel: 'Shop',             net: 1589.00 },
-      { date: '2025-12-12', day: 'Fri', channel: 'RIVER',            net: 2741.00 },
-      { date: '2025-12-13', day: 'Sat', channel: 'Shop',             net: 1095.00 },
-      { date: '2025-12-13', day: 'Sat', channel: 'RIVER',            net: 2274.00 },
-      { date: '2025-12-15', day: 'Mon', channel: 'Shop',             net:  844.00 },
-      { date: '2025-12-16', day: 'Tue', channel: 'Shop',             net: 1453.00 },
-      { date: '2025-12-17', day: 'Wed', channel: 'Shop',             net: 1500.00 },
-      { date: '2025-12-18', day: 'Thu', channel: 'Shop',             net: 1189.00 },
-      { date: '2025-12-19', day: 'Fri', channel: 'Shop',             net: 1265.00 },
-      { date: '2025-12-19', day: 'Fri', channel: 'RIVER',            net: 2125.00 },
-      { date: '2025-12-20', day: 'Sat', channel: 'Shop',             net: 1409.00 },
-      { date: '2025-12-20', day: 'Sat', channel: 'SUCHADA',          net: 3645.00 },
-      { date: '2025-12-23', day: 'Tue', channel: 'Shop',             net:  888.00 },
-      { date: '2025-12-23', day: 'Tue', channel: 'LIGHTFESTIVAL',    net: 9070.00 },
-      { date: '2025-12-25', day: 'Thu', channel: 'LIGHTFESTIVAL',    net: 7105.00 },
-      { date: '2025-12-25', day: 'Thu', channel: 'UNIVERSITY',       net: 1377.00 },
-      { date: '2025-12-26', day: 'Fri', channel: 'LIGHTFESTIVAL',    net: 8880.00 },
-      { date: '2025-12-26', day: 'Fri', channel: 'SHOP',             net: 1724.00 },
-      { date: '2025-12-27', day: 'Sat', channel: 'LIGHTFESTIVAL',    net: 8518.00 },
-      { date: '2025-12-27', day: 'Sat', channel: 'SHOP',             net: 1669.00 },
-      { date: '2025-12-28', day: 'Sun', channel: 'LIGHTFESTIVAL',    net: 6005.00 },
-      { date: '2025-12-28', day: 'Sun', channel: 'SHOP',             net: 1032.00 },
+      { date: '2025-12-05', day: 'Fri', channel: 'Shop', net: 1731.00 },
+      { date: '2025-12-05', day: 'Fri', channel: 'LATYAO', net: 3526.00 },
+      { date: '2025-12-06', day: 'Sat', channel: 'Shop', net: 1334.00 },
+      { date: '2025-12-06', day: 'Sat', channel: 'LATYAO', net: 3447.00 },
+      { date: '2025-12-07', day: 'Sun', channel: 'Shop', net: 2030.00 },
+      { date: '2025-12-07', day: 'Sun', channel: 'LATYAO', net: 1452.00 },
+      { date: '2025-12-07', day: 'Sun', channel: 'UNIVERSITY', net: 8666.00 },
+      { date: '2025-12-08', day: 'Mon', channel: 'Shop', net: 1215.00 },
+      { date: '2025-12-09', day: 'Tue', channel: 'Shop', net: 1139.00 },
+      { date: '2025-12-09', day: 'Tue', channel: 'LATYAO', net: 2453.00 },
+      { date: '2025-12-10', day: 'Wed', channel: 'Shop', net: 1318.00 },
+      { date: '2025-12-11', day: 'Thu', channel: 'Shop', net: 685.00 },
+      { date: '2025-12-12', day: 'Fri', channel: 'Shop', net: 1589.00 },
+      { date: '2025-12-12', day: 'Fri', channel: 'RIVER', net: 2741.00 },
+      { date: '2025-12-13', day: 'Sat', channel: 'Shop', net: 1095.00 },
+      { date: '2025-12-13', day: 'Sat', channel: 'RIVER', net: 2274.00 },
+      { date: '2025-12-15', day: 'Mon', channel: 'Shop', net: 844.00 },
+      { date: '2025-12-16', day: 'Tue', channel: 'Shop', net: 1453.00 },
+      { date: '2025-12-17', day: 'Wed', channel: 'Shop', net: 1500.00 },
+      { date: '2025-12-18', day: 'Thu', channel: 'Shop', net: 1189.00 },
+      { date: '2025-12-19', day: 'Fri', channel: 'Shop', net: 1265.00 },
+      { date: '2025-12-19', day: 'Fri', channel: 'RIVER', net: 2125.00 },
+      { date: '2025-12-20', day: 'Sat', channel: 'Shop', net: 1409.00 },
+      { date: '2025-12-20', day: 'Sat', channel: 'SUCHADA', net: 3645.00 },
+      { date: '2025-12-23', day: 'Tue', channel: 'Shop', net: 888.00 },
+      { date: '2025-12-23', day: 'Tue', channel: 'LIGHTFESTIVAL', net: 9070.00 },
+      { date: '2025-12-25', day: 'Thu', channel: 'LIGHTFESTIVAL', net: 7105.00 },
+      { date: '2025-12-25', day: 'Thu', channel: 'UNIVERSITY', net: 1377.00 },
+      { date: '2025-12-26', day: 'Fri', channel: 'LIGHTFESTIVAL', net: 8880.00 },
+      { date: '2025-12-26', day: 'Fri', channel: 'SHOP', net: 1724.00 },
+      { date: '2025-12-27', day: 'Sat', channel: 'LIGHTFESTIVAL', net: 8518.00 },
+      { date: '2025-12-27', day: 'Sat', channel: 'SHOP', net: 1669.00 },
+      { date: '2025-12-28', day: 'Sun', channel: 'LIGHTFESTIVAL', net: 6005.00 },
+      { date: '2025-12-28', day: 'Sun', channel: 'SHOP', net: 1032.00 },
     ];
 
     let inserted = 0;
@@ -606,7 +606,7 @@ async function restore2024SalesData() {
       { date: '2024-10-30', day: 'Wed', net: 1149.00 }, { date: '2024-10-31', day: 'Thu', net: 1121.00 },
       { date: '2024-11-01', day: 'Fri', net: 1695.00 }, { date: '2024-11-02', day: 'Sat', net: 1927.00 },
       { date: '2024-11-03', day: 'Sun', net: 2003.00 }, { date: '2024-11-04', day: 'Mon', net: 1322.00 },
-      { date: '2024-11-05', day: 'Tue', net:  983.00 }, { date: '2024-11-06', day: 'Wed', net: 1927.00 },
+      { date: '2024-11-05', day: 'Tue', net: 983.00 }, { date: '2024-11-06', day: 'Wed', net: 1927.00 },
       { date: '2024-11-07', day: 'Thu', net: 1654.00 }, { date: '2024-11-08', day: 'Fri', net: 1372.00 },
       { date: '2024-11-09', day: 'Sat', net: 1761.00 }, { date: '2024-11-10', day: 'Sun', net: 1546.00 },
       { date: '2024-11-11', day: 'Mon', net: 2212.00 }, { date: '2024-11-12', day: 'Tue', net: 1917.00 },
@@ -638,7 +638,7 @@ async function restore2024SalesData() {
       { date: '2024-09-15', day: 'Sun', channel: 'J', net: 5460 },
       { date: '2024-09-20', day: 'Fri', channel: 'W', net: 3330 },
       { date: '2024-09-21', day: 'Sat', channel: 'J', net: 6790 },
-      { date: '2024-09-21', day: 'Sat', channel: 'W', net:  190 },
+      { date: '2024-09-21', day: 'Sat', channel: 'W', net: 190 },
       { date: '2024-09-22', day: 'Sun', channel: 'J', net: 5535 },
       { date: '2024-10-04', day: 'Fri', channel: 'W', net: 4290 },
       { date: '2024-10-05', day: 'Sat', channel: 'J', net: 5815 },
@@ -676,7 +676,7 @@ async function restore2024SalesData() {
       { date: '2024-11-22', day: 'Fri', channel: 'W', net: 4627 },
       { date: '2024-11-23', day: 'Sat', channel: 'W', net: 2404 },
       { date: '2024-11-23', day: 'Sat', channel: 'J', net: 4888 },
-      { date: '2024-11-24', day: 'Sun', channel: 'M', net:    0 },
+      { date: '2024-11-24', day: 'Sun', channel: 'M', net: 0 },
       { date: '2024-11-25', day: 'Mon', channel: 'D', net: 5609 },
       { date: '2024-11-29', day: 'Fri', channel: 'W', net: 3188 },
       { date: '2024-11-30', day: 'Sat', channel: 'M', net: 2578 },
@@ -777,12 +777,12 @@ async function ensureCorrectBirthdayTemplate(imageUrl: string) {
     const templates = await storage.getMessageTemplatesByChannel('email');
     const birthdayTemplate = templates.find(t => t.type === 'birthday');
     const correctHtml = buildBirthdayHtml(imageUrl);
-    
+
     if (birthdayTemplate) {
       // Compare full HTML content to detect any differences
       const currentContent = (birthdayTemplate.htmlContent || '').trim();
       const needsUpdate = currentContent !== correctHtml.trim();
-      
+
       if (needsUpdate) {
         log('Updating birthday template');
         await storage.updateMessageTemplate(birthdayTemplate.id, {
@@ -825,7 +825,7 @@ declare global {
 
 // Increase limit to 50MB to handle receipt photo uploads
 // Capture raw body for LINE webhook signature verification
-app.use(express.json({ 
+app.use(express.json({
   limit: '50mb',
   verify: (req: Request, res, buf) => {
     // Store raw body for LINE webhook signature verification
@@ -926,14 +926,14 @@ app.use((req, res, next) => {
       ];
 
       log("Channel sync: cleaning up obsolete channels...");
-      const obsoleteChannels = ['W','J','D','M','แข่งเรือ'];
+      const obsoleteChannels = ['W', 'J', 'D', 'M', 'แข่งเรือ'];
       for (const channelCode of obsoleteChannels) {
         await db.delete(sites).where(eq(sites.channelName, channelCode));
       }
 
       const missing = allChannels.filter(c => !existingChannels.has(c.channelName));
       log(`Channel sync: ${missing.length} missing channels to add`);
-      
+
       if (missing.length > 0) {
         for (const ch of missing) {
           log(`Channel sync: adding ${ch.channelName}...`);
@@ -943,7 +943,7 @@ app.use((req, res, next) => {
             channelName: ch.channelName,
             type: ch.type,
             location: 'Various',
-            operatingDays: JSON.stringify(['monday','tuesday','wednesday','thursday','friday','saturday','sunday']),
+            operatingDays: JSON.stringify(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
             openTime: '09:00',
             closeTime: '21:00',
             isActive: true,
@@ -962,12 +962,12 @@ app.use((req, res, next) => {
     try {
       const dec30Check = await db.select({ grabFee: dailySales.grabFee }).from(dailySales)
         .where(and(eq(dailySales.date, '2024-12-30'), eq(dailySales.orderChannel, 'Shop')));
-      
+
       if (dec30Check.length > 0 && Number(dec30Check[0].grabFee) === 0) {
         await db.update(dailySales)
-          .set({ 
-            grabFee: "116.01", 
-            totalSales: sql`CAST(net_sales AS REAL) + 116.01` 
+          .set({
+            grabFee: "116.01",
+            totalSales: sql`CAST(net_sales AS REAL) + 116.01`
           })
           .where(and(eq(dailySales.date, '2024-12-30'), eq(dailySales.orderChannel, 'Shop')));
         log("Fixed Dec 30 2024 Shop grab_fee: 0 → 116.01");
@@ -978,7 +978,7 @@ app.use((req, res, next) => {
 
     // Initialize email assets from object storage
     const objectStorage = new ObjectStorageService();
-    
+
     try {
       const logoUrl = await objectStorage.ensureYensLogoUploaded();
       setEmailLogoUrl(logoUrl);
@@ -987,7 +987,7 @@ app.use((req, res, next) => {
       log('Warning: Failed to initialize email logo, using fallback text');
       console.error('Logo initialization error:', error);
     }
-    
+
     // v3.17.15: Upload birthday graphic and update template with correct image URL
     try {
       const birthdayGraphicUrl = await objectStorage.ensureBirthdayGraphicUploaded();
@@ -1003,7 +1003,7 @@ app.use((req, res, next) => {
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      
+
       log(`Error: ${status} - ${message}`);
       console.error('Request error:', err);
 
@@ -1019,13 +1019,13 @@ app.use((req, res, next) => {
       // Serve static files from public directory in development mode
       const path = await import("path");
       app.use(express.static(path.resolve(import.meta.dirname, "..", "public")));
-      
+
       // Serve static files from object storage public directory
       const objectStoragePublicDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0];
       if (objectStoragePublicDir) {
         app.use(express.static(objectStoragePublicDir));
       }
-      
+
       await setupVite(app, server);
     } else {
       serveStatic(app);
@@ -1035,18 +1035,27 @@ app.use((req, res, next) => {
     // Other ports are firewalled. Default to 5000 if not specified.
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
-    const port = parseInt(process.env.PORT || '5000', 10);
+    // const port = parseInt(process.env.PORT || '5000', 10);
 
+
+    // server.listen({
+    //   port,
+    //   host: "127.0.0.1",
+    // }, () => {
+    //   log(`Server ready and serving on port ${port}`);
+
+    //   // Start the scheduled message processor
+    //   startScheduler();
+    // });
+    const port = parseInt(process.env.PORT || '5000', 10);
 
     server.listen({
       port,
-      host: "127.0.0.1",
+      host: "0.0.0.0",
     }, () => {
       log(`Server ready and serving on port ${port}`);
-      
-      // Start the scheduled message processor
       startScheduler();
-    });
+    });//////new one 
   } catch (error) {
     console.error('Fatal error during server startup:', error);
     log(`Startup failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
