@@ -1,11 +1,11 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex, blob, numeric, boolean } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, real, index, uniqueIndex, numeric, boolean, serial } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import crypto from "crypto";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Session storage table for standalone auth
-export const sessions = sqliteTable(
+export const sessions = pgTable(
   "sessions",
   {
     sid: text("sid").primaryKey(),
@@ -16,7 +16,7 @@ export const sessions = sqliteTable(
 );
 
 // Staff users table (baristas, managers, and admins)
-export const users = sqliteTable("users", {
+export const users = pgTable("users", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   email: text("email").unique(),
   firstName: text("first_name"),
@@ -26,14 +26,14 @@ export const users = sqliteTable("users", {
   location: text("location"), // for baristas/managers
   password: text("password"), // bcrypt hashed password (nullable - optional auth method)
   twoFactorSecret: text("two_factor_secret"), // TOTP secret for 2FA (nullable)
-  twoFactorEnabled: integer("two_factor_enabled", { mode: 'boolean' }).notNull().default(false),
-  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true), // Admin can disable access remotely
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true), // Admin can disable access remotely
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Refresh tokens for standalone auth
-export const refreshTokens = sqliteTable("refresh_tokens", {
+export const refreshTokens = pgTable("refresh_tokens", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   token: text("token").unique().notNull(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -43,7 +43,7 @@ export const refreshTokens = sqliteTable("refresh_tokens", {
 });
 
 // Customers table - loyalty program members
-export const customers = sqliteTable("customers", {
+export const customers = pgTable("customers", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   phone: text("phone").notNull().unique(),
@@ -54,7 +54,7 @@ export const customers = sqliteTable("customers", {
   tier: text("tier").notNull().default("bronze"), // bronze, silver, gold, platinum
   referralCode: text("referral_code").notNull().unique(),
   referredBy: text("referred_by"),
-  totalSpent: real("total_spent", { precision: 10, scale: 2 }).notNull().default("0"),
+  totalSpent: numeric("total_spent").notNull().default("0"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   // Additional fields for CSV import (matching production database column names)
   gender: text("gender"),
@@ -63,7 +63,7 @@ export const customers = sqliteTable("customers", {
   lastUse: text("last_use"),
   tag: text("tag"),
   lineUid: text("line_uid"),
-  isLineActive: integer("is_line_active", { mode: 'boolean' }).notNull().default(true), // false when customer unfollows LINE bot
+  isLineActive: boolean("is_line_active").notNull().default(true), // false when customer unfollows LINE bot
   lastUnfollowAt: text("last_unfollow_at"), // audit trail of last unfollow event
   relinkCount: integer("relink_count").notNull().default(0), // number of times customer has re-linked LINE
 },
@@ -72,22 +72,22 @@ export const customers = sqliteTable("customers", {
 ]);
 
 // Transactions table - purchase history
-export const transactions = sqliteTable("transactions", {
+export const transactions = pgTable("transactions", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   customerId: text("customer_id").notNull().references(() => customers.id),
   baristaId: text("barista_id").references(() => users.id), // Track which barista processed
-  amount: real("amount", { precision: 10, scale: 2 }).notNull(),
+  amount: numeric("amount").notNull(),
   points: integer("points").notNull(),
   location: text("location").notNull(),
   receiptUrl: text("receipt_url"),
   type: text("type").notNull().default("purchase"), // purchase, reward, birthday_bonus, referral
-  includedSpecialOffer: integer("included_special_offer", { mode: 'boolean' }).notNull().default(false), // Did barista sell weekly special?
-  isNewCustomer: integer("is_new_customer", { mode: 'boolean' }).notNull().default(false), // Was this a new customer signup?
+  includedSpecialOffer: boolean("included_special_offer").notNull().default(false), // Did barista sell weekly special?
+  isNewCustomer: boolean("is_new_customer").notNull().default(false), // Was this a new customer signup?
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Promotions table - SMS campaigns
-export const promotions = sqliteTable("promotions", {
+export const promotions = pgTable("promotions", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text("title").notNull(),
   message: text("message").notNull(),
@@ -97,30 +97,30 @@ export const promotions = sqliteTable("promotions", {
 });
 
 // Customer Notifications - tracks which promotions each customer has seen
-export const customerNotifications = sqliteTable("customer_notifications", {
+export const customerNotifications = pgTable("customer_notifications", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   customerId: text("customer_id").notNull().references(() => customers.id),
   promotionId: text("promotion_id").notNull().references(() => promotions.id),
-  isRead: integer("is_read", { mode: 'boolean' }).notNull().default(false),
+  isRead: boolean("is_read").notNull().default(false),
   readAt: text("read_at"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Products table - menu items
-export const products = sqliteTable("products", {
+export const products = pgTable("products", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   productCode: text("product_code"), // Product code from POS
   name: text("name").notNull(),
   description: text("description"),
-  price: real("price", { precision: 10, scale: 2 }).notNull(),
-  cost: real("cost", { precision: 10, scale: 2 }), // Cost price
+  price: numeric("price").notNull(),
+  cost: numeric("cost"), // Cost price
   category: text("category").notNull(), // soft_serve, milk_tea, fruit_tea, shakes, sundaes, float_drinks
   imageUrl: text("image_url"),
   badge: text("badge"), // new, popular, limited, sale, null
-  featured: integer("featured", { mode: 'boolean' }).notNull().default(false),
-  promoFocus: integer("promo_focus", { mode: 'boolean' }).notNull().default(false), // Highlight as promotional focus
-  available: integer("available", { mode: 'boolean' }).notNull().default(true),
-  isRedeemable: integer("is_redeemable", { mode: 'boolean' }).notNull().default(false), // Can be redeemed with loyalty points
+  featured: boolean("featured").notNull().default(false),
+  promoFocus: boolean("promo_focus").notNull().default(false), // Highlight as promotional focus
+  available: boolean("available").notNull().default(true),
+  isRedeemable: boolean("is_redeemable").notNull().default(false), // Can be redeemed with loyalty points
   pointCost: integer("point_cost").notNull().default(100), // Points required for redemption
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -128,7 +128,7 @@ export const products = sqliteTable("products", {
 });
 
 // Message Templates table - for birthday and promotional SMS/email/LINE messages
-export const messageTemplates = sqliteTable("message_templates", {
+export const messageTemplates = pgTable("message_templates", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   templateKey: text("template_key").unique(), // Unique key for lookup: email_welcome, line_birthday, etc.
   name: text("name").notNull(),
@@ -139,14 +139,14 @@ export const messageTemplates = sqliteTable("message_templates", {
   htmlContent: text("html_content"), // HTML content for email templates
   jsonContent: text("json_content"), // JSON Flex Message content for LINE templates
   variables: text("variables"), // List of available placeholders: ["customerName", "points", "tier"]
-  isDefault: integer("is_default", { mode: 'boolean' }).notNull().default(false),
-  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
+  isDefault: boolean("is_default").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Message Log table - tracks all sent messages
-export const messageLog = sqliteTable("message_log", {
+export const messageLog = pgTable("message_log", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   customerId: text("customer_id").notNull().references(() => customers.id),
   templateId: text("template_id").references(() => messageTemplates.id),
@@ -163,7 +163,7 @@ export const messageLog = sqliteTable("message_log", {
 });
 
 // Scheduled Messages table - for sending messages at a specific time
-export const scheduledMessages = sqliteTable("scheduled_messages", {
+export const scheduledMessages = pgTable("scheduled_messages", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   channel: text("channel").notNull(), // sms, email, line
   recipientType: text("recipient_type").notNull(), // all, tier, individual, birthday_today, birthday_week
@@ -185,11 +185,11 @@ export const scheduledMessages = sqliteTable("scheduled_messages", {
 });
 
 // Automations table - automated message rules triggered by schedule or events
-export const automations = sqliteTable("automations", {
+export const automations = pgTable("automations", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
   triggerType: text("trigger_type").notNull(), // 'recurring_daily', 'recurring_weekly', 'recurring_monthly', 'one_time'
   triggerConfig: text("trigger_config").notNull().$type<{ time?: string; dayOfWeek?: string; dayOfMonth?: number; date?: string }>(),
   customerFilter: text("customer_filter").notNull().default("all"), // 'all', 'tier_bronze', 'tier_silver', 'tier_gold', 'tier_platinum', 'birthday_today', 'inactive_30d', 'inactive_60d'
@@ -206,7 +206,7 @@ export const automations = sqliteTable("automations", {
 });
 
 // Automation Runs table - execution history log for each automation
-export const automationRuns = sqliteTable("automation_runs", {
+export const automationRuns = pgTable("automation_runs", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   automationId: text("automation_id").notNull().references(() => automations.id, { onDelete: 'cascade' }),
   triggeredAt: text("triggered_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -218,7 +218,7 @@ export const automationRuns = sqliteTable("automation_runs", {
 });
 
 // Sites table - physical locations/stalls where Yens products are sold
-export const sites = sqliteTable("sites", {
+export const sites = pgTable("sites", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(), // Site name (e.g., "Central Plaza Stall", "Mobile Van #1")
   channelName: text("channel_name").notNull(), // Sales channel identifier (e.g., "SHOP", "RIVER", "GRAB")
@@ -227,7 +227,7 @@ export const sites = sqliteTable("sites", {
   operatingDays: text("operating_days"), // ["monday", "tuesday", etc.]
   openTime: text("open_time"), // "09:00"
   closeTime: text("close_time"), // "18:00"
-  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
   notes: text("notes"), // For ad-hoc sites or special instructions
   managerId: text("manager_id").references(() => users.id), // Optional: assigned manager
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -235,7 +235,7 @@ export const sites = sqliteTable("sites", {
 });
 
 // Time Entries table - tracks barista clock in/out times
-export const timeEntries = sqliteTable("time_entries", {
+export const timeEntries = pgTable("time_entries", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id), // Barista who clocked in
   siteId: text("site_id").notNull().references(() => sites.id), // Location where they're working
@@ -249,12 +249,12 @@ export const timeEntries = sqliteTable("time_entries", {
 
 // Work Schedules table - barista work schedules
 // Weekly schedule series configuration
-export const workScheduleSeries = sqliteTable("work_schedule_series", {
+export const workScheduleSeries = pgTable("work_schedule_series", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id), // Barista for this series
   siteId: text("site_id").notNull().references(() => sites.id), // Location for this series
   weekStartDate: text("week_start_date").notNull(), // ISO date of Monday starting the series (YYYY-MM-DD)
-  daysOfWeek: text("days_of_week").notNull(), // e.g., ['monday', 'wednesday', 'friday']
+  daysOfWeek: text("days_of_week").notNull().$type<string[]>(), // e.g., ['monday', 'wednesday', 'friday']
   repeatWeeks: integer("repeat_weeks").notNull().default(1), // Number of weeks to repeat (1, 2, 4, 8, 12)
   startTime: text("start_time").notNull(), // HH:MM format
   endTime: text("end_time").notNull(), // HH:MM format
@@ -265,7 +265,7 @@ export const workScheduleSeries = sqliteTable("work_schedule_series", {
 });
 
 // Individual work schedule occurrences
-export const workSchedules = sqliteTable("work_schedules", {
+export const workSchedules = pgTable("work_schedules", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id), // Barista assigned to shift
   siteId: text("site_id").notNull().references(() => sites.id), // Location of shift
@@ -280,12 +280,12 @@ export const workSchedules = sqliteTable("work_schedules", {
 });
 
 // Barista Announcements table - promotions and notices for baristas
-export const baristaAnnouncements = sqliteTable("barista_announcements", {
+export const baristaAnnouncements = pgTable("barista_announcements", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text("title").notNull(), // Announcement title
   content: text("content").notNull(), // Announcement body
   type: text("type").notNull().default("general"), // general, promotion, incentive, policy
-  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true), // Show/hide announcement
+  isActive: boolean("is_active").notNull().default(true), // Show/hide announcement
   priority: integer("priority").notNull().default(0), // Higher priority shows first
   expiresAt: text("expires_at"), // Optional expiry date
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -293,7 +293,7 @@ export const baristaAnnouncements = sqliteTable("barista_announcements", {
 });
 
 // Weekly Specials table - featured promotions for baristas to push
-export const weeklySpecials = sqliteTable("weekly_specials", {
+export const weeklySpecials = pgTable("weekly_specials", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text("title").notNull(), // e.g., "Mango Sticky Rice Sundae"
   description: text("description").notNull(), // What makes it special
@@ -302,13 +302,13 @@ export const weeklySpecials = sqliteTable("weekly_specials", {
   bonusPoints: integer("bonus_points").notNull().default(5), // Extra points for barista when sold
   startDate: text("start_date").notNull(), // YYYY-MM-DD
   endDate: text("end_date").notNull(), // YYYY-MM-DD
-  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Barista Performance table - tracks weekly/monthly performance
-export const baristaPerformance = sqliteTable("barista_performance", {
+export const baristaPerformance = pgTable("barista_performance", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id),
   weekStart: text("week_start").notNull(), // YYYY-MM-DD (Monday of week)
@@ -319,22 +319,22 @@ export const baristaPerformance = sqliteTable("barista_performance", {
   weeklyRank: integer("weekly_rank"), // Ranking among all baristas (1 = first place)
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => ({
+}, (table) => [
   // Unique constraint for atomic upserts - prevents race conditions
-  userWeekUnique: uniqueIndex("barista_performance_user_week_unique").on(table.userId, table.weekStart),
-}));
+  uniqueIndex("barista_performance_user_week_unique").on(table.userId, table.weekStart),
+]);
 
 // Daily Sales table - tracks sales by site from Excel imports
-export const dailySales = sqliteTable("daily_sales", {
+export const dailySales = pgTable("daily_sales", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   date: text("date").notNull(), // YYYY-MM-DD
   dayOfWeek: text("day_of_week").notNull(), // Sun, Mon, Tue, Wed, Thu, Fri, Sat
   orderChannel: text("order_channel").notNull(), // Shop, Supalai, Balloon, Box, River, Army, Lamp, etc.
-  netSales: real("net_sales", { precision: 10, scale: 2 }).notNull(), // Sales before fees
-  otherSales: real("other_sales", { precision: 10, scale: 2 }).default("0"), // Other revenue (e.g., tips, delivery)
+  netSales: numeric("net_sales").notNull(), // Sales before fees
+  otherSales: numeric("other_sales").default("0"), // Other revenue (e.g., tips, delivery)
   otherSalesNote: text("other_sales_note"), // Optional note/reference for other sales (e.g., "Catering", "Tips")
-  grabFee: real("grab_fee", { precision: 10, scale: 2 }).default("0"), // Delivery platform fees
-  totalSales: real("total_sales", { precision: 10, scale: 2 }).notNull(), // Total sales
+  grabFee: numeric("grab_fee").default("0"), // Delivery platform fees
+  totalSales: numeric("total_sales").notNull(), // Total sales
   importedBy: text("imported_by").references(() => users.id), // Admin who imported
   importedAt: text("imported_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -353,13 +353,13 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   // Allow dates as strings (ISO format) or Date objects for API compatibility
   registerDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
     if (!val) return null;
-    if (val instanceof Date) return val;
-    return new Date(val);
+    if (val instanceof Date) return val.toISOString();
+    return new Date(val).toISOString();
   }),
   lastUse: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
     if (!val) return null;
-    if (val instanceof Date) return val;
-    return new Date(val);
+    if (val instanceof Date) return val.toISOString();
+    return new Date(val).toISOString();
   }),
 });
 
@@ -421,8 +421,10 @@ export const insertProductSchema = createInsertSchema(products).omit({
   updatedAt: true,
 }).extend({
   productCode: z.string().optional(),
-  cost: z.string().optional(),
+  price: z.preprocess((val) => (val === '' || val === null || val === undefined) ? undefined : String(val), z.string().refine(val => !isNaN(Number(val)), { message: "Price must be a valid number" })),
+  cost: z.preprocess((val) => (val === '' || val === null || val === undefined) ? null : String(val), z.string().refine(val => !isNaN(Number(val)), { message: "Cost must be a valid number" }).nullable().optional()),
 });
+
 
 export const insertMessageTemplateSchema = createInsertSchema(messageTemplates).omit({
   id: true,
@@ -452,7 +454,13 @@ export const insertSiteSchema = createInsertSchema(sites).omit({
   updatedAt: true,
 }).extend({
   channelName: z.string().min(1, "Channel name is required").max(20, "Channel name must be 20 characters or less").regex(/^[A-Z0-9 _-]+$/, "Channel name must contain only uppercase letters, numbers, spaces, hyphens, and underscores"),
+  operatingDays: z.preprocess((val) => {
+    if (Array.isArray(val)) return JSON.stringify(val);
+    if (typeof val === 'string') return val;
+    return null;
+  }, z.string().nullable().optional()),
 });
+
 
 export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
   id: true,
@@ -555,14 +563,14 @@ export type RefreshToken = typeof refreshTokens.$inferSelect;
 export type InsertRefreshToken = typeof refreshTokens.$inferInsert;
 
 // Customer Reviews table - store customer feedback and ratings
-export const customerReviews = sqliteTable("customer_reviews", {
-  id: integer("id").primaryKey({ autoIncrement: true }), // Auto-increment serial
+export const customerReviews = pgTable("customer_reviews", {
+  id: serial("id").primaryKey(), // Auto-increment serial
   customerId: text("customer_id").references(() => customers.id).notNull(),
   rating: integer("rating").notNull(), // 1-5 stars
   feedbackTags: text("feedback_tags"), // ["delicious", "fast_service", "good_value", etc.]
   comment: text("comment"), // Optional free-form comment (max 500 chars)
   googlePlaceId: text("google_place_id"), // Google Place ID for the review
-  syncedToGoogle: integer("synced_to_google", { mode: 'boolean' }).notNull().default(false), // Tracking if synced
+  syncedToGoogle: boolean("synced_to_google").notNull().default(false), // Tracking if synced
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -570,18 +578,24 @@ export const insertCustomerReviewSchema = createInsertSchema(customerReviews).om
   id: true,
   createdAt: true,
   syncedToGoogle: true,
+}).extend({
+  feedbackTags: z.preprocess((val) => {
+    if (Array.isArray(val)) return JSON.stringify(val);
+    if (typeof val === 'string') return val;
+    return null;
+  }, z.string().nullable().optional()),
 });
 
 export type CustomerReview = typeof customerReviews.$inferSelect;
 export type InsertCustomerReview = z.infer<typeof insertCustomerReviewSchema>;
 
 // LINE Linking Codes table - persistent storage for linking codes
-export const lineLinkingCodes = sqliteTable("line_linking_codes", {
-  code: text("code", { length: 10 }).primaryKey(), // e.g., LINK-ABCD
+export const lineLinkingCodes = pgTable("line_linking_codes", {
+  code: text("code").primaryKey(), // e.g., LINK-ABCD
   customerId: text("customer_id").notNull().references(() => customers.id),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   expiresAt: text("expires_at").notNull(),
-  used: integer("used", { mode: 'boolean' }).notNull().default(false),
+  used: boolean("used").notNull().default(false),
 });
 
 export const insertLineLinkingCodeSchema = createInsertSchema(lineLinkingCodes).omit({ createdAt: true });
@@ -589,14 +603,14 @@ export type LineLinkingCode = typeof lineLinkingCodes.$inferSelect;
 export type InsertLineLinkingCode = z.infer<typeof insertLineLinkingCodeSchema>;
 
 // Shop Events table - calendar events for planning (expos, promotions, meetings, etc.)
-export const shopEvents = sqliteTable("shop_events", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const shopEvents = pgTable("shop_events", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
   type: text("type").notNull().default("event"), // event, expo, promotion, holiday, meeting, catering, other
   startDate: text("start_date").notNull(),
   endDate: text("end_date"),
-  allDay: integer("all_day", { mode: 'boolean' }).notNull().default(false),
+  allDay: boolean("all_day").notNull().default(false),
   location: text("location"),
   notes: text("notes"),
   color: text("color"),
@@ -607,8 +621,15 @@ export const insertShopEventSchema = createInsertSchema(shopEvents).omit({
   id: true,
   createdAt: true,
 }).extend({
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date().optional().nullable(),
+  startDate: z.union([z.string(), z.date()]).transform(val => {
+    const d = new Date(val);
+    return d.toISOString();
+  }),
+  endDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+    if (!val) return null;
+    const d = new Date(val);
+    return d.toISOString();
+  }),
 });
 
 export type ShopEvent = typeof shopEvents.$inferSelect;
@@ -635,7 +656,7 @@ export type AutomationRun = typeof automationRuns.$inferSelect;
 export type InsertAutomationRun = z.infer<typeof insertAutomationRunSchema>;
 
 // App Settings table - key/value store for configurable business settings
-export const appSettings = sqliteTable("app_settings", {
+export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),

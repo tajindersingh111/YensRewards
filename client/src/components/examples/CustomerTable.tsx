@@ -1,10 +1,11 @@
 import CustomerTable from '../CustomerTable';
+import { Customer } from '@shared/schema';
 
 export default function CustomerTableExample() {
   return (
     <CustomerTable
-      onMessage={(customer) => console.log("Message:", customer.id)}
-      onEdit={(customer) => console.log("Edit:", customer.id)}
+      onMessage={(customer: Customer) => console.log("Message:", customer.id)}
+      onEdit={(customer: Customer) => console.log("Edit:", customer.id)}
     />
   );
 }

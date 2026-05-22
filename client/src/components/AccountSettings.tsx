@@ -112,7 +112,7 @@ export default function AccountSettings() {
   const backupMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/admin/backup/run", {});
-      return res as { success: boolean; message: string };
+      return await res.json() as { success: boolean; message: string };
     },
     onSuccess: (data) => {
       toast({ title: "Backup Complete", description: data.message });

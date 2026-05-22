@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -26,6 +26,33 @@ import DesignPreview from "@/pages/design-preview";
 import LineQRPoster from "@/pages/line-qr-poster";
 import NotFound from "@/pages/not-found";
 
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
+
+function AdminRoute({ path, component: Component }: { path: string; component: React.ComponentType<any> }) {
+  const { user, isLoading, isAuthenticated } = useAuth();
+
+  if (isLoading) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </Route>
+    );
+  }
+
+  if (!isAuthenticated || user?.role !== "admin") {
+    return (
+      <Route path={path}>
+        <Redirect to="/admin/login" />
+      </Route>
+    );
+  }
+
+  return <Route path={path} component={Component} />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -43,8 +70,8 @@ function Router() {
       <Route path="/insights-old" component={InsightsOld} />
       <Route path="/admin/login" component={AdminLogin} />
 
-      <Route path="/test-messages" component={MessageTest} />
-      <Route path="/messaging-troubleshoot" component={MessagingTroubleshoot} />
+      <AdminRoute path="/test-messages" component={MessageTest} />
+      <AdminRoute path="/messaging-troubleshoot" component={MessagingTroubleshoot} />
       <Route path="/qr/:appType" component={QRDisplay} />
       <Route path="/qr" component={QRDisplay} />
       <Route path="/camera-test" component={CameraTest} />

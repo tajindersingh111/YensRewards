@@ -74,23 +74,25 @@ export async function runDailyBackup(): Promise<{ success: boolean; message: str
 
   try {
     // ── Export daily_sales ──────────────────────────────────────────────────
-    const salesResult = await db.execute(sql`
+    const salesQueryResult = await db.execute(sql`
       SELECT date, day_of_week, order_channel, net_sales, grab_fee, other_sales,
              other_sales_note, total_sales, imported_at, created_at
       FROM daily_sales ORDER BY date, order_channel
     `);
-    const salesCSV = toCSV(salesResult.rows as Record<string, any>[]);
+    const salesResult = salesQueryResult.rows as Record<string, any>[];
+    const salesCSV = toCSV(salesResult);
 
     // ── Export customers ────────────────────────────────────────────────────
-    const custResult = await db.execute(sql`
+    const custQueryResult = await db.execute(sql`
       SELECT id, name, phone, email, birthday, points, tier, referral_code,
              total_spent, gender, register_date, register_branch, last_use, tag, created_at
       FROM customers ORDER BY created_at
     `);
-    const custCSV = toCSV(custResult.rows as Record<string, any>[]);
+    const custResult = custQueryResult.rows as Record<string, any>[];
+    const custCSV = toCSV(custResult);
 
-    const salesRows = salesResult.rows.length;
-    const custRows = custResult.rows.length;
+    const salesRows = salesResult.length;
+    const custRows = custResult.length;
 
     // ── Push to GitHub ──────────────────────────────────────────────────────
     let githubOk = true;

@@ -404,8 +404,8 @@ export default function AdminDashboard() {
           <div key="customers">
             <SectionHeader title={t('customers.title')} subtitle="Your loyal community members" action={<CustomerCSVImport showTrigger={true} />} />
             <CustomerTable
-              onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
-              onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
+              onMessage={(customer: any) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
+              onEdit={(customer: any) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
             />
           </div>
         )}
@@ -413,9 +413,9 @@ export default function AdminDashboard() {
           <div key="loyalty">
             <SectionHeader title="Loyalty Programme" subtitle="Track your most valuable fans" />
             <CustomerInsights
-              onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
-              onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}
-              onSendBirthdayMessages={(customers) => { setBirthdayCustomers(customers); setIsBirthdayMessageDialogOpen(true); }}
+              onMessage={(customer: Customer) => { setMessagingCustomer(customer); setIsMessageDialogOpen(true); }}
+              onEdit={(customer: Customer) => { setEditingCustomer(customer); setIsEditDialogOpen(true); }}
+              onSendBirthdayMessages={(customers: Customer[]) => { setBirthdayCustomers(customers); setIsBirthdayMessageDialogOpen(true); }}
             />
           </div>
         )}
@@ -435,7 +435,7 @@ export default function AdminDashboard() {
         {activeTab === 'schedules' && <SchedulesManager key="schedules" />}
         {activeTab === 'barista' && <BaristaManager key="barista" />}
         {activeTab === 'shopCalendar' && (
-          <div key="shopCalendar" className="h-[70vh]">
+          <div key="shopCalendar" className="h-[calc(100vh-280px)] min-h-[780px]">
             <ShopCalendar />
           </div>
         )}

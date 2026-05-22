@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupAuth } from "./auth";
@@ -11,7 +12,8 @@ import path from "path";
 import { db } from "./db";
 import { eq, and, gte, lt, lte, inArray, sql } from "drizzle-orm";
 import { dailySales, users, sites, customers as customersTable } from "@shared/schema";
-import { v4 as uuidv4 } from "uuid";
+import crypto from "crypto";
+const uuidv4 = () => crypto.randomUUID();
 import bcrypt from "bcryptjs";
 
 // Ensure at least one admin user exists
@@ -1043,7 +1045,7 @@ app.use((req, res, next) => {
       log(`Server ready and serving on port ${port}`);
       
       // Start the scheduled message processor
-      // startScheduler();
+      startScheduler();
     });
   } catch (error) {
     console.error('Fatal error during server startup:', error);

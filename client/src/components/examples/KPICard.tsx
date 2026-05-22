@@ -1,4 +1,4 @@
-import KPICard from '../KPICard';
+import { KPICard } from '../KPICard';
 import { DollarSign } from 'lucide-react';
 
 export default function KPICardExample() {
@@ -7,8 +7,8 @@ export default function KPICardExample() {
       title="Total Sales"
       value="฿24,580"
       icon={DollarSign}
-      trend={{ value: 12.5, isPositive: true }}
-      subtitle="This month"
+      trend="up"
+      trendValue="12.5"
     />
   );
 }

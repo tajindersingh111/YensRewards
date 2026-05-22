@@ -25,8 +25,9 @@ async function processScheduledMessage(message: any) {
     } else if (message.recipientType === 'tier' && message.recipientTier) {
       targetCustomers = allCustomers.filter(c => c.tier === message.recipientTier);
     } else if (message.recipientType === 'individual' && message.recipientIds) {
+      const ids = typeof message.recipientIds === 'string' ? JSON.parse(message.recipientIds) : message.recipientIds;
       targetCustomers = await Promise.all(
-        message.recipientIds.map((id: string) => storage.getCustomer(id))
+        ids.map((id: string) => storage.getCustomer(id))
       );
       targetCustomers = targetCustomers.filter(c => c !== undefined);
     } else if (message.recipientType === 'birthday_today' || message.recipientType === 'birthday_week') {
@@ -428,8 +429,8 @@ export async function processAutomation(automation: any) {
     const isOneTime = automation.triggerType === 'one_time';
 
     await storage.updateAutomation(automation.id, {
-      lastRunAt: new Date(),
-      nextRunAt: isOneTime ? null : nextRunAt,
+      lastRunAt: new Date().toISOString(),
+      nextRunAt: isOneTime ? null : (nextRunAt ? nextRunAt.toISOString() : null),
       runCount: (automation.runCount ?? 0) + 1,
       // Disable one-time automations after firing
       isActive: isOneTime ? false : automation.isActive,

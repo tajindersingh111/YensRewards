@@ -2,20 +2,36 @@ import twilio from 'twilio';
 
 let connectionSettings: any;
 
+export function isTwilioConfigured(): boolean {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const key = process.env.TWILIO_API_KEY;
+  const secret = process.env.TWILIO_API_KEY_SECRET;
+  
+  if (!sid || !key || !secret) return false;
+  if (
+    sid.includes('YOUR_TWILIO_ACCOUNT_SID') || 
+    key.includes('YOUR_TWILIO_API_KEY') || 
+    secret.includes('YOUR_TWILIO_API_KEY_SECRET')
+  ) {
+    return false;
+  }
+  return true;
+}
+
 async function getCredentials() {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const apiKey = process.env.TWILIO_API_KEY;
   const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
   const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
-  if (!accountSid || !apiKey || !apiKeySecret) {
-    throw new Error('Twilio credentials (TWILIO_ACCOUNT_SID, TWILIO_API_KEY, TWILIO_API_KEY_SECRET) not found in environment');
+  if (!isTwilioConfigured()) {
+    throw new Error('Twilio credentials are not configured or contain placeholder values');
   }
 
   return {
-    accountSid,
-    apiKey,
-    apiKeySecret,
+    accountSid: accountSid!,
+    apiKey: apiKey!,
+    apiKeySecret: apiKeySecret!,
     phoneNumber: phoneNumber || ''
   };
 }
@@ -67,8 +83,25 @@ export function normalizeE164(phone: string): string {
 
 export async function sendSMS(to: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const client = await getTwilioClient();
     const toNormalized = normalizeE164(to);
+
+    // Thai numbers (+66): route through Vonage if configured
+    const isVonageConfigured = () => !!(process.env.VONAGE_API_KEY && process.env.VONAGE_API_SECRET);
+    if (toNormalized.startsWith('+66') && isVonageConfigured()) {
+      console.log(`Routing Thai number ${toNormalized} to Vonage`);
+      const { sendVonageSMS } = await import('./vonage');
+      return await sendVonageSMS(toNormalized, message);
+    }
+
+    if (!isTwilioConfigured()) {
+      console.warn(`Twilio is not configured. Skipping SMS to ${toNormalized}`);
+      return {
+        success: false,
+        error: 'Twilio is not configured — please configure valid TWILIO_ACCOUNT_SID, TWILIO_API_KEY, and TWILIO_API_KEY_SECRET'
+      };
+    }
+
+    const client = await getTwilioClient();
 
     // Check for a Messaging Service SID (preferred for international delivery)
     const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;

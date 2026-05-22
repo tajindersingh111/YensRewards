@@ -88,6 +88,25 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
 
   const clearDateFilters = () => { setJoinAfter(""); setJoinBefore(""); };
 
+  const handleExport = () => {
+    // Construct the URL with current filters
+    const params = new URLSearchParams({
+      ...(debouncedSearch           ? { search:    debouncedSearch } : {}),
+      ...(tierFilter !== 'all'      ? { tier:      tierFilter      } : {}),
+      ...(joinAfter                 ? { joinAfter                  } : {}),
+      ...(joinBefore                ? { joinBefore                 } : {}),
+    });
+    
+    // Use a hidden link to trigger download without full page navigation
+    // which can be intercepted by the client-side router
+    const link = document.createElement('a');
+    link.href = `/api/admin/customers/export?${params.toString()}`;
+    link.setAttribute('download', `customers_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (isLoading && !customersProp) return (
     <div className="py-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-widest">
       Loading Member Registry...
@@ -130,6 +149,7 @@ export default function CustomerTable({ customers: customersProp, onEdit, onMess
             <Button
               className="flex-1 md:flex-none bg-blue-900 text-yellow-400 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg"
               data-testid="button-export"
+              onClick={handleExport}
             >
               <Download className="w-3.5 h-3.5 mr-2" /> Export
             </Button>

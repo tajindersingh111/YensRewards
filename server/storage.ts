@@ -37,7 +37,7 @@ import {
   type AutomationRun,
   type ShopEvent,
   type InsertShopEvent,
-  type RefreshTokens,
+  type RefreshToken,
   type InsertRefreshToken,
 } from "@shared/schema";
 import { db } from "./db";
@@ -267,8 +267,8 @@ export interface IStorage {
   deleteShopEvent(id: number): Promise<void>;
 
   // Refresh Token methods
-  createRefreshToken(data: InsertRefreshToken): Promise<RefreshTokens>;
-  getRefreshToken(token: string): Promise<RefreshTokens | undefined>;
+  createRefreshToken(data: InsertRefreshToken): Promise<RefreshToken>;
+  getRefreshToken(token: string): Promise<RefreshToken | undefined>;
   deleteRefreshToken(token: string): Promise<void>;
 }
 
@@ -303,7 +303,7 @@ export class DbStorage implements IStorage {
           firstName: userData.firstName,
           lastName: userData.lastName,
           profileImageUrl: userData.profileImageUrl,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         },
       })
       .returning();
@@ -627,8 +627,11 @@ export class DbStorage implements IStorage {
     }
 
     if (joinBefore) {
-      // In SQLite, date(joinBefore, '+1 day') is the way to add intervals
-      conditions.push(sql`${customers.createdAt} < date(${joinBefore}, '+1 day')`);
+      // Calculate next day in JS to remain independent of SQL dialect differences
+      const nextDay = new Date(joinBefore);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayStr = nextDay.toISOString().split("T")[0];
+      conditions.push(sql`${customers.createdAt} < ${nextDayStr}`);
     }
 
     if (conditions.length > 0) {
@@ -1468,7 +1471,10 @@ export class DbStorage implements IStorage {
     ];
 
     for (const template of defaultTemplates) {
-      await db.insert(messageTemplates).values(template);
+      await db.insert(messageTemplates).values({
+        ...template,
+        variables: template.variables ? JSON.stringify(template.variables) : null,
+      });
     }
     console.log('Default templates seeded successfully');
   }
@@ -1779,7 +1785,11 @@ export class DbStorage implements IStorage {
     // Create series record
     const seriesResult = await db
       .insert(workScheduleSeries)
-      .values({ ...series, createdBy })
+      .values({
+        ...series,
+        daysOfWeek: JSON.stringify(series.daysOfWeek) as any,
+        createdBy,
+      })
       .returning();
     const createdSeries = seriesResult[0];
 
@@ -1973,10 +1983,22 @@ export class DbStorage implements IStorage {
       .from(baristaPerformance)
       .leftJoin(users, eq(baristaPerformance.userId, users.id))
       .where(eq(baristaPerformance.weekStart, weekStart))
-      .orderBy(desc(baristaPerformance.totalPoints))
-      .limit(limit);
+      .orderBy(desc(baristaPerformance.totalPoints));
     
-    return result as Array<BaristaPerformance & { user: User }>;
+    const items = result
+      .filter(r => r.user !== null)
+      .map(r => r as BaristaPerformance & { user: User });
+
+    // Compute ranks dynamically, handling ties
+    let currentRank = 1;
+    for (let i = 0; i < items.length; i++) {
+      if (i > 0 && items[i].totalPoints < items[i - 1].totalPoints) {
+        currentRank = i + 1;
+      }
+      items[i].weeklyRank = currentRank;
+    }
+
+    return items.slice(0, limit);
   }
 
   async updateBaristaPerformance(performance: InsertBaristaPerformance): Promise<BaristaPerformance> {
@@ -2015,11 +2037,25 @@ export class DbStorage implements IStorage {
       .select()
       .from(baristaPerformance)
       .leftJoin(users, eq(baristaPerformance.userId, users.id))
-      .where(eq(baristaPerformance.weekStart, weekStart))
-      .orderBy(asc(baristaPerformance.weeklyRank));
-    return results
+      .where(eq(baristaPerformance.weekStart, weekStart));
+    
+    const items = results
       .filter(r => r.users !== null)
       .map(r => ({ ...r.barista_performance, user: r.users as User }));
+
+    // Sort by totalPoints descending
+    items.sort((a, b) => b.totalPoints - a.totalPoints);
+
+    // Compute ranks dynamically, handling ties
+    let currentRank = 1;
+    for (let i = 0; i < items.length; i++) {
+      if (i > 0 && items[i].totalPoints < items[i - 1].totalPoints) {
+        currentRank = i + 1;
+      }
+      items[i].weeklyRank = currentRank;
+    }
+
+    return items;
   }
 
   // Scheduled Message methods
@@ -2180,10 +2216,12 @@ export class DbStorage implements IStorage {
   // Shop Events methods
   async getShopEvents(from?: Date, to?: Date): Promise<ShopEvent[]> {
     let query = db.select().from(shopEvents);
-    if (from && to) {
-      query = query.where(and(gte(shopEvents.startDate, from), lte(shopEvents.startDate, to))) as any;
-    } else if (from) {
-      query = query.where(gte(shopEvents.startDate, from)) as any;
+    const fromStr = from ? from.toISOString().split('T')[0] : undefined;
+    const toStr = to ? to.toISOString().split('T')[0] : undefined;
+    if (fromStr && toStr) {
+      query = query.where(and(gte(shopEvents.startDate, fromStr), lte(shopEvents.startDate, toStr))) as any;
+    } else if (fromStr) {
+      query = query.where(gte(shopEvents.startDate, fromStr)) as any;
     }
     return (query as any).orderBy(asc(shopEvents.startDate));
   }

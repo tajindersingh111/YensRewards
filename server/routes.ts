@@ -1,4 +1,5 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
+// Trigger reload to pick up schema updates
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./auth";
@@ -121,7 +122,7 @@ async function checkDailyTreasuryCap(customerId: string): Promise<{
   reason?: string;
   message?: string;
 }> {
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   const [stats] = await db
     .select({
@@ -393,7 +394,7 @@ async function getOrCreateLinkingCode(customerId: string): Promise<string> {
     .where(and(
       eq(lineLinkingCodes.customerId, customerId),
       eq(lineLinkingCodes.used, false),
-      gt(lineLinkingCodes.expiresAt, new Date())
+      gt(lineLinkingCodes.expiresAt, new Date().toISOString())
     ))
     .limit(1);
   
@@ -416,7 +417,7 @@ async function getOrCreateLinkingCode(customerId: string): Promise<string> {
   await db.insert(lineLinkingCodes).values({
     code,
     customerId,
-    expiresAt,
+    expiresAt: expiresAt.toISOString(),
     used: false
   });
   
@@ -661,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sanitizeUser(user));
     } catch (error: any) {
       console.error("Error creating user:", error);
-      if (error.code === '23505') { // Unique violation
+      if (error.code === '23505' || error.code === 'SQLITE_CONSTRAINT_UNIQUE') { // Unique violation
         return res.status(409).json({ message: "User with this email already exists" });
       }
       res.status(500).json({ message: "Failed to create user" });
@@ -745,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating user details:", error);
       // Check for duplicate email error (both from storage layer and DB)
-      if (error.message?.includes("already in use") || error.code === '23505') {
+      if (error.message?.includes("already in use") || error.code === '23505' || error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         return res.status(409).json({ message: "Email is already in use by another user" });
       }
       res.status(500).json({ message: "Failed to update user details" });
@@ -898,7 +899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { token } = req.body;
 
       // Derive userId from the authenticated session, not from client-supplied input.
-      const userId: string | undefined = req.user?.claims?.sub;
+      const userId: string | undefined = (req.user as any)?.id;
 
       if (!userId) {
         return res.status(401).json({ message: "Authentication required" });
@@ -994,9 +995,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Failed to create session" });
         }
         
-        const { createAccessToken, createRefreshToken } = await import('./auth');
-        const accessToken = createAccessToken(user.id);
-        const refreshToken = await createRefreshToken(user.id);
+        const { generateTokens } = await import('./auth');
+        const { accessToken, refreshToken } = await generateTokens(user.id);
 
         console.log(`✅ Password login successful for user ${user.id}`);
         res.json({ 
@@ -1520,7 +1520,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: "0",
         points: -product.pointCost,
         type: "redemption",
-        description: `Redeemed: ${product.name}`,
         location: "App",
       });
       res.json({ success: true, pointsDeducted: product.pointCost, remainingPoints: newPoints, productName: product.name });
@@ -1933,7 +1932,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: fromError(error).toString() });
       }
       console.error("Error creating transaction:", error);
-      res.status(500).json({ message: "Failed to create transaction" });
+      res.status(500).json({ 
+        message: "Failed to create transaction", 
+        error: error.message || String(error), 
+        stack: error.stack 
+      });
     }
   });
 
@@ -2075,10 +2078,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'attachment; filename=' + `customers_export_${new Date().toISOString().split('T')[0]}.xlsx`
       );
 
-      // Write to response
-      await workbook.xlsx.write(res);
-      res.end();
-      console.log(`✅ Exported ${customers.length} customers to Excel`);
+      // Write to buffer and send
+      const buffer = await workbook.xlsx.writeBuffer();
+      const nodeBuffer = Buffer.from(buffer);
+      
+      res.setHeader('Content-Length', nodeBuffer.length);
+      res.send(nodeBuffer);
+      console.log(`✅ Exported ${customers.length} customers to Excel (${nodeBuffer.length} bytes)`);
     } catch (error) {
       console.error("❌ Error exporting customers:", error);
       res.status(500).json({ message: "Failed to export customers" });
@@ -2969,7 +2975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('📊 Adding new sale:', JSON.stringify(req.body));
     try {
       const validatedData = insertDailySalesSchema.parse(req.body);
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
 
       // Recalculate totalSales server-side to ensure otherSales is always included
       const netSales = parseFloat(validatedData.netSales);
@@ -3084,7 +3090,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate sales report for date range
   app.get('/api/admin/sales/report', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { startDate, endDate } = req.query;
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
       
       if (!startDate || !endDate) {
         return res.status(400).json({ message: "Start and end dates are required" });
@@ -3353,7 +3360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get admin user ID for tracking imports
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       console.log('👤 Importing as user:', userId);
 
       // Helper function to normalize column names (handle casing/whitespace)
@@ -3746,12 +3753,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update product (admin only)
   app.patch('/api/admin/products/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const product = await storage.updateProduct(req.params.id, req.body);
+      const cleanedData = {
+        ...req.body,
+        cost: req.body.cost === '' ? null : req.body.cost,
+        price: req.body.price === '' ? null : req.body.price,
+      };
+      const validatedData = insertProductSchema.partial().parse(cleanedData);
+      const product = await storage.updateProduct(req.params.id, validatedData);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
       res.json(product);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: fromError(error).toString() });
+      }
       console.error("Error updating product:", error);
       res.status(500).json({ message: "Failed to update product" });
     }
@@ -4247,21 +4263,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         UPDATE customers 
         SET email = NULL 
         WHERE email IN ('Male', 'Female', 'male', 'female', 'Anonymous')
-        OR (email IS NOT NULL AND email != '' AND email NOT LIKE '%@%' AND email NOT LIKE '%@%')
+        OR (email IS NOT NULL AND email != '' AND email NOT LIKE '%@%')
       `);
       
       res.json({
         success: true,
         message: "Email cleanup completed",
-        rowsAffected: result.rowCount || 0
+        rowsAffected: result.rowCount
       });
     } catch (error) {
       console.error("Error cleaning up emails:", error);
       res.status(500).json({ message: "Failed to clean up emails" });
     }
   });
-
-  // ============ Message Template API Endpoints (Admin Only) ============
   
   // Get all message templates
   app.get('/api/admin/message-templates', isAuthenticated, isAdmin, async (req, res) => {
@@ -5309,11 +5323,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         channel,
         recipientType,
         recipientTier: tier || null,
-        recipientIds: customerIds || null,
+        recipientIds: customerIds ? JSON.stringify(customerIds) : null,
         templateId: null,
         subject: subject || null,
         message,
-        scheduledFor: scheduledDate,
+        scheduledFor: scheduledDate.toISOString(),
         timezone: timezone || 'Asia/Bangkok',
         status: 'pending',
         createdBy: userId || null,
@@ -5427,7 +5441,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // When re-enabling, recalculate nextRunAt
       let nextRunAt = existing.nextRunAt;
       if (isActive && !existing.nextRunAt) {
-        nextRunAt = calculateNextRunAt(existing.triggerType, existing.triggerConfig as any);
+        const nextDate = calculateNextRunAt(existing.triggerType, existing.triggerConfig as any);
+        nextRunAt = nextDate ? nextDate.toISOString() : null;
         await storage.updateAutomation(req.params.id, { nextRunAt });
       }
       const updated = await storage.toggleAutomation(req.params.id, isActive);
@@ -5743,7 +5758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // This preserves the identity bridge while stopping messages to blocked users.
               await storage.updateCustomer(customer.id, {
                 isLineActive: false,
-                lastUnfollowAt: new Date(),
+                lastUnfollowAt: new Date().toISOString(),
               });
               console.log(`✅ REGISTRY UPDATED: Member ${customer.name || customer.id} marked as LINE INACTIVE.`);
             } else {
@@ -5981,6 +5996,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Barista Customer Search ============
+  
+  // Search customers by phone (for Baristas)
+  app.get('/api/barista/customers/search', isAuthenticated, async (req, res) => {
+    try {
+      const { phone } = req.query;
+      
+      if (!phone || typeof phone !== 'string') {
+        return res.status(400).json({ message: "Phone number query parameter is required" });
+      }
+
+      // Allow baristas to search customers to add points or process transactions
+      const customers = await storage.searchCustomersByPhone(phone, 20);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error searching customers:", error);
+      res.status(500).json({ message: "Failed to search customers" });
+    }
+  });
+
   // Get time entries for current user
   app.get('/api/barista/time-entries', isAuthenticated, async (req, res) => {
     try {
@@ -6054,6 +6089,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting all time entries:", error);
       res.status(500).json({ message: "Failed to get time entries" });
+    }
+  });
+
+  // TEMPORARY DEBUG ROUTE
+  app.get('/api/debug/time-entries', async (req, res) => {
+    try {
+      const entries = await storage.getAllTimeEntries();
+      const allUsers = await storage.getAllUsers();
+      res.json({
+        entries: entries.slice(0, 5),
+        users: allUsers.map(u => ({ id: u.id, email: u.email }))
+      });
+    } catch (error) {
+      res.status(500).json({ error: String(error) });
     }
   });
 
@@ -6438,7 +6487,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid event ID" });
-      const event = await storage.updateShopEvent(id, req.body);
+      const parsed = insertShopEventSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: fromError(parsed.error).toString() });
+      const event = await storage.updateShopEvent(id, parsed.data);
       if (!event) return res.status(404).json({ message: "Event not found" });
       res.json(event);
     } catch (error) {
@@ -6479,7 +6530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const [key, value] of Object.entries(updates)) {
         await db.insert(appSettings)
           .values({ key, value })
-          .onConflictDoUpdate({ target: appSettings.key, set: { value, updatedAt: new Date() } });
+          .onConflictDoUpdate({ target: appSettings.key, set: { value, updatedAt: new Date().toISOString() } });
       }
       res.json({ success: true });
     } catch (error) {
@@ -6546,7 +6597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [newReview] = await db.insert(customerReviews).values({
         customerId: reviewData.customerId,
         rating: reviewData.rating,
-        feedbackTags: reviewData.feedbackTags || [],
+        feedbackTags: reviewData.feedbackTags || null,
         comment: reviewData.comment || null,
         googlePlaceId: reviewData.googlePlaceId || null,
       }).returning();

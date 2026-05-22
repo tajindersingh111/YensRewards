@@ -797,7 +797,7 @@ export default function CustomerAppV3() {
               <div className="relative">
                 <div className="absolute inset-0 bg-yellow-400/20 rounded-full blur-2xl animate-pulse" />
                 <Avatar className="w-28 h-28 rounded-full ring-4 ring-yellow-400 border-4 border-white shadow-2xl relative z-10">
-                  <AvatarImage src={customer?.photo} alt={customer?.name} className="object-cover" />
+                  <AvatarImage src={customer?.photo ?? undefined} alt={customer?.name} className="object-cover" />
                   <AvatarFallback className="bg-blue-900 text-white text-3xl font-black">
                     {customer?.name?.charAt(0) || "?"}
                   </AvatarFallback>

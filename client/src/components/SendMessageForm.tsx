@@ -25,9 +25,89 @@ export default function SendMessageForm() {
   const { toast } = useToast();
   const [channel, setChannel] = useState<"sms" | "email" | "line" | "app">("sms");
   const [recipientType, setRecipientType] = useState("all");
+  const [tier, setTier] = useState<string>("bronze");
   const [message, setMessage] = useState("");
   const [subject, setSubject] = useState("");
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const endpoint = scheduleEnabled ? "/api/admin/messages/schedule" : "/api/admin/messages/send";
+      const res = await apiRequest("POST", endpoint, payload);
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: scheduleEnabled ? "Campaign Scheduled" : "Campaign Dispatched",
+        description: data.message || (scheduleEnabled ? "Campaign scheduled successfully!" : "Campaign dispatched successfully!"),
+      });
+      // Reset form fields
+      setMessage("");
+      setSubject("");
+      if (scheduleEnabled) {
+        setScheduledDate("");
+        setScheduledTime("");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/messages/scheduled"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to dispatch/schedule campaign",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSend = () => {
+    if (!message) {
+      toast({ title: "Validation Error", description: "Please enter a message.", variant: "destructive" });
+      return;
+    }
+
+    if (channel === "email" && !subject) {
+      toast({ title: "Validation Error", description: "Email subject is required.", variant: "destructive" });
+      return;
+    }
+
+    let scheduledFor: string | undefined;
+    if (scheduleEnabled) {
+      if (!scheduledDate || !scheduledTime) {
+        toast({ title: "Validation Error", description: "Please specify both date and time for scheduling.", variant: "destructive" });
+        return;
+      }
+      const dateObj = new Date(`${scheduledDate}T${scheduledTime}`);
+      if (isNaN(dateObj.getTime())) {
+        toast({ title: "Validation Error", description: "Invalid date or time format.", variant: "destructive" });
+        return;
+      }
+      if (dateObj <= new Date()) {
+        toast({ title: "Validation Error", description: "Scheduled time must be in the future.", variant: "destructive" });
+        return;
+      }
+      scheduledFor = dateObj.toISOString();
+    }
+
+    const payload: any = {
+      channel,
+      recipientType,
+      message,
+      subject: channel === "email" ? subject : undefined,
+    };
+
+    if (recipientType === "tier") {
+      payload.tier = tier;
+    }
+
+    if (scheduleEnabled && scheduledFor) {
+      payload.scheduledFor = scheduledFor;
+      payload.timezone = "Asia/Bangkok";
+    }
+
+    mutation.mutate(payload);
+  };
 
   // PREMIER BRANDED THEME WRAPPER
   return (
@@ -89,6 +169,23 @@ export default function SendMessageForm() {
                     <SelectItem value="no_line">Not on LINE yet (Growth Op)</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {recipientType === "tier" && (
+                  <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Select Membership Tier</Label>
+                    <Select value={tier} onValueChange={setTier}>
+                      <SelectTrigger className="h-12 rounded-xl border-slate-200 font-bold bg-slate-50">
+                        <SelectValue placeholder="Select Tier" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="bronze">Bronze</SelectItem>
+                        <SelectItem value="silver">Silver</SelectItem>
+                        <SelectItem value="gold">Gold</SelectItem>
+                        <SelectItem value="member">Member</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               {/* Step 2: Content */}
@@ -138,8 +235,18 @@ export default function SendMessageForm() {
                 </div>
                 {scheduleEnabled && (
                   <div className="flex gap-4">
-                    <Input type="date" className="h-10 rounded-lg border-slate-200 font-bold text-xs" />
-                    <Input type="time" className="h-10 rounded-lg border-slate-200 font-bold text-xs" />
+                    <Input 
+                      type="date" 
+                      className="h-10 rounded-lg border-slate-200 font-bold text-xs" 
+                      value={scheduledDate}
+                      onChange={e => setScheduledDate(e.target.value)}
+                    />
+                    <Input 
+                      type="time" 
+                      className="h-10 rounded-lg border-slate-200 font-bold text-xs" 
+                      value={scheduledTime}
+                      onChange={e => setScheduledTime(e.target.value)}
+                    />
                   </div>
                 )}
               </div>
@@ -180,11 +287,18 @@ export default function SendMessageForm() {
             </div>
 
             <Button
-              className="w-full h-16 mt-8 bg-[#FCD34D] text-blue-900 font-black rounded-2xl shadow-lg transition-all active:scale-95"
-              onClick={() => toast({ title: "Campaign Ready", description: "Reviewing delivery routes..." })}
+              className="w-full h-16 mt-8 bg-[#FCD34D] text-blue-900 font-black rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400"
+              onClick={handleSend}
+              disabled={mutation.isPending || !message}
             >
-              <Send className="w-5 h-5 mr-3" />
-              {scheduleEnabled ? "SCHEDULE CAMPAIGN" : "DISPATCH NOW"}
+              {mutation.isPending ? (
+                <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5 mr-3" />
+              )}
+              {mutation.isPending 
+                ? "PROCESSING..." 
+                : (scheduleEnabled ? "SCHEDULE CAMPAIGN" : "DISPATCH NOW")}
             </Button>
             <p className="text-[9px] text-center mt-4 font-bold text-slate-500 uppercase tracking-tighter italic">
               Estimated Delivery: 2-5 Seconds

@@ -41,3 +41,11 @@ temp/
 
 # Uploaded / generated assets that should not be in version control
 attached_assets/
+
+# SQLite databases
+sqlite.db
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+

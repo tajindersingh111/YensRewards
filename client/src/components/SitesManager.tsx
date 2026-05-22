@@ -162,7 +162,13 @@ export default function SitesManager() {
       channelName: site.channelName,
       type: site.type as "stall" | "mobile_van",
       location: site.location,
-      operatingDays: site.operatingDays || [],
+      operatingDays: Array.isArray(site.operatingDays)
+        ? site.operatingDays
+        : (typeof site.operatingDays === 'string'
+          ? (site.operatingDays.startsWith('[')
+            ? JSON.parse(site.operatingDays)
+            : site.operatingDays.split(',').map(d => d.trim()))
+          : []),
       openTime: site.openTime || "09:00",
       closeTime: site.closeTime || "21:00",
       isActive: site.isActive,

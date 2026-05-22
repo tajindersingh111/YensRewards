@@ -104,7 +104,7 @@ export default function BulkDeleteCustomersDialog({ customers }: BulkDeleteCusto
     
     return customers.filter(c => {
       // Parse createdAt as UTC timestamp
-      const createdAt = c.createdAt instanceof Date ? c.createdAt.getTime() : Date.parse(c.createdAt as unknown as string);
+      const createdAt = typeof c.createdAt === 'string' ? Date.parse(c.createdAt) : (c.createdAt as any instanceof Date ? (c.createdAt as any).getTime() : Date.parse(String(c.createdAt)));
       
       // Check lower bound (fromDate) - use UTC helper matching mutation logic
       if (fromDate) {

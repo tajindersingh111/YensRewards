@@ -1,8 +1,58 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Megaphone, ArrowUpRight } from "lucide-react";
+import { Megaphone, ArrowUpRight, Calendar } from "lucide-react";
+import { format } from "date-fns";
 
-export default function PromotionCard({ title, type, status, targetCount }: { title: string, type: string, status: string, targetCount: number }) {
+interface AdminPromotionProps {
+  title: string;
+  type: string;
+  status: string;
+  targetCount: number;
+  description?: never;
+  validUntil?: never;
+  isNew?: never;
+}
+
+interface CustomerPromotionProps {
+  title: string;
+  description: string;
+  validUntil: Date;
+  isNew?: boolean;
+  type?: never;
+  status?: never;
+  targetCount?: never;
+}
+
+export default function PromotionCard(props: AdminPromotionProps | CustomerPromotionProps) {
+  if ('description' in props) {
+    const { title, description, validUntil, isNew } = props;
+    return (
+      <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden group transition-all duration-500 hover:shadow-2xl bg-white">
+        <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 rounded-xl p-2 border border-white/10">
+              <Megaphone className="w-4 h-4 text-yellow-400 animate-pulse" />
+            </div>
+            <h3 className="text-base font-black text-white uppercase tracking-tight leading-tight italic">{title}</h3>
+          </div>
+          {isNew && (
+            <Badge className="bg-red-500 text-white font-black uppercase text-[9px] tracking-widest border-none animate-bounce">
+              New
+            </Badge>
+          )}
+        </div>
+        <CardContent className="p-6 space-y-4">
+          <p className="text-sm font-medium text-slate-600 leading-relaxed">{description}</p>
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <Calendar className="w-3.5 h-3.5 text-blue-900" />
+            <span>Sent: {validUntil ? format(new Date(validUntil), "PPP") : ""}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { title, type, status, targetCount } = props;
   return (
     <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden group transition-all duration-500">
       <div className="h-44 bg-gradient-to-br from-blue-900 to-blue-800 relative p-6 flex flex-col justify-between overflow-hidden">

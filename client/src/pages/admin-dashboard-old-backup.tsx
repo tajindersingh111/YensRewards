@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import KPICard from "@/components/KPICard";
+import { KPICard } from "@/components/KPICard";
 import SalesChart from "@/components/SalesChart";
 import CustomerTable from "@/components/CustomerTable";
 import CustomerEditDialog from "@/components/CustomerEditDialog";
@@ -826,11 +826,11 @@ export default function AdminDashboard() {
               <CustomerCSVImport showTrigger={true} />
             </div>
             <CustomerTable
-              onMessage={(customer) => {
+              onMessage={(customer: any) => {
                 setMessagingCustomer(customer as Customer);
                 setIsMessageDialogOpen(true);
               }}
-              onEdit={(customer) => {
+              onEdit={(customer: any) => {
                 setEditingCustomer(customer as any);
                 setIsEditDialogOpen(true);
               }}

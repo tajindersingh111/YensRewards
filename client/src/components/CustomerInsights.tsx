@@ -22,7 +22,15 @@ const TIER_COLORS = {
   bronze: "#B45309"
 };
 
-export default function CustomerInsights() {
+export default function CustomerInsights({
+  onMessage,
+  onEdit,
+  onSendBirthdayMessages
+}: {
+  onMessage?: (customer: Customer) => void;
+  onEdit?: (customer: Customer) => void;
+  onSendBirthdayMessages?: (customers: Customer[]) => void;
+} = {}) {
   const { t } = useTranslation();
 
   const { data: customers = [], isLoading } = useQuery<Customer[]>({

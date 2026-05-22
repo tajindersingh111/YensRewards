@@ -33,7 +33,7 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // Force false for local testing
+      secure: process.env.NODE_ENV === "production",
       sameSite: 'lax',
       maxAge: sessionTtl,
     },
@@ -41,6 +41,25 @@ export function setupAuth(app: Express) {
 
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Global JWT authentication middleware to support Bearer token auth in Passport-based checkers
+  app.use(async (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const payload = jwt.verify(token, JWT_ACCESS_SECRET) as { userId: string };
+        const user = await storage.getUser(payload.userId);
+        if (user && user.isActive) {
+          req.user = user;
+          req.isAuthenticated = () => true;
+        }
+      } catch (err) {
+        // Token invalid or expired - ignore here, let downstream middlewares handle it
+      }
+    }
+    next();
+  });
 
   passport.use(new LocalStrategy({
     usernameField: 'email',
@@ -143,7 +162,7 @@ export function setupAuth(app: Express) {
 }
 
 // Helper functions
-async function generateTokens(userId: string) {
+export async function generateTokens(userId: string) {
   const accessToken = jwt.sign({ userId }, JWT_ACCESS_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
   const refreshToken = jwt.sign({ userId }, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
 

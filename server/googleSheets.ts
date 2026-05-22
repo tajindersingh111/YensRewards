@@ -1,6 +1,10 @@
+/*
+// ============================================================================
 // Google Sheets backup via Replit Connectors SDK (google-sheet connector)
 // Scopes: drive.file + spreadsheets — tokens handled automatically, never cache the client.
 // Files are placed/moved into TARGET_FOLDER_ID (user's shared Yen's Drive folder).
+// ============================================================================
+
 import { ReplitConnectors } from "@replit/connectors-sdk";
 import { db } from "./db";
 import { appSettings } from "@shared/schema";
@@ -150,5 +154,20 @@ export async function uploadBackupToSheets(
   return {
     success: !anyFailed,
     message: `Google Sheets: ${results.join(" | ")}`,
+  };
+}
+*/
+
+// ============================================================================
+// Local Development Stub (Active)
+// ============================================================================
+// Google Sheets backup disabled for local Windows development
+export async function uploadBackupToSheets(
+  files: { name: string; title: string; settingsKey: string; content: string }[]
+): Promise<{ success: boolean; message: string }> {
+  console.log(`[Google Sheets Backup] Disabled locally. Skipping backup of ${files.length} files.`);
+  return {
+    success: true,
+    message: "Google Sheets backup disabled.",
   };
 }

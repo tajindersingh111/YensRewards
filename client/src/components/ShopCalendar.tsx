@@ -160,8 +160,8 @@ function EventDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg p-0 border-none shadow-2xl rounded-[2rem]">
-        <div className="bg-blue-900 px-8 py-6 rounded-t-[2rem] flex items-center gap-4 relative overflow-hidden">
+      <DialogContent className="max-w-lg p-0 border-none shadow-2xl rounded-[2rem] max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="bg-blue-900 px-8 py-6 rounded-t-[2rem] flex items-center gap-4 relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 opacity-5 rounded-full blur-3xl -mr-12 -mt-12" />
           <div className="bg-yellow-400 rounded-2xl p-4 shadow-lg shrink-0 transform -rotate-3 relative z-10">
             <Calendar className="w-5 h-5 text-blue-900" />
@@ -176,104 +176,106 @@ function EventDialog({
           </div>
         </div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-8">
-            <FormField control={form.control} name="title" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl><Input data-testid="input-event-title" placeholder="Event title" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="type" render={({ field }) => (
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+            <div className="space-y-4 p-8 overflow-y-auto flex-1">
+              <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-event-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {EVENT_TYPES.map(t => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-
-              <FormField control={form.control} name="allDay" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>All Day</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2 h-9">
-                      <Switch data-testid="switch-all-day" checked={field.value} onCheckedChange={field.onChange} />
-                      <span className="text-sm text-muted-foreground">{field.value ? "Yes" : "No"}</span>
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="startDate" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Start Date</FormLabel>
-                  <FormControl><Input data-testid="input-start-date" type="date" {...field} /></FormControl>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl><Input data-testid="input-event-title" placeholder="Event title" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              {!allDay && (
-                <FormField control={form.control} name="startTime" render={({ field }) => (
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="type" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Time</FormLabel>
-                    <FormControl><Input data-testid="input-start-time" type="time" {...field} /></FormControl>
+                    <FormLabel>Type</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-event-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {EVENT_TYPES.map(t => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )} />
-              )}
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="endDate" render={({ field }) => (
+                <FormField control={form.control} name="allDay" render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>All Day</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2 h-9">
+                        <Switch data-testid="switch-all-day" checked={field.value} onCheckedChange={field.onChange} />
+                        <span className="text-sm text-muted-foreground">{field.value ? "Yes" : "No"}</span>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="startDate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date</FormLabel>
+                    <FormControl><Input data-testid="input-start-date" type="date" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                {!allDay && (
+                  <FormField control={form.control} name="startTime" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time</FormLabel>
+                      <FormControl><Input data-testid="input-start-time" type="time" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="endDate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date <span className="text-muted-foreground">(optional)</span></FormLabel>
+                    <FormControl><Input data-testid="input-end-date" type="date" {...field} /></FormControl>
+                  </FormItem>
+                )} />
+                {!allDay && (
+                  <FormField control={form.control} name="endTime" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Time</FormLabel>
+                      <FormControl><Input data-testid="input-end-time" type="time" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                )}
+              </div>
+
+              <FormField control={form.control} name="location" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>End Date <span className="text-muted-foreground">(optional)</span></FormLabel>
-                  <FormControl><Input data-testid="input-end-date" type="date" {...field} /></FormControl>
+                  <FormLabel>Location <span className="text-muted-foreground">(optional)</span></FormLabel>
+                  <FormControl><Input data-testid="input-event-location" placeholder="e.g. Yen's Head Office, Central World" {...field} /></FormControl>
                 </FormItem>
               )} />
-              {!allDay && (
-                <FormField control={form.control} name="endTime" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Time</FormLabel>
-                    <FormControl><Input data-testid="input-end-time" type="time" {...field} /></FormControl>
-                  </FormItem>
-                )} />
-              )}
+
+              <FormField control={form.control} name="description" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description <span className="text-muted-foreground">(optional)</span></FormLabel>
+                  <FormControl><Textarea data-testid="input-event-description" placeholder="Brief description..." className="resize-none" rows={2} {...field} /></FormControl>
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="notes" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Planning Notes <span className="text-muted-foreground">(optional)</span></FormLabel>
+                  <FormControl><Textarea data-testid="input-event-notes" placeholder="Internal notes, preparation checklist..." className="resize-none" rows={2} {...field} /></FormControl>
+                </FormItem>
+              )} />
             </div>
 
-            <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location <span className="text-muted-foreground">(optional)</span></FormLabel>
-                <FormControl><Input data-testid="input-event-location" placeholder="e.g. Yen's Head Office, Central World" {...field} /></FormControl>
-              </FormItem>
-            )} />
-
-            <FormField control={form.control} name="description" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description <span className="text-muted-foreground">(optional)</span></FormLabel>
-                <FormControl><Textarea data-testid="input-event-description" placeholder="Brief description..." className="resize-none" rows={2} {...field} /></FormControl>
-              </FormItem>
-            )} />
-
-            <FormField control={form.control} name="notes" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Planning Notes <span className="text-muted-foreground">(optional)</span></FormLabel>
-                <FormControl><Textarea data-testid="input-event-notes" placeholder="Internal notes, preparation checklist..." className="resize-none" rows={2} {...field} /></FormControl>
-              </FormItem>
-            )} />
-
-            <DialogFooter className="gap-2 flex-wrap">
+            <DialogFooter className="gap-2 flex-wrap shrink-0 p-6 bg-slate-50 border-t rounded-b-[2rem] flex items-center justify-end">
               {isEdit && (
                 <Button
                   type="button"
@@ -362,17 +364,27 @@ function MonthView({
       </div>
       <div className="grid grid-cols-7 flex-1 divide-x divide-y">
         {days.map(day => {
-          const dayEvents = eventsOnDay(day);
           const inMonth = isSameMonth(day, currentDate);
+          if (!inMonth) {
+            return (
+              <div
+                key={day.toISOString()}
+                className="min-h-[90px] p-1 bg-muted/5 cursor-default"
+                data-testid={`calendar-day-padding-${format(day, "yyyy-MM-dd")}`}
+              />
+            );
+          }
+
+          const dayEvents = eventsOnDay(day);
           const isCurrentDay = isToday(day);
           return (
             <div
               key={day.toISOString()}
               onClick={() => onDayClick(day)}
               data-testid={`calendar-day-${format(day, "yyyy-MM-dd")}`}
-              className={`min-h-[90px] p-1 cursor-pointer transition-colors hover:bg-muted/40 ${!inMonth ? "bg-muted/20" : ""}`}
+              className="min-h-[90px] p-1 cursor-pointer transition-colors hover:bg-muted/40"
             >
-              <div className={`w-7 h-7 flex items-center justify-center text-sm font-medium mb-1 rounded-full ${isCurrentDay ? "bg-blue-900 text-white" : inMonth ? "text-foreground" : "text-muted-foreground"}`}>
+              <div className={`w-7 h-7 flex items-center justify-center text-sm font-medium mb-1 rounded-full ${isCurrentDay ? "bg-blue-900 text-white" : "text-foreground"}`}>
                 {format(day, "d")}
               </div>
               <div className="space-y-0.5">

@@ -270,7 +270,7 @@ export default function SalesTrackerDashboard() {
       const fontBytes = new Uint8Array(fontBuf);
       let b64 = '';
       for (let i = 0; i < fontBytes.length; i += 1024)
-        b64 += String.fromCharCode(...fontBytes.subarray(i, i + 1024));
+        b64 += String.fromCharCode(...Array.from(fontBytes.subarray(i, i + 1024)));
       b64 = btoa(b64);
       doc.addFileToVFS('Sarabun-Regular.ttf', b64);
       doc.addFont('Sarabun-Regular.ttf', FONT, 'normal');
@@ -710,7 +710,7 @@ export default function SalesTrackerDashboard() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <p className="font-black text-blue-900 text-base">฿{parseFloat(sale.totalSales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                            {parseFloat(sale.grabFee) > 0 && <p className="text-[10px] font-bold text-red-500">-฿{sale.grabFee} App Fee</p>}
+                            {parseFloat(sale.grabFee ?? "0") > 0 && <p className="text-[10px] font-bold text-red-500">-฿{sale.grabFee} App Fee</p>}
                           </td>
                           <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                             <div className="flex justify-end gap-1">
