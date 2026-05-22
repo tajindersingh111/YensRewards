@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-Yens Rewards is a full-stack TypeScript loyalty system for a retail food business. It has a React/Vite frontend and an Express backend backed by PostgreSQL via Drizzle ORM. Production traffic reaches a single Node server (`server/index.ts`) that serves both the frontend and REST API. The system stores customer loyalty profiles, purchase history, staff accounts, schedules, message templates, outbound message logs, and review data. It integrates with Replit OIDC for admin login, local password + optional TOTP for staff, Replit object storage, LINE, Twilio, Resend, and a background scheduler.
+Yens Rewards is a full-stack TypeScript loyalty system for a retail food business. It has a React/Vite frontend and an Express backend backed by SQLite (better-sqlite3) via Drizzle ORM. Production traffic reaches a single Node server (`server/index.ts`) that serves both the frontend and REST API. The system stores customer loyalty profiles, purchase history, staff accounts, schedules, message templates, outbound message logs, and review data. It integrates with standalone email/password + optional TOTP for staff, local/GCS object storage, LINE, Twilio, Resend, and a background scheduler.
 
 Production assumptions for this scan:
 - Only production-reachable code matters.
 - `NODE_ENV` is `production` in deployments.
-- Replit deployment TLS is handled by the platform.
+- TLS is handled by the reverse proxy or platform.
 - Mockup / sandbox-only code is out of scope unless production reachability is shown.
 
 ## Assets
@@ -17,12 +17,12 @@ Production assumptions for this scan:
 - **Operational business data** — transactions, schedules, performance metrics, sites, sales imports, promotions, automations, and analytics.
 - **Outbound messaging capability** — LINE, SMS, and email credentials plus the ability to target customer audiences. Abuse could lead to spam, phishing, privacy incidents, and reputational damage.
 - **Object storage contents** — product images and public email assets, plus signed-upload capability for admin workflows.
-- **Application secrets** — database credentials, session secret, connector-derived API credentials, LINE webhook secret, and admin bootstrap secret.
+- **Application secrets** — database credentials, session secret, API credentials, LINE webhook secret, and admin bootstrap secret.
 
 ## Trust Boundaries
 
 - **Browser / mobile client to API** — all `/api/*` input is untrusted and must be authenticated, authorized, validated, and rate-limited where sensitive.
-- **API to PostgreSQL** — the backend can read and write all business data; broken authorization or injection here can expose or corrupt the entire dataset.
+- **API to Database** — the backend can read and write all business data; broken authorization or injection here can expose or corrupt the entire dataset.
 - **API to external providers** — the server sends messages through LINE, Twilio, and Resend and receives LINE webhooks. Provider credentials and webhook authenticity must be protected.
 - **API to object storage** — admin flows generate signed upload URLs and proxy public asset delivery. Only intended objects should become public.
 - **Public / authenticated / admin boundaries** — public customer-facing endpoints, staff-authenticated endpoints, and admin-only endpoints must remain clearly separated server-side.
@@ -30,8 +30,8 @@ Production assumptions for this scan:
 
 ## Scan Anchors
 
-- **Production entry points:** `server/index.ts`, `server/routes.ts`, `server/replitAuth.ts`
-- **Highest-risk areas:** public customer routes in `server/routes.ts`, auth/session logic in `server/replitAuth.ts` and auth routes, LINE webhook and account-linking flows, admin messaging endpoints, object storage helpers, scheduler logic
+- **Production entry points:** `server/index.ts`, `server/routes.ts`
+- **Highest-risk areas:** public customer routes in `server/routes.ts`, auth/session logic in `server/auth.ts` and auth routes, LINE webhook and account-linking flows, admin messaging endpoints, object storage helpers, scheduler logic
 - **Public surfaces:** `/api/customers/*`, `/api/products*`, `/products/*`, `/email-assets/*`, `/api/sites`, `/api/line/webhook`, review submission
 - **Authenticated surfaces:** `/api/auth/*`, `/api/barista/*`, `/api/transactions`, `/api/work-schedules/me`, `/api/weekly-special/active`
 - **Admin surfaces:** `/api/admin/*`
@@ -41,7 +41,7 @@ Production assumptions for this scan:
 
 ### Spoofing
 
-The system supports both Replit OIDC sessions and password-based staff login with optional TOTP. Staff authentication must not be bypassable through weak bootstrap flows, weak session handling, or easily brute-forced login and verification endpoints. LINE webhook requests must be accepted only when their signatures verify correctly. Customer account-linking flows must prove real control of the target account and not rely on guessable identifiers alone.
+The system supports password-based staff login with optional TOTP. Staff authentication must not be bypassable through weak bootstrap flows, weak session handling, or easily brute-forced login and verification endpoints. LINE webhook requests must be accepted only when their signatures verify correctly. Customer account-linking flows must prove real control of the target account and not rely on guessable identifiers alone.
 
 ### Tampering
 

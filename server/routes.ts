@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./auth";
 import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products, transactions as transactionsTable } from "@shared/schema";
 import { calculateNextRunAt, processAutomation, triggerBackupNow } from "./scheduler";
 import { z } from "zod";
@@ -18,6 +18,7 @@ import ExcelJS from "exceljs";
 import * as fs from "fs";
 import * as path from "path";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 // ============ In-memory rate limiter for auth endpoints ============
 // Tracks failed login attempts per IP address.
@@ -430,7 +431,7 @@ async function validateLinkingCode(code: string): Promise<string | null> {
     .where(and(
       eq(lineLinkingCodes.code, upperCode),
       eq(lineLinkingCodes.used, false),
-      gt(lineLinkingCodes.expiresAt, new Date())
+      gt(lineLinkingCodes.expiresAt, new Date().toISOString())
     ))
     .limit(1);
   
@@ -455,7 +456,7 @@ async function consumeLinkingCode(code: string): Promise<void> {
 setInterval(async () => {
   try {
     await db.delete(lineLinkingCodes)
-      .where(lt(lineLinkingCodes.expiresAt, new Date()));
+      .where(lt(lineLinkingCodes.expiresAt, new Date().toISOString()));
   } catch (error) {
     console.error('Error cleaning up expired linking codes:', error);
   }
@@ -604,38 +605,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined;
-      const isAdminClaim = req.user.claims.is_admin === true;
-
-      // Resolve canonical DB user (sub → email fallback handles pre-invited users)
-      let user = await resolveDbUser(req.user);
-
-      // Auto-create is only allowed in test/development mode.  In production,
-      // isAuthenticated and the OIDC verify callback together guarantee that any
-      // user who reaches this point already has a DB record, so the fallback
-      // branch here is only a safety net for local developer flows.
-      if (!user && isTestMode) {
-        console.log('⚠️  [dev-only] User not found, creating from claims...');
-        const roleForNewUser = isAdminClaim ? 'admin' : 'barista';
-        user = await storage.upsertUser({
-          id: req.user.claims.sub,
-          email: req.user.claims.email || '',
-          firstName: req.user.claims.first_name || '',
-          lastName: req.user.claims.last_name || '',
-          profileImageUrl: req.user.claims.profile_image_url || null,
-          role: roleForNewUser,
-        });
-        console.log('✅ User created with role:', user.role);
-      }
-
+      // In local auth mode, req.user is already the DB user attached by isAuthenticated
+      const user = req.user;
+      
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(401).json({ message: "Unauthorized" });
       }
 
       res.json(sanitizeUser(user));
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+    } catch (err) {
+      console.error('Error in /api/auth/user:', err);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
@@ -662,16 +642,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate role
-      if (!['admin', 'manager', 'barista'].includes(role)) {
-        return res.status(400).json({ message: "Invalid role. Must be admin, manager, or barista" });
+      if (!['admin', 'manager', 'barista', 'customer'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, manager, barista, or customer" });
       }
 
-      // Create user with a temporary ID (will be replaced on first login)
+      // Create user with a temporary ID and default password
+      const defaultPassword = await bcrypt.hash("yens123", 10);
       const user = await storage.createUser({
         email,
         firstName: firstName || '',
         lastName: lastName || '',
         role,
+        password: defaultPassword,
+        isActive: true,
       });
       
       console.log(`✅ Created user: ${email} with role ${role}`);
@@ -696,8 +679,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate role
-      if (!['admin', 'manager', 'barista'].includes(role)) {
-        return res.status(400).json({ message: "Invalid role. Must be admin, manager, or barista" });
+      if (!['admin', 'manager', 'barista', 'customer'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, manager, barista, or customer" });
       }
 
       const user = await storage.updateUserRole(id, role);
@@ -775,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       
       // Prevent deleting yourself
-      if (id === (req as any).user?.claims.sub) {
+      if (id === (req as any).user?.id) {
         return res.status(400).json({ message: "You cannot delete your own account" });
       }
 
@@ -800,8 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Password must be at least 8 characters" });
       }
 
-      // Hash password with bcrypt (10 rounds)
-      const bcrypt = await import('bcrypt');
+      // Hash password with bcryptjs (10 rounds)
       const hashedPassword = await bcrypt.hash(password, 10);
       
       const user = await storage.setUserPassword(id, hashedPassword);
@@ -1006,12 +988,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week
       };
 
-      (req as any).login(sessionUser, (err: any) => {
+      (req as any).login(sessionUser, async (err: any) => {
         if (err) {
           console.error("Error creating session:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
         
+        const { createAccessToken, createRefreshToken } = await import('./auth');
+        const accessToken = createAccessToken(user.id);
+        const refreshToken = await createRefreshToken(user.id);
+
         console.log(`✅ Password login successful for user ${user.id}`);
         res.json({ 
           success: true, 
@@ -1022,7 +1008,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
+            isActive: user.isActive,
           },
+          accessToken,
+          refreshToken,
           message: "Login successful" 
         });
       });
@@ -1080,19 +1069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       clearAuthFailures(ip);
 
       // Create session after successful 2FA
-      const sessionUser = {
-        claims: {
-          sub: user.id,
-          email: user.email,
-          first_name: user.firstName,
-          last_name: user.lastName,
-          profile_image_url: user.profileImageUrl,
-          is_admin: user.role === 'admin',
-        },
-        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week
-      };
-
-      (req as any).login(sessionUser, (err: any) => {
+      (req as any).login(user, (err: any) => {
         if (err) {
           console.error("Error creating session after 2FA:", err);
           return res.status(500).json({ message: "Failed to create session" });
@@ -1101,13 +1078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`✅ 2FA login successful for user ${user.id}`);
         res.json({ 
           success: true,
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-          },
+          user: sanitizeUser(user),
           message: "Login successful" 
         });
       });
@@ -1912,7 +1883,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create transaction (process purchase)
   app.post('/api/transactions', isAuthenticated, async (req, res) => {
     try {
-      const validatedData = insertTransactionSchema.parse(req.body);
+      // Pre-process numeric fields to avoid Zod validation errors from string inputs
+      const cleanedBody = {
+        ...req.body,
+        amount: req.body.amount ? parseFloat(String(req.body.amount)) : 0,
+        points: req.body.points ? parseInt(String(req.body.points), 10) : 0,
+      };
+
+      const validatedData = insertTransactionSchema.parse(cleanedBody);
 
       // Daily treasury cap — block if customer already hit 3 receipts or 500 pts in 24 h
       const cap = await checkDailyTreasuryCap(validatedData.customerId);
@@ -1923,7 +1901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add barista ID from authenticated user
       const transactionData = {
         ...validatedData,
-        baristaId: (req.user as any)!.claims.sub,
+        baristaId: (req.user as any)!.id,
       };
       
       const transaction = await storage.createTransaction(transactionData);
@@ -2023,6 +2001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all customers (no pagination) - for insights/analytics
+  // Get all customers (no pagination) - for insights/analytics
   app.get('/api/admin/customers/all', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const customers = await storage.getAllCustomers();
@@ -2032,6 +2011,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch customers" });
     }
   });
+
+  // Export all customers to Excel
+  app.get('/api/admin/customers/export', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("📊 Starting customer export...");
+      const customers = await storage.getAllCustomers();
+      
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Customers');
+
+      // Define columns
+      worksheet.columns = [
+        { header: 'ID', key: 'id', width: 10 },
+        { header: 'Name', key: 'name', width: 25 },
+        { header: 'Phone', key: 'phone', width: 15 },
+        { header: 'Email', key: 'email', width: 25 },
+        { header: 'Tier', key: 'tier', width: 12 },
+        { header: 'Points', key: 'points', width: 10 },
+        { header: 'Total Spent', key: 'totalSpent', width: 15 },
+        { header: 'Gender', key: 'gender', width: 10 },
+        { header: 'Birthday', key: 'birthday', width: 15 },
+        { header: 'Register Date', key: 'registerDate', width: 20 },
+        { header: 'Register Branch', key: 'registerBranch', width: 20 },
+        { header: 'Last Use', key: 'lastUse', width: 20 },
+        { header: 'Tag', key: 'tag', width: 15 },
+      ];
+
+      // Add rows
+      customers.forEach(customer => {
+        worksheet.addRow({
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+          email: customer.email || '',
+          tier: customer.tier || 'member',
+          points: customer.points || 0,
+          totalSpent: customer.totalSpent || '0',
+          gender: customer.gender || '',
+          birthday: customer.birthday || '',
+          registerDate: customer.registerDate ? new Date(customer.registerDate).toLocaleString() : '',
+          registerBranch: customer.registerBranch || '',
+          lastUse: customer.lastUse ? new Date(customer.lastUse).toLocaleString() : '',
+          tag: customer.tag || '',
+        });
+      });
+
+      // Style headers
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+
+      // Set response headers
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=' + `customers_export_${new Date().toISOString().split('T')[0]}.xlsx`
+      );
+
+      // Write to response
+      await workbook.xlsx.write(res);
+      res.end();
+      console.log(`✅ Exported ${customers.length} customers to Excel`);
+    } catch (error) {
+      console.error("❌ Error exporting customers:", error);
+      res.status(500).json({ message: "Failed to export customers" });
+    }
+  });
+
 
   // Get top spenders - server-sorted for performance
   app.get('/api/admin/customers/top-spenders', isAuthenticated, isAdmin, async (req, res) => {
@@ -5221,7 +5274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a scheduled message
   app.post('/api/admin/messages/schedule', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       const { channel, recipientType, tier, customerIds, subject, message, scheduledFor, timezone } = req.body;
 
       if (!channel || !recipientType || !message || !scheduledFor) {
@@ -5850,7 +5903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user's active time entry (currently clocked in)
   app.get('/api/barista/time-entry/current', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -5866,7 +5919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clock in
   app.post('/api/barista/clock-in', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -5894,7 +5947,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clock out
   app.post('/api/barista/clock-out/:timeEntryId', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -5931,7 +5984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get time entries for current user
   app.get('/api/barista/time-entries', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -5954,7 +6007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get work schedules for current user
   app.get('/api/barista/schedules', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -6068,7 +6121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Repeat weeks must be between 1 and 52" });
         }
         
-        const createdBy = (req.user as any)?.claims?.sub;
+        const createdBy = (req.user as any)?.id;
         const result = await storage.createWorkScheduleSeries(
           {
             userId,
@@ -6223,7 +6276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get work schedules for logged-in barista
   app.get('/api/work-schedules/me', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)!.claims.sub;
+      const userId = (req.user as any)!.id;
       const schedules = await storage.getUserWorkSchedules(userId);
       res.json(schedules);
     } catch (error) {
@@ -6331,7 +6384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get my performance stats
   app.get('/api/barista/performance/me', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)!.claims.sub;
+      const userId = (req.user as any)!.id;
       const weekStart = req.query.weekStart as string || getMonday(new Date()).toISOString().split('T')[0];
       const performance = await storage.getBaristaPerformance(userId, weekStart);
       res.json(performance || null);
@@ -6344,7 +6397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get performance history
   app.get('/api/barista/performance/history', isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)!.claims.sub;
+      const userId = (req.user as any)!.id;
       const limit = parseInt(req.query.limit as string) || 10;
       const history = await storage.getUserPerformanceHistory(userId, limit);
       res.json(history);

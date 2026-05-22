@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { setupAuth } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
 import { ObjectStorageService } from "./objectStorage";
 import { setEmailLogoUrl } from "./resend";
@@ -8,15 +9,43 @@ import { storage } from "./storage";
 import fs from "fs";
 import path from "path";
 import { db } from "./db";
-import { dailySales } from "@shared/schema";
-import { sql as drizzleSql, eq, and } from "drizzle-orm";
+import { eq, and, gte, lt, lte, inArray, sql } from "drizzle-orm";
+import { dailySales, users, sites, customers as customersTable } from "@shared/schema";
 import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcryptjs";
+
+// Ensure at least one admin user exists
+async function ensureDefaultAdmin() {
+  try {
+    const hashedPassword = await bcrypt.hash("123456", 10);
+    const admins = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
+    if (admins.length === 0) {
+      log("No admin user found, creating default admin...");
+      await db.insert(users).values({
+        id: uuidv4(),
+        email: "admin@yensrewards.com",
+        password: hashedPassword,
+        firstName: "System",
+        lastName: "Admin",
+        role: "admin",
+        isActive: true,
+      });
+      log("Default admin created: admin@yensrewards.com / 123456");
+    } else {
+      log(`Admin user found, force-updating password for ${admins[0].email}...`);
+      await db.update(users).set({ password: hashedPassword }).where(eq(users.id, admins[0].id));
+      log("Admin password updated to: 123456");
+    }
+  } catch (err) {
+    log("Error ensuring default admin: " + String(err));
+  }
+}
 
 // ONE-TIME: Restore 147 missing customers from January 2026 CSV upload
 async function restoreMissingCustomers() {
   try {
-    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM customers`);
-    const existing = parseInt((check.rows[0] as any).c || '0');
+    const check = await db.select({ c: sql<number>`count(*)` }).from(customersTable);
+    const existing = Number(check[0]?.c || 0);
     if (existing >= 620) {
       log(`Customer restoration: already have ${existing} customers, skipping`);
       return;
@@ -34,8 +63,8 @@ async function restoreMissingCustomers() {
     const lines = fsModule.readFileSync(csvPath, 'utf-8').split('\n').filter((l: string) => l.trim());
     const headers = parseCSVLine(lines[0]);
 
-    const existingRows = await db.execute(drizzleSql`SELECT phone FROM customers`);
-    const existingPhones = new Set(existingRows.rows.map((r: any) => r.phone));
+    const existingRows = await db.select({ phone: customersTable.phone }).from(customersTable);
+    const existingPhones = new Set(existingRows.map((r: any) => r.phone));
 
     let inserted = 0, skipped = 0;
     for (let i = 1; i < lines.length; i++) {
@@ -73,26 +102,31 @@ async function restoreMissingCustomers() {
       const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
       try {
-        await db.execute(drizzleSql`
-          INSERT INTO customers (
-            id, name, phone, email, gender, birthday, points, tier,
-            referral_code, total_spent, created_at, register_date,
-            register_branch, last_use, tag, line_uid
-          ) VALUES (
-            ${id}, ${name}, ${phone}, ${email}, ${gender}, ${birthday},
-            ${points}, ${tier}, ${referralCode}, ${totalSpent},
-            ${registerDate ?? new Date()}, ${registerDate ?? null},
-            ${registerBranch}, ${lastUse ?? null}, ${tag}, ${lineUid}
-          )
-          ON CONFLICT DO NOTHING
-        `);
+        await db.insert(customersTable).values({
+          id,
+          name,
+          phone,
+          email,
+          gender,
+          birthday,
+          points,
+          tier,
+          referralCode,
+          totalSpent: totalSpent.toString(),
+          createdAt: (registerDate ?? new Date()).toISOString(),
+          registerDate: registerDate?.toISOString() ?? null,
+          registerBranch,
+          lastUse: lastUse?.toISOString() ?? null,
+          tag,
+          lineUid
+        }).onConflictDoNothing();
         inserted++;
         existingPhones.add(phone);
       } catch (_err) { skipped++; }
     }
 
-    const after = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM customers`);
-    log(`Customer restoration complete: inserted ${inserted}, skipped ${skipped}. Total now: ${(after.rows[0] as any).c}`);
+    const after = await db.select({ c: sql<number>`count(*)` }).from(customersTable);
+    log(`Customer restoration complete: inserted ${inserted}, skipped ${skipped}. Total now: ${after[0].c}`);
   } catch (err) {
     log(`Customer restoration warning: ${err instanceof Error ? err.message : err}`);
   }
@@ -115,16 +149,16 @@ function parseCSVLine(line: string): string[] {
 // Safe to run repeatedly: uses ON CONFLICT DO NOTHING so no duplicates
 async function restoreMissingPdfSalesData() {
   try {
-    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2025-12-29'`);
-    const existing = parseInt((check.rows[0] as any).c || '0');
+    const check = await db.select({ c: sql<number>`count(*)` }).from(dailySales).where(gte(dailySales.date, '2025-12-29'));
+    const existing = Number(check[0]?.c || 0);
     if (existing >= 180) {
       log(`Sales restoration: already have ${existing} records from Dec 2025+, skipping`);
       return;
     }
     log(`Sales restoration: found only ${existing} records from Dec 2025+, restoring PDF data...`);
 
-    const admins = await db.execute(drizzleSql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
-    const adminId = (admins.rows[0] as any)?.id || 'KZ-L18';
+    const admins = await db.select({ id: users.id }).from(users).where(eq(users.role, 'admin')).limit(1);
+    const adminId = admins[0]?.id || 'KZ-L18';
 
     // Each entry: date, day-of-week, channel, net_sales, other_sales (optional)
     const transactions: { date: string; day: string; channel: string; net: number; other?: number }[] = [
@@ -336,16 +370,24 @@ async function restoreMissingPdfSalesData() {
       const id = uuidv4();
       const otherSales = tx.other ?? 0;
       const totalSales = tx.net + otherSales;
-      await db.execute(drizzleSql`
-        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
-        VALUES (${id}, ${tx.date}, ${tx.day}, ${tx.channel}, ${tx.net}, 0, ${totalSales}, ${otherSales}, ${adminId}, NOW(), NOW())
-        ON CONFLICT (date, order_channel) DO NOTHING
-      `);
+      await db.insert(dailySales).values({
+        id,
+        date: tx.date,
+        dayOfWeek: tx.day,
+        orderChannel: tx.channel,
+        netSales: tx.net.toString(),
+        grabFee: "0",
+        totalSales: totalSales.toString(),
+        otherSales: otherSales.toString(),
+        importedBy: adminId,
+        importedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      }).onConflictDoNothing();
       inserted++;
     }
 
-    const finalCount = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2025-12-29'`);
-    log(`Sales restoration complete: attempted ${inserted} records. Dec 2025+ rows now: ${(finalCount.rows[0] as any).c}`);
+    const finalCount = await db.select({ c: sql<number>`count(*)` }).from(dailySales).where(gte(dailySales.date, '2025-12-29'));
+    log(`Sales restoration complete: attempted ${inserted} records. Dec 2025+ rows now: ${finalCount[0].c}`);
   } catch (err) {
     log(`Sales restoration warning: ${err instanceof Error ? err.message : err}`);
     console.error('Sales restoration error:', err);
@@ -356,16 +398,16 @@ async function restoreMissingPdfSalesData() {
 // Source: Annual PDF (01/01/25–25/12/25) + December monthly PDF (01/12/25–31/12/25)
 async function restoreMissing2025SalesData() {
   try {
-    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2025-01-01' AND date < '2026-01-01'`);
-    const existing = parseInt((check.rows[0] as any).c || '0');
+    const check = await db.select({ c: sql<number>`count(*)` }).from(dailySales).where(and(gte(dailySales.date, '2025-01-01'), lt(dailySales.date, '2026-01-01')));
+    const existing = Number(check[0]?.c || 0);
     if (existing >= 560) {
       log(`2025 sales check: already have ${existing} rows for 2025, skipping`);
       return;
     }
     log(`2025 sales check: found ${existing} rows for 2025, restoring missing Oct/Nov/Dec data...`);
 
-    const admins = await db.execute(drizzleSql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
-    const adminId = (admins.rows[0] as any)?.id || 'KZ-L18';
+    const admins = await db.select({ id: users.id }).from(users).where(eq(users.role, 'admin')).limit(1);
+    const adminId = admins[0]?.id || 'KZ-L18';
 
     const txns: { date: string; day: string; channel: string; net: number }[] = [
       // ── October 2025 (entirely missing from DB) ──
@@ -467,16 +509,25 @@ async function restoreMissing2025SalesData() {
     let inserted = 0;
     for (const tx of txns) {
       const id = uuidv4();
-      await db.execute(drizzleSql`
-        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
-        VALUES (${id}, ${tx.date}, ${tx.day}, ${tx.channel}, ${tx.net}, 0, ${tx.net}, 0, ${adminId}, NOW(), NOW())
-        ON CONFLICT (date, order_channel) DO NOTHING
-      `);
+      await db.insert(dailySales).values({
+        id,
+        date: tx.date,
+        dayOfWeek: tx.day,
+        orderChannel: tx.channel,
+        netSales: tx.net.toString(),
+        grabFee: "0",
+        totalSales: tx.net.toString(),
+        otherSales: "0",
+        importedBy: adminId,
+        importedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      }).onConflictDoNothing();
       inserted++;
     }
 
-    const afterCount = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2025-01-01' AND date < '2026-01-01'`);
-    log(`2025 sales restoration: attempted ${inserted} records. 2025 total now: ${(afterCount.rows[0] as any).c}`);
+    const afterCount = await db.select({ c: sql<number>`count(*)` }).from(dailySales)
+      .where(and(gte(dailySales.date, '2025-01-01'), lt(dailySales.date, '2026-01-01')));
+    log(`2025 sales restoration: attempted ${inserted} records. 2025 total now: ${afterCount[0]?.c}`);
   } catch (err) {
     log(`2025 sales restoration warning: ${err instanceof Error ? err.message : err}`);
     console.error('2025 sales restoration error:', err);
@@ -488,16 +539,17 @@ async function restoreMissing2025SalesData() {
 // Market channels (W/J/D/M/แข่งเรือ): from MARKET sheet — event-based revenue
 async function restore2024SalesData() {
   try {
-    const check = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2024-07-01' AND date < '2024-12-01'`);
-    const existing = parseInt((check.rows[0] as any).c || '0');
+    const check = await db.select({ c: sql<number>`count(*)` }).from(dailySales)
+      .where(and(gte(dailySales.date, '2024-07-01'), lt(dailySales.date, '2024-12-01')));
+    const existing = Number(check[0]?.c || 0);
     if (existing >= 100) {
       log(`2024 sales check: already have ${existing} Jul–Nov 2024 rows, skipping`);
       return;
     }
     log(`2024 sales check: found ${existing} Jul–Nov 2024 rows, importing Excel data...`);
 
-    const admins = await db.execute(drizzleSql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
-    const adminId = (admins.rows[0] as any)?.id || 'KZ-L18';
+    const admins = await db.select({ id: users.id }).from(users).where(eq(users.role, 'admin')).limit(1);
+    const adminId = admins[0]?.id || 'KZ-L18';
 
     // Daily Shop aggregates from Consolidated Data sheet (Jul 24 – Nov 30 2024)
     const shopData: { date: string; day: string; net: number }[] = [
@@ -632,25 +684,41 @@ async function restore2024SalesData() {
     let inserted = 0;
     for (const s of shopData) {
       const id = uuidv4();
-      await db.execute(drizzleSql`
-        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
-        VALUES (${id}, ${s.date}, ${s.day}, ${'Shop'}, ${s.net}, 0, ${s.net}, 0, ${adminId}, NOW(), NOW())
-        ON CONFLICT (date, order_channel) DO NOTHING
-      `);
+      await db.insert(dailySales).values({
+        id,
+        date: s.date,
+        dayOfWeek: s.day,
+        orderChannel: 'Shop',
+        netSales: s.net.toString(),
+        grabFee: "0",
+        totalSales: s.net.toString(),
+        otherSales: "0",
+        importedBy: adminId,
+        importedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      }).onConflictDoNothing();
       inserted++;
     }
     for (const m of marketData) {
       const id = uuidv4();
-      await db.execute(drizzleSql`
-        INSERT INTO daily_sales (id, date, day_of_week, order_channel, net_sales, grab_fee, total_sales, other_sales, imported_by, imported_at, created_at)
-        VALUES (${id}, ${m.date}, ${m.day}, ${m.channel}, ${m.net}, 0, ${m.net}, 0, ${adminId}, NOW(), NOW())
-        ON CONFLICT (date, order_channel) DO NOTHING
-      `);
+      await db.insert(dailySales).values({
+        id,
+        date: m.date,
+        dayOfWeek: m.day,
+        orderChannel: m.channel,
+        netSales: m.net.toString(),
+        grabFee: "0",
+        totalSales: m.net.toString(),
+        otherSales: "0",
+        importedBy: adminId,
+        importedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      }).onConflictDoNothing();
       inserted++;
     }
 
-    const afterCount = await db.execute(drizzleSql`SELECT COUNT(*) as c FROM daily_sales WHERE date >= '2024-07-01' AND date < '2024-12-01'`);
-    log(`2024 sales import: attempted ${inserted} records. Jul–Nov 2024 rows now: ${(afterCount.rows[0] as any).c}`);
+    const afterCount = await db.select({ c: sql<number>`count(*)` }).from(dailySales).where(and(gte(dailySales.date, '2024-07-01'), lt(dailySales.date, '2024-12-01')));
+    log(`2024 sales import: attempted ${inserted} records. Jul–Nov 2024 rows now: ${afterCount[0].c}`);
   } catch (err) {
     log(`2024 sales import warning: ${err instanceof Error ? err.message : err}`);
     console.error('2024 sales import error:', err);
@@ -660,35 +728,7 @@ async function restore2024SalesData() {
 // Ensure the post-commit git hook for GitHub auto-sync is always installed.
 // The hook is written to .git/hooks/post-commit every startup so it survives
 // any Replit environment resets. Token is read at hook-run time from GITHUB_TOKEN.
-function ensureGitHubSyncHook() {
-  try {
-    const hooksDir = path.resolve(process.cwd(), ".git", "hooks");
-    const hookPath = path.join(hooksDir, "post-commit");
-    const hookContent = `#!/bin/bash
-# Auto-sync to GitHub after every Replit checkpoint commit
-# Token is read from the GITHUB_TOKEN Replit secret at runtime.
-if [ -z "$GITHUB_TOKEN" ]; then
-  exit 0
-fi
-REMOTE_URL="https://Leonardfraser:\${GITHUB_TOKEN}@github.com/Leonardfraser/YensRewards.git"
-BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "main")
-git push "$REMOTE_URL" "\${BRANCH}:main" --quiet 2>&1 | sed "s/\${GITHUB_TOKEN}/***REDACTED***/g" || true
-`;
-    if (!fs.existsSync(hooksDir)) {
-      log("GitHub sync hook: .git/hooks directory not found, skipping");
-      return;
-    }
-    const existing = fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf8") : "";
-    if (existing !== hookContent) {
-      fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
-      log("GitHub sync hook installed (post-commit → YensRewards)");
-    } else {
-      log("GitHub sync hook already up to date");
-    }
-  } catch (err) {
-    log(`GitHub sync hook setup warning: ${err instanceof Error ? err.message : err}`);
-  }
-}
+
 
 // v3.17.15 - Build birthday email template with dynamic image URL
 function buildBirthdayHtml(imageUrl: string): string {
@@ -766,7 +806,7 @@ app.set('trust proxy', 1);
 
 // Log startup info
 log(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
-log(`REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT || 'not set'}`);
+
 log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
 log(`SESSION_SECRET: ${process.env.SESSION_SECRET ? 'set' : 'not set'}`);
 log(`VONAGE_API_KEY: ${process.env.VONAGE_API_KEY ? 'set' : 'NOT SET'}`);
@@ -826,9 +866,18 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    // Ensure default admin exists first thing
+    await ensureDefaultAdmin();
+
+    log('Setting up authentication...');
+    setupAuth(app);
+
     log('Registering routes...');
     const server = await registerRoutes(app);
     log('Routes registered successfully');
+
+    // Ensure default admin exists
+    await ensureDefaultAdmin();
 
     // ONE-TIME restore: insert Mar 30–Apr 26 2026 PDF sales into production DB
     await restoreMissingPdfSalesData();
@@ -844,11 +893,12 @@ app.use((req, res, next) => {
 
     // ONE-TIME: ensure all sales channels from historical data exist in sites table
     try {
-      const existingSites = await db.execute(drizzleSql`SELECT channel_name FROM sites`);
-      const existingChannels = new Set(existingSites.rows.map((r: any) => r.channel_name));
+      log("Channel sync: fetching existing sites...");
+      const existingSites = await db.select({ channelName: sites.channelName }).from(sites);
+      const existingChannels = new Set(existingSites.map((r: any) => r.channelName));
+      log(`Channel sync: found ${existingChannels.size} existing channels`);
 
       const allChannels = [
-        // Mobile/event channels
         { name: 'Caravan Truck', channelName: 'CARAVAN TRUCK', type: 'mobile_van' },
         { name: 'Coca Cola Event', channelName: 'COCA COLA', type: 'mobile_van' },
         { name: 'Light Festival', channelName: 'LIGHTFESTIVAL', type: 'mobile_van' },
@@ -865,43 +915,59 @@ app.use((req, res, next) => {
         { name: 'Rongsri Market', channelName: 'RONGSRI', type: 'mobile_van' },
         { name: 'River Market 35', channelName: 'RIVER 35', type: 'mobile_van' },
         { name: 'River Market 110', channelName: 'RIVER 110', type: 'mobile_van' },
-        // Stall/partnership channels
         { name: 'Misc Sales', channelName: 'MISC', type: 'stall' },
         { name: 'Food Court', channelName: 'FOOD', type: 'stall' },
         { name: 'CP Partnership', channelName: 'CP', type: 'stall' },
         { name: 'CP All Partnership', channelName: 'CP ALL', type: 'stall' },
         { name: 'CP All (Alt)', channelName: 'CPALL', type: 'stall' },
         { name: 'University (Alt)', channelName: 'UNVERSITY', type: 'stall' },
-        // Note: 2024-only market codes (W, J, D, M, แข่งเรือ) deliberately excluded —
-        // these only exist in 2024 Excel data and are not needed for 2025 vs 2026 comparison.
       ];
 
-      // Clean up any 2024-only market codes that may have been added previously
-      await db.execute(drizzleSql`DELETE FROM sites WHERE channel_name IN ('W','J','D','M','แข่งเรือ')`);
+      log("Channel sync: cleaning up obsolete channels...");
+      const obsoleteChannels = ['W','J','D','M','แข่งเรือ'];
+      for (const channelCode of obsoleteChannels) {
+        await db.delete(sites).where(eq(sites.channelName, channelCode));
+      }
 
       const missing = allChannels.filter(c => !existingChannels.has(c.channelName));
+      log(`Channel sync: ${missing.length} missing channels to add`);
+      
       if (missing.length > 0) {
         for (const ch of missing) {
-          await db.execute(drizzleSql`
-            INSERT INTO sites (id, name, channel_name, type, location, operating_days, open_time, close_time, is_active, created_at, updated_at)
-            VALUES (gen_random_uuid(), ${ch.name}, ${ch.channelName}, ${ch.type}, 'Various',
-              ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
-              '09:00', '21:00', true, NOW(), NOW())
-          `);
+          log(`Channel sync: adding ${ch.channelName}...`);
+          await db.insert(sites).values({
+            id: uuidv4(),
+            name: ch.name,
+            channelName: ch.channelName,
+            type: ch.type,
+            location: 'Various',
+            operatingDays: JSON.stringify(['monday','tuesday','wednesday','thursday','friday','saturday','sunday']),
+            openTime: '09:00',
+            closeTime: '21:00',
+            isActive: true,
+          });
         }
-        log(`Added ${missing.length} missing channels to sites: ${missing.map(c => c.channelName).join(', ')}`);
+        log(`Channel sync: successfully added ${missing.length} channels`);
       } else {
-        log("All sales channels already in sites table, skipping");
+        log("Channel sync: all channels already exist");
       }
     } catch (err) {
-      log("Channel sync skipped: " + String(err));
+      log("Channel sync failed with error: " + String(err));
+      if (err instanceof Error) console.error(err.stack);
     }
 
     // ONE-TIME fix: Dec 30 2024 Shop grab_fee was 0, should be 116.01 (from daily Excel file)
     try {
-      const dec30Check = await db.execute(drizzleSql`SELECT grab_fee FROM daily_sales WHERE date = '2024-12-30' AND order_channel = 'Shop'`);
-      if (dec30Check.rows.length > 0 && Number(dec30Check.rows[0].grab_fee) === 0) {
-        await db.execute(drizzleSql`UPDATE daily_sales SET grab_fee = 116.01, total_sales = net_sales + 116.01 WHERE date = '2024-12-30' AND order_channel = 'Shop'`);
+      const dec30Check = await db.select({ grabFee: dailySales.grabFee }).from(dailySales)
+        .where(and(eq(dailySales.date, '2024-12-30'), eq(dailySales.orderChannel, 'Shop')));
+      
+      if (dec30Check.length > 0 && Number(dec30Check[0].grabFee) === 0) {
+        await db.update(dailySales)
+          .set({ 
+            grabFee: "116.01", 
+            totalSales: sql`CAST(net_sales AS REAL) + 116.01` 
+          })
+          .where(and(eq(dailySales.date, '2024-12-30'), eq(dailySales.orderChannel, 'Shop')));
         log("Fixed Dec 30 2024 Shop grab_fee: 0 → 116.01");
       }
     } catch (err) {
@@ -968,18 +1034,16 @@ app.use((req, res, next) => {
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
     const port = parseInt(process.env.PORT || '5000', 10);
-    // Ensure GitHub auto-sync hook is always present
-    ensureGitHubSyncHook();
+
 
     server.listen({
       port,
-      host: "0.0.0.0",
-      reusePort: true,
+      host: "127.0.0.1",
     }, () => {
       log(`Server ready and serving on port ${port}`);
       
       // Start the scheduled message processor
-      startScheduler();
+      // startScheduler();
     });
   } catch (error) {
     console.error('Fatal error during server startup:', error);

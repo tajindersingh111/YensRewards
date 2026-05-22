@@ -13,23 +13,38 @@ import {
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
-export const objectStorageClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token",
-      },
-    },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
+// Initialize GCS client with standard credentials if available, 
+// otherwise fall back to Replit sidecar if running on Replit,
+// or a mock client for local development.
+export const objectStorageClient = process.env.GCS_KEY_FILE 
+  ? new Storage({ keyFilename: process.env.GCS_KEY_FILE })
+  : process.env.GCS_PROJECT_ID && process.env.GCS_CLIENT_EMAIL && process.env.GCS_PRIVATE_KEY
+    ? new Storage({
+        projectId: process.env.GCS_PROJECT_ID,
+        credentials: {
+          client_email: process.env.GCS_CLIENT_EMAIL,
+          private_key: process.env.GCS_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }
+      })
+    : process.env.REPLIT_ID 
+      ? new Storage({
+          credentials: {
+            audience: "replit",
+            subject_token_type: "access_token",
+            token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+            type: "external_account",
+            credential_source: {
+              url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+              format: {
+                type: "json",
+                subject_token_field_name: "access_token",
+              },
+            },
+            universe_domain: "googleapis.com",
+          },
+          projectId: "",
+        })
+      : new Storage(); // Fallback for local dev (will use local-object-storage mocks)
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -192,6 +207,13 @@ export class ObjectStorageService {
   }
 
   async listEmailAssets(deduplicate: boolean = false): Promise<Array<{ name: string; url: string; size: number; created: string }>> {
+    // If not on Replit, return empty list to trigger local upload bypass logic
+    // If not on Replit or GCS not fully configured, return empty list to trigger local upload bypass logic
+    const isGcsConfigured = !!(process.env.GCS_KEY_FILE || (process.env.GCS_PROJECT_ID && process.env.GCS_CLIENT_EMAIL && process.env.GCS_PRIVATE_KEY));
+    if (!isGcsConfigured && !process.env.REPLIT_ID) {
+      return [];
+    }
+
     const publicSearchPaths = this.getPublicObjectSearchPaths();
     const publicPath = publicSearchPaths[0];
     
@@ -322,6 +344,13 @@ export class ObjectStorageService {
         throw new Error(`Local file not found: ${localFilePath}`);
       }
 
+      // If not on Replit, just return the target asset path directly
+      const isGcsConfigured = !!(process.env.GCS_KEY_FILE || (process.env.GCS_PROJECT_ID && process.env.GCS_CLIENT_EMAIL && process.env.GCS_PRIVATE_KEY));
+      if (!isGcsConfigured && !process.env.REPLIT_ID) {
+        console.log(`Local development mode: skipping upload for ${targetFilename}`);
+        return `/email-assets/${targetFilename}`;
+      }
+
       // Get upload URL
       const { uploadURL, assetPath } = await this.getEmailAssetUploadURL(targetFilename);
       
@@ -426,6 +455,12 @@ async function signObjectURL({
   method: "GET" | "PUT" | "DELETE" | "HEAD";
   ttlSec: number;
 }): Promise<string> {
+  // If not on Replit, return a local mock URL to prevent ECONNREFUSED
+  const isGcsConfigured = !!(process.env.GCS_KEY_FILE || (process.env.GCS_PROJECT_ID && process.env.GCS_CLIENT_EMAIL && process.env.GCS_PRIVATE_KEY));
+  if (!isGcsConfigured && !process.env.REPLIT_ID) {
+    return `http://localhost:5000/local-object-storage/${bucketName}/${objectName}`;
+  }
+
   const request = {
     bucket_name: bucketName,
     object_name: objectName,

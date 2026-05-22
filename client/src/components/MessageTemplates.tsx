@@ -143,11 +143,11 @@ export default function MessageTemplates() {
     mutationFn: async (data: InsertMessageTemplate) => await apiRequest('POST', '/api/admin/message-templates', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
-      toast({ title: t('admin.messages.success'), description: t('admin.messages.templateCreated') });
+      toast({ title: t('messages.success'), description: t('messages.templateCreated') });
       resetForm();
     },
     onError: (error: any) => {
-      toast({ title: t('admin.messages.error'), description: error.message || t('admin.messages.createFailed'), variant: "destructive" });
+      toast({ title: t('messages.error'), description: error.message || t('messages.createFailed'), variant: "destructive" });
     },
   });
 
@@ -156,11 +156,11 @@ export default function MessageTemplates() {
       await apiRequest('PATCH', `/api/admin/message-templates/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
-      toast({ title: t('admin.messages.success'), description: t('admin.messages.templateUpdated') });
+      toast({ title: t('messages.success'), description: t('messages.templateUpdated') });
       resetForm();
     },
     onError: (error: any) => {
-      toast({ title: t('admin.messages.error'), description: error.message || t('admin.messages.updateFailed'), variant: "destructive" });
+      toast({ title: t('messages.error'), description: error.message || t('messages.updateFailed'), variant: "destructive" });
     },
   });
 
@@ -168,10 +168,10 @@ export default function MessageTemplates() {
     mutationFn: async (id: string) => await apiRequest('DELETE', `/api/admin/message-templates/${id}`, undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/message-templates'] });
-      toast({ title: t('admin.messages.success'), description: t('admin.messages.templateDeleted') });
+      toast({ title: t('messages.success'), description: t('messages.templateDeleted') });
     },
     onError: (error: any) => {
-      toast({ title: t('admin.messages.error'), description: error.message || t('admin.messages.deleteFailed'), variant: "destructive" });
+      toast({ title: t('messages.error'), description: error.message || t('messages.deleteFailed'), variant: "destructive" });
     },
   });
 
@@ -182,7 +182,7 @@ export default function MessageTemplates() {
       toast({ title: "Default Templates Created!", description: `Created ${result.created} birthday message templates (Thai & English)` });
     },
     onError: (error: any) => {
-      toast({ title: t('admin.messages.error'), description: error.message || "Failed to create default templates", variant: "destructive" });
+      toast({ title: t('messages.error'), description: error.message || "Failed to create default templates", variant: "destructive" });
     },
   });
 
@@ -289,7 +289,7 @@ export default function MessageTemplates() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(t('admin.messages.deleteConfirm'))) deleteTemplateMutation.mutate(id);
+    if (confirm(t('messages.deleteConfirm'))) deleteTemplateMutation.mutate(id);
   };
 
   const getPreviewMessage = () => {
@@ -319,8 +319,8 @@ export default function MessageTemplates() {
           <FileText className="w-4 h-4 text-blue-900" />
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-black uppercase tracking-tight text-white leading-none">{t('admin.messages.templates')}</h2>
-          <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{t('admin.messages.manageTemplates')}</p>
+          <h2 className="text-xl font-black uppercase tracking-tight text-white leading-none">{t('messages.templates')}</h2>
+          <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{t('messages.manageTemplates')}</p>
         </div>
         <div className="flex gap-2 flex-wrap shrink-0">
           {templates.length === 0 && !isCreating && (
@@ -332,7 +332,7 @@ export default function MessageTemplates() {
           {!isCreating && (
             <Button onClick={() => setIsCreating(true)} size="sm" className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" data-testid="button-create-template">
               <Plus className="w-3.5 h-3.5 mr-1.5" />
-              {t('admin.messages.addTemplate')}
+              {t('messages.addTemplate')}
             </Button>
           )}
         </div>
@@ -362,9 +362,9 @@ export default function MessageTemplates() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{isThaiLanguage ? "ทุกประเภท" : "All types"}</SelectItem>
-              <SelectItem value="birthday">{t('admin.messages.birthday')}</SelectItem>
-              <SelectItem value="promotion">{t('admin.messages.promotion')}</SelectItem>
-              <SelectItem value="reminder">{t('admin.messages.reminder')}</SelectItem>
+              <SelectItem value="birthday">{t('messages.birthday')}</SelectItem>
+              <SelectItem value="promotion">{t('messages.promotion')}</SelectItem>
+              <SelectItem value="reminder">{t('messages.reminder')}</SelectItem>
               <SelectItem value="welcome">{isThaiLanguage ? "ต้อนรับ" : "Welcome"}</SelectItem>
               <SelectItem value="announcement">{isThaiLanguage ? "ประกาศ" : "Announcement"}</SelectItem>
             </SelectContent>
@@ -390,9 +390,9 @@ export default function MessageTemplates() {
             </div>
             <div>
               <h2 className="text-base font-black uppercase tracking-tight text-white leading-none">
-                {editingTemplate ? t('admin.messages.editTemplate') : t('admin.messages.addNewTemplate')}
+                {editingTemplate ? t('messages.editTemplate') : t('messages.addNewTemplate')}
               </h2>
-              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{t('admin.messages.placeholdersDesc')}</p>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-[0.15em] mt-1.5">{t('messages.placeholdersDesc')}</p>
             </div>
           </div>
           <Form {...form}>
@@ -401,21 +401,21 @@ export default function MessageTemplates() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('admin.messages.templateName')}</FormLabel>
-                      <FormControl><Input placeholder={t('admin.messages.templateName')} data-testid="input-template-name" {...field} /></FormControl>
+                      <FormLabel>{t('messages.templateName')}</FormLabel>
+                      <FormControl><Input placeholder={t('messages.templateName')} data-testid="input-template-name" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="type" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('admin.messages.templateType')}</FormLabel>
+                      <FormLabel>{t('messages.templateType')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input placeholder={isThaiLanguage ? "เลือกหรือพิมพ์ประเภท..." : "Select or type custom..."} data-testid="input-template-type" list="template-type-options" {...field} value={field.value || ""} />
                           <datalist id="template-type-options">
-                            <option value="birthday">{t('admin.messages.birthday')}</option>
-                            <option value="promotion">{t('admin.messages.promotion')}</option>
-                            <option value="reminder">{t('admin.messages.reminder')}</option>
+                            <option value="birthday">{t('messages.birthday')}</option>
+                            <option value="promotion">{t('messages.promotion')}</option>
+                            <option value="reminder">{t('messages.reminder')}</option>
                             <option value="welcome">{isThaiLanguage ? "ต้อนรับ" : "Welcome"}</option>
                             <option value="announcement">{isThaiLanguage ? "ประกาศ" : "Announcement"}</option>
                             <option value="event">{isThaiLanguage ? "กิจกรรม" : "Event"}</option>
@@ -430,16 +430,16 @@ export default function MessageTemplates() {
                   )} />
                   <FormField control={form.control} name="channel" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('admin.messages.channel')}</FormLabel>
+                      <FormLabel>{t('messages.channel')}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-template-channel"><SelectValue /></SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="sms">{t('admin.messages.sms')}</SelectItem>
-                          <SelectItem value="email">{t('admin.messages.email')}</SelectItem>
+                          <SelectItem value="sms">{t('messages.sms')}</SelectItem>
+                          <SelectItem value="email">{t('messages.email')}</SelectItem>
                           <SelectItem value="line">LINE</SelectItem>
-                          <SelectItem value="both">{t('admin.messages.sms')} + {t('admin.messages.email')}</SelectItem>
+                          <SelectItem value="both">{t('messages.sms')} + {t('messages.email')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -450,8 +450,8 @@ export default function MessageTemplates() {
                 {(form.watch("channel") === "email" || form.watch("channel") === "both") && (
                   <FormField control={form.control} name="subject" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('admin.messages.templateSubject')}</FormLabel>
-                      <FormControl><Input placeholder={t('admin.messages.templateSubject')} data-testid="input-template-subject" {...field} value={field.value || ""} /></FormControl>
+                      <FormLabel>{t('messages.templateSubject')}</FormLabel>
+                      <FormControl><Input placeholder={t('messages.templateSubject')} data-testid="input-template-subject" {...field} value={field.value || ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -551,10 +551,10 @@ export default function MessageTemplates() {
                 <FormField control={form.control} name="message" render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {(form.watch("channel") === "email" || form.watch("channel") === "both") ? (isThaiLanguage ? "ข้อความ Plain Text (สำรอง)" : "Plain Text Message (Fallback)") : t('admin.messages.templateMessage')}
+                      {(form.watch("channel") === "email" || form.watch("channel") === "both") ? (isThaiLanguage ? "ข้อความ Plain Text (สำรอง)" : "Plain Text Message (Fallback)") : t('messages.templateMessage')}
                     </FormLabel>
                     <FormControl>
-                      <Textarea placeholder={t('admin.messages.placeholdersDesc')} rows={4} data-testid="input-template-message" {...field} />
+                      <Textarea placeholder={t('messages.placeholdersDesc')} rows={4} data-testid="input-template-message" {...field} />
                     </FormControl>
                     <FormMessage />
                     <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -571,33 +571,33 @@ export default function MessageTemplates() {
                 <FormField control={form.control} name="isDefault" render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-is-default" /></FormControl>
-                    <div className="space-y-1 leading-none"><FormLabel>{t('admin.messages.setDefault')}</FormLabel></div>
+                    <div className="space-y-1 leading-none"><FormLabel>{t('messages.setDefault')}</FormLabel></div>
                   </FormItem>
                 )} />
 
                 <div className="border-t pt-4">
-                  <div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4" /><h4 className="font-semibold">{t('admin.csv.preview')}</h4></div>
+                  <div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4" /><h4 className="font-semibold">{t('customers.preview')}</h4></div>
                   <div className="bg-muted p-4 rounded-lg"><p className="text-sm whitespace-pre-wrap">{getPreviewMessage()}</p></div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
-                    <Input placeholder={t('admin.messages.customerName')} value={previewData.name} onChange={(e) => setPreviewData({ ...previewData, name: e.target.value })} className="text-xs" data-testid="input-preview-name" />
+                    <Input placeholder={t('messages.customerName')} value={previewData.name} onChange={(e) => setPreviewData({ ...previewData, name: e.target.value })} className="text-xs" data-testid="input-preview-name" />
                     <Select value={previewData.tier} onValueChange={(value) => setPreviewData({ ...previewData, tier: value })}>
                       <SelectTrigger className="text-xs" data-testid="select-preview-tier"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bronze">{t('common.tiers.bronze')}</SelectItem>
-                        <SelectItem value="silver">{t('common.tiers.silver')}</SelectItem>
-                        <SelectItem value="gold">{t('common.tiers.gold')}</SelectItem>
+                        <SelectItem value="bronze">{t('customer.tiers.bronze')}</SelectItem>
+                        <SelectItem value="silver">{t('customer.tiers.silver')}</SelectItem>
+                        <SelectItem value="gold">{t('customer.tiers.gold')}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input placeholder={t('admin.messages.customerPoints')} value={previewData.points} onChange={(e) => setPreviewData({ ...previewData, points: e.target.value })} className="text-xs" data-testid="input-preview-points" />
+                    <Input placeholder={t('messages.customerPoints')} value={previewData.points} onChange={(e) => setPreviewData({ ...previewData, points: e.target.value })} className="text-xs" data-testid="input-preview-points" />
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="flex gap-2 px-8 pb-8">
                 <Button type="submit" className="bg-yellow-400 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} data-testid="button-save-template">
-                  {editingTemplate ? t('admin.messages.update') : t('admin.messages.create')}
+                  {editingTemplate ? t('messages.update') : t('messages.create')}
                 </Button>
                 <Button type="button" variant="outline" className="border-blue-900/10 text-blue-900 font-black uppercase text-[10px] tracking-widest rounded-xl" onClick={resetForm} data-testid="button-cancel-template">
-                  {t('admin.messages.cancel')}
+                  {t('messages.cancel')}
                 </Button>
               </CardFooter>
             </form>
@@ -625,7 +625,7 @@ export default function MessageTemplates() {
                       {template.isDefault && (
                         <Badge className="text-xs font-medium bg-amber-400 text-amber-950 border-0 no-default-hover-elevate">
                           <Star className="w-2.5 h-2.5 mr-1 fill-amber-950" />
-                          {t('admin.messages.defaultTemplate')}
+                          {t('messages.defaultTemplate')}
                         </Badge>
                       )}
                     </div>
@@ -640,7 +640,7 @@ export default function MessageTemplates() {
                   <CardContent className="flex-1 px-4 pb-3 pt-1">
                     {template.subject && (
                       <div className="mb-2.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">{t('admin.messages.templateSubject')}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">{t('messages.templateSubject')}</p>
                         <p className="text-xs truncate text-foreground/80">{template.subject}</p>
                       </div>
                     )}
@@ -700,7 +700,7 @@ export default function MessageTemplates() {
               {previewTemplate?.name || (isThaiLanguage ? "ตัวอย่างเทมเพลต" : "Template Preview")}
             </DialogTitle>
             {previewTemplate?.subject && (
-              <DialogDescription className="text-xs">{t('admin.messages.templateSubject')}: {previewTemplate.subject}</DialogDescription>
+              <DialogDescription className="text-xs">{t('messages.templateSubject')}: {previewTemplate.subject}</DialogDescription>
             )}
           </DialogHeader>
           <ScrollArea className="flex-1 mt-2">

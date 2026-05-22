@@ -85,7 +85,7 @@ export default function SettingsPage() {
 
   const handleDownloadFile = (filename: string) => {
     window.location.href = `/api/admin/downloads/${filename}`;
-    toast({ title: t('admin.settings.downloadStarted'), description: t('admin.settings.downloadStartedDesc') });
+    toast({ title: t('settings.downloadStarted'), description: t('settings.downloadStartedDesc') });
   };
 
   return (

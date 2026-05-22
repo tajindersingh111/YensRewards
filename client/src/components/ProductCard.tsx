@@ -27,7 +27,7 @@ export function ProductCard({
   const { t, i18n } = useTranslation();
   
   const categoryTranslation = product.category 
-    ? t(`admin.products.categories.${product.category}`)
+    ? t(`products.categories.${product.category}`)
     : "";
 
   const formatPrice = (price: string | number) => {
@@ -67,7 +67,7 @@ export function ProductCard({
           </button>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <span className="text-muted-foreground text-sm">{t('admin.products.noImage')}</span>
+            <span className="text-muted-foreground text-sm">{t('products.noImage')}</span>
           </div>
         )}
 
@@ -88,7 +88,7 @@ export function ProductCard({
         {product.featured && (
           <div className="absolute top-2 left-2">
             <Badge variant="default" className="bg-yellow-400 text-blue-900 font-black text-xs">
-              {t('admin.products.featured')}
+              {t('products.featured')}
             </Badge>
           </div>
         )}
@@ -97,7 +97,7 @@ export function ProductCard({
         {product.promoFocus && (
           <div className="absolute bottom-2 left-2">
             <Badge variant="default" className="bg-orange-500 text-white text-xs animate-pulse" data-testid={`badge-promo-focus-${product.id}`}>
-              {t('admin.products.promoFocus')}
+              {t('products.promoFocus')}
             </Badge>
           </div>
         )}
@@ -152,7 +152,7 @@ export function ProductCard({
             )}
             {!product.available && (
               <Badge variant="destructive" className="text-xs">
-                {t('admin.products.unavailable')}
+                {t('products.unavailable')}
               </Badge>
             )}
           </div>

@@ -280,11 +280,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      toast({ title: t('admin.toasts.authRequired'), description: t('admin.toasts.authRequiredDesc'), variant: "destructive" });
+      toast({ title: t('toasts.authRequired'), description: t('toasts.authRequiredDesc'), variant: "destructive" });
       setTimeout(() => setLocation("/admin/login"), 500);
     }
     if (!authLoading && isAuthenticated && user?.role !== "admin") {
-      toast({ title: t('admin.toasts.accessDenied'), description: t('admin.toasts.accessDeniedDesc'), variant: "destructive" });
+      toast({ title: t('toasts.accessDenied'), description: t('toasts.accessDeniedDesc'), variant: "destructive" });
       setTimeout(() => setLocation("/"), 500);
     }
   }, [isAuthenticated, authLoading, user, toast, setLocation, t]);
@@ -294,16 +294,16 @@ export default function AdminDashboard() {
       await apiRequest('POST', '/api/admin/promotions', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/promotions'] });
-      toast({ title: t('admin.toasts.promotionSuccess'), description: t('admin.toasts.promotionSent') });
+      toast({ title: t('toasts.promotionSuccess'), description: t('toasts.promotionSent') });
     },
     onError: () => {
-      toast({ title: t('common.error'), description: t('admin.toasts.promotionError'), variant: "destructive" });
+      toast({ title: t('common.error'), description: t('toasts.promotionError'), variant: "destructive" });
     },
   });
 
   const handleSendPromotion = (message: string, tier?: string) => {
     createPromotion.mutate({
-      title: t('admin.toasts.specialPromotion'),
+      title: t('toasts.specialPromotion'),
       targetTier: tier === 'all' ? undefined : tier,
       message,
     });
@@ -402,7 +402,7 @@ export default function AdminDashboard() {
         {activeTab === 'analytics' && <AnalyticsDashboard key="analytics" />}
         {activeTab === 'customers' && (
           <div key="customers">
-            <SectionHeader title={t('admin.customers.title')} subtitle="Your loyal community members" action={<CustomerCSVImport showTrigger={true} />} />
+            <SectionHeader title={t('customers.title')} subtitle="Your loyal community members" action={<CustomerCSVImport showTrigger={true} />} />
             <CustomerTable
               onMessage={(customer) => { setMessagingCustomer(customer as Customer); setIsMessageDialogOpen(true); }}
               onEdit={(customer) => { setEditingCustomer(customer as Customer); setIsEditDialogOpen(true); }}

@@ -470,11 +470,17 @@ export default function SitesManager() {
                     <Calendar className="w-3.5 h-3.5 text-blue-900" />
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {(site.operatingDays || []).map((day) => (
-                      <span key={day} className="text-[9px] font-black text-blue-900 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-wide">
-                        {t(`sites.days.${day}`)}
-                      </span>
-                    ))}
+                    {(() => {
+                      const days = site.operatingDays;
+                      const daysArray = Array.isArray(days) 
+                        ? days 
+                        : (typeof days === 'string' ? (days.startsWith('[') ? JSON.parse(days) : days.split(',').map(d => d.trim())) : []);
+                      return daysArray.map((day: string) => (
+                        <span key={day} className="text-[9px] font-black text-blue-900 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-wide">
+                          {t(`sites.days.${day}`)}
+                        </span>
+                      ));
+                    })()}
                   </div>
                 </div>
                 <div className="flex gap-2 pt-2">

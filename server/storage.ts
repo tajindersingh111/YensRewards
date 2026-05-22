@@ -37,23 +37,18 @@ import {
   type AutomationRun,
   type ShopEvent,
   type InsertShopEvent,
+  type RefreshTokens,
+  type InsertRefreshToken,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents, dailySales } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents, dailySales, refreshTokens } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte, inArray } from "drizzle-orm";
 
 export interface IStorage {
-  // Auth methods (required for Replit Auth)
+  // Auth methods
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   isUserAdmin(id: string): Promise<boolean>;
-  /**
-   * Attempt to migrate a pre-invited user's DB id to match their OIDC sub so
-   * that claims.sub == users.id everywhere in the app.  Returns true if the id
-   * was successfully migrated, false if the old id had FK references (meaning
-   * the user already has data written against the old id).
-   */
-  alignUserOidcId(oldId: string, newId: string): Promise<boolean>;
   
   // User management methods
   getAllUsers(): Promise<User[]>;
@@ -108,13 +103,6 @@ export interface IStorage {
   }): Promise<{ deletedCount: number; deletedIds: string[] }>;
   deleteCustomer(id: string): Promise<void>;
   getDuplicatePhoneNumbers(): Promise<Array<{ phone: string; count: number; customers: Customer[] }>>;
-  /**
-   * Atomically deduct `pointCost` from the customer's balance if and only if
-   * they currently have at least that many points.  Returns the updated
-   * Customer on success or null when the balance is insufficient (or the
-   * customer doesn't exist).  Uses a single conditional UPDATE so concurrent
-   * requests cannot both pass the affordability check.
-   */
   atomicRedeemPoints(customerId: string, pointCost: number): Promise<Customer | null>;
 
   // Transaction methods
@@ -140,7 +128,7 @@ export interface IStorage {
     avgTransaction: number;
     pointsRedeemed: number;
     salesByLocation: Array<{ label: string; value: number }>;
-    recentTransactions: Transaction[];
+    recentTransactions: Transaction[]
   }>;
   
   getWeeklyOverview(): Promise<{
@@ -277,75 +265,17 @@ export interface IStorage {
   createShopEvent(event: InsertShopEvent): Promise<ShopEvent>;
   updateShopEvent(id: number, event: Partial<InsertShopEvent>): Promise<ShopEvent | undefined>;
   deleteShopEvent(id: number): Promise<void>;
+
+  // Refresh Token methods
+  createRefreshToken(data: InsertRefreshToken): Promise<RefreshTokens>;
+  getRefreshToken(token: string): Promise<RefreshTokens | undefined>;
+  deleteRefreshToken(token: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
-  // Auth methods (required for Replit Auth)
+  // Auth methods
   async getUser(id: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
-  }
-
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    // In test mode, if role is provided (e.g., "admin" from is_admin claim), update it
-    // In production, preserve existing role
-    const isTestMode = process.env.REPLIT_DEPLOYMENT === undefined;
-    const shouldUpdateRole = isTestMode && userData.role !== undefined;
-    
-    // First check if a user with this email already exists (only if email is provided)
-    if (userData.email) {
-      const existingUserByEmail = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, userData.email))
-        .limit(1);
-
-      if (existingUserByEmail.length > 0) {
-        // Update existing user by email
-        const updateData: any = {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
-          updatedAt: new Date(),
-        };
-        
-        // In test mode, update role if provided
-        if (shouldUpdateRole) {
-          updateData.role = userData.role;
-        }
-        
-        const result = await db
-          .update(users)
-          .set(updateData)
-          .where(eq(users.email, userData.email))
-          .returning();
-        return result[0];
-      }
-    }
-
-    // Otherwise, do normal upsert by ID
-    const updateData: any = {
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      profileImageUrl: userData.profileImageUrl,
-      updatedAt: new Date(),
-    };
-    
-    // In test mode, update role if provided
-    if (shouldUpdateRole) {
-      updateData.role = userData.role;
-    }
-    
-    const result = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: updateData,
-      })
-      .returning();
     return result[0];
   }
 
@@ -354,19 +284,30 @@ export class DbStorage implements IStorage {
     return user?.role === "admin";
   }
 
-  async alignUserOidcId(oldId: string, newId: string): Promise<boolean> {
-    try {
-      // Try to update the primary key.  If foreign-key constraints prevent it
-      // (the user already has rows referencing the old id) the DB will throw and
-      // we return false so the caller can fall back gracefully.
-      await db
-        .update(users)
-        .set({ id: newId, updatedAt: new Date() })
-        .where(eq(users.id, oldId));
-      return true;
-    } catch {
-      return false;
-    }
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    // This method is now simplified for standard use
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        profileImageUrl: userData.profileImageUrl,
+        role: userData.role || "barista",
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
 
   // User management methods
@@ -382,7 +323,7 @@ export class DbStorage implements IStorage {
   async updateUserRole(id: string, role: string): Promise<User | undefined> {
     const result = await db
       .update(users)
-      .set({ role, updatedAt: new Date() })
+      .set({ role, updatedAt: new Date().toISOString() })
       .where(eq(users.id, id))
       .returning();
     return result[0];
@@ -406,7 +347,7 @@ export class DbStorage implements IStorage {
       }
     }
 
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: any = { updatedAt: new Date().toISOString() };
     
     // Store email in lowercase for consistency
     if (normalizedEmail !== undefined) updateData.email = normalizedEmail;
@@ -424,7 +365,7 @@ export class DbStorage implements IStorage {
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
     const result = await db
       .update(users)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date().toISOString() })
       .where(eq(users.id, id))
       .returning();
     return result[0];
@@ -454,7 +395,7 @@ export class DbStorage implements IStorage {
       .update(users)
       .set({ 
         password: hashedPassword,
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       })
       .where(eq(users.id, userId))
       .returning();
@@ -466,8 +407,8 @@ export class DbStorage implements IStorage {
     if (!user?.password) {
       return false;
     }
-    const bcrypt = await import('bcrypt');
-    return await bcrypt.compare(password, user.password);
+    const bcryptjs = await import('bcryptjs');
+    return await bcryptjs.compare(password, user.password);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -486,7 +427,7 @@ export class DbStorage implements IStorage {
       .set({ 
         twoFactorSecret: secret,
         twoFactorEnabled: true,
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       })
       .where(eq(users.id, userId))
       .returning();
@@ -499,7 +440,7 @@ export class DbStorage implements IStorage {
       .set({ 
         twoFactorSecret: null,
         twoFactorEnabled: false,
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       })
       .where(eq(users.id, userId))
       .returning();
@@ -560,7 +501,7 @@ export class DbStorage implements IStorage {
     const result = await db
       .select()
       .from(customers)
-      .where(sql`${customers.phone} ILIKE ${'%' + sanitized + '%'}`)
+      .where(sql`${customers.phone} LIKE ${'%' + sanitized + '%'}`)
       .orderBy(customers.name)
       .limit(limit);
     
@@ -671,9 +612,9 @@ export class DbStorage implements IStorage {
     if (search && search.trim()) {
       const searchTerm = `%${search.trim()}%`;
       conditions.push(sql`(
-        ${customers.name} ILIKE ${searchTerm} OR 
-        ${customers.phone} ILIKE ${searchTerm} OR 
-        ${customers.email} ILIKE ${searchTerm}
+        ${customers.name} LIKE ${searchTerm} OR 
+        ${customers.phone} LIKE ${searchTerm} OR 
+        ${customers.email} LIKE ${searchTerm}
       )`);
     }
 
@@ -686,8 +627,8 @@ export class DbStorage implements IStorage {
     }
 
     if (joinBefore) {
-      // Add 1 day so "before 2025-05-03" is inclusive of that full day
-      conditions.push(sql`${customers.createdAt} < (${joinBefore}::date + interval '1 day')`);
+      // In SQLite, date(joinBefore, '+1 day') is the way to add intervals
+      conditions.push(sql`${customers.createdAt} < date(${joinBefore}, '+1 day')`);
     }
 
     if (conditions.length > 0) {
@@ -756,9 +697,9 @@ export class DbStorage implements IStorage {
       const searchTerm = `%${filters.searchQuery}%`;
       conditions.push(
         sql`(
-          ${customers.name} ILIKE ${searchTerm} OR 
-          ${customers.phone} ILIKE ${searchTerm} OR 
-          ${customers.email} ILIKE ${searchTerm}
+          ${customers.name} LIKE ${searchTerm} OR 
+          ${customers.phone} LIKE ${searchTerm} OR 
+          ${customers.email} LIKE ${searchTerm}
         )`
       );
     }
@@ -849,7 +790,7 @@ export class DbStorage implements IStorage {
     const duplicatePhones = await db
       .select({
         phone: customers.phone,
-        count: sql<number>`count(*)::int`,
+        count: sql<number>`count(*)`,
       })
       .from(customers)
       .groupBy(customers.phone)
@@ -1008,7 +949,7 @@ export class DbStorage implements IStorage {
       // Update existing
       await db
         .update(customerNotifications)
-        .set({ isRead: true, readAt: new Date() })
+        .set({ isRead: true, readAt: new Date().toISOString() })
         .where(eq(customerNotifications.id, existing[0].id));
     } else {
       // Create new notification marked as read
@@ -1018,7 +959,7 @@ export class DbStorage implements IStorage {
           customerId,
           promotionId,
           isRead: true,
-          readAt: new Date(),
+          readAt: new Date().toISOString(),
         });
     }
   }
@@ -1130,7 +1071,7 @@ export class DbStorage implements IStorage {
     const thisWeekTransactions = await db
       .select()
       .from(transactions)
-      .where(sql`${transactions.createdAt} >= ${startOfThisWeek}`);
+      .where(sql`${transactions.createdAt} >= ${startOfThisWeek.toISOString()}`);
     
     // Get last week's transactions
     const lastWeekTransactions = await db
@@ -1138,8 +1079,8 @@ export class DbStorage implements IStorage {
       .from(transactions)
       .where(
         and(
-          sql`${transactions.createdAt} >= ${startOfLastWeek}`,
-          sql`${transactions.createdAt} < ${endOfLastWeek}`
+          sql`${transactions.createdAt} >= ${startOfLastWeek.toISOString()}`,
+          sql`${transactions.createdAt} < ${endOfLastWeek.toISOString()}`
         )
       );
     
@@ -1171,7 +1112,7 @@ export class DbStorage implements IStorage {
     const newCustomersThisWeek = await db
       .select()
       .from(customers)
-      .where(sql`${customers.createdAt} >= ${startOfThisWeek}`);
+      .where(sql`${customers.createdAt} >= ${startOfThisWeek.toISOString()}`);
     
     // Get unique returning customers this week (had transaction before this week)
     const returningCustomerIds = new Set<string>();
@@ -1182,7 +1123,7 @@ export class DbStorage implements IStorage {
         .where(
           and(
             eq(customers.id, trans.customerId),
-            sql`${customers.createdAt} < ${startOfThisWeek}`
+            sql`${customers.createdAt} < ${startOfThisWeek.toISOString()}`
           )
         )
         .limit(1);
@@ -1288,7 +1229,7 @@ export class DbStorage implements IStorage {
   async updateProduct(id: string, product: Partial<Product>): Promise<Product | undefined> {
     const result = await db
       .update(products)
-      .set({ ...product, updatedAt: new Date() })
+      .set({ ...product, updatedAt: new Date().toISOString() })
       .where(eq(products.id, id))
       .returning();
     
@@ -1359,7 +1300,7 @@ export class DbStorage implements IStorage {
 
     const result = await db
       .update(messageTemplates)
-      .set({ ...template, updatedAt: new Date() })
+      .set({ ...template, updatedAt: new Date().toISOString() })
       .where(eq(messageTemplates.id, id))
       .returning();
     
@@ -1536,7 +1477,7 @@ export class DbStorage implements IStorage {
   async createMessageLog(log: InsertMessageLog): Promise<MessageLog> {
     const result = await db.insert(messageLog).values({
       ...log,
-      sentAt: log.status === 'sent' ? new Date() : null,
+      sentAt: log.status === 'sent' ? new Date().toISOString() : null,
     }).returning();
     return result[0];
   }
@@ -1569,9 +1510,9 @@ export class DbStorage implements IStorage {
     };
     
     if (status === 'sent') {
-      updates.sentAt = new Date();
+      updates.sentAt = new Date().toISOString();
     } else if (status === 'delivered') {
-      updates.deliveredAt = new Date();
+      updates.deliveredAt = new Date().toISOString();
     }
 
     await db
@@ -1581,13 +1522,36 @@ export class DbStorage implements IStorage {
   }
 
   // Site methods
+  // Helper to normalize site data (handling JSON parsing for SQLite strings)
+  private normalizeSite(site: any): Site {
+    if (!site) return site;
+    
+    let days = site.operatingDays;
+    
+    // Attempt to parse if it's a string
+    if (typeof days === 'string') {
+      try {
+        days = JSON.parse(days);
+      } catch (e) {
+        // If not valid JSON, treat as empty array or try to split by comma
+        days = days.includes(',') ? days.split(',').map((s: any) => s.trim()) : (days.trim() ? [days.trim()] : []);
+      }
+    }
+    
+    return {
+      ...site,
+      operatingDays: Array.isArray(days) ? days : []
+    };
+  }
+
   async getAllSites(): Promise<Site[]> {
-    return await db.select().from(sites).orderBy(asc(sites.name));
+    const results = await db.select().from(sites).orderBy(asc(sites.name));
+    return results.map(site => this.normalizeSite(site));
   }
 
   async getSite(id: string): Promise<Site | undefined> {
     const result = await db.select().from(sites).where(eq(sites.id, id));
-    return result[0];
+    return result[0] ? this.normalizeSite(result[0]) : undefined;
   }
 
   async createSite(insertSite: InsertSite): Promise<Site> {
@@ -1595,7 +1559,7 @@ export class DbStorage implements IStorage {
       .insert(sites)
       .values(insertSite)
       .returning();
-    return result[0];
+    return this.normalizeSite(result[0]);
   }
 
   async bulkCreateSites(sitesData: InsertSite[]): Promise<Site[]> {
@@ -1604,7 +1568,7 @@ export class DbStorage implements IStorage {
       const results: Site[] = [];
       for (const siteData of sitesData) {
         const [site] = await tx.insert(sites).values(siteData).returning();
-        results.push(site);
+        results.push(this.normalizeSite(site));
       }
       return results;
     });
@@ -1613,10 +1577,10 @@ export class DbStorage implements IStorage {
   async updateSite(id: string, site: Partial<Site>): Promise<Site | undefined> {
     const result = await db
       .update(sites)
-      .set({ ...site, updatedAt: new Date() })
+      .set({ ...site, updatedAt: new Date().toISOString() })
       .where(eq(sites.id, id))
       .returning();
-    return result[0];
+    return result[0] ? this.normalizeSite(result[0]) : undefined;
   }
 
   async deleteSite(id: string): Promise<void> {
@@ -1669,7 +1633,7 @@ export class DbStorage implements IStorage {
         userId,
         siteId,
         date,
-        clockInTime: new Date(),
+        clockInTime: new Date().toISOString(),
       })
       .returning();
     return result[0];
@@ -1694,8 +1658,8 @@ export class DbStorage implements IStorage {
     const result = await db
       .update(timeEntries)
       .set({
-        clockOutTime: new Date(),
-        updatedAt: new Date(),
+        clockOutTime: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(timeEntries.id, timeEntryId))
       .returning();
@@ -1786,7 +1750,7 @@ export class DbStorage implements IStorage {
   ): Promise<WorkSchedule | undefined> {
     const result = await db
       .update(workSchedules)
-      .set({ ...schedule, updatedAt: new Date() })
+      .set({ ...schedule, updatedAt: new Date().toISOString() })
       .where(eq(workSchedules.id, id))
       .returning();
     return result[0];
@@ -1878,7 +1842,7 @@ export class DbStorage implements IStorage {
       .from(baristaAnnouncements)
       .where(and(
         eq(baristaAnnouncements.isActive, true),
-        sql`(${baristaAnnouncements.expiresAt} IS NULL OR ${baristaAnnouncements.expiresAt} > ${now})`
+        sql`(${baristaAnnouncements.expiresAt} IS NULL OR ${baristaAnnouncements.expiresAt} > ${now.toISOString()})`
       ))
       .orderBy(desc(baristaAnnouncements.priority), desc(baristaAnnouncements.createdAt));
   }
@@ -1914,7 +1878,7 @@ export class DbStorage implements IStorage {
   ): Promise<BaristaAnnouncement | undefined> {
     const result = await db
       .update(baristaAnnouncements)
-      .set({ ...announcement, updatedAt: new Date() })
+      .set({ ...announcement, updatedAt: new Date().toISOString() })
       .where(eq(baristaAnnouncements.id, id))
       .returning();
     return result[0];
@@ -1969,7 +1933,7 @@ export class DbStorage implements IStorage {
   ): Promise<WeeklySpecial | undefined> {
     const result = await db
       .update(weeklySpecials)
-      .set({ ...special, updatedAt: new Date() })
+      .set({ ...special, updatedAt: new Date().toISOString() })
       .where(eq(weeklySpecials.id, id))
       .returning();
     return result[0];
@@ -2029,7 +1993,7 @@ export class DbStorage implements IStorage {
           newCustomerSignups: performance.newCustomerSignups,
           totalPoints: performance.totalPoints,
           weeklyRank: performance.weeklyRank,
-          updatedAt: new Date()
+          updatedAt: new Date().toISOString()
         }
       })
       .returning();
@@ -2081,7 +2045,7 @@ export class DbStorage implements IStorage {
       .where(
         and(
           eq(scheduledMessages.status, 'pending'),
-          lte(scheduledMessages.scheduledFor, now)
+          lte(scheduledMessages.scheduledFor, now.toISOString())
         )
       )
       .orderBy(asc(scheduledMessages.scheduledFor));
@@ -2090,7 +2054,7 @@ export class DbStorage implements IStorage {
   async updateScheduledMessage(id: string, updates: Partial<ScheduledMessage>): Promise<ScheduledMessage | undefined> {
     const result = await db
       .update(scheduledMessages)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date().toISOString() })
       .where(eq(scheduledMessages.id, id))
       .returning();
     return result[0];
@@ -2099,14 +2063,14 @@ export class DbStorage implements IStorage {
   async cancelScheduledMessage(id: string): Promise<ScheduledMessage | undefined> {
     const result = await db
       .update(scheduledMessages)
-      .set({ status: 'cancelled', updatedAt: new Date() })
+      .set({ status: 'cancelled', updatedAt: new Date().toISOString() })
       .where(eq(scheduledMessages.id, id))
       .returning();
     return result[0];
   }
 
   async markScheduledMessageProcessing(id: string): Promise<ScheduledMessage | undefined> {
-    const now = new Date();
+    const now = new Date().toISOString();
     const result = await db
       .update(scheduledMessages)
       .set({ 
@@ -2133,7 +2097,7 @@ export class DbStorage implements IStorage {
         sentCount,
         failedCount,
         errorMessage,
-        updatedAt: new Date() 
+        updatedAt: new Date().toISOString() 
       })
       .where(eq(scheduledMessages.id, id))
       .returning();
@@ -2159,7 +2123,7 @@ export class DbStorage implements IStorage {
   async updateAutomation(id: string, updates: Partial<Automation>): Promise<Automation | undefined> {
     const result = await db
       .update(automations)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date().toISOString() })
       .where(eq(automations.id, id))
       .returning();
     return result[0];
@@ -2172,7 +2136,7 @@ export class DbStorage implements IStorage {
   async toggleAutomation(id: string, isActive: boolean): Promise<Automation | undefined> {
     const result = await db
       .update(automations)
-      .set({ isActive, updatedAt: new Date() })
+      .set({ isActive, updatedAt: new Date().toISOString() })
       .where(eq(automations.id, id))
       .returning();
     return result[0];
@@ -2183,7 +2147,7 @@ export class DbStorage implements IStorage {
     return db
       .select()
       .from(automations)
-      .where(and(eq(automations.isActive, true), lte(automations.nextRunAt, now)));
+      .where(and(eq(automations.isActive, true), lte(automations.nextRunAt, now.toISOString())));
   }
 
   async createAutomationRun(data: { automationId: string; status?: string }): Promise<AutomationRun> {
@@ -2198,7 +2162,7 @@ export class DbStorage implements IStorage {
     const status = failedCount > 0 && sentCount === 0 ? 'failed' : 'completed';
     const result = await db
       .update(automationRuns)
-      .set({ status, sentCount, failedCount, errorMessage, completedAt: new Date() })
+      .set({ status, sentCount, failedCount, errorMessage, completedAt: new Date().toISOString() })
       .where(eq(automationRuns.id, id))
       .returning();
     return result[0];
@@ -2241,6 +2205,21 @@ export class DbStorage implements IStorage {
 
   async deleteShopEvent(id: number): Promise<void> {
     await db.delete(shopEvents).where(eq(shopEvents.id, id));
+  }
+
+  // Refresh Token implementation
+  async createRefreshToken(data: InsertRefreshToken): Promise<RefreshToken> {
+    const result = await db.insert(refreshTokens).values(data).returning();
+    return result[0];
+  }
+
+  async getRefreshToken(token: string): Promise<RefreshToken | undefined> {
+    const result = await db.select().from(refreshTokens).where(eq(refreshTokens.token, token)).limit(1);
+    return result[0];
+  }
+
+  async deleteRefreshToken(token: string): Promise<void> {
+    await db.delete(refreshTokens).where(eq(refreshTokens.token, token));
   }
 }
 

@@ -64,11 +64,11 @@ export function SchedulesManager() {
     mutationFn: async (data: any) => await apiRequest('POST', '/api/admin/work-schedules', data),
     onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/work-schedules'] });
-      toast({ title: response.mode === 'weekly' ? t('admin.schedules.weeklyCreated', { count: response.schedulesCreated }) : t('admin.schedules.created') });
+      toast({ title: response.mode === 'weekly' ? t('schedules.weeklyCreated', { count: response.schedulesCreated }) : t('schedules.created') });
       setIsDialogOpen(false);
       resetForm();
     },
-    onError: () => toast({ title: t('admin.schedules.error'), variant: "destructive" }),
+    onError: () => toast({ title: t('schedules.error'), variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
@@ -76,7 +76,7 @@ export function SchedulesManager() {
       await apiRequest('PATCH', `/api/admin/work-schedules/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/work-schedules'] });
-      toast({ title: t('admin.schedules.updated') });
+      toast({ title: t('schedules.updated') });
       setIsDialogOpen(false);
       resetForm();
     },
@@ -86,7 +86,7 @@ export function SchedulesManager() {
     mutationFn: async (id: string) => await apiRequest('DELETE', `/api/admin/work-schedules/${id}`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/work-schedules'] });
-      toast({ title: t('admin.schedules.deleted') });
+      toast({ title: t('schedules.deleted') });
     },
   });
 
@@ -101,8 +101,8 @@ export function SchedulesManager() {
       updateMutation.mutate({ id: editingSchedule.id, data: formData });
     } else {
       if (scheduleMode === 'weekly') {
-        if (!weeklyFormData.userId || !weeklyFormData.siteId) return toast({ title: t('admin.schedules.validationBaristaAndSite'), variant: 'destructive' });
-        if (weeklyFormData.daysOfWeek.length === 0) return toast({ title: t('admin.schedules.validationSelectDays'), variant: 'destructive' });
+        if (!weeklyFormData.userId || !weeklyFormData.siteId) return toast({ title: t('schedules.validationBaristaAndSite'), variant: 'destructive' });
+        if (weeklyFormData.daysOfWeek.length === 0) return toast({ title: t('schedules.validationSelectDays'), variant: 'destructive' });
         createMutation.mutate({ mode: 'weekly', ...weeklyFormData });
       } else {
         createMutation.mutate({ mode: 'single', ...formData });
@@ -136,8 +136,8 @@ export function SchedulesManager() {
               <Calendar className="h-6 w-6 text-blue-900" />
             </div>
             <div>
-              <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">{t('admin.schedules.title')}</h2>
-              <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-2 opacity-80">{t('admin.schedules.subtitle')}</p>
+              <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">{t('schedules.title')}</h2>
+              <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mt-2 opacity-80">{t('schedules.subtitle')}</p>
             </div>
           </div>
           <Button
@@ -146,7 +146,7 @@ export function SchedulesManager() {
             data-testid="button-add-schedule"
           >
             <Plus className="w-4 h-4 mr-2" />
-            {t('admin.schedules.addSchedule')}
+            {t('schedules.addSchedule')}
           </Button>
         </div>
       </div>
@@ -156,7 +156,7 @@ export function SchedulesManager() {
       ) : schedules.length === 0 ? (
         <Card className="p-20 text-center border-dashed bg-slate-50/50 rounded-[3rem]">
           <Calendar className="w-16 h-16 mx-auto text-slate-200 mb-4" />
-          <p className="text-slate-400 font-black uppercase tracking-widest">{t('admin.schedules.noSchedules')}</p>
+          <p className="text-slate-400 font-black uppercase tracking-widest">{t('schedules.noSchedules')}</p>
         </Card>
       ) : (
         <div className="grid gap-6">
@@ -235,7 +235,7 @@ export function SchedulesManager() {
             <div className="p-8 space-y-8">
               {!editingSchedule && (
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.mode')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.mode')}</Label>
                   <div className="flex gap-3">
                     {(['single', 'weekly'] as const).map((mode) => (
                       <Button
@@ -255,7 +255,7 @@ export function SchedulesManager() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.barista')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.barista')}</Label>
                   <Select
                     value={scheduleMode === 'single' ? formData.userId : weeklyFormData.userId}
                     onValueChange={(v) => scheduleMode === 'single' ? setFormData({ ...formData, userId: v }) : setWeeklyFormData({ ...weeklyFormData, userId: v })}
@@ -269,7 +269,7 @@ export function SchedulesManager() {
                   </Select>
                 </div>
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.site')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.site')}</Label>
                   <Select
                     value={scheduleMode === 'single' ? formData.siteId : weeklyFormData.siteId}
                     onValueChange={(v) => scheduleMode === 'single' ? setFormData({ ...formData, siteId: v }) : setWeeklyFormData({ ...weeklyFormData, siteId: v })}
@@ -286,13 +286,13 @@ export function SchedulesManager() {
 
               {scheduleMode === 'single' ? (
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.date')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.date')}</Label>
                   <Input type="date" value={formData.scheduledDate} onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })} className="h-12 rounded-xl font-bold" data-testid="input-date" />
                 </div>
               ) : (
                 <div className="space-y-8">
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.weekStart')}</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.weekStart')}</Label>
                     <Input
                       type="date"
                       value={weeklyFormData.weekStartDate}
@@ -309,7 +309,7 @@ export function SchedulesManager() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.daysOfWeek')}</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.daysOfWeek')}</Label>
                     <div className="grid grid-cols-7 gap-2">
                       {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
                         <Button
@@ -329,11 +329,11 @@ export function SchedulesManager() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.repeatWeeks')}</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.repeatWeeks')}</Label>
                     <Select value={String(weeklyFormData.repeatWeeks)} onValueChange={(v) => setWeeklyFormData({ ...weeklyFormData, repeatWeeks: Number(v) })}>
                       <SelectTrigger className="h-12 rounded-xl font-bold border-slate-200" data-testid="select-repeat-weeks"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 4, 8, 12].map(num => <SelectItem key={num} value={String(num)} className="font-bold">{t('admin.schedules.weeks', { count: num })}</SelectItem>)}
+                        {[1, 2, 4, 8, 12].map(num => <SelectItem key={num} value={String(num)} className="font-bold">{t('schedules.weeks', { count: num })}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -342,7 +342,7 @@ export function SchedulesManager() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.startTime')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.startTime')}</Label>
                   <Input
                     type="time"
                     value={scheduleMode === 'single' ? formData.startTime : weeklyFormData.startTime}
@@ -352,7 +352,7 @@ export function SchedulesManager() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.endTime')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.endTime')}</Label>
                   <Input
                     type="time"
                     value={scheduleMode === 'single' ? formData.endTime : weeklyFormData.endTime}
@@ -364,7 +364,7 @@ export function SchedulesManager() {
               </div>
 
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('admin.schedules.notes')}</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('schedules.notes')}</Label>
                 <Textarea
                   value={scheduleMode === 'single' ? formData.notes : weeklyFormData.notes}
                   onChange={(e) => scheduleMode === 'single' ? setFormData({ ...formData, notes: e.target.value }) : setWeeklyFormData({ ...weeklyFormData, notes: e.target.value })}
@@ -378,9 +378,9 @@ export function SchedulesManager() {
                 <div className="p-5 bg-blue-900/5 rounded-[1.5rem] border border-blue-900/10 flex items-start gap-4">
                   <Info className="w-5 h-5 text-blue-900 mt-0.5" />
                   <div>
-                    <p className="text-xs font-black text-blue-900 uppercase tracking-tight">{t('admin.schedules.summary')}</p>
+                    <p className="text-xs font-black text-blue-900 uppercase tracking-tight">{t('schedules.summary')}</p>
                     <p className="text-[10px] font-bold text-blue-900/60 uppercase tracking-widest mt-1">
-                      {t('admin.schedules.summaryText', { days: weeklyFormData.daysOfWeek.length, weeks: weeklyFormData.repeatWeeks, total: weeklyFormData.daysOfWeek.length * weeklyFormData.repeatWeeks })}
+                      {t('schedules.summaryText', { days: weeklyFormData.daysOfWeek.length, weeks: weeklyFormData.repeatWeeks, total: weeklyFormData.daysOfWeek.length * weeklyFormData.repeatWeeks })}
                     </p>
                   </div>
                 </div>
