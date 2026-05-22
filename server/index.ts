@@ -882,7 +882,13 @@ app.use((req, res, next) => {
       try {
         log("Production mode: Running database schema sync via drizzle-kit push...");
         const { execSync } = await import("child_process");
-        execSync("npx drizzle-kit push", { stdio: "inherit" });
+        execSync("npx drizzle-kit push", {
+          stdio: "inherit",
+          env: {
+            ...process.env,
+            NODE_TLS_REJECT_UNAUTHORIZED: "0",
+          }
+        });
         log("Database schema sync completed successfully.");
       } catch (err) {
         log("Database schema sync warning: " + (err instanceof Error ? err.message : String(err)));
