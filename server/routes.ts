@@ -133,7 +133,7 @@ async function checkDailyTreasuryCap(customerId: string): Promise<{
     .where(
       and(
         eq(transactionsTable.customerId, customerId),
-        gte(transactionsTable.createdAt, twentyFourHoursAgo),
+        sql`CAST(${transactionsTable.createdAt} AS TIMESTAMPTZ) >= ${twentyFourHoursAgo}::timestamptz`,
         eq(transactionsTable.type, 'purchase'), // only count purchase events; rewards/bonuses/referrals don't consume quota
       )
     );
@@ -1885,7 +1885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pre-process numeric fields to avoid Zod validation errors from string inputs
       const cleanedBody = {
         ...req.body,
-        amount: req.body.amount ? parseFloat(String(req.body.amount)) : 0,
+        amount: req.body.amount ? String(req.body.amount) : "0",
         points: req.body.points ? parseInt(String(req.body.points), 10) : 0,
       };
 
@@ -6420,7 +6420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get weekly leaderboard
   app.get('/api/barista/leaderboard', isAuthenticated, async (req, res) => {
     try {
-      const weekStart = req.query.weekStart as string || getMonday(new Date()).toISOString().split('T')[0];
+      const weekStart = req.query.weekStart as string || getMondayString(new Date());
       const limit = parseInt(req.query.limit as string) || 10;
       const leaderboard = await storage.getWeeklyLeaderboard(weekStart, limit);
       res.json(leaderboard);
@@ -6434,7 +6434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/barista/performance/me', isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any)!.id;
-      const weekStart = req.query.weekStart as string || getMonday(new Date()).toISOString().split('T')[0];
+      const weekStart = req.query.weekStart as string || getMondayString(new Date());
       const performance = await storage.getBaristaPerformance(userId, weekStart);
       res.json(performance || null);
     } catch (error) {
@@ -6644,12 +6644,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Helper function to get Monday of current week
-function getMonday(date: Date): Date {
+// Helper function to get Monday of current week as timezone-safe YYYY-MM-DD
+function getMondayString(date: Date): string {
   const d = new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff));
+  const monday = new Date(d.setDate(diff));
+  
+  const year = monday.getFullYear();
+  const month = String(monday.getMonth() + 1).padStart(2, '0');
+  const dayStr = String(monday.getDate()).padStart(2, '0');
+  return `${year}-${month}-${dayStr}`;
 }
 
 // Helper function to update barista performance after transaction
@@ -6660,7 +6665,7 @@ async function updateBaristaPerformanceAfterTransaction(
   isNewCustomerSignup: boolean,
   weeklySpecialBonusPoints: number = 0
 ) {
-  const weekStart = getMonday(new Date()).toISOString().split('T')[0];
+  const weekStart = getMondayString(new Date());
   
   // Get existing performance for this week
   const existing = await storage.getBaristaPerformance(baristaId, weekStart);

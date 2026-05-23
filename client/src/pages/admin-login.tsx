@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, KeyRound } from "lucide-react";
 import logoUrl from "@assets/yens logo_1760702216221.png";
 
@@ -58,6 +58,9 @@ export default function AdminLogin() {
           });
           return;
         }
+
+        // Invalidate auth user cache to propagate changes instantly
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
 
         toast({
           title: "Login Successful",

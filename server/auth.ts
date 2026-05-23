@@ -160,6 +160,31 @@ export function setupAuth(app: Express) {
       res.json({ success: true });
     });
   });
+
+  app.get("/api/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+      }
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error("Session destroy error:", destroyErr);
+        }
+        res.clearCookie("connect.sid");
+        
+        const referer = req.get("referer") || "";
+        if (referer.includes("/admin")) {
+          res.redirect("/admin/login");
+        } else if (referer.includes("/barista")) {
+          res.redirect("/barista");
+        } else if (referer.includes("/customer")) {
+          res.redirect("/customer");
+        } else {
+          res.redirect("/");
+        }
+      });
+    });
+  });
 }
 
 // Helper functions

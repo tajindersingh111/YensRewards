@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoUpdate } from "@/hooks/use-auto-update";
@@ -100,6 +101,9 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
           return;
         }
         
+        // Invalidate auth user cache to propagate changes instantly
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+
         toast({
           title: t('common.success'),
           description: t('common.loginSuccess'),
@@ -412,7 +416,7 @@ function ProductMenuSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
 function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Auto-update detection
   useAutoUpdate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [, setLocationPath] = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("search");
@@ -421,6 +425,22 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [amount, setAmount] = useState("");
   const [location, setLocation] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [includedSpecialOffer, setIncludedSpecialOffer] = useState(false);
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+
+  const isCustomerNew = (customer: Customer) => {
+    if (!customer.createdAt) return false;
+    try {
+      const createdDate = new Date(customer.createdAt);
+      const today = new Date();
+      return (
+        createdDate.toDateString() === today.toDateString() ||
+        (today.getTime() - createdDate.getTime()) < 24 * 60 * 60 * 1000
+      );
+    } catch (e) {
+      return false;
+    }
+  };
   
   // Quick Register state
   const [quickRegisterOpen, setQuickRegisterOpen] = useState(false);
@@ -532,13 +552,27 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
 
   // Create transaction mutation
   const createTransaction = useMutation({
-    mutationFn: async (data: { customerId: string; amount: string; points: number; location: string; type: string }) => {
+    mutationFn: async (data: { 
+      customerId: string; 
+      amount: string; 
+      points: number; 
+      location: string; 
+      type: string;
+      includedSpecialOffer?: boolean;
+      isNewCustomer?: boolean;
+    }) => {
       return await apiRequest('POST', '/api/transactions', data);
     },
     onSuccess: () => {
       if (selectedCustomer) {
         queryClient.invalidateQueries({ queryKey: ['/api/customers', selectedCustomer.id] });
       }
+      // Invalidate performance stats so dashboard and leaderboards refresh immediately
+      queryClient.invalidateQueries({ queryKey: ['/api/barista/performance/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/barista/leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/barista/performance/history'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/barista-performance/summary'] });
+
       setStep("success");
       toast({
         title: t('barista.transactionSuccess'),
@@ -647,7 +681,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       }
       
       // Auto-select the customer (whether new or existing)
-      handleSelectCustomer(customerData);
+      handleSelectCustomer(customerData, !customerData.isExisting);
     },
     onError: (error: any) => {
       toast({
@@ -674,7 +708,7 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
     });
   };
 
-  const handleSelectCustomer = (customer: Customer) => {
+  const handleSelectCustomer = (customer: Customer, isNewOverride?: boolean) => {
     // Block if cannot transact
     if (!canTransact) {
       toast({
@@ -685,6 +719,9 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       return;
     }
     setSelectedCustomer(customer);
+    setIncludedSpecialOffer(false);
+    const isNew = isNewOverride ?? isCustomerNew(customer);
+    setIsNewCustomer(isNew);
     setStep("verify");
   };
 
@@ -759,6 +796,8 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
       points,
       location,
       type: "purchase",
+      includedSpecialOffer,
+      isNewCustomer,
     });
   };
 
@@ -767,6 +806,8 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
     setSelectedCustomer(null);
     setAmount("");
     setSearchQuery("");
+    setIncludedSpecialOffer(false);
+    setIsNewCustomer(false);
   };
 
   const handleCancel = () => {
@@ -1563,6 +1604,53 @@ function BaristaApp({ user, onLogout }: { user: User; onLogout: () => void }) {
                   </p>
                 </div>
 
+                {/* Performance & Promotion Toggles */}
+                <div className="space-y-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
+                    {i18n.language === 'th' ? "ติดตามผลงานบาริสต้า" : "Barista Performance Tracker"}
+                  </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5 pr-2">
+                      <Label htmlFor="new-customer-toggle" className="text-xs font-bold text-blue-900 uppercase">
+                        {i18n.language === 'th' ? "ลงทะเบียนลูกค้าใหม่" : "New Customer Signup"}
+                      </Label>
+                      <p className="text-[10px] text-slate-400 leading-tight">
+                        {i18n.language === 'th' 
+                          ? "โบนัสผู้แนะนำ +2 คะแนนผลงาน" 
+                          : "Barista receives +2 performance points"}
+                      </p>
+                    </div>
+                    <Switch
+                      id="new-customer-toggle"
+                      checked={isNewCustomer}
+                      onCheckedChange={setIsNewCustomer}
+                      data-testid="toggle-new-customer"
+                    />
+                  </div>
+
+                  {weeklySpecial && (
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                      <div className="space-y-0.5 pr-2">
+                        <Label htmlFor="special-offer-toggle" className="text-xs font-bold text-blue-900 uppercase">
+                          {i18n.language === 'th' ? `ขาย${t('barista.weeklySpecial')}` : `${t('barista.weeklySpecial')} Sold`}
+                        </Label>
+                        <p className="text-[10px] text-yellow-600 font-medium leading-tight">
+                          {i18n.language === 'th'
+                            ? `โบนัสพิเศษ +${weeklySpecial.bonusPoints} คะแนนผลงาน`
+                            : `Barista receives +${weeklySpecial.bonusPoints} performance points`}
+                        </p>
+                      </div>
+                      <Switch
+                        id="special-offer-toggle"
+                        checked={includedSpecialOffer}
+                        onCheckedChange={setIncludedSpecialOffer}
+                        data-testid="toggle-special-offer"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 {/* Control Cluster */}
                 <div className="space-y-3 pt-4">
                   <Button
@@ -1746,7 +1834,7 @@ export default function BaristaAppWithAuth() {
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
 
   const handleLogout = () => {
-    setLoggedInUser(null);
+    window.location.href = "/api/logout";
   };
 
   if (!loggedInUser) {
