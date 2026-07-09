@@ -14,6 +14,7 @@ export interface Env {
   TWILIO_ACCOUNT_SID?: string;
   TWILIO_API_KEY?: string;
   TWILIO_API_KEY_SECRET?: string;
+  TWILIO_AUTH_TOKEN?: string;
   TWILIO_PHONE_NUMBER?: string;
   TWILIO_MESSAGING_SERVICE_SID?: string;
 }
@@ -80,11 +81,12 @@ export function auditEnv(): Env {
   const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
   const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
   const TWILIO_API_KEY_SECRET = process.env.TWILIO_API_KEY_SECRET;
+  const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
   const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
   const TWILIO_MESSAGING_SERVICE_SID = process.env.TWILIO_MESSAGING_SERVICE_SID;
 
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_API_KEY || !TWILIO_API_KEY_SECRET) {
-    log("Notice: Twilio API credentials (TWILIO_ACCOUNT_SID, TWILIO_API_KEY, etc.) are incomplete. Twilio fallback notifications will be disabled.");
+  if (!TWILIO_ACCOUNT_SID || (!TWILIO_AUTH_TOKEN && (!TWILIO_API_KEY || !TWILIO_API_KEY_SECRET))) {
+    log("Notice: Twilio API credentials (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN or TWILIO_API_KEY/SECRET) are incomplete. Twilio fallback notifications will be disabled.");
   }
 
   log(`Environment successfully validated in [${NODE_ENV}] mode.`);
@@ -103,6 +105,7 @@ export function auditEnv(): Env {
     TWILIO_ACCOUNT_SID,
     TWILIO_API_KEY,
     TWILIO_API_KEY_SECRET,
+    TWILIO_AUTH_TOKEN,
     TWILIO_PHONE_NUMBER,
     TWILIO_MESSAGING_SERVICE_SID,
   };

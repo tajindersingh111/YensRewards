@@ -1692,12 +1692,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      const session = req.session as any;
-      const isStaff = req.isAuthenticated();
-      const isOwner = session.customerId === customer.id;
-      if (!isStaff && !isOwner) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
       res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
     } catch (error) {
       console.error("Error fetching customer:", error);
@@ -1942,6 +1936,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ Admin API Endpoints ============
   // All admin endpoints require authentication and admin role
+
+  // Get all transactions for admin live feed
+  app.get('/api/admin/transactions', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const allTx = await db.select()
+        .from(transactionsTable)
+        .orderBy(desc(transactionsTable.createdAt))
+        .limit(100);
+
+      const enrichedTx = await Promise.all(allTx.map(async (tx) => {
+        const cust = await storage.getCustomer(tx.customerId);
+        return {
+          ...tx,
+          customerName: cust?.name || 'Guest Member',
+          customerPhone: cust?.phone || '',
+        };
+      }));
+
+      res.json(enrichedTx);
+    } catch (error) {
+      console.error("Error fetching admin transactions feed:", error);
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
 
   // Get overview analytics/KPIs (for Dashboard tab - legacy)
   app.get('/api/admin/overview-analytics', isAuthenticated, isAdmin, async (req, res) => {

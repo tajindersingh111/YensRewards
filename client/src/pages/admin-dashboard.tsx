@@ -75,6 +75,10 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
   const { data: metrics } = useQuery<any>({ queryKey: ['/api/admin/sales-tracker-metrics'] });
   const { data: customers = [] } = useQuery<any[]>({ queryKey: ['/api/admin/customers'] });
   const { data: salesData = [] } = useQuery<any[]>({ queryKey: ['/api/admin/sales-overview'] });
+  const { data: liveTransactions = [] } = useQuery<any[]>({
+    queryKey: ['/api/admin/transactions'],
+    refetchInterval: 3000, // Poll every 3 seconds for real-time live feed!
+  });
 
   const fmt = (n: number) => `฿${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
@@ -193,27 +197,33 @@ function AdminOverview({ onNavigate }: { onNavigate: (section: string, tab: stri
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* RECENT ACTIVITY LEDGER */}
         <div className="space-y-4">
-          <SectionHeader title="Recent Ledger" subtitle="Live Transaction Feed" />
+          <SectionHeader title="Recent Ledger" subtitle="Real-time POS Transaction Feed" />
           <Card className="border-none shadow-xl rounded-[2rem] bg-white overflow-hidden">
             <CardContent className="p-0">
-              {recentSales.length === 0 ? (
+              {liveTransactions.length === 0 ? (
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest p-6 text-center">No recent transactions</p>
-              ) : recentSales.map((sale: any, idx: number) => (
-                <div key={sale.id || idx} className="flex items-center justify-between p-5 transition-all border-b border-slate-50 last:border-0">
+              ) : liveTransactions.slice(0, 5).map((tx: any, idx: number) => (
+                <div key={tx.id || idx} className="flex items-center justify-between p-5 transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-900/5 flex items-center justify-center text-blue-900 font-black text-xs shrink-0">
-                      {(sale.salesChannel || sale.channel || 'G').charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 rounded-xl bg-blue-950/5 flex items-center justify-center text-blue-900 font-black text-xs shrink-0">
+                      {(tx.customerName || 'G').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-black text-blue-900 uppercase truncate">{sale.salesChannel || sale.channel || 'Guest'}</p>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase">
-                        {sale.date ? format(new Date(sale.date), "MMM dd, yyyy") : ''}
+                      <p className="text-xs font-black text-blue-900 uppercase truncate">{tx.customerName || 'Guest'}</p>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">
+                        {tx.location || 'Main Counter'} • {tx.createdAt ? format(new Date(tx.createdAt), "MMM dd, hh:mm a") : ''}
                       </p>
                     </div>
                   </div>
                   <div className="text-right shrink-0 ml-3">
-                    <p className="text-sm font-black text-blue-900">฿{Number(sale.netSales || sale.totalSales || sale.total || 0).toLocaleString()}</p>
-                    <p className="text-[9px] font-black text-yellow-600 uppercase">{sale.salesChannel || 'Channel'}</p>
+                    <p className="text-sm font-black text-blue-900">฿{Number(tx.amount || 0).toLocaleString()}</p>
+                    <Badge className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 mt-1 border-none rounded ${
+                      tx.points >= 0 
+                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-50' 
+                        : 'bg-rose-50 text-rose-700 hover:bg-rose-50'
+                    }`}>
+                      {tx.points >= 0 ? `+${tx.points}` : `${tx.points}`} pts
+                    </Badge>
                   </div>
                 </div>
               ))}

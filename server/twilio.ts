@@ -6,8 +6,16 @@ export function isTwilioConfigured(): boolean {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const key = process.env.TWILIO_API_KEY;
   const secret = process.env.TWILIO_API_KEY_SECRET;
+  const token = process.env.TWILIO_AUTH_TOKEN;
   
-  if (!sid || !key || !secret) return false;
+  if (!sid) return false;
+  
+  // If we have Auth Token, that is sufficient
+  if (token && !token.includes('YOUR_TWILIO_AUTH_TOKEN')) {
+    return true;
+  }
+  
+  if (!key || !secret) return false;
   if (
     sid.includes('YOUR_TWILIO_ACCOUNT_SID') || 
     key.includes('YOUR_TWILIO_API_KEY') || 
@@ -22,6 +30,7 @@ async function getCredentials() {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const apiKey = process.env.TWILIO_API_KEY;
   const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
   const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
   if (!isTwilioConfigured()) {
@@ -30,14 +39,20 @@ async function getCredentials() {
 
   return {
     accountSid: accountSid!,
-    apiKey: apiKey!,
-    apiKeySecret: apiKeySecret!,
+    apiKey: apiKey || '',
+    apiKeySecret: apiKeySecret || '',
+    authToken: authToken || '',
     phoneNumber: phoneNumber || ''
   };
 }
 
 export async function getTwilioClient() {
-  const { accountSid, apiKey, apiKeySecret } = await getCredentials();
+  const { accountSid, apiKey, apiKeySecret, authToken } = await getCredentials();
+  if (authToken) {
+    console.log("Initializing Twilio client using Account SID + Auth Token");
+    return twilio(accountSid, authToken);
+  }
+  console.log("Initializing Twilio client using API Key + API Secret");
   return twilio(apiKey, apiKeySecret, {
     accountSid: accountSid
   });
