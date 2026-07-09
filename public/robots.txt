@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /admin
+Disallow: /admin-dashboard
+Disallow: /admin-old
+Disallow: /admin/*
+Disallow: /barista
+Disallow: /barista/*
+Disallow: /api/*
+
+Sitemap: https://yensthai.com/sitemap.xml

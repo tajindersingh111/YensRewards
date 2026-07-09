@@ -10,6 +10,7 @@ import {
   getObjectAclPolicy,
   setObjectAclPolicy,
 } from "./objectAcl";
+import { env } from "./env";
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
@@ -458,7 +459,7 @@ async function signObjectURL({
   // If not on Replit, return a local mock URL to prevent ECONNREFUSED
   const isGcsConfigured = !!(process.env.GCS_KEY_FILE || (process.env.GCS_PROJECT_ID && process.env.GCS_CLIENT_EMAIL && process.env.GCS_PRIVATE_KEY));
   if (!isGcsConfigured && !process.env.REPLIT_ID) {
-    return `http://localhost:5000/local-object-storage/${bucketName}/${objectName}`;
+    return `${env.PUBLIC_URL}/local-object-storage/${bucketName}/${objectName}`;
   }
 
   const request = {

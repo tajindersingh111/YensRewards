@@ -3,9 +3,53 @@ import { sendHtmlEmail } from "./resend";
 import { sendSMS } from "./twilio";
 import { sendLineMessage } from "./line";
 import { runDailyBackup } from "./backup";
+import { db } from "./db";
+import { messageLog, automations } from "@shared/schema";
+import { and, eq, gte } from "drizzle-orm";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
 let isProcessing = false;
+
+export function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
+
+export function parseBirthday(birthdayStr: any): { month: number; day: number } | null {
+  if (!birthdayStr) return null;
+  try {
+    const cleanStr = String(birthdayStr).trim();
+    const parts = cleanStr.split(/[-/]/);
+    if (parts.length === 3) {
+      let month = NaN;
+      let day = NaN;
+      if (parts[0].length === 4) {
+        month = parseInt(parts[1], 10);
+        day = parseInt(parts[2], 10);
+      } else {
+        const p0 = parseInt(parts[0], 10);
+        const p1 = parseInt(parts[1], 10);
+        if (p1 > 12 && p0 <= 12) {
+          month = p0;
+          day = p1;
+        } else {
+          month = p1;
+          day = p0;
+        }
+      }
+      if (isNaN(month) || isNaN(day)) return null;
+      return { month, day };
+    } else if (parts.length === 2) {
+      const p0 = parseInt(parts[0], 10);
+      const p1 = parseInt(parts[1], 10);
+      if (isNaN(p0) || isNaN(p1)) return null;
+      if (p0 > 12) return { month: p1, day: p0 };
+      return { month: p0, day: p1 };
+    }
+  } catch (err) {
+    console.error("Error parsing birthday string:", birthdayStr, err);
+  }
+  return null;
+}
 
 async function processScheduledMessage(message: any) {
   console.log(`⏰ Processing scheduled message ${message.id}`);
@@ -31,44 +75,32 @@ async function processScheduledMessage(message: any) {
       );
       targetCustomers = targetCustomers.filter(c => c !== undefined);
     } else if (message.recipientType === 'birthday_today' || message.recipientType === 'birthday_week') {
-      const today = new Date();
-      const todayMonth = today.getMonth() + 1;
-      const todayDay = today.getDate();
-      const dayOfWeek = today.getDay();
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - dayOfWeek);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
+      const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+      const today = new Date(Date.now() + BANGKOK_OFFSET_MS);
+      const todayMonth = today.getUTCMonth() + 1;
+      const todayDay = today.getUTCDate();
+      const dayOfWeek = today.getUTCDay();
+      
+      const weekStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - dayOfWeek, 0, 0, 0));
+      const weekEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - dayOfWeek + 6, 23, 59, 59));
 
       targetCustomers = allCustomers.filter(customer => {
         if (!customer.birthday) return false;
         try {
-          let birthMonth = 0, birthDay = 0;
-          const birthdayStr = customer.birthday.toString().trim();
-          
-          if (birthdayStr.includes('-')) {
-            const parts = birthdayStr.split('-');
-            if (parts.length === 2) {
-              birthMonth = parseInt(parts[0], 10);
-              birthDay = parseInt(parts[1], 10);
-            } else if (parts.length === 3) {
-              birthMonth = parseInt(parts[1], 10);
-              birthDay = parseInt(parts[2], 10);
-            }
-          } else if (birthdayStr.includes('/')) {
-            const parts = birthdayStr.split('/');
-            if (parts.length >= 2) {
-              birthMonth = parseInt(parts[0], 10);
-              birthDay = parseInt(parts[1], 10);
-            }
-          }
-
-          if (!birthMonth || !birthDay) return false;
+          const birthdayParsed = parseBirthday(customer.birthday);
+          if (!birthdayParsed) return false;
+          const { month: birthMonth, day: birthDay } = birthdayParsed;
 
           if (message.recipientType === 'birthday_today') {
+            const isFeb29Birth = birthMonth === 2 && birthDay === 29;
+            const isFeb28Today = todayMonth === 2 && todayDay === 28;
+            const isNonLeapYear = !isLeapYear(today.getUTCFullYear());
+            if (isFeb29Birth && isFeb28Today && isNonLeapYear) {
+              return true;
+            }
             return birthMonth === todayMonth && birthDay === todayDay;
           } else {
-            const thisYearBirthday = new Date(today.getFullYear(), birthMonth - 1, birthDay);
+            const thisYearBirthday = new Date(Date.UTC(today.getUTCFullYear(), birthMonth - 1, birthDay));
             return thisYearBirthday >= weekStart && thisYearBirthday <= weekEnd;
           }
         } catch {
@@ -81,10 +113,40 @@ async function processScheduledMessage(message: any) {
     let failedCount = 0;
     const errors: string[] = [];
 
-    for (const customer of targetCustomers) {
+    // Start of day in Bangkok time (UTC+7)
+    const BANGKOK_OFFSET = 7 * 60 * 60 * 1000;
+    const bToday = new Date(Date.now() + BANGKOK_OFFSET);
+    bToday.setUTCHours(0, 0, 0, 0);
+    const todayStartUTC = new Date(bToday.getTime() - BANGKOK_OFFSET).toISOString();
+
+    for (let idx = 0; idx < targetCustomers.length; idx++) {
+      const customer = targetCustomers[idx];
       if (!customer) continue;
 
+      // Rate limit delay between sends (e.g. 250ms) to avoid overloading providers
+      if (idx > 0) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+
       try {
+        // Idempotency/Duplicate check: Has this customer already received this message today?
+        const alreadySent = await db
+          .select()
+          .from(messageLog)
+          .where(
+            and(
+              eq(messageLog.customerId, customer.id),
+              message.templateId ? eq(messageLog.templateId, message.templateId) : eq(messageLog.subject, message.subject || ''),
+              gte(messageLog.createdAt, todayStartUTC)
+            )
+          )
+          .limit(1);
+
+        if (alreadySent.length > 0) {
+          console.log(`[Scheduler] Skipping duplicate scheduled message to customer ${customer.id} (already sent today)`);
+          continue;
+        }
+
         if (message.channel === 'email') {
           if (!customer.email) {
             failedCount++;
@@ -169,7 +231,7 @@ async function processScheduledMessage(message: any) {
           }
         }
       } catch (error) {
-        console.error(`Error sending to customer ${customer.id}:`, error);
+        console.error(`Error sending scheduled message to customer ${customer.id}:`, error);
         failedCount++;
         errors.push(error instanceof Error ? error.message : 'Unknown error');
       }
@@ -294,22 +356,23 @@ async function filterCustomers(customerFilter: string): Promise<any[]> {
   }
 
   if (customerFilter === 'birthday_today') {
-    const now = new Date();
-    const todayMonth = now.getMonth() + 1;
-    const todayDay = now.getDate();
+    const BANGKOK_OFFSET = 7 * 60 * 60 * 1000;
+    const now = new Date(Date.now() + BANGKOK_OFFSET);
+    const todayMonth = now.getUTCMonth() + 1;
+    const todayDay = now.getUTCDate();
     return all.filter(c => {
       if (!c.birthday) return false;
-      const str = String(c.birthday).trim();
-      let bm = 0, bd = 0;
-      if (str.includes('-')) {
-        const p = str.split('-');
-        if (p.length === 2) { bm = +p[0]; bd = +p[1]; }
-        else if (p.length === 3) { bm = +p[1]; bd = +p[2]; }
-      } else if (str.includes('/')) {
-        const p = str.split('/');
-        if (p.length >= 2) { bm = +p[0]; bd = +p[1]; }
+      const birthdayParsed = parseBirthday(c.birthday);
+      if (!birthdayParsed) return false;
+      const { month: birthMonth, day: birthDay } = birthdayParsed;
+
+      const isFeb29Birth = birthMonth === 2 && birthDay === 29;
+      const isFeb28Today = todayMonth === 2 && todayDay === 28;
+      const isNonLeapYear = !isLeapYear(now.getUTCFullYear());
+      if (isFeb29Birth && isFeb28Today && isNonLeapYear) {
+        return true;
       }
-      return bm === todayMonth && bd === todayDay;
+      return birthMonth === todayMonth && birthDay === todayDay;
     });
   }
 
@@ -326,6 +389,32 @@ async function filterCustomers(customerFilter: string): Promise<any[]> {
 }
 
 export async function processAutomation(automation: any) {
+  // 1. Calculate the next run time
+  const nextRunAt = calculateNextRunAt(automation.triggerType, automation.triggerConfig);
+  const isOneTime = automation.triggerType === 'one_time';
+
+  // 2. Perform an atomic update to lock/advance this automation immediately
+  const updated = await db
+    .update(automations)
+    .set({
+      lastRunAt: new Date().toISOString(),
+      nextRunAt: isOneTime ? null : (nextRunAt ? nextRunAt.toISOString() : null),
+      runCount: (automation.runCount ?? 0) + 1,
+      isActive: isOneTime ? false : automation.isActive,
+    })
+    .where(
+      and(
+        eq(automations.id, automation.id),
+        eq(automations.nextRunAt, automation.nextRunAt)
+      )
+    )
+    .returning();
+
+  if (updated.length === 0) {
+    console.log(`[Scheduler] Automation "${automation.name}" already claimed by another worker.`);
+    return;
+  }
+
   console.log(`🤖 Processing automation "${automation.name}" (${automation.id})`);
   const run = await storage.createAutomationRun({ automationId: automation.id });
 
@@ -335,8 +424,21 @@ export async function processAutomation(automation: any) {
     let failedCount = 0;
     const errors: string[] = [];
 
-    for (const customer of customers) {
+    // Start of day in Bangkok time (UTC+7)
+    const BANGKOK_OFFSET = 7 * 60 * 60 * 1000;
+    const bToday = new Date(Date.now() + BANGKOK_OFFSET);
+    bToday.setUTCHours(0, 0, 0, 0);
+    const todayStartUTC = new Date(bToday.getTime() - BANGKOK_OFFSET).toISOString();
+
+    for (let idx = 0; idx < customers.length; idx++) {
+      const customer = customers[idx];
       if (!customer) continue;
+
+      // Spacing delay (250ms) to avoid rate limit bans
+      if (idx > 0) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+
       try {
         // Personalise message — support both {{name}} and {name} placeholder formats
         const personalise = (text: string) => text
@@ -355,6 +457,24 @@ export async function processAutomation(automation: any) {
 
         const msg: string = personalise(automation.message);
         const subj: string = personalise(automation.subject || 'Message from Yens');
+
+        // Idempotency/Duplicate check: Has this customer already received this template/subject today?
+        const alreadySent = await db
+          .select()
+          .from(messageLog)
+          .where(
+            and(
+              eq(messageLog.customerId, customer.id),
+              automation.templateId ? eq(messageLog.templateId, automation.templateId) : eq(messageLog.subject, subj),
+              gte(messageLog.createdAt, todayStartUTC)
+            )
+          )
+          .limit(1);
+
+        if (alreadySent.length > 0) {
+          console.log(`[Scheduler] Skipping duplicate automation message to customer ${customer.id} (already sent today)`);
+          continue;
+        }
 
         if (automation.channel === 'email') {
           if (!customer.email) { failedCount++; continue; }
@@ -417,25 +537,13 @@ export async function processAutomation(automation: any) {
           sentCount++;
         }
       } catch (err) {
+        console.error(`Error sending automation message to customer ${customer.id}:`, err);
         failedCount++;
         errors.push(err instanceof Error ? err.message : 'Unknown error');
       }
     }
 
     await storage.completeAutomationRun(run.id, sentCount, failedCount, errors.slice(0, 5).join('; ') || undefined);
-
-    // Compute next run and update automation
-    const nextRunAt = calculateNextRunAt(automation.triggerType, automation.triggerConfig);
-    const isOneTime = automation.triggerType === 'one_time';
-
-    await storage.updateAutomation(automation.id, {
-      lastRunAt: new Date().toISOString(),
-      nextRunAt: isOneTime ? null : (nextRunAt ? nextRunAt.toISOString() : null),
-      runCount: (automation.runCount ?? 0) + 1,
-      // Disable one-time automations after firing
-      isActive: isOneTime ? false : automation.isActive,
-    });
-
     console.log(`✅ Automation "${automation.name}" done: ${sentCount} sent, ${failedCount} failed`);
   } catch (error) {
     console.error(`❌ Automation "${automation.name}" failed:`, error);
@@ -498,20 +606,35 @@ export async function triggerBackupNow(): Promise<{ success: boolean; message: s
 
 export function startScheduler() {
   if (schedulerInterval) {
-    console.log('Scheduler already running');
+    console.log('[Scheduler] Message scheduler is already running.');
     return;
   }
 
-  console.log('⏰ Starting message scheduler (checks every 60 seconds)');
+  console.log('[Scheduler] Starting message scheduler service (interval: 60s)');
   
-  checkScheduledMessages();
-  checkAutomations();
-  checkDailyBackup();
+  // Initial runs wrapped safely
+  try { checkScheduledMessages(); } catch (err) { console.error('[Scheduler] Initial checkScheduledMessages error:', err); }
+  try { checkAutomations(); } catch (err) { console.error('[Scheduler] Initial checkAutomations error:', err); }
+  try { checkDailyBackup(); } catch (err) { console.error('[Scheduler] Initial checkDailyBackup error:', err); }
   
   schedulerInterval = setInterval(async () => {
-    await checkScheduledMessages();
-    await checkAutomations();
-    await checkDailyBackup();
+    try {
+      await checkScheduledMessages();
+    } catch (err) {
+      console.error('[Scheduler] Error in checkScheduledMessages task:', err);
+    }
+    
+    try {
+      await checkAutomations();
+    } catch (err) {
+      console.error('[Scheduler] Error in checkAutomations task:', err);
+    }
+    
+    try {
+      await checkDailyBackup();
+    } catch (err) {
+      console.error('[Scheduler] Error in checkDailyBackup task:', err);
+    }
   }, 60 * 1000);
 }
 
@@ -519,6 +642,6 @@ export function stopScheduler() {
   if (schedulerInterval) {
     clearInterval(schedulerInterval);
     schedulerInterval = null;
-    console.log('⏰ Message scheduler stopped');
+    console.log('[Scheduler] Message scheduler service stopped.');
   }
 }

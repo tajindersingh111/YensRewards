@@ -67,16 +67,12 @@ export function setupAuth(app: Express) {
     passwordField: 'password',
   }, async (email, password, done) => {
     try {
-      console.log(`Auth debug: Attempting login for ${email}`);
       const user = await storage.getUserByEmail(email);
       if (!user || !user.password) {
-        console.log(`Auth debug: User not found or has no password for ${email}`);
         return done(null, false, { message: "Invalid email or password" });
       }
       
-      console.log(`Auth debug: Found user ${user.email}, comparing password...`);
       const isMatch = await bcrypt.compare(password, user.password);
-      console.log(`Auth debug: Password match for ${email}: ${isMatch} (Provided length: ${password.length})`);
       if (!isMatch) {
         return done(null, false, { message: "Invalid email or password" });
       }
@@ -105,59 +101,57 @@ export function setupAuth(app: Express) {
   });
 
   // Auth Routes
-  app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", async (err: any, user: User, info: any) => {
-      if (err) return next(err);
-      if (!user) return res.status(401).json({ message: info?.message || "Login failed" });
-
-      req.logIn(user, async (loginErr) => {
-        if (loginErr) return next(loginErr);
-
-        const tokens = await generateTokens(user.id);
-        res.json({
-          success: true,
-          user: sanitizeUser(user),
-          ...tokens
-        });
-      });
-    })(req, res, next);
-  });
 
   app.post("/api/auth/refresh", async (req, res) => {
     const { refreshToken } = req.body;
-    if (!refreshToken) return res.status(401).json({ message: "Refresh token required" });
+    if (!refreshToken) {
+      return res.status(400).json({ message: "Refresh token is required", code: "REFRESH_TOKEN_MISSING" });
+    }
 
     try {
-      const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as { userId: string };
+      const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as { userId: string; app_id?: string };
       const storedToken = await storage.getRefreshToken(refreshToken);
       
       if (!storedToken || new Date(storedToken.expiresAt) < new Date()) {
-        if (storedToken) await storage.deleteRefreshToken(refreshToken);
-        return res.status(401).json({ message: "Invalid or expired refresh token" });
+        if (storedToken) {
+          await storage.deleteRefreshToken(refreshToken);
+        }
+        return res.status(401).json({ message: "Refresh token is invalid or expired", code: "REFRESH_TOKEN_EXPIRED" });
       }
 
       const user = await storage.getUser(payload.userId);
       if (!user || !user.isActive) {
-        return res.status(401).json({ message: "User not found or inactive" });
+        return res.status(401).json({ message: "User account is inactive or not found", code: "USER_INACTIVE" });
       }
 
-      const tokens = await generateTokens(user.id);
-      // Optional: Rotate refresh token
+      // Rotate token: delete old, issue new pair
       await storage.deleteRefreshToken(refreshToken);
+      const tokens = await generateTokens(user.id, payload.app_id || 'web');
       
       res.json(tokens);
-    } catch (err) {
-      res.status(401).json({ message: "Invalid refresh token" });
+    } catch (err: any) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Refresh token has expired", code: "REFRESH_TOKEN_EXPIRED" });
+      }
+      res.status(401).json({ message: "Refresh token is invalid", code: "REFRESH_TOKEN_INVALID" });
     }
   });
 
   app.post("/api/auth/logout", async (req, res) => {
     const { refreshToken } = req.body;
     if (refreshToken) {
-      await storage.deleteRefreshToken(refreshToken);
+      try {
+        await storage.deleteRefreshToken(refreshToken);
+      } catch (err) {
+        console.error("Error during refresh token invalidation:", err);
+      }
     }
-    req.logout(() => {
-      res.json({ success: true });
+    
+    req.logout((err) => {
+      if (err) {
+        console.error("Session logout error:", err);
+      }
+      res.json({ success: true, message: "Logged out successfully" });
     });
   });
 
@@ -188,9 +182,12 @@ export function setupAuth(app: Express) {
 }
 
 // Helper functions
-export async function generateTokens(userId: string) {
-  const accessToken = jwt.sign({ userId }, JWT_ACCESS_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
-  const refreshToken = jwt.sign({ userId }, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
+export async function generateTokens(userId: string, appId: string = 'web') {
+  const user = await storage.getUser(userId);
+  const role = user?.role || 'barista';
+
+  const accessToken = jwt.sign({ userId, role, app_id: appId }, JWT_ACCESS_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  const refreshToken = jwt.sign({ userId, app_id: appId }, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
@@ -198,6 +195,7 @@ export async function generateTokens(userId: string) {
   await storage.createRefreshToken({
     token: refreshToken,
     userId,
+    device: appId,
     expiresAt: expiresAt.toISOString(),
   });
 
@@ -217,39 +215,47 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1];
     try {
-      const payload = jwt.verify(token, JWT_ACCESS_SECRET) as { userId: string };
+      const payload = jwt.verify(token, JWT_ACCESS_SECRET) as { userId: string; role?: string; app_id?: string };
       // Attach user to request for downstream middlewares
       storage.getUser(payload.userId).then(user => {
         if (user && user.isActive) {
           req.user = user;
+          (req as any).jwtPayload = payload; // Attach JWT claims
           return next();
         }
-        res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json({ message: "User account is inactive or not found", code: "USER_INACTIVE" });
       });
       return;
-    } catch (err) {
-      return res.status(401).json({ message: "Token expired or invalid" });
+    } catch (err: any) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token has expired", code: "TOKEN_EXPIRED" });
+      }
+      return res.status(401).json({ message: "Token is invalid", code: "TOKEN_INVALID" });
     }
   }
 
-  // Fallback to session (Web)
+  // Fallback to session (Web Admin Panel)
   if (req.isAuthenticated()) {
     const user = req.user as User;
     if (user.isActive) {
       return next();
     }
+    return res.status(401).json({ message: "User account is inactive", code: "USER_INACTIVE" });
   }
   
-  console.log(`❌ Auth check failed for path ${req.path}`);
-  res.status(401).json({ message: "Unauthorized" });
+  res.status(401).json({ message: "Authentication token or session missing", code: "TOKEN_MISSING" });
 };
 
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   const user = req.user as User | undefined;
-  if (user && user.role === "admin") {
+  const jwtPayload = (req as any).jwtPayload;
+  
+  // Check role from either JWT payload or authenticated user object
+  const role = jwtPayload?.role || user?.role;
+  if (role === "admin") {
     return next();
   }
-  res.status(403).json({ message: "Forbidden: Admin access required" });
+  res.status(403).json({ message: "Forbidden: Admin access required", code: "FORBIDDEN_ADMIN" });
 };
 
 export const requireSameOrigin = (req: Request, res: Response, next: NextFunction) => {

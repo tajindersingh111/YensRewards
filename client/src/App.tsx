@@ -5,16 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAManager from "@/components/PWAManager";
 import Home from "@/pages/home";
-import CustomerApp from "@/pages/customer-app";
-import CustomerAppV2 from "@/pages/customer-app-v2";
 import CustomerAppV3 from "@/pages/customer-app-v3";
 import CustomerMenu from "@/pages/customer-menu";
 import BaristaApp from "@/pages/barista-app";
 import AdminDashboard from "@/pages/admin-dashboard";
-import AdminDashboardOld from "@/pages/admin-dashboard-old-backup";
-import CustomersComparison from "@/pages/customers-comparison";
-import OverviewComparison from "@/pages/overview-comparison";
-import InsightsOld from "@/pages/insights-old";
 import AdminLogin from "@/pages/admin-login";
 
 import MessageTest from "@/pages/message-test";
@@ -58,16 +52,10 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/customer" component={CustomerAppV3} />
-      <Route path="/customer-v2" component={CustomerAppV2} />
-      <Route path="/customer-old" component={CustomerApp} />
       <Route path="/menu" component={CustomerMenu} />
       <Route path="/barista" component={BaristaApp} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
-      <Route path="/admin-old" component={AdminDashboardOld} />
-      <Route path="/customers-old" component={CustomersComparison} />
-      <Route path="/overview-old" component={OverviewComparison} />
-      <Route path="/insights-old" component={InsightsOld} />
       <Route path="/admin/login" component={AdminLogin} />
 
       <AdminRoute path="/test-messages" component={MessageTest} />
@@ -83,15 +71,19 @@ function Router() {
   );
 }
 
+import ErrorBoundary from "@/components/ErrorBoundary";
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <PWAManager />
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <PWAManager />
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

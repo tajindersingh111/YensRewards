@@ -21,10 +21,11 @@ import bcrypt from "bcryptjs";
 // Ensure at least one admin user exists
 async function ensureDefaultAdmin() {
   try {
-    const hashedPassword = await bcrypt.hash("123456", 10);
     const admins = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
     if (admins.length === 0) {
-      log("No admin user found, creating default admin...");
+      // No admin at all — create one with a strong temporary password.
+      // IMPORTANT: Change this password immediately after first login.
+      const hashedPassword = await bcrypt.hash("ChangeMe_Yens2026!", 12);
       await db.insert(users).values({
         id: uuidv4(),
         email: "admin@yensrewards.com",
@@ -34,11 +35,10 @@ async function ensureDefaultAdmin() {
         role: "admin",
         isActive: true,
       });
-      log("Default admin credentials created.");
+      log("⚠️  Default admin created with temporary password. CHANGE IT IMMEDIATELY after first login.");
     } else {
-      log(`Admin user found, force-updating password for ${admins[0].email}...`);
-      await db.update(users).set({ password: hashedPassword }).where(eq(users.id, admins[0].id));
-      log("Admin password updated successfully.");
+      // Admin already exists — do NOT touch their password.
+      log(`Admin user found (${admins[0].email}). Skipping password update.`);
     }
   } catch (err) {
     log("Error ensuring default admin: " + String(err));
@@ -808,11 +808,25 @@ const app = express();
 // trivially spoofed by a direct client.
 app.set('trust proxy', 1);
 
-// Custom CORS middleware to support Flutter Web and external integrations
+// CORS middleware — restrict to an explicit origin allowlist.
+// Set CORS_ALLOWED_ORIGINS in .env as a comma-separated list of trusted origins.
+// e.g. CORS_ALLOWED_ORIGINS="https://yensthai.com,https://pos.yensthai.com"
+const corsAllowedOrigins: Set<string> = new Set(
+  (process.env.CORS_ALLOWED_ORIGINS || "http://localhost:5000,http://localhost:3000,http://10.0.2.2:5000")
+    .split(",")
+    .map(o => o.trim())
+    .filter(Boolean)
+);
+
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (origin && corsAllowedOrigins.has(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Credentials", "true");
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }

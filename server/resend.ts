@@ -318,7 +318,6 @@ function wrapHtmlInEmailTemplate(htmlContent: string, subject: string): string {
   `.trim();
 }
 
-// Send HTML email directly
 export async function sendHtmlEmail(
   to: string,
   subject: string,
@@ -327,18 +326,7 @@ export async function sendHtmlEmail(
   try {
     const { client, fromEmail } = await getUncachableResendClient();
     const wrappedHtml = wrapHtmlInEmailTemplate(html, subject);
-
-    const result = await client.emails.send({
-      from: fromEmail,
-      to: [to],
-      subject: subject,
-      html: wrappedHtml,
-    });
-
-    return {
-      success: true,
-      messageId: result.data?.id || undefined,
-    };
+    return await sendSingleEmailWithClient(client, fromEmail, to, subject, wrappedHtml);
   } catch (error: any) {
     console.error('Error sending HTML email:', error);
     return {

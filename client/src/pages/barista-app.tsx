@@ -70,10 +70,8 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      console.log('🔐 Login attempt:', { email, passwordLength: password.length });
       const response = await apiRequest("POST", "/api/auth/login", { email, password });
       const data = await response.json();
-      console.log('✅ Login response:', data);
       return data as { 
         success: boolean; 
         requires2FA: boolean; 
@@ -150,9 +148,7 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🚀 handleLogin called', { email, passwordLength: password.length });
     if (!email || !password) {
-      console.log('❌ Missing credentials');
       toast({
         title: t('common.error'),
         description: "Please enter email and password",
@@ -160,7 +156,6 @@ function BaristaLogin({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
       });
       return;
     }
-    console.log('📤 Calling loginMutation.mutate');
     loginMutation.mutate({ email, password });
   };
 

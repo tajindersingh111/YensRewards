@@ -17,6 +17,7 @@ export interface Env {
   TWILIO_AUTH_TOKEN?: string;
   TWILIO_PHONE_NUMBER?: string;
   TWILIO_MESSAGING_SERVICE_SID?: string;
+  PUBLIC_URL: string;
 }
 
 export function auditEnv(): Env {
@@ -89,12 +90,14 @@ export function auditEnv(): Env {
     log("Notice: Twilio API credentials (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN or TWILIO_API_KEY/SECRET) are incomplete. Twilio fallback notifications will be disabled.");
   }
 
+  const PUBLIC_URL = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
+
   log(`Environment successfully validated in [${NODE_ENV}] mode.`);
 
   return {
     NODE_ENV,
     PORT,
-    DATABASE_URL: DATABASE_URL || "postgresql://postgres:Taj@2004@localhost:5433/yens_thai",
+    DATABASE_URL: DATABASE_URL || (() => { throw new Error("FATAL: DATABASE_URL environment variable is required."); })(),
     SESSION_SECRET,
     JWT_SECRET,
     JWT_ACCESS_SECRET,
@@ -108,6 +111,7 @@ export function auditEnv(): Env {
     TWILIO_AUTH_TOKEN,
     TWILIO_PHONE_NUMBER,
     TWILIO_MESSAGING_SERVICE_SID,
+    PUBLIC_URL,
   };
 }
 

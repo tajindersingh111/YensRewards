@@ -3,7 +3,7 @@ import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./auth";
-import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products, transactions as transactionsTable } from "@shared/schema";
+import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products, transactions as transactionsTable, refreshTokens } from "@shared/schema";
 import { calculateNextRunAt, processAutomation, triggerBackupNow } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
@@ -470,10 +470,24 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint - responds immediately without database check
-  // This is used by deployment health checks
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  // Health check endpoint - verifies server sanity and database connectivity
+  app.get('/api/health', async (req, res) => {
+    try {
+      await db.execute(sql`SELECT 1`);
+      res.json({
+        status: 'ok',
+        database: 'connected',
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error('Health check database error:', err);
+      res.status(500).json({
+        status: 'error',
+        database: 'disconnected',
+        error: process.env.NODE_ENV === 'production' ? 'Database connection failed' : err.message,
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   // Serve public product images from object storage
@@ -792,7 +806,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      console.log(`✅ Set password for user ${id}`);
+      // Revoke all existing refresh tokens for the user
+      await db.delete(refreshTokens).where(eq(refreshTokens.userId, id));
+
+      console.log(`✅ Set password and revoked active sessions for user ${id}`);
       res.json({ success: true, message: "Password set successfully" });
     } catch (error: any) {
       console.error("Error setting password:", error);
@@ -935,7 +952,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const { email, password } = req.body;
+      const { email, password, app_id, client_id } = req.body;
+      const appId = app_id || client_id || "web";
 
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
@@ -959,9 +977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Your account has been disabled. Please contact an administrator." });
       }
 
-      // Check if 2FA is enabled — issue a server-side pending challenge instead of
-      // returning the userId directly. The login-2fa endpoint will only accept this
-      // opaque token, ensuring callers must pass the password step first.
+      // Check if 2FA is enabled
       if (user.twoFactorEnabled) {
         const pendingToken = createPending2FAChallenge(user.id);
         console.log(`🔐 User ${user.id} requires 2FA verification`);
@@ -976,29 +992,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear any recorded failures on successful login
       clearAuthFailures(ip);
 
-      // Create session for password-based login
-      const sessionUser = {
-        claims: {
-          sub: user.id,
-          email: user.email,
-          first_name: user.firstName,
-          last_name: user.lastName,
-          profile_image_url: user.profileImageUrl,
-          is_admin: user.role === 'admin',
-        },
-        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week
-      };
+      const { generateTokens } = await import('./auth');
+      const { accessToken, refreshToken } = await generateTokens(user.id, appId);
 
-      (req as any).login(sessionUser, async (err: any) => {
-        if (err) {
-          console.error("Error creating session:", err);
-          return res.status(500).json({ message: "Failed to create session" });
-        }
-        
-        const { generateTokens } = await import('./auth');
-        const { accessToken, refreshToken } = await generateTokens(user.id);
-
-        console.log(`✅ Password login successful for user ${user.id}`);
+      const respondWithTokens = () => {
+        console.log(`✅ Login successful for user ${user.id} (App ID: ${appId})`);
         res.json({ 
           success: true, 
           requires2FA: false,
@@ -1014,7 +1012,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           refreshToken,
           message: "Login successful" 
         });
-      });
+      };
+
+      // Only establish standard Express Session for browser clients (Web Dashboard)
+      if (appId === "web") {
+        (req as any).login(user, async (err: any) => {
+          if (err) {
+            console.error("Error creating session:", err);
+            return res.status(500).json({ message: "Failed to create session" });
+          }
+          respondWithTokens();
+        });
+      } else {
+        // Bypass express-session for mobile app/API clients
+        respondWithTokens();
+      }
     } catch (error: any) {
       console.error("Error during password login:", error);
       res.status(500).json({ message: "Login failed" });
@@ -1369,16 +1381,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // customer identity so subsequent resource-specific endpoints can enforce ownership.
   // Session status check — lets the frontend skip OTP when a valid customer session already exists
   app.get('/api/customers/auth/status', async (req, res) => {
-    const session = req.session as any;
-    if (!session.customerId) {
-      return res.status(401).json({ message: "No customer session" });
+    try {
+      const session = req.session as any;
+      if (!session.customerId) {
+        return res.status(401).json({ message: "No customer session" });
+      }
+      const customer = await storage.getCustomer(session.customerId);
+      if (!customer) {
+        delete session.customerId;
+        return res.status(401).json({ message: "Customer not found" });
+      }
+      res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
+    } catch (error) {
+      console.error("Error in customer auth status:", error);
+      res.status(500).json({ message: "Failed to get auth status" });
     }
-    const customer = await storage.getCustomer(session.customerId);
-    if (!customer) {
-      delete session.customerId;
-      return res.status(401).json({ message: "Customer not found" });
-    }
-    res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
   });
 
   // LIFF seamless LINE linking — called from the customer app when running inside LINE browser.
@@ -1686,7 +1703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get customer by phone — requires either a matching customer session or staff auth.
   // Prevents unauthenticated loyalty-balance and account data disclosure by phone lookup.
-  app.get('/api/customers/phone/:phone', async (req, res) => {
+  app.get('/api/customers/phone/:phone', isAuthenticated, async (req, res) => {
     try {
       const customer = await storage.getCustomerByPhone(req.params.phone);
       if (!customer) {
@@ -1770,10 +1787,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // Step 3 — Duplicate check (quota not consumed for existing phones)
-    const existingCustomer = await storage.getCustomerByPhone(validatedData.phone);
-    if (existingCustomer) {
-      // Do not return customer data — prevents data disclosure via signup probing
-      return res.status(409).json({ message: "A customer with this phone number already exists" });
+    try {
+      const existingCustomer = await storage.getCustomerByPhone(validatedData.phone);
+      if (existingCustomer) {
+        // Do not return customer data — prevents data disclosure via signup probing
+        return res.status(409).json({ message: "A customer with this phone number already exists" });
+      }
+    } catch (error) {
+      console.error("Error checking existing customer:", error);
+      return res.status(500).json({ message: "Internal Vault Error" });
     }
 
     // Step 4 — THE COMMIT: quota only recorded on a clean DB write
@@ -1788,13 +1810,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update customer (Admin only)
   app.patch('/api/admin/customers/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      console.log("Updating customer:", req.params.id, "with data:", JSON.stringify(req.body));
-      
+      // Validate input using partial schema
+      const validatedData = insertCustomerSchema.partial().parse(req.body);
+
       // Transform date strings to Date objects for the database
-      const updateData = { ...req.body };
+      const updateData = { ...validatedData } as any;
       if (updateData.registerDate) {
         updateData.registerDate = new Date(updateData.registerDate);
       }
@@ -1808,9 +1830,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(customer);
     } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: fromError(error).toString() });
+      }
       console.error("Error updating customer:", error?.message || error);
-      console.error("Stack:", error?.stack);
-      res.status(500).json({ message: "Failed to update customer", error: error?.message });
+      res.status(500).json({ message: "Failed to update customer" });
     }
   });
 
@@ -1926,11 +1950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: fromError(error).toString() });
       }
       console.error("Error creating transaction:", error);
-      res.status(500).json({ 
-        message: "Failed to create transaction", 
-        error: error.message || String(error), 
-        stack: error.stack 
-      });
+      res.status(500).json({ message: "Failed to create transaction" });
     }
   });
 
@@ -1940,21 +1960,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all transactions for admin live feed
   app.get('/api/admin/transactions', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const allTx = await db.select()
+      // Single JOIN query — eliminates N+1 from the previous per-transaction getCustomer() calls
+      const allTx = await db
+        .select({
+          id: transactionsTable.id,
+          customerId: transactionsTable.customerId,
+          baristaId: transactionsTable.baristaId,
+          amount: transactionsTable.amount,
+          points: transactionsTable.points,
+          location: transactionsTable.location,
+          receiptUrl: transactionsTable.receiptUrl,
+          type: transactionsTable.type,
+          includedSpecialOffer: transactionsTable.includedSpecialOffer,
+          isNewCustomer: transactionsTable.isNewCustomer,
+          createdAt: transactionsTable.createdAt,
+          customerName: customersTable.name,
+          customerPhone: customersTable.phone,
+        })
         .from(transactionsTable)
+        .leftJoin(customersTable, eq(transactionsTable.customerId, customersTable.id))
         .orderBy(desc(transactionsTable.createdAt))
         .limit(100);
 
-      const enrichedTx = await Promise.all(allTx.map(async (tx) => {
-        const cust = await storage.getCustomer(tx.customerId);
-        return {
-          ...tx,
-          customerName: cust?.name || 'Guest Member',
-          customerPhone: cust?.phone || '',
-        };
+      const result = allTx.map(tx => ({
+        ...tx,
+        customerName: tx.customerName || 'Guest Member',
+        customerPhone: tx.customerPhone || '',
       }));
 
-      res.json(enrichedTx);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching admin transactions feed:", error);
       res.status(500).json({ message: "Failed to fetch transactions" });
@@ -5559,11 +5593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LINE Webhook endpoint (public - called by LINE Platform)
   app.post('/api/line/webhook', async (req, res) => {
     try {
-      // Immediate logging - this MUST appear for any request
-      console.log('📥 ========== LINE WEBHOOK RECEIVED ==========');
-      console.log('📥 Headers:', JSON.stringify(req.headers, null, 2));
-      console.log('📥 Body:', JSON.stringify(req.body, null, 2));
-      console.log('📥 =============================================');
+      console.log(`📥 LINE webhook received at ${new Date().toISOString()}`);
       
       const body = req.body as LineWebhookBody;
       

@@ -1,4 +1,4 @@
-import { pgTable, text, integer, real, index, uniqueIndex, numeric, boolean, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, real, index, uniqueIndex, numeric, boolean, serial, timestamp } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import crypto from "crypto";
 import { createInsertSchema } from "drizzle-zod";
@@ -84,7 +84,11 @@ export const transactions = pgTable("transactions", {
   includedSpecialOffer: boolean("included_special_offer").notNull().default(false), // Did barista sell weekly special?
   isNewCustomer: boolean("is_new_customer").notNull().default(false), // Was this a new customer signup?
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+},
+(table) => [
+  index("idx_transactions_customer_id").on(table.customerId),
+  index("idx_transactions_created_at").on(table.createdAt),
+]);
 
 // Promotions table - SMS campaigns
 export const promotions = pgTable("promotions", {
@@ -160,7 +164,11 @@ export const messageLog = pgTable("message_log", {
   sentAt: text("sent_at"),
   deliveredAt: text("delivered_at"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+},
+(table) => [
+  index("idx_message_log_customer_id").on(table.customerId),
+  index("idx_message_log_status").on(table.status),
+]);
 
 // Scheduled Messages table - for sending messages at a specific time
 export const scheduledMessages = pgTable("scheduled_messages", {

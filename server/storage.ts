@@ -43,13 +43,14 @@ import {
 import { db } from "./db";
 import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents, dailySales, refreshTokens } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte, inArray } from "drizzle-orm";
+import bcryptjs from "bcryptjs";
 
 export interface IStorage {
   // Auth methods
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   isUserAdmin(id: string): Promise<boolean>;
-  
+
   // User management methods
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
@@ -57,7 +58,7 @@ export interface IStorage {
   updateUserDetails(id: string, details: { email?: string; firstName?: string; lastName?: string }): Promise<User | undefined>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   deleteUser(id: string): Promise<void>;
-  
+
   // Password & 2FA methods
   setUserPassword(userId: string, hashedPassword: string): Promise<User | undefined>;
   verifyUserPassword(userId: string, password: string): Promise<boolean>;
@@ -66,7 +67,7 @@ export interface IStorage {
   disable2FA(userId: string): Promise<User | undefined>;
   verify2FAToken(userId: string, token: string): Promise<boolean>;
   get2FASecret(userId: string): Promise<string | null>;
-  
+
   // Customer methods
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
@@ -109,18 +110,18 @@ export interface IStorage {
   getTransaction(id: string): Promise<Transaction | undefined>;
   getCustomerTransactions(customerId: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
-  
+
   // Promotion methods
   createPromotion(promotion: InsertPromotion): Promise<Promotion>;
   getAllPromotions(): Promise<Promotion[]>;
   getCustomerPromotions(customerId: string): Promise<Array<Promotion & { isRead: boolean }>>;
-  
+
   // Notification methods
   createNotification(notification: InsertCustomerNotification): Promise<CustomerNotification>;
   getUnreadCount(customerId: string): Promise<number>;
   markAsRead(customerId: string, promotionId: string): Promise<void>;
   markAllAsRead(customerId: string): Promise<void>;
-  
+
   // Analytics methods
   getAnalytics(): Promise<{
     totalSales: number;
@@ -130,7 +131,7 @@ export interface IStorage {
     salesByLocation: Array<{ label: string; value: number }>;
     recentTransactions: Transaction[]
   }>;
-  
+
   getWeeklyOverview(): Promise<{
     thisWeek: {
       revenue: number;
@@ -161,7 +162,7 @@ export interface IStorage {
       revenue: number;
     };
   }>;
-  
+
   // Product methods
   getAllProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -170,7 +171,7 @@ export interface IStorage {
   updateProduct(id: string, product: Partial<Product>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<void>;
   deleteAllProducts(): Promise<number>;
-  
+
   // Message Template methods
   getAllMessageTemplates(): Promise<MessageTemplate[]>;
   getMessageTemplate(id: string): Promise<MessageTemplate | undefined>;
@@ -182,12 +183,12 @@ export interface IStorage {
   updateMessageTemplate(id: string, template: Partial<MessageTemplate>): Promise<MessageTemplate | undefined>;
   deleteMessageTemplate(id: string): Promise<void>;
   seedDefaultTemplates(): Promise<void>;
-  
+
   // Message Log methods
   createMessageLog(log: InsertMessageLog): Promise<MessageLog>;
   getMessageLogs(customerId?: string): Promise<MessageLog[]>;
   updateMessageLogStatus(id: string, status: string, externalId?: string, errorMessage?: string): Promise<void>;
-  
+
   // Site methods
   getAllSites(): Promise<Site[]>;
   getSite(id: string): Promise<Site | undefined>;
@@ -195,7 +196,7 @@ export interface IStorage {
   bulkCreateSites(sitesData: InsertSite[]): Promise<Site[]>;
   updateSite(id: string, site: Partial<Site>): Promise<Site | undefined>;
   deleteSite(id: string): Promise<void>;
-  
+
   // Time Entry methods (clock in/out)
   getCurrentTimeEntry(userId: string): Promise<TimeEntry | undefined>;
   getTimeEntry(id: string): Promise<TimeEntry | undefined>;
@@ -203,7 +204,7 @@ export interface IStorage {
   clockOut(timeEntryId: string): Promise<TimeEntry | undefined>;
   getTimeEntries(userId: string, startDate?: string, endDate?: string): Promise<TimeEntry[]>;
   getAllTimeEntries(startDate?: string, endDate?: string, userId?: string): Promise<TimeEntry[]>;
-  
+
   // Work Schedule methods
   getAllWorkSchedules(): Promise<WorkSchedule[]>;
   getWorkSchedule(id: string): Promise<WorkSchedule | undefined>;
@@ -213,7 +214,7 @@ export interface IStorage {
   updateWorkSchedule(id: string, schedule: Partial<WorkSchedule>): Promise<WorkSchedule | undefined>;
   deleteWorkSchedule(id: string): Promise<void>;
   deleteWorkScheduleSeries(seriesId: string): Promise<void>;
-  
+
   // Barista Announcement methods
   getActiveAnnouncements(): Promise<BaristaAnnouncement[]>;
   getAllAnnouncements(): Promise<BaristaAnnouncement[]>;
@@ -221,7 +222,7 @@ export interface IStorage {
   createAnnouncement(announcement: InsertBaristaAnnouncement): Promise<BaristaAnnouncement>;
   updateAnnouncement(id: string, announcement: Partial<BaristaAnnouncement>): Promise<BaristaAnnouncement | undefined>;
   deleteAnnouncement(id: string): Promise<void>;
-  
+
   // Weekly Special methods
   getActiveWeeklySpecial(): Promise<WeeklySpecial | undefined>;
   getAllWeeklySpecials(): Promise<WeeklySpecial[]>;
@@ -229,14 +230,14 @@ export interface IStorage {
   createWeeklySpecial(special: InsertWeeklySpecial): Promise<WeeklySpecial>;
   updateWeeklySpecial(id: string, special: Partial<WeeklySpecial>): Promise<WeeklySpecial | undefined>;
   deleteWeeklySpecial(id: string): Promise<void>;
-  
+
   // Barista Performance methods
   getBaristaPerformance(userId: string, weekStart: string): Promise<BaristaPerformance | undefined>;
   getWeeklyLeaderboard(weekStart: string, limit?: number): Promise<Array<BaristaPerformance & { user: User }>>;
   updateBaristaPerformance(performance: InsertBaristaPerformance): Promise<BaristaPerformance>;
   getUserPerformanceHistory(userId: string, limit?: number): Promise<BaristaPerformance[]>;
   getAllBaristaPerformanceSummary(weekStart: string): Promise<Array<BaristaPerformance & { user: User }>>;
-  
+
   // Scheduled Message methods
   createScheduledMessage(message: InsertScheduledMessage): Promise<ScheduledMessage>;
   getScheduledMessages(): Promise<ScheduledMessage[]>;
@@ -331,29 +332,29 @@ export class DbStorage implements IStorage {
 
   async updateUserDetails(id: string, details: { email?: string; firstName?: string; lastName?: string }): Promise<User | undefined> {
     let normalizedEmail: string | undefined;
-    
+
     // Normalize and check for duplicate email if email is being updated (case-insensitive)
     if (details.email !== undefined) {
       normalizedEmail = details.email.toLowerCase();
-      
+
       // Find any user with the same email (case-insensitive)
       const allUsers = await db.select().from(users);
       const existingUser = allUsers.find(
         u => u.email && u.email.toLowerCase() === normalizedEmail && u.id !== id
       );
-      
+
       if (existingUser) {
         throw new Error("Email is already in use by another user");
       }
     }
 
     const updateData: any = { updatedAt: new Date().toISOString() };
-    
+
     // Store email in lowercase for consistency
     if (normalizedEmail !== undefined) updateData.email = normalizedEmail;
     if (details.firstName !== undefined) updateData.firstName = details.firstName;
     if (details.lastName !== undefined) updateData.lastName = details.lastName;
-    
+
     const result = await db
       .update(users)
       .set(updateData)
@@ -393,7 +394,7 @@ export class DbStorage implements IStorage {
   async setUserPassword(userId: string, hashedPassword: string): Promise<User | undefined> {
     const result = await db
       .update(users)
-      .set({ 
+      .set({
         password: hashedPassword,
         updatedAt: new Date().toISOString()
       })
@@ -407,7 +408,6 @@ export class DbStorage implements IStorage {
     if (!user?.password) {
       return false;
     }
-    const bcryptjs = await import('bcryptjs');
     return await bcryptjs.compare(password, user.password);
   }
 
@@ -424,7 +424,7 @@ export class DbStorage implements IStorage {
   async enable2FA(userId: string, secret: string): Promise<User | undefined> {
     const result = await db
       .update(users)
-      .set({ 
+      .set({
         twoFactorSecret: secret,
         twoFactorEnabled: true,
         updatedAt: new Date().toISOString()
@@ -437,7 +437,7 @@ export class DbStorage implements IStorage {
   async disable2FA(userId: string): Promise<User | undefined> {
     const result = await db
       .update(users)
-      .set({ 
+      .set({
         twoFactorSecret: null,
         twoFactorEnabled: false,
         updatedAt: new Date().toISOString()
@@ -452,7 +452,7 @@ export class DbStorage implements IStorage {
     if (!user?.twoFactorSecret || !user.twoFactorEnabled) {
       return false;
     }
-    
+
     const OTPAuth = await import('otpauth');
     const totp = new OTPAuth.TOTP({
       secret: user.twoFactorSecret,
@@ -460,7 +460,7 @@ export class DbStorage implements IStorage {
       period: 30,
       algorithm: 'SHA1',
     });
-    
+
     // Validate with 1-step window for clock drift
     const delta = totp.validate({ token, window: 1 });
     return delta !== null;
@@ -495,7 +495,7 @@ export class DbStorage implements IStorage {
   async searchCustomersByPhone(query: string, limit: number = 10): Promise<Customer[]> {
     // Sanitize query - only keep digits and + symbol
     const sanitized = query.replace(/[^0-9+]/g, '');
-    
+
     // Use ILIKE with wildcards on both sides to match anywhere in phone number
     // This handles different formats: +66812345678, 0812345678, etc.
     const result = await db
@@ -504,19 +504,19 @@ export class DbStorage implements IStorage {
       .where(sql`${customers.phone} LIKE ${'%' + sanitized + '%'}`)
       .orderBy(customers.name)
       .limit(limit);
-    
+
     return result;
   }
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     // Generate unique referral code
     const referralCode = `YENS${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    
+
     const result = await db
       .insert(customers)
       .values({ ...insertCustomer, referralCode })
       .returning();
-    
+
     return result[0];
   }
 
@@ -526,7 +526,7 @@ export class DbStorage implements IStorage {
       .set(customer)
       .where(eq(customers.id, id))
       .returning();
-    
+
     return result[0];
   }
 
@@ -542,17 +542,17 @@ export class DbStorage implements IStorage {
   async upsertCustomerByPhone(customer: InsertCustomer & Partial<Customer>): Promise<{ action: 'insert' | 'update', customer: Customer }> {
     // Check if customer exists by phone
     const existing = await this.getCustomerByPhone(customer.phone);
-    
+
     if (existing) {
       // Update existing customer (only fields that are explicitly provided)
       const updateData: Partial<Customer> = {};
-      
+
       // CRITICAL: Preserve existing customer names during CSV imports
       // Only update name if existing customer has no name (prevents overwriting real names)
       if (customer.name !== undefined && (!existing.name || existing.name.trim() === '')) {
         updateData.name = customer.name;
       }
-      
+
       // Always update these fields if provided (safe to overwrite)
       if (customer.email !== undefined) updateData.email = customer.email;
       if (customer.photo !== undefined) updateData.photo = customer.photo;
@@ -563,12 +563,12 @@ export class DbStorage implements IStorage {
       if (customer.registerBranch !== undefined) updateData.registerBranch = customer.registerBranch;
       if (customer.registerDate !== undefined) updateData.registerDate = customer.registerDate;
       if (customer.lastUse !== undefined) updateData.lastUse = customer.lastUse;
-      
+
       // Update points/tier/spending if explicitly provided
       if (customer.points !== undefined) updateData.points = customer.points;
       if (customer.tier !== undefined) updateData.tier = customer.tier;
       if (customer.totalSpent !== undefined) updateData.totalSpent = customer.totalSpent;
-      
+
       const updated = await this.updateCustomer(existing.id, updateData);
       return { action: 'update', customer: updated! };
     } else {
@@ -580,7 +580,7 @@ export class DbStorage implements IStorage {
         tier: customer.tier ?? 'member',
         totalSpent: customer.totalSpent ?? '0.00',
       };
-      
+
       const created = await this.createCustomer(insertData);
       return { action: 'insert', customer: created };
     }
@@ -642,11 +642,11 @@ export class DbStorage implements IStorage {
 
     // Determine sort column and order
     let orderByClause;
-    const sortColumn = sortBy === 'totalSpent' ? customers.totalSpent 
-      : sortBy === 'points' ? customers.points 
-      : sortBy === 'name' ? customers.name
-      : customers.createdAt;
-    
+    const sortColumn = sortBy === 'totalSpent' ? customers.totalSpent
+      : sortBy === 'points' ? customers.points
+        : sortBy === 'name' ? customers.name
+          : customers.createdAt;
+
     orderByClause = sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Execute both queries in parallel
@@ -783,7 +783,7 @@ export class DbStorage implements IStorage {
     await db.delete(transactions).where(eq(transactions.customerId, id));
     await db.delete(customerNotifications).where(eq(customerNotifications.customerId, id));
     await db.delete(messageLog).where(eq(messageLog.customerId, id));
-    
+
     // Delete the customer
     await db.delete(customers).where(eq(customers.id, id));
   }
@@ -799,7 +799,7 @@ export class DbStorage implements IStorage {
       .groupBy(customers.phone)
       .having(sql`count(*) > 1`)
       .orderBy(sql`count(*) desc`);
-    
+
     // For each duplicate phone, fetch all customers with that phone
     const result = await Promise.all(
       duplicatePhones.map(async (dup) => {
@@ -808,7 +808,7 @@ export class DbStorage implements IStorage {
           .from(customers)
           .where(eq(customers.phone, dup.phone))
           .orderBy(desc(customers.createdAt));
-        
+
         return {
           phone: dup.phone,
           count: dup.count,
@@ -816,7 +816,7 @@ export class DbStorage implements IStorage {
         };
       })
     );
-    
+
     return result;
   }
 
@@ -842,7 +842,7 @@ export class DbStorage implements IStorage {
         .insert(transactions)
         .values(insertTransaction)
         .returning();
-      
+
       // 2. Update customer points and total spent atomically
       // Use a single UPDATE with calculations to prevent race conditions
       const [updatedCustomer] = await tx
@@ -858,7 +858,7 @@ export class DbStorage implements IStorage {
         })
         .where(eq(customers.id, insertTransaction.customerId))
         .returning();
-      
+
       return newTransaction;
     });
   }
@@ -869,7 +869,7 @@ export class DbStorage implements IStorage {
       .insert(promotions)
       .values(insertPromotion)
       .returning();
-    
+
     return result[0];
   }
 
@@ -880,17 +880,17 @@ export class DbStorage implements IStorage {
   async getCustomerPromotions(customerId: string): Promise<Array<Promotion & { isRead: boolean }>> {
     const customer = await this.getCustomer(customerId);
     if (!customer) return [];
-    
+
     // Get all promotions that apply to this customer (either targetTier matches or no targetTier)
     const allPromos = await db
       .select()
       .from(promotions)
       .orderBy(desc(promotions.sentAt));
-    
-    const relevantPromos = allPromos.filter(p => 
+
+    const relevantPromos = allPromos.filter(p =>
       !p.targetTier || p.targetTier === '' || p.targetTier === 'all' || p.targetTier === customer.tier
     );
-    
+
     // Get notification status for each promo
     const promosWithReadStatus = await Promise.all(
       relevantPromos.map(async (promo) => {
@@ -904,14 +904,14 @@ export class DbStorage implements IStorage {
             )
           )
           .limit(1);
-        
+
         return {
           ...promo,
           isRead: notification.length > 0 ? notification[0].isRead : false,
         };
       })
     );
-    
+
     return promosWithReadStatus;
   }
 
@@ -921,17 +921,17 @@ export class DbStorage implements IStorage {
       .insert(customerNotifications)
       .values(insertNotification)
       .returning();
-    
+
     return result[0];
   }
 
   async getUnreadCount(customerId: string): Promise<number> {
     // Get all promotions relevant to this customer
     const promosWithStatus = await this.getCustomerPromotions(customerId);
-    
+
     // Count unread promotions (those that exist but aren't marked as read)
     const unreadCount = promosWithStatus.filter(p => !p.isRead).length;
-    
+
     return unreadCount;
   }
 
@@ -947,7 +947,7 @@ export class DbStorage implements IStorage {
         )
       )
       .limit(1);
-    
+
     if (existing.length > 0) {
       // Update existing
       await db
@@ -970,7 +970,7 @@ export class DbStorage implements IStorage {
   async markAllAsRead(customerId: string): Promise<void> {
     // Get all promotions for this customer
     const promosWithStatus = await this.getCustomerPromotions(customerId);
-    
+
     // Mark each as read
     await Promise.all(
       promosWithStatus.map(promo => this.markAsRead(customerId, promo.id))
@@ -989,34 +989,34 @@ export class DbStorage implements IStorage {
     // Get all transactions for this month
     const allTransactions = await db.select().from(transactions);
     const totalSales = allTransactions.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
-    
+
     // Get total customers
     const allCustomers = await db.select().from(customers);
     const totalCustomers = allCustomers.length;
-    
+
     // Calculate average transaction
     const avgTransaction = allTransactions.length > 0 ? totalSales / allTransactions.length : 0;
-    
+
     // Get points redeemed (count redemption transactions)
     const redemptionTransactions = allTransactions.filter(t => t.type === 'redemption');
     const pointsRedeemed = redemptionTransactions.reduce((sum, t) => sum + t.points, 0);
-    
+
     // Group sales by location
     const locationMap = new Map<string, number>();
     allTransactions.forEach(t => {
       const current = locationMap.get(t.location) || 0;
       locationMap.set(t.location, current + parseFloat(t.amount.toString()));
     });
-    
+
     const salesByLocation = Array.from(locationMap.entries()).map(([label, value]) => ({ label, value }));
-    
+
     // Get recent transactions
     const recentTransactions = await db
       .select()
       .from(transactions)
       .orderBy(desc(transactions.createdAt))
       .limit(10);
-    
+
     return {
       totalSales,
       totalCustomers,
@@ -1059,23 +1059,23 @@ export class DbStorage implements IStorage {
   }> {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     // Calculate week boundaries
     const dayOfWeek = today.getDay();
     const startOfThisWeek = new Date(today);
     startOfThisWeek.setDate(today.getDate() - dayOfWeek);
-    
+
     const startOfLastWeek = new Date(startOfThisWeek);
     startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
-    
+
     const endOfLastWeek = new Date(startOfThisWeek);
-    
+
     // Get this week's transactions
     const thisWeekTransactions = await db
       .select()
       .from(transactions)
       .where(sql`${transactions.createdAt} >= ${startOfThisWeek.toISOString()}`);
-    
+
     // Get last week's transactions
     const lastWeekTransactions = await db
       .select()
@@ -1086,37 +1086,37 @@ export class DbStorage implements IStorage {
           sql`${transactions.createdAt} < ${endOfLastWeek.toISOString()}`
         )
       );
-    
+
     // Calculate this week's metrics
     const thisWeekRevenue = thisWeekTransactions
       .filter(t => t.type === 'purchase')
       .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
-    
+
     const thisWeekTransCount = thisWeekTransactions.filter(t => t.type === 'purchase').length;
     const thisWeekAvgTrans = thisWeekTransCount > 0 ? thisWeekRevenue / thisWeekTransCount : 0;
-    
+
     const thisWeekPointsIssued = thisWeekTransactions
       .filter(t => t.type === 'purchase')
       .reduce((sum, t) => sum + t.points, 0);
-    
+
     const thisWeekPointsRedeemed = thisWeekTransactions
       .filter(t => t.type === 'reward')
       .reduce((sum, t) => sum + Math.abs(t.points), 0);
-    
+
     // Calculate last week's metrics
     const lastWeekRevenue = lastWeekTransactions
       .filter(t => t.type === 'purchase')
       .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
-    
+
     const lastWeekTransCount = lastWeekTransactions.filter(t => t.type === 'purchase').length;
     const lastWeekAvgTrans = lastWeekTransCount > 0 ? lastWeekRevenue / lastWeekTransCount : 0;
-    
+
     // Get new customers this week
     const newCustomersThisWeek = await db
       .select()
       .from(customers)
       .where(sql`${customers.createdAt} >= ${startOfThisWeek.toISOString()}`);
-    
+
     // Get unique returning customers this week (had transaction before this week)
     const returningCustomerIds = new Set<string>();
     for (const trans of thisWeekTransactions) {
@@ -1130,12 +1130,12 @@ export class DbStorage implements IStorage {
           )
         )
         .limit(1);
-      
+
       if (customer.length > 0) {
         returningCustomerIds.add(trans.customerId);
       }
     }
-    
+
     // Get daily data for the last 7 days
     const dailyData: Array<{ date: string; revenue: number; transactions: number }> = [];
     for (let i = 6; i >= 0; i--) {
@@ -1143,26 +1143,26 @@ export class DbStorage implements IStorage {
       date.setDate(today.getDate() - i);
       const nextDate = new Date(date);
       nextDate.setDate(date.getDate() + 1);
-      
+
       const dayTransactions = thisWeekTransactions.filter(t => {
         const transDate = new Date(t.createdAt);
         return transDate >= date && transDate < nextDate && t.type === 'purchase';
       });
-      
+
       const dayRevenue = dayTransactions.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
-      
+
       dailyData.push({
         date: date.toISOString().split('T')[0],
         revenue: dayRevenue,
         transactions: dayTransactions.length,
       });
     }
-    
+
     // Find best day
-    const bestDay = dailyData.reduce((best, day) => 
+    const bestDay = dailyData.reduce((best, day) =>
       day.revenue > best.revenue ? day : best
-    , dailyData[0] || { date: '', revenue: 0 });
-    
+      , dailyData[0] || { date: '', revenue: 0 });
+
     // Top locations by revenue (using daily_sales channel/site data — last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -1180,7 +1180,7 @@ export class DbStorage implements IStorage {
       .sort((a, b) => b[1].revenue - a[1].revenue)
       .slice(0, 5)
       .map(([name, data]) => ({ productName: name, revenue: data.revenue, quantity: data.days }));
-    
+
     return {
       thisWeek: {
         revenue: thisWeekRevenue,
@@ -1225,7 +1225,7 @@ export class DbStorage implements IStorage {
       .insert(products)
       .values(insertProduct)
       .returning();
-    
+
     return result[0];
   }
 
@@ -1235,7 +1235,7 @@ export class DbStorage implements IStorage {
       .set({ ...product, updatedAt: new Date().toISOString() })
       .where(eq(products.id, id))
       .returning();
-    
+
     return result[0];
   }
 
@@ -1288,7 +1288,7 @@ export class DbStorage implements IStorage {
       .insert(messageTemplates)
       .values(insertTemplate)
       .returning();
-    
+
     return result[0];
   }
 
@@ -1306,7 +1306,7 @@ export class DbStorage implements IStorage {
       .set({ ...template, updatedAt: new Date().toISOString() })
       .where(eq(messageTemplates.id, id))
       .returning();
-    
+
     return result[0];
   }
 
@@ -1514,7 +1514,7 @@ export class DbStorage implements IStorage {
       externalId: externalId || null,
       errorMessage: errorMessage || null,
     };
-    
+
     if (status === 'sent') {
       updates.sentAt = new Date().toISOString();
     } else if (status === 'delivered') {
@@ -1531,9 +1531,9 @@ export class DbStorage implements IStorage {
   // Helper to normalize site data (handling JSON parsing for SQLite strings)
   private normalizeSite(site: any): Site {
     if (!site) return site;
-    
+
     let days = site.operatingDays;
-    
+
     // Attempt to parse if it's a string
     if (typeof days === 'string') {
       try {
@@ -1543,7 +1543,7 @@ export class DbStorage implements IStorage {
         days = days.includes(',') ? days.split(',').map((s: any) => s.trim()) : (days.trim() ? [days.trim()] : []);
       }
     }
-    
+
     return {
       ...site,
       operatingDays: Array.isArray(days) ? days : []
@@ -1652,7 +1652,7 @@ export class DbStorage implements IStorage {
       .from(timeEntries)
       .where(eq(timeEntries.id, timeEntryId))
       .limit(1);
-    
+
     if (!existing[0]) {
       throw new Error("Time entry not found");
     }
@@ -1774,7 +1774,7 @@ export class DbStorage implements IStorage {
     if (!series.daysOfWeek || series.daysOfWeek.length === 0) {
       throw new Error('At least one day of week must be selected');
     }
-    
+
     // Validate weekStartDate is a Monday
     const startDate = new Date(series.weekStartDate);
     const dayOfWeek = startDate.getDay();
@@ -1795,7 +1795,7 @@ export class DbStorage implements IStorage {
 
     // Generate individual schedule occurrences
     const schedules: InsertWorkSchedule[] = [];
-    
+
     // Day name to index mapping (Monday = 0)
     const dayMap: Record<string, number> = {
       monday: 0, tuesday: 1, wednesday: 2, thursday: 3,
@@ -1808,9 +1808,9 @@ export class DbStorage implements IStorage {
         const dayIndex = dayMap[dayName.toLowerCase()];
         const scheduleDate = new Date(startDate);
         scheduleDate.setDate(startDate.getDate() + (week * 7) + dayIndex);
-        
+
         const dateStr = scheduleDate.toISOString().split('T')[0]; // YYYY-MM-DD
-        
+
         schedules.push({
           userId: series.userId,
           siteId: series.siteId,
@@ -1897,7 +1897,7 @@ export class DbStorage implements IStorage {
   async deleteAnnouncement(id: string): Promise<void> {
     await db.delete(baristaAnnouncements).where(eq(baristaAnnouncements.id, id));
   }
-  
+
   // Weekly Special methods
   async getActiveWeeklySpecial(): Promise<WeeklySpecial | undefined> {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -1952,7 +1952,7 @@ export class DbStorage implements IStorage {
   async deleteWeeklySpecial(id: string): Promise<void> {
     await db.delete(weeklySpecials).where(eq(weeklySpecials.id, id));
   }
-  
+
   // Barista Performance methods
   async getBaristaPerformance(userId: string, weekStart: string): Promise<BaristaPerformance | undefined> {
     const result = await db
@@ -1984,7 +1984,7 @@ export class DbStorage implements IStorage {
       .leftJoin(users, eq(baristaPerformance.userId, users.id))
       .where(eq(baristaPerformance.weekStart, weekStart))
       .orderBy(desc(baristaPerformance.totalPoints));
-    
+
     const items = result
       .filter(r => r.user !== null)
       .map(r => r as BaristaPerformance & { user: User });
@@ -2019,7 +2019,7 @@ export class DbStorage implements IStorage {
         }
       })
       .returning();
-    
+
     return result[0];
   }
 
@@ -2038,7 +2038,7 @@ export class DbStorage implements IStorage {
       .from(baristaPerformance)
       .leftJoin(users, eq(baristaPerformance.userId, users.id))
       .where(eq(baristaPerformance.weekStart, weekStart));
-    
+
     const items = results
       .filter(r => r.users !== null)
       .map(r => ({ ...r.barista_performance, user: r.users as User }));
@@ -2109,10 +2109,10 @@ export class DbStorage implements IStorage {
     const now = new Date().toISOString();
     const result = await db
       .update(scheduledMessages)
-      .set({ 
-        status: 'processing', 
+      .set({
+        status: 'processing',
         processingStartedAt: now,
-        updatedAt: now 
+        updatedAt: now
       })
       .where(
         and(
@@ -2128,12 +2128,12 @@ export class DbStorage implements IStorage {
     const status = failedCount > 0 && sentCount === 0 ? 'failed' : 'completed';
     const result = await db
       .update(scheduledMessages)
-      .set({ 
+      .set({
         status,
         sentCount,
         failedCount,
         errorMessage,
-        updatedAt: new Date().toISOString() 
+        updatedAt: new Date().toISOString()
       })
       .where(eq(scheduledMessages.id, id))
       .returning();
@@ -2245,19 +2245,28 @@ export class DbStorage implements IStorage {
     await db.delete(shopEvents).where(eq(shopEvents.id, id));
   }
 
-  // Refresh Token implementation
+  // Refresh Token implementation (hashed using SHA-256 for security)
   async createRefreshToken(data: InsertRefreshToken): Promise<RefreshToken> {
-    const result = await db.insert(refreshTokens).values(data).returning();
+    const crypto = await import("crypto");
+    const hashedToken = crypto.createHash("sha256").update(data.token).digest("hex");
+    const result = await db.insert(refreshTokens).values({
+      ...data,
+      token: hashedToken,
+    }).returning();
     return result[0];
   }
 
   async getRefreshToken(token: string): Promise<RefreshToken | undefined> {
-    const result = await db.select().from(refreshTokens).where(eq(refreshTokens.token, token)).limit(1);
+    const crypto = await import("crypto");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const result = await db.select().from(refreshTokens).where(eq(refreshTokens.token, hashedToken)).limit(1);
     return result[0];
   }
 
   async deleteRefreshToken(token: string): Promise<void> {
-    await db.delete(refreshTokens).where(eq(refreshTokens.token, token));
+    const crypto = await import("crypto");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    await db.delete(refreshTokens).where(eq(refreshTokens.token, hashedToken));
   }
 }
 
