@@ -45,6 +45,30 @@ async function ensureDefaultAdmin() {
   }
 }
 
+// Ensure default POS user exists
+async function ensureDefaultPOSUser() {
+  try {
+    const posUsers = await db.select().from(users).where(eq(users.role, 'yenspos')).limit(1);
+    if (posUsers.length === 0) {
+      const hashedPassword = await bcrypt.hash("yenspos123", 12);
+      await db.insert(users).values({
+        id: uuidv4(),
+        email: "pos@yensrewards.com",
+        password: hashedPassword,
+        firstName: "Yens",
+        lastName: "POS",
+        role: "yenspos",
+        isActive: true,
+      });
+      log("⚠️  Default POS user created: pos@yensrewards.com / yenspos123");
+    } else {
+      log(`POS user found (${posUsers[0].email}).`);
+    }
+  } catch (err) {
+    log("Error ensuring default POS user: " + String(err));
+  }
+}
+
 // ONE-TIME: Restore 147 missing customers from January 2026 CSV upload
 async function restoreMissingCustomers() {
   try {
@@ -922,6 +946,7 @@ app.use((req, res, next) => {
 
     // Ensure default admin exists first thing
     await ensureDefaultAdmin();
+    await ensureDefaultPOSUser();
 
     log('Setting up authentication...');
     setupAuth(app);
@@ -932,6 +957,7 @@ app.use((req, res, next) => {
 
     // Ensure default admin exists
     await ensureDefaultAdmin();
+    await ensureDefaultPOSUser();
 
     // ONE-TIME restore: insert Mar 30–Apr 26 2026 PDF sales into production DB
     await restoreMissingPdfSalesData();

@@ -371,7 +371,7 @@ export default function AdminDashboard() {
                   key={group.id}
                   onClick={() => navigate(group.id, group.subs[0].id)}
                   className={`flex items-center gap-2.5 px-6 h-full text-[10px] font-black uppercase tracking-[0.15em] border-b-2 transition-all shrink-0 ${
-                    isActive ? 'text-yellow-400 border-yellow-400 bg-white/5' : 'text-blue-300/40 border-transparent hover:text-white'
+                    isActive ? 'text-yellow-400 border-yellow-400 bg-white/5' : 'text-white border-transparent'
                   }`}
                   data-testid={`nav-group-${group.id}`}
                 >

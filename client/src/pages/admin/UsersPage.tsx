@@ -45,6 +45,7 @@ const roleColors = {
   admin: "bg-red-500 text-white",
   manager: "bg-blue-500 text-white",
   barista: "bg-green-500 text-white",
+  yenspos: "bg-amber-500 text-white",
 };
 
 export default function UsersPage() {
@@ -481,6 +482,7 @@ export default function UsersPage() {
                     <SelectItem value="admin">{t("admin.users.roleAdmin")}</SelectItem>
                     <SelectItem value="manager">{t("admin.users.roleManager")}</SelectItem>
                     <SelectItem value="barista">{t("admin.users.roleBarista")}</SelectItem>
+                    <SelectItem value="yenspos">{t("admin.users.roleYenspos")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -732,6 +734,7 @@ export default function UsersPage() {
                   <SelectItem value="admin">{t("admin.users.roleAdmin")}</SelectItem>
                   <SelectItem value="manager">{t("admin.users.roleManager")}</SelectItem>
                   <SelectItem value="barista">{t("admin.users.roleBarista")}</SelectItem>
+                  <SelectItem value="yenspos">{t("admin.users.roleYenspos")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

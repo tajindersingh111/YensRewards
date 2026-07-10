@@ -440,6 +440,7 @@
       "roleAdmin": "ผู้ดูแลระบบ",
       "roleManager": "ผู้จัดการ",
       "roleBarista": "พนักงาน",
+      "roleYenspos": "YensPOS",
       "cancel": "ยกเลิก",
       "createUser": "สร้างผู้ใช้",
       "creating": "กำลังสร้าง...",

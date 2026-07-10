@@ -657,8 +657,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate role
-      if (!['admin', 'manager', 'barista', 'customer'].includes(role)) {
-        return res.status(400).json({ message: "Invalid role. Must be admin, manager, barista, or customer" });
+      if (!['admin', 'manager', 'barista', 'customer', 'yenspos'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, manager, barista, customer, or yenspos" });
       }
 
       // Create user with a temporary ID and default password
@@ -694,8 +694,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate role
-      if (!['admin', 'manager', 'barista', 'customer'].includes(role)) {
-        return res.status(400).json({ message: "Invalid role. Must be admin, manager, barista, or customer" });
+      if (!['admin', 'manager', 'barista', 'customer', 'yenspos'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, manager, barista, customer, or yenspos" });
       }
 
       const user = await storage.updateUserRole(id, role);

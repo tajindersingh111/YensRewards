@@ -440,6 +440,7 @@
       "roleAdmin": "Admin",
       "roleManager": "Manager",
       "roleBarista": "Barista",
+      "roleYenspos": "YensPOS",
       "cancel": "Cancel",
       "createUser": "Create User",
       "creating": "Creating...",
