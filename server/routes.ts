@@ -2559,6 +2559,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get POS-specific and combined metrics
+  app.get('/api/admin/pos-metrics', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      const yearStart = `${now.getUTCFullYear()}-01-01`;
+      
+      const monthStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const monthStart = monthStartUTC.toISOString().split('T')[0];
+      
+      const currentDayUTC = now.getUTCDay();
+      let daysToSubtract = currentDayUTC === 0 ? 6 : currentDayUTC - 1;
+      const mondayUTC = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() - daysToSubtract,
+        0, 0, 0, 0
+      ));
+      const weekStart = mondayUTC.toISOString().split('T')[0];
+      
+      const lastMondayUTC = new Date(Date.UTC(
+        mondayUTC.getUTCFullYear(),
+        mondayUTC.getUTCMonth(),
+        mondayUTC.getUTCDate() - 7,
+        0, 0, 0, 0
+      ));
+      const lastSundayUTC = new Date(Date.UTC(
+        mondayUTC.getUTCFullYear(),
+        mondayUTC.getUTCMonth(),
+        mondayUTC.getUTCDate() - 1,
+        0, 0, 0, 0
+      ));
+      const lastWeekStart = lastMondayUTC.toISOString().split('T')[0];
+      const lastWeekEnd = lastSundayUTC.toISOString().split('T')[0];
+      
+      const lastMonthStartUTC = new Date(Date.UTC(
+        now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear(),
+        now.getUTCMonth() === 0 ? 11 : now.getUTCMonth() - 1,
+        1
+      ));
+      const lastMonthEndUTC = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        0
+      ));
+      const lastMonthStart = lastMonthStartUTC.toISOString().split('T')[0];
+      const lastMonthEnd = lastMonthEndUTC.toISOString().split('T')[0];
+
+      // Fetch all POS transactions
+      // Filter for type = 'purchase' so we only measure revenue-generating transactions
+      const txs = await db.select().from(transactionsTable).where(eq(transactionsTable.type, 'purchase'));
+
+      // Helper to sum numeric amounts
+      const sumAmount = (list: typeof txs) => list.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      // Calculations
+      const todaySales = sumAmount(txs.filter(t => t.createdAt && t.createdAt.startsWith(today)));
+      const todayCount = txs.filter(t => t.createdAt && t.createdAt.startsWith(today)).length;
+
+      const currentWeekSales = sumAmount(txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= weekStart && dateStr <= today;
+      }));
+      const currentWeekCount = txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= weekStart && dateStr <= today;
+      }).length;
+
+      const lastWeekSales = sumAmount(txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= lastWeekStart && dateStr <= lastWeekEnd;
+      }));
+
+      const currentMonthSales = sumAmount(txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= monthStart && dateStr <= today;
+      }));
+      const currentMonthCount = txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= monthStart && dateStr <= today;
+      }).length;
+
+      const lastMonthSales = sumAmount(txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= lastMonthStart && dateStr <= lastMonthEnd;
+      }));
+
+      const ytdSales = sumAmount(txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= yearStart && dateStr <= today;
+      }));
+      const ytdCount = txs.filter(t => {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        return dateStr >= yearStart && dateStr <= today;
+      }).length;
+
+      // Group POS sales by site/location
+      const siteSalesMap: Record<string, { amount: number; count: number }> = {};
+      for (const t of txs) {
+        const loc = t.location || 'Unknown';
+        if (!siteSalesMap[loc]) {
+          siteSalesMap[loc] = { amount: 0, count: 0 };
+        }
+        siteSalesMap[loc].amount += parseFloat(t.amount);
+        siteSalesMap[loc].count += 1;
+      }
+      const siteBreakdown = Object.entries(siteSalesMap).map(([site, val]) => ({
+        site,
+        amount: val.amount,
+        count: val.count,
+      })).sort((a, b) => b.amount - a.amount);
+
+      // Group POS sales by date for time-series charts
+      const posDailyMap: Record<string, number> = {};
+      for (const t of txs) {
+        const dateStr = t.createdAt ? t.createdAt.substring(0, 10) : '';
+        if (dateStr) {
+          posDailyMap[dateStr] = (posDailyMap[dateStr] || 0) + parseFloat(t.amount);
+        }
+      }
+
+      // Group manual daily sales by date
+      const manualSales = await db.select().from(dailySales);
+      const manualDailyMap: Record<string, number> = {};
+      for (const s of manualSales) {
+        manualDailyMap[s.date] = (manualDailyMap[s.date] || 0) + parseFloat(s.totalSales);
+      }
+
+      // Generate a list of all distinct dates from both tables
+      const allDates = Array.from(new Set([...Object.keys(posDailyMap), ...Object.keys(manualDailyMap)]))
+        .sort((a, b) => b.localeCompare(a)); // Newest first
+
+      // Combine daily totals
+      const combinedDaily = allDates.map(date => {
+        const pos = posDailyMap[date] || 0;
+        const manual = manualDailyMap[date] || 0;
+        return {
+          date,
+          posSales: pos,
+          manualSales: manual,
+          grandTotal: pos + manual,
+        };
+      });
+
+      res.json({
+        pos: {
+          todaySales,
+          todayCount,
+          currentWeekSales,
+          currentWeekCount,
+          lastWeekSales,
+          currentMonthSales,
+          currentMonthCount,
+          lastMonthSales,
+          ytdSales,
+          ytdCount,
+          siteBreakdown,
+        },
+        manualSales: manualSales.sort((a, b) => b.date.localeCompare(a.date)),
+        transactions: txs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')),
+        combinedDaily,
+      });
+    } catch (error) {
+      console.error("Error fetching POS metrics:", error);
+      res.status(500).json({ message: "Failed to fetch POS metrics" });
+    }
+  });
+
   // Get sales tracker metrics (Best Channel, Best Day, Best Month, YTD)
   app.get('/api/admin/sales-tracker-metrics', isAuthenticated, isAdmin, async (req, res) => {
     try {
