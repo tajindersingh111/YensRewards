@@ -14,6 +14,7 @@ import { sendLineMessage, sendLineImageMessage, verifyLineSignature, replyLineMe
 import { db } from "./db";
 import { eq, sql, and, gt, lt, gte, desc, asc } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { env } from "./env";
 import multer from "multer";
 import ExcelJS from "exceljs";
 import * as fs from "fs";
@@ -490,23 +491,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve public product images from object storage
+  // Serve public product images from object storage / Railway Volume
   app.get("/products/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;
-    const objectStorageService = new ObjectStorageService();
     try {
-      const file = await objectStorageService.searchPublicObject(`products/${filePath}`);
-      if (!file) {
-        return res.status(404).json({ error: "Image not found" });
+      const localPath = path.join("/data/uploads/product-images", filePath);
+      if (fs.existsSync(localPath)) {
+        return res.sendFile(localPath);
       }
-
-      // Verify the file is marked as public via ACL policy
-      const canAccess = await objectStorageService.canAccessPublicObject(file);
-      if (!canAccess) {
-        return res.status(403).json({ error: "Access denied" });
+      const fallbackPath = path.resolve("./server/assets", filePath);
+      if (fs.existsSync(fallbackPath)) {
+        return res.sendFile(fallbackPath);
       }
-
-      objectStorageService.downloadObject(file, res);
+      return res.status(404).json({ error: "Image not found" });
     } catch (error) {
       console.error("Error serving product image:", error);
       if (!res.headersSent) {
@@ -3603,7 +3600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Parse Excel file
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(req.file.buffer);
+      await workbook.xlsx.load(req.file.buffer as any);
       let totalImported = 0;
       let totalSkipped = 0;
       const errors: string[] = [];
@@ -4053,34 +4050,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload product image (admin only)
-  // Get presigned URL for product image upload
-  app.post('/api/admin/product-images/upload-url', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getProductImageUploadURL();
-      res.json({ uploadURL });
-    } catch (error) {
-      console.error("Error generating product image upload URL:", error);
-      res.status(500).json({ message: "Failed to generate upload URL" });
+  // Direct product image upload (admin only)
+  const productImageDiskStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, "/data/uploads/product-images");
+    },
+    filename: (req, file, cb) => {
+      const uniqueName = `${crypto.randomUUID()}-${file.originalname}`;
+      cb(null, uniqueName);
     }
   });
 
-  // Set ACL policy after product image upload
-  app.post('/api/admin/product-images/set-acl', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { imageURL } = req.body;
-      if (!imageURL) {
-        return res.status(400).json({ message: "Image URL is required" });
+  const productImageUpload = multer({
+    storage: productImageDiskStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = /jpeg|jpg|png|webp/;
+      const mimeType = allowedTypes.test(file.mimetype);
+      const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      if (mimeType && extName) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only images (jpeg, jpg, png, webp) are allowed."));
       }
-
-      const objectStorageService = new ObjectStorageService();
-      const imagePath = await objectStorageService.setProductImageAclPolicy(imageURL);
-      res.json({ url: imagePath });
-    } catch (error) {
-      console.error("Error setting product image ACL:", error);
-      res.status(500).json({ message: "Failed to set image ACL" });
     }
+  });
+
+  app.post('/api/admin/product-images/upload', isAuthenticated, isAdmin, (req, res) => {
+    productImageUpload.single('image')(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ message: `Upload error: ${err.message}` });
+      } else if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const filename = req.file.filename;
+      const publicUrl = `${env.APP_PUBLIC_URL}/uploads/product-images/${filename}`;
+      res.status(200).json({ url: publicUrl });
+    });
   });
 
   // ============================================
@@ -4098,6 +4108,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating email asset upload URL:", error);
       res.status(500).json({ message: "Failed to generate upload URL" });
     }
+  });
+
+  // Local PUT route to receive raw email asset upload body
+  app.put('/api/admin/email-assets/upload-file', isAuthenticated, isAdmin, (req, res) => {
+    const filename = req.query.filename as string;
+    if (!filename) {
+      return res.status(400).json({ message: "filename is required" });
+    }
+    const dest = path.join("/data/uploads/email-assets", path.basename(filename));
+    const writeStream = fs.createWriteStream(dest);
+    req.pipe(writeStream);
+    writeStream.on('finish', () => {
+      res.status(200).json({ success: true });
+    });
+    writeStream.on('error', (err) => {
+      console.error("Error writing email asset file:", err);
+      res.status(500).json({ message: "Failed to save upload file" });
+    });
   });
 
   // Set ACL policy after email asset upload
@@ -4159,19 +4187,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/email-assets/:filePath', async (req, res) => {
     try {
       const { filePath } = req.params;
-      const objectStorageService = new ObjectStorageService();
-      const file = await objectStorageService.searchPublicObject(`email-assets/${filePath}`);
-      
-      if (!file) {
-        return res.status(404).json({ message: "Asset not found" });
+      const localPath = path.join("/data/uploads/email-assets", filePath);
+      if (fs.existsSync(localPath)) {
+        return res.sendFile(localPath);
       }
-
-      const canAccess = await objectStorageService.canAccessPublicObject(file);
-      if (!canAccess) {
-        return res.status(403).json({ message: "Access denied" });
+      const fallbackPath = path.resolve("./server/assets", filePath);
+      if (fs.existsSync(fallbackPath)) {
+        return res.sendFile(fallbackPath);
       }
-
-      await objectStorageService.downloadObject(file, res, 86400);
+      return res.status(404).json({ message: "Asset not found" });
     } catch (error) {
       console.error("Error serving email asset:", error);
       res.status(500).json({ message: "Failed to serve asset" });

@@ -90,10 +90,10 @@ describe("Automated Scheduler Tests", () => {
   describe("Leap Year and Birthday Today Matching", () => {
     it("should process Feb 29 birthday on a non-leap year (e.g. 2026) on Feb 28", () => {
       // Mock system dates & birthday checks
-      const birthMonth = 2;
-      const birthDay = 29;
-      const todayMonth = 2;
-      const todayDay = 28;
+      const birthMonth: number = 2;
+      const birthDay: number = 29;
+      const todayMonth: number = 2;
+      const todayDay: number = 28;
       const testYear = 2026; // non-leap year
 
       const isFeb29Birth = birthMonth === 2 && birthDay === 29;

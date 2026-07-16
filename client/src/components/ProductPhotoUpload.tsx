@@ -41,44 +41,20 @@ export default function ProductPhotoUpload({ currentImageUrl, onImageChange }: P
     setUploading(true);
 
     try {
-      // Step 1: Get presigned upload URL from server
-      const urlResponse = await fetch('/api/admin/product-images/upload-url', {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch('/api/admin/product-images/upload', {
         method: 'POST',
+        body: formData,
       });
 
-      if (!urlResponse.ok) {
-        throw new Error('Failed to get upload URL');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to upload image');
       }
 
-      const { uploadURL } = await urlResponse.json();
-
-      // Step 2: Upload directly to Google Cloud Storage
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type,
-        },
-        body: file,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      // Step 3: Set ACL policy and get final URL
-      const aclResponse = await fetch('/api/admin/product-images/set-acl', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageURL: uploadURL }),
-      });
-
-      if (!aclResponse.ok) {
-        throw new Error('Failed to set image permissions');
-      }
-
-      const { url: imageUrl } = await aclResponse.json();
+      const { url: imageUrl } = await response.json();
 
       setPreviewUrl(imageUrl);
       onImageChange(imageUrl);
@@ -87,11 +63,11 @@ export default function ProductPhotoUpload({ currentImageUrl, onImageChange }: P
         title: "Success",
         description: "Image uploaded successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload image. Please try again.",
+        description: error.message || "Failed to upload image. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -41,6 +41,8 @@ interface POSMetrics {
     manualSales: number;
     grandTotal: number;
   }>;
+  manualSales: Array<any>;
+  transactions: Array<any>;
 }
 
 export default function YensPOSDashboard() {

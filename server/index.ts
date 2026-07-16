@@ -869,6 +869,28 @@ if (!fs.existsSync("./attached_assets")) {
   log("Created missing attached_assets directory");
 }
 
+// Ensure Railway Volume upload folders exist
+if (!fs.existsSync("/data/uploads/product-images")) {
+  try {
+    fs.mkdirSync("/data/uploads/product-images", { recursive: true });
+    log("Created missing product-images directory in Railway Volume");
+  } catch (err) {
+    log("Warning: Failed to create product-images directory: " + String(err));
+  }
+}
+if (!fs.existsSync("/data/uploads/email-assets")) {
+  try {
+    fs.mkdirSync("/data/uploads/email-assets", { recursive: true });
+    log("Created missing email-assets directory in Railway Volume");
+  } catch (err) {
+    log("Warning: Failed to create email-assets directory: " + String(err));
+  }
+}
+
+// Serve uploaded assets statically
+app.use('/uploads/product-images', express.static('/data/uploads/product-images'));
+app.use('/uploads/email-assets', express.static('/data/uploads/email-assets'));
+
 // Log startup info
 log(`Starting server in ${env.NODE_ENV} mode`);
 
@@ -1106,12 +1128,6 @@ app.use((req, res, next) => {
       // Serve static files from public directory in development mode
       const path = await import("path");
       app.use(express.static(path.resolve(import.meta.dirname, "..", "public")));
-
-      // Serve static files from object storage public directory
-      const objectStoragePublicDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0];
-      if (objectStoragePublicDir) {
-        app.use(express.static(objectStoragePublicDir));
-      }
 
       await setupVite(app, server);
     } else {

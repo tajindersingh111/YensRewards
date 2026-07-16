@@ -18,6 +18,7 @@ export interface Env {
   TWILIO_PHONE_NUMBER?: string;
   TWILIO_MESSAGING_SERVICE_SID?: string;
   PUBLIC_URL: string;
+  APP_PUBLIC_URL: string;
 }
 
 export function auditEnv(): Env {
@@ -92,6 +93,20 @@ export function auditEnv(): Env {
 
   const PUBLIC_URL = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
 
+  let APP_PUBLIC_URL = process.env.APP_PUBLIC_URL;
+  if (isProduction) {
+    if (!APP_PUBLIC_URL) {
+      throw new Error("FATAL: APP_PUBLIC_URL environment variable is required in production mode.");
+    }
+    if (APP_PUBLIC_URL.includes("localhost")) {
+      throw new Error("FATAL: APP_PUBLIC_URL cannot contain 'localhost' in production mode.");
+    }
+  } else {
+    if (!APP_PUBLIC_URL) {
+      APP_PUBLIC_URL = PUBLIC_URL;
+    }
+  }
+
   log(`Environment successfully validated in [${NODE_ENV}] mode.`);
 
   return {
@@ -112,6 +127,7 @@ export function auditEnv(): Env {
     TWILIO_PHONE_NUMBER,
     TWILIO_MESSAGING_SERVICE_SID,
     PUBLIC_URL,
+    APP_PUBLIC_URL,
   };
 }
 
