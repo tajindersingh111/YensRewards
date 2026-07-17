@@ -2,7 +2,7 @@ import type { Express, RequestHandler } from "express";
 // Trigger reload to pick up schema updates
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser } from "./auth";
+import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser, signCustomerToken } from "./auth";
 import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products, transactions as transactionsTable, refreshTokens } from "@shared/schema";
 import { calculateNextRunAt, processAutomation, triggerBackupNow } from "./scheduler";
 import { z } from "zod";
@@ -77,7 +77,7 @@ function clearAuthFailures(ip: string): void {
 // Limits new account creation per IP address.
 // Max 5 registrations per hour per IP — generous for legitimate walk-in signups,
 // tight enough to prevent bulk fake-account creation flooding the customer table.
-const REG_WINDOW_MS  = 60 * 60 * 1000; // 1 hour sliding window
+const REG_WINDOW_MS = 60 * 60 * 1000; // 1 hour sliding window
 const REG_MAX_PER_IP = 5;
 const REG_LOCKOUT_MS = 60 * 60 * 1000; // 1 hour lockout
 
@@ -116,7 +116,7 @@ function recordRegAttempt(ip: string): void {
 // Prevents a single customer from accumulating unlimited points in one day.
 // Counts only purchase-type transactions in the rolling 24-hour window.
 const MAX_DAILY_RECEIPTS = 3;
-const MAX_DAILY_POINTS   = 500;
+const MAX_DAILY_POINTS = 500;
 
 async function checkDailyTreasuryCap(customerId: string): Promise<{
   allowed: boolean;
@@ -127,7 +127,7 @@ async function checkDailyTreasuryCap(customerId: string): Promise<{
 
   const [stats] = await db
     .select({
-      count:       sql<number>`cast(count(*) as int)`,
+      count: sql<number>`cast(count(*) as int)`,
       totalPoints: sql<number>`cast(coalesce(sum(${transactionsTable.points}), 0) as int)`,
     })
     .from(transactionsTable)
@@ -139,13 +139,13 @@ async function checkDailyTreasuryCap(customerId: string): Promise<{
       )
     );
 
-  const count       = stats?.count       ?? 0;
+  const count = stats?.count ?? 0;
   const totalPoints = stats?.totalPoints ?? 0;
 
   if (count >= MAX_DAILY_RECEIPTS) {
     return {
       allowed: false,
-      reason:  "RECEIPT_CAP_REACHED",
+      reason: "RECEIPT_CAP_REACHED",
       message: "Daily receipt limit reached. Please keep your receipt and scan again tomorrow!",
     };
   }
@@ -153,7 +153,7 @@ async function checkDailyTreasuryCap(customerId: string): Promise<{
   if (totalPoints >= MAX_DAILY_POINTS) {
     return {
       allowed: false,
-      reason:  "POINTS_CAP_REACHED",
+      reason: "POINTS_CAP_REACHED",
       message: "Daily point accumulation limit reached. Your loyalty is incredible — save some for tomorrow!",
     };
   }
@@ -319,7 +319,7 @@ setInterval(() => {
 // Helper function to normalize day of week names to canonical short form
 function normalizeDayOfWeek(day: string): string {
   const normalized = day.trim().toLowerCase();
-  
+
   // Map all variations to canonical short form
   const dayMap: Record<string, string> = {
     'monday': 'Mon',
@@ -350,7 +350,7 @@ function normalizeDayOfWeek(day: string): string {
     'sun': 'Sun',
     'sun.': 'Sun',
   };
-  
+
   return dayMap[normalized] || day;
 }
 
@@ -398,12 +398,12 @@ async function getOrCreateLinkingCode(customerId: string): Promise<string> {
       gt(lineLinkingCodes.expiresAt, new Date().toISOString())
     ))
     .limit(1);
-  
+
   if (existing.length > 0) {
     console.log(`🔗 Returning existing LINE linking code ${existing[0].code} for customer ${customerId}`);
     return existing[0].code;
   }
-  
+
   // Generate new unique code
   let code: string;
   let attempts = 0;
@@ -413,7 +413,7 @@ async function getOrCreateLinkingCode(customerId: string): Promise<string> {
     if (existingCode.length === 0) break;
     attempts++;
   } while (attempts < 10);
-  
+
   const expiresAt = new Date(Date.now() + LINKING_CODE_TTL_MS);
   await db.insert(lineLinkingCodes).values({
     code,
@@ -421,7 +421,7 @@ async function getOrCreateLinkingCode(customerId: string): Promise<string> {
     expiresAt: expiresAt.toISOString(),
     used: false
   });
-  
+
   console.log(`🔗 Generated new LINE linking code ${code} for customer ${customerId}, expires at ${expiresAt.toISOString()}`);
   return code;
 }
@@ -436,12 +436,12 @@ async function validateLinkingCode(code: string): Promise<string | null> {
       gt(lineLinkingCodes.expiresAt, new Date().toISOString())
     ))
     .limit(1);
-  
+
   if (result.length === 0) {
     console.log(`❌ LINE linking code ${upperCode} not found, used, or expired`);
     return null;
   }
-  
+
   console.log(`✅ LINE linking code ${upperCode} is valid for customer ${result[0].customerId}`);
   return result[0].customerId;
 }
@@ -465,7 +465,7 @@ setInterval(async () => {
 }, 5 * 60 * 1000); // Clean every 5 minutes
 
 // Configure multer for file uploads (memory storage for Excel files)
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
@@ -511,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
-  
+
   // Setup authentication
   await setupAuth(app);
 
@@ -531,28 +531,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`🧪 [DEV] Testing Resend connection with email: ${email}`);
         const result = await sendEmail(email, "Test Email from Yens Thai Ice Cream", "สวัสดีค่ะ! This is a test email to verify Resend integration is working correctly.\n\nIf you received this, the email system is configured properly!");
-        
+
         console.log(`📧 [DEV] Resend test result:`, JSON.stringify(result));
-        
+
         if (result.success) {
-          res.json({ 
-            success: true, 
+          res.json({
+            success: true,
             message: "Test email sent successfully",
-            messageId: result.messageId 
+            messageId: result.messageId
           });
         } else {
-          res.status(500).json({ 
-            success: false, 
+          res.status(500).json({
+            success: false,
             message: "Failed to send test email",
-            error: result.error 
+            error: result.error
           });
         }
       } catch (error: any) {
         console.error("❌ [DEV] Resend test error:", error);
-        res.status(500).json({ 
-          success: false, 
+        res.status(500).json({
+          success: false,
           message: "Error testing Resend connection",
-          error: error.message 
+          error: error.message
         });
       }
     });
@@ -563,17 +563,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { getUncachableResendClient } = await import('./resend');
       const { fromEmail } = await getUncachableResendClient();
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         fromEmail: fromEmail,
         message: "Resend is configured"
       });
     } catch (error: any) {
       console.error("❌ Resend config check error:", error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "Resend not configured",
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -588,28 +588,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`🧪 Testing Resend connection with email: ${email}`);
       const result = await sendEmail(email, "Test Email from Yens", "This is a test email to verify Resend integration is working correctly.");
-      
+
       console.log(`📧 Resend test result:`, result);
-      
+
       if (result.success) {
-        res.json({ 
-          success: true, 
+        res.json({
+          success: true,
           message: "Test email sent successfully",
-          messageId: result.messageId 
+          messageId: result.messageId
         });
       } else {
-        res.status(500).json({ 
-          success: false, 
+        res.status(500).json({
+          success: false,
           message: "Failed to send test email",
-          error: result.error 
+          error: result.error
         });
       }
     } catch (error: any) {
       console.error("❌ Resend test error:", error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "Error testing Resend connection",
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -619,7 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // In local auth mode, req.user is already the DB user attached by isAuthenticated
       const user = req.user;
-      
+
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -632,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ User Management Endpoints (Admin Only) ============
-  
+
   // Get all users
   app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -648,7 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { email, firstName, lastName, role } = req.body;
-      
+
       if (!email || !role) {
         return res.status(400).json({ message: "Email and role are required" });
       }
@@ -668,7 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: defaultPassword,
         isActive: true,
       });
-      
+
       console.log(`✅ Created user: ${email} with role ${role}`);
       res.json(sanitizeUser(user));
     } catch (error: any) {
@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { role } = req.body;
-      
+
       if (!role) {
         return res.status(400).json({ message: "Role is required" });
       }
@@ -699,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       console.log(`✅ Updated user ${user.email} role to ${role}`);
       res.json(sanitizeUser(user));
     } catch (error) {
@@ -713,7 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { isActive } = req.body;
-      
+
       if (typeof isActive !== 'boolean') {
         return res.status(400).json({ message: "isActive must be a boolean" });
       }
@@ -722,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       console.log(`✅ ${isActive ? 'Enabled' : 'Disabled'} user ${user.email}`);
       res.json(sanitizeUser(user));
     } catch (error) {
@@ -736,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { email, firstName, lastName } = req.body;
-      
+
       // At least one field must be provided
       if (!email && !firstName && !lastName) {
         return res.status(400).json({ message: "At least one field (email, firstName, or lastName) is required" });
@@ -751,7 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       console.log(`✅ Updated user ${id} details`);
       res.json(sanitizeUser(user));
     } catch (error: any) {
@@ -768,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       // Prevent deleting yourself
       if (id === (req as any).user?.id) {
         return res.status(400).json({ message: "You cannot delete your own account" });
@@ -797,7 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash password with bcryptjs (10 rounds)
       const hashedPassword = await bcrypt.hash(password, 10);
-      
+
       const user = await storage.setUserPassword(id, hashedPassword);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -818,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/users/:id/2fa/setup', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       const user = await storage.getUser(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -838,11 +838,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uri = totp.toString(); // otpauth:// URI for QR code
 
       console.log(`✅ Generated 2FA secret for user ${id}`);
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         secret,
         uri, // This will be used to generate QR code on frontend
-        message: "2FA secret generated. Scan QR code with authenticator app." 
+        message: "2FA secret generated. Scan QR code with authenticator app."
       });
     } catch (error: any) {
       console.error("Error setting up 2FA:", error);
@@ -891,7 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/users/:id/2fa/disable', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       const user = await storage.disable2FA(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -924,7 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const isValid = await storage.verify2FAToken(userId, token);
-      
+
       if (isValid) {
         console.log(`✅ 2FA verification successful for user ${userId}`);
         res.json({ success: true, message: "Verification successful" });
@@ -978,11 +978,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user.twoFactorEnabled) {
         const pendingToken = createPending2FAChallenge(user.id);
         console.log(`🔐 User ${user.id} requires 2FA verification`);
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           requires2FA: true,
           pendingToken,
-          message: "Password correct. 2FA verification required." 
+          message: "Password correct. 2FA verification required."
         });
       }
 
@@ -994,8 +994,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const respondWithTokens = () => {
         console.log(`✅ Login successful for user ${user.id} (App ID: ${appId})`);
-        res.json({ 
-          success: true, 
+        res.json({
+          success: true,
           requires2FA: false,
           user: {
             id: user.id,
@@ -1007,7 +1007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           accessToken,
           refreshToken,
-          message: "Login successful" 
+          message: "Login successful"
         });
       };
 
@@ -1083,12 +1083,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error creating session after 2FA:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
-        
+
         console.log(`✅ 2FA login successful for user ${user.id}`);
-        res.json({ 
+        res.json({
           success: true,
           user: sanitizeUser(user),
-          message: "Login successful" 
+          message: "Login successful"
         });
       });
     } catch (error: any) {
@@ -1194,7 +1194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(users.id, user.id));
 
       console.log(`✅ 2FA setup initiated for user ${user.id}`);
-      res.json({ 
+      res.json({
         success: true,
         qrCode: qrCodeUrl,
         secret: secret.base32,
@@ -1258,7 +1258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Disable 2FA using canonical DB id
       await db.update(users)
-        .set({ 
+        .set({
           twoFactorEnabled: false,
           twoFactorSecret: null,
         })
@@ -1273,29 +1273,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Testing Endpoints (Admin Only) ============
-  
+
   // Test SMS sending
   app.post('/api/admin/test-sms', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { phone, message } = req.body;
-      
+
       if (!phone || !message) {
         return res.status(400).json({ message: "Phone and message are required" });
       }
 
       console.log(`📱 Testing SMS to ${phone}`);
       const result = await sendSMS(phone, message);
-      
+
       if (result.success) {
-        res.json({ 
-          success: true, 
+        res.json({
+          success: true,
           messageId: result.messageId,
-          message: "SMS sent successfully" 
+          message: "SMS sent successfully"
         });
       } else {
-        res.status(500).json({ 
-          success: false, 
-          message: result.error || "Failed to send SMS" 
+        res.status(500).json({
+          success: false,
+          message: result.error || "Failed to send SMS"
         });
       }
     } catch (error: any) {
@@ -1308,24 +1308,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/test-email', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { email, subject, message } = req.body;
-      
+
       if (!email || !subject || !message) {
         return res.status(400).json({ message: "Email, subject, and message are required" });
       }
 
       console.log(`📧 Testing email to ${email}`);
       const result = await sendEmail(email, subject, message);
-      
+
       if (result.success) {
-        res.json({ 
-          success: true, 
+        res.json({
+          success: true,
           messageId: result.messageId,
-          message: "Email sent successfully" 
+          message: "Email sent successfully"
         });
       } else {
-        res.status(500).json({ 
-          success: false, 
-          message: result.error || "Failed to send email" 
+        res.status(500).json({
+          success: false,
+          message: result.error || "Failed to send email"
         });
       }
     } catch (error: any) {
@@ -1643,7 +1643,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
+      // Issue a long-lived customer JWT so the Flutter app can authenticate
+      // subsequent requests via Bearer token (the HTTP client doesn't persist cookies).
+      const customerToken = signCustomerToken(entry.customerId);
+      res.json({
+        ...toPublicCustomerDTO(customer as unknown as Record<string, unknown>),
+        customerToken,
+      });
     } catch (error) {
       console.error("Error verifying customer OTP:", error);
       res.status(500).json({ message: "Verification failed" });
@@ -1658,12 +1664,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/customers/search', isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string;
-      
+
       // Validate query length
       if (!query || query.length < 3) {
         return res.status(400).json({ message: "Query must be at least 3 characters" });
       }
-      
+
       const customers = await storage.searchCustomersByPhone(query, 10);
       // Return only the fields a barista needs to look up a customer during a transaction.
       // Sensitive fields (email, birthday, totalSpent, tags, referralCode, lineUid, etc.)
@@ -1706,6 +1712,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
+      // Allow access if: staff user OR customer's own JWT (customerId matches)
+      const reqCustomerId = (req as any).customerId;
+      if (reqCustomerId && reqCustomerId !== (customer as any).id) {
+        return res.status(403).json({ message: "Forbidden: You can only access your own data" });
+      }
       res.json(toPublicCustomerDTO(customer as unknown as Record<string, unknown>));
     } catch (error) {
       console.error("Error fetching customer:", error);
@@ -1722,12 +1733,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      
+
       // Don't generate code if already linked
       if (customer.lineUid) {
         return res.json({ alreadyLinked: true, linkCode: null });
       }
-      
+
       const linkCode = await getOrCreateLinkingCode(customer.id);
       res.json({ alreadyLinked: false, linkCode });
     } catch (error) {
@@ -1820,7 +1831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.lastUse) {
         updateData.lastUse = new Date(updateData.lastUse);
       }
-      
+
       const customer = await storage.updateCustomer(req.params.id, updateData);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
@@ -1917,18 +1928,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...validatedData,
         baristaId: (req.user as any)!.id,
       };
-      
+
       const transaction = await storage.createTransaction(transactionData);
-      
+
       // Get updated customer data
       const customer = await storage.getCustomer(validatedData.customerId);
-      
+
       // Update barista performance if baristaId is present
       if (transactionData.baristaId) {
         // Get active weekly special for bonus points
         const weeklySpecial = await storage.getActiveWeeklySpecial();
         const bonusPoints = (validatedData.includedSpecialOffer && weeklySpecial) ? weeklySpecial.bonusPoints : 0;
-        
+
         // Update performance stats (don't await - fire and forget to avoid slowing down response)
         updateBaristaPerformanceAfterTransaction(
           transactionData.baristaId,
@@ -1940,7 +1951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error updating barista performance:", error);
         });
       }
-      
+
       res.status(201).json({ transaction, customer });
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -1992,6 +2003,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a POS transaction
+  app.patch('/api/admin/transactions/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      const updated = await storage.updateTransaction(id, updateData);
+      if (!updated) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      res.status(500).json({ message: "Failed to update transaction" });
+    }
+  });
+
+  // Delete a POS transaction
+  app.delete('/api/admin/transactions/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteTransaction(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+      res.json({ message: "Transaction deleted successfully", transaction: deleted });
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      res.status(500).json({ message: "Failed to delete transaction" });
+    }
+  });
+
   // Get overview analytics/KPIs (for Dashboard tab - legacy)
   app.get('/api/admin/overview-analytics', isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -2023,7 +2066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sortBy = req.query.sortBy as 'name' | 'totalSpent' | 'points' | 'createdAt' | undefined;
       const sortOrder = req.query.sortOrder as 'asc' | 'desc' | undefined;
       const tierFilter = req.query.tier as string | undefined;
-      const joinAfter  = req.query.joinAfter  as string | undefined;
+      const joinAfter = req.query.joinAfter as string | undefined;
       const joinBefore = req.query.joinBefore as string | undefined;
 
       // Validate date params before hitting the storage layer
@@ -2069,7 +2112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("📊 Starting customer export...");
       const customers = await storage.getAllCustomers();
-      
+
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Customers');
 
@@ -2130,7 +2173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Write to buffer and send
       const buffer = await workbook.xlsx.writeBuffer();
       const nodeBuffer = Buffer.from(buffer);
-      
+
       res.setHeader('Content-Length', nodeBuffer.length);
       res.send(nodeBuffer);
       console.log(`✅ Exported ${customers.length} customers to Excel (${nodeBuffer.length} bytes)`);
@@ -2162,12 +2205,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { filter } = req.query; // 'today' or 'week'
       const customers = await storage.getAllCustomers();
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Normalize to midnight
       const todayMonth = today.getMonth() + 1;
       const todayDay = today.getDate();
-      
+
       // Get current week's date range (Sunday to Saturday), normalized to midnight
       const dayOfWeek = today.getDay();
       const weekStart = new Date(today);
@@ -2176,15 +2219,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999); // End of day
-      
+
       const birthdayCustomers = customers.filter(customer => {
         if (!customer.birthday) return false;
-        
+
         try {
           // Parse birthday from various formats: MM-DD, MM/DD, YYYY-MM-DD
           let birthMonth: number = 0, birthDay: number = 0;
           const birthdayStr = customer.birthday.toString().trim();
-          
+
           if (birthdayStr.includes('-')) {
             const parts = birthdayStr.split('-');
             if (parts.length === 2) {
@@ -2220,10 +2263,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             birthMonth = parsedDate.getMonth() + 1;
             birthDay = parsedDate.getDate();
           }
-          
+
           if (!birthMonth || !birthDay || isNaN(birthMonth) || isNaN(birthDay)) return false;
           if (birthMonth < 1 || birthMonth > 12 || birthDay < 1 || birthDay > 31) return false;
-          
+
           if (filter === 'today') {
             return birthMonth === todayMonth && birthDay === todayDay;
           } else if (filter === 'week') {
@@ -2238,7 +2281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return false;
         }
       });
-      
+
       res.json(birthdayCustomers);
     } catch (error) {
       console.error("Error fetching birthday customers:", error);
@@ -2251,39 +2294,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get all message logs
       const allLogs = await storage.getMessageLogs();
-      
+
       // Get today's date in Bangkok timezone
       const bangkokNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
       const todayStart = new Date(bangkokNow);
       todayStart.setHours(0, 0, 0, 0);
-      
+
       // Filter for birthday messages sent today
       const birthdayMessagesSentToday = allLogs.filter(log => {
         // Check if message contains birthday-related keywords
         const isBirthday = log.subject?.toLowerCase().includes('birthday') ||
-                          log.subject?.toLowerCase().includes('วันเกิด') ||
-                          log.message?.toLowerCase().includes('happy birthday') ||
-                          log.message?.toLowerCase().includes('สุขสันต์วันเกิด');
-        
+          log.subject?.toLowerCase().includes('วันเกิด') ||
+          log.message?.toLowerCase().includes('happy birthday') ||
+          log.message?.toLowerCase().includes('สุขสันต์วันเกิด');
+
         // Check if sent today
         const sentDate = log.sentAt || log.createdAt;
         if (!sentDate) return false;
-        
+
         const logDate = new Date(sentDate);
         const logDateBangkok = new Date(logDate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
         logDateBangkok.setHours(0, 0, 0, 0);
-        
+
         const isSentToday = logDateBangkok.getTime() === todayStart.getTime();
-        
+
         // Only count successfully sent messages
         const isSuccess = log.status === 'sent' || log.status === 'delivered';
-        
+
         return isBirthday && isSentToday && isSuccess;
       });
-      
+
       // Get unique customer IDs
       const customerIds = Array.from(new Set(birthdayMessagesSentToday.map(log => log.customerId)));
-      
+
       res.json({ customerIds });
     } catch (error) {
       console.error("Error fetching birthday messages sent today:", error);
@@ -2307,13 +2350,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const customerId = req.params.id;
       const customer = await storage.getCustomer(customerId);
-      
+
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
 
       await storage.deleteCustomer(customerId);
-      
+
       console.log(`✅ Customer deleted: ${customer.name} (${customer.phone}) by admin`);
       res.json({ success: true, message: "Customer deleted successfully" });
     } catch (error) {
@@ -2376,7 +2419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const smsResult = await sendSMS(customer.phone, personalizedMessage);
           results.sms = smsResult;
-          
+
           // Log SMS message
           await storage.createMessageLog({
             customerId: customer.id,
@@ -2423,11 +2466,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if at least one channel succeeded
       const success = results.inApp?.success || results.sms?.success || results.email?.success;
-      
+
       if (!success) {
-        return res.status(500).json({ 
+        return res.status(500).json({
           message: "Failed to send message via any channel",
-          results 
+          results
         });
       }
 
@@ -2437,7 +2480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (results.inApp?.success) successChannels.push("in-app notification");
       if (results.sms?.success) successChannels.push("SMS");
       if (results.email?.success) successChannels.push("email");
-      
+
       if (successChannels.length > 0) {
         successMessage = `Message sent via ${successChannels.join(", ")}`;
       }
@@ -2456,14 +2499,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/import-customers', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { customers } = req.body;
-      
+
       if (!Array.isArray(customers) || customers.length === 0) {
         return res.status(400).json({ message: "Invalid customer data" });
       }
-      
+
       let imported = 0;
       let skipped = 0;
-      
+
       for (const customerData of customers) {
         try {
           // Check if customer already exists by phone
@@ -2472,7 +2515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             skipped++;
             continue;
           }
-          
+
           // Validate and create customer
           const validatedData = insertCustomerSchema.parse(customerData);
           await storage.createCustomer(validatedData);
@@ -2482,12 +2525,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           skipped++;
         }
       }
-      
-      res.json({ 
-        imported, 
-        skipped, 
+
+      res.json({
+        imported,
+        skipped,
         total: customers.length,
-        message: `Successfully imported ${imported} customers, skipped ${skipped}` 
+        message: `Successfully imported ${imported} customers, skipped ${skipped}`
       });
     } catch (error) {
       console.error("Error importing customers:", error);
@@ -2502,7 +2545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      
+
       // Calculate last month range
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -2511,7 +2554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentMonthSales = await db.select()
         .from(dailySales)
         .where(sql`${dailySales.date} >= ${currentMonthStart.toISOString().split('T')[0]} AND ${dailySales.date} <= ${currentMonthEnd.toISOString().split('T')[0]}`);
-      
+
       // Fetch last month sales
       const lastMonthSales = await db.select()
         .from(dailySales)
@@ -2520,11 +2563,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate metrics
       const currentMonthRevenue = currentMonthSales.reduce((sum, sale) => sum + parseFloat(sale.totalSales), 0);
       const lastMonthRevenue = lastMonthSales.reduce((sum, sale) => sum + parseFloat(sale.totalSales), 0);
-      const momGrowth = lastMonthRevenue > 0 
-        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+      const momGrowth = lastMonthRevenue > 0
+        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
         : 0;
-      const avgTransaction = currentMonthSales.length > 0 
-        ? currentMonthRevenue / currentMonthSales.length 
+      const avgTransaction = currentMonthSales.length > 0
+        ? currentMonthRevenue / currentMonthSales.length
         : 0;
       const transactionCount = currentMonthSales.length;
 
@@ -2548,7 +2591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(dailySales)
         .orderBy(sql`${dailySales.date} DESC, ${dailySales.orderChannel}`)
         .limit(200);
-      
+
       res.json(sales);
     } catch (error) {
       console.error("Error fetching sales overview:", error);
@@ -2561,12 +2604,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const now = new Date();
       const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      
+
       const yearStart = `${now.getUTCFullYear()}-01-01`;
-      
+
       const monthStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       const monthStart = monthStartUTC.toISOString().split('T')[0];
-      
+
       const currentDayUTC = now.getUTCDay();
       let daysToSubtract = currentDayUTC === 0 ? 6 : currentDayUTC - 1;
       const mondayUTC = new Date(Date.UTC(
@@ -2576,7 +2619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         0, 0, 0, 0
       ));
       const weekStart = mondayUTC.toISOString().split('T')[0];
-      
+
       const lastMondayUTC = new Date(Date.UTC(
         mondayUTC.getUTCFullYear(),
         mondayUTC.getUTCMonth(),
@@ -2591,7 +2634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ));
       const lastWeekStart = lastMondayUTC.toISOString().split('T')[0];
       const lastWeekEnd = lastSundayUTC.toISOString().split('T')[0];
-      
+
       const lastMonthStartUTC = new Date(Date.UTC(
         now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear(),
         now.getUTCMonth() === 0 ? 11 : now.getUTCMonth() - 1,
@@ -2730,14 +2773,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const now = new Date();
       const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      
+
       // Calculate year start (January 1st) using UTC
       const yearStart = `${now.getUTCFullYear()}-01-01`;
-      
+
       // Calculate current month start (first day of current month) using UTC
       const monthStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       const monthStart = monthStartUTC.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
+
       // Calculate current week start (Monday) using UTC to match database dates
       const currentDayUTC = now.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
       let daysToSubtract;
@@ -2753,7 +2796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         0, 0, 0, 0
       ));
       const weekStart = mondayUTC.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
+
       // Calculate last week start (previous Monday) and end (previous Sunday)
       const lastMondayUTC = new Date(Date.UTC(
         mondayUTC.getUTCFullYear(),
@@ -2769,7 +2812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ));
       const lastWeekStart = lastMondayUTC.toISOString().split('T')[0];
       const lastWeekEnd = lastSundayUTC.toISOString().split('T')[0];
-      
+
       // Calculate last month start and end
       const lastMonthStartUTC = new Date(Date.UTC(
         now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear(),
@@ -2783,71 +2826,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ));
       const lastMonthStart = lastMonthStartUTC.toISOString().split('T')[0];
       const lastMonthEnd = lastMonthEndUTC.toISOString().split('T')[0];
-      
+
       // Fetch all sales for calculations
       const allSales = await db.select().from(dailySales);
-      
+
       // Calculate Current Week Revenue (Monday to today)
       const currentWeekSales = allSales
         .filter(s => s.date >= weekStart && s.date <= today)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
-      
+
       // Calculate Last Week Revenue (previous Monday to Sunday)
       const lastWeekSales = allSales
         .filter(s => s.date >= lastWeekStart && s.date <= lastWeekEnd)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
-      
+
       // Calculate Current Month Revenue (1st to today)
       const currentMonthSales = allSales
         .filter(s => s.date >= monthStart && s.date <= today)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
-      
+
       // Calculate Last Month Revenue (full month)
       const lastMonthSales = allSales
         .filter(s => s.date >= lastMonthStart && s.date <= lastMonthEnd)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
-      
+
       // Calculate YTD (Year to Date) - from Jan 1 to today using totalSales for consistency
       const ytdSalesData = allSales.filter(s => s.date >= yearStart && s.date <= today);
       const ytdSales = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const ytdTransactionCount = ytdSalesData.length;
-      
+
       // Calculate transaction counts for week and month
       const currentWeekTransactions = allSales.filter(s => s.date >= weekStart && s.date <= today).length;
       const currentMonthTransactions = allSales.filter(s => s.date >= monthStart && s.date <= today).length;
-      
+
       // Calculate days elapsed for projections
       const daysElapsedWeek = Math.floor((new Date(today).getTime() - new Date(weekStart).getTime()) / (1000 * 60 * 60 * 24)) + 1;
       const daysElapsedMonth = now.getUTCDate();
       const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
       const daysElapsedYear = Math.floor((new Date(today).getTime() - new Date(yearStart).getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      
+
       // Calculate same month last year for YoY comparison
       const lastYearMonthStart = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
       const lastYearMonthEnd = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(daysElapsedMonth).padStart(2, '0')}`;
       const sameMonthLastYear = allSales
         .filter(s => s.date >= lastYearMonthStart && s.date <= lastYearMonthEnd)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
-      
+
       // Calculate same YTD period last year
       const lastYearStart = `${now.getUTCFullYear() - 1}-01-01`;
       const lastYearToday = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
       const ytdLastYear = allSales
         .filter(s => s.date >= lastYearStart && s.date <= lastYearToday)
         .reduce((sum, s) => sum + parseFloat(s.netSales), 0);
-      
+
       // FY2026 Annual Target from business forecast
       const annualTarget = 1732028;
       const weeklyTarget = annualTarget / 52;
       const monthlyTarget = annualTarget / 12;
-      
+
       // Filter sales to current year only for best channel/day/month
       // Use fresh Date() to ensure we get the actual current year
       const currentYear = new Date().getFullYear();
       console.log(`[Sales Tracker] Filtering for year: ${currentYear}, Total sales records: ${allSales.length}`);
       const currentYearSales = allSales.filter(s => s.date.startsWith(String(currentYear)));
       console.log(`[Sales Tracker] Current year sales count: ${currentYearSales.length}`);
-      
+
       // Find best channel (highest total sales) - Current Year Only
       const channelTotals = currentYearSales.reduce((acc, sale) => {
         const channel = sale.orderChannel;
@@ -2857,11 +2900,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         acc[channel] += parseFloat(sale.totalSales);
         return acc;
       }, {} as Record<string, number>);
-      
+
       const bestChannel = Object.entries(channelTotals).length > 0
         ? Object.entries(channelTotals).sort(([, a], [, b]) => b - a)[0]
         : null;
-      
+
       // Find best single calendar date (highest total sales on one date) - Current Year Only
       // Group sales by date and find the date with highest combined sales
       const dateTotals = currentYearSales.reduce((acc, sale) => {
@@ -2873,13 +2916,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         acc[date].total += parseFloat(sale.totalSales);
         return acc;
       }, {} as Record<string, { total: number; dayOfWeek: string }>);
-      
+
       const bestDay = Object.entries(dateTotals).length > 0
         ? Object.entries(dateTotals)
-            .map(([date, data]) => ({ date, dayOfWeek: data.dayOfWeek, total: data.total }))
-            .sort((a, b) => b.total - a.total)[0]
+          .map(([date, data]) => ({ date, dayOfWeek: data.dayOfWeek, total: data.total }))
+          .sort((a, b) => b.total - a.total)[0]
         : null;
-      
+
       // Find best month (highest total sales) - Current Year Only
       const monthTotals = currentYearSales.reduce((acc, sale) => {
         const month = sale.date.substring(0, 7); // YYYY-MM
@@ -2889,11 +2932,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         acc[month] += parseFloat(sale.totalSales);
         return acc;
       }, {} as Record<string, number>);
-      
+
       const bestMonth = Object.entries(monthTotals).length > 0
         ? Object.entries(monthTotals).sort(([, a], [, b]) => b - a)[0]
         : null;
-      
+
       res.json({
         currentWeekSales,
         lastWeekSales,
@@ -2972,8 +3015,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Format dates as YYYY-MM-DD for string comparison
       const currentMonthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
       const lastMonthStart = `${lastMonthYear}-${String(lastMonth).padStart(2, '0')}-01`;
-      const nextMonthStart = currentMonth === 12 
-        ? `${currentYear + 1}-01-01` 
+      const nextMonthStart = currentMonth === 12
+        ? `${currentYear + 1}-01-01`
         : `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
 
       console.log('🔍 Date filters:', { currentMonthStart, lastMonthStart, nextMonthStart });
@@ -2993,13 +3036,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ytdSalesData = allSales.filter(s => s.date >= yearStart && s.date <= today);
       const ytdRevenue = ytdSalesData.reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
       const ytdTransactions = ytdSalesData.length;
-      
+
       // Same period last year for YoY comparison
       const lastYearStart = `${currentYear - 1}-01-01`;
       const lastYearToday = `${currentYear - 1}-${String(currentMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const sameMonthLastYearStart = `${currentYear - 1}-${String(currentMonth).padStart(2, '0')}-01`;
       const sameMonthLastYearEnd = `${currentYear - 1}-${String(currentMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      
+
       const sameMonthLastYear = allSales
         .filter(s => s.date >= sameMonthLastYearStart && s.date <= sameMonthLastYearEnd)
         .reduce((sum, s) => sum + parseFloat(s.totalSales), 0);
@@ -3075,7 +3118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Day of Week Analysis - use totalSales for consistency
       const dayMap = new Map<string, { revenue: number; transactions: number }>();
       const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      
+
       ytdSales.forEach(sale => {
         const day = normalizeDayOfWeek(sale.dayOfWeek || '');
         if (day) {
@@ -3140,7 +3183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         acc[date] += parseFloat(sale.netSales);
         return acc;
       }, {} as Record<string, number>);
-      
+
       const bestSingleDay = Object.entries(dateTotals).length > 0
         ? Object.entries(dateTotals).sort(([, a], [, b]) => b - a)[0]
         : null;
@@ -3310,18 +3353,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
-      
+
       if (!startDate || !endDate) {
         return res.status(400).json({ message: "Start and end dates are required" });
       }
-      
+
       console.log(`📊 Generating report for ${startDate} to ${endDate}`);
-      
+
       // Fetch sales in date range
       const sales = await db.select().from(dailySales)
         .where(sql`${dailySales.date} >= ${startDate} AND ${dailySales.date} <= ${endDate}`)
         .orderBy(sql`${dailySales.date} DESC`);
-      
+
       // Calculate summary metrics
       const totalNetSales = sales.reduce((sum, s) => sum + parseFloat(s.netSales), 0);
       const totalOtherSales = sales.reduce((sum, s) => sum + parseFloat(s.otherSales || '0'), 0);
@@ -3332,7 +3375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const msPerDay = 1000 * 60 * 60 * 24;
       const daysInPeriod = Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / msPerDay) + 1;
       const avgPerDay = daysInPeriod > 0 ? totalSales / daysInPeriod : 0;
-      
+
       // Channel breakdown
       const channelMap = new Map<string, { revenue: number; count: number }>();
       sales.forEach(sale => {
@@ -3349,7 +3392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           count: data.count,
         }))
         .sort((a, b) => b.revenue - a.revenue);
-      
+
       // Day of week breakdown
       const dayMap = new Map<string, { revenue: number; count: number }>();
       sales.forEach(sale => {
@@ -3367,7 +3410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         revenue: Math.round((dayMap.get(day)?.revenue || 0) * 100) / 100,
         count: dayMap.get(day)?.count || 0,
       }));
-      
+
       res.json({
         startDate,
         endDate,
@@ -3405,7 +3448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const currentYear = new Date().getFullYear();
       const startOfYear = `${currentYear}-01-01`;
-      
+
       // Get all sales for YTD
       const allSales = await db.select().from(dailySales)
         .where(sql`${dailySales.date} >= ${startOfYear}`);
@@ -3426,7 +3469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check 2: YTD total
       const ytdTotal = allSales.reduce((sum, sale) => sum + parseFloat(sale.totalSales), 0);
       const ytdRounded = Math.round(ytdTotal * 100) / 100;
-      
+
       // Check 3: Day-of-week breakdown sums to YTD
       const dayMap = new Map<string, number>();
       allSales.forEach(sale => {
@@ -3435,7 +3478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dayMap.set(day, (dayMap.get(day) || 0) + parseFloat(sale.totalSales));
         }
       });
-      
+
       let daySum = 0;
       const dayBreakdown: Record<string, number> = {};
       ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
@@ -3444,21 +3487,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         daySum += amount;
       });
       daySum = Math.round(daySum * 100) / 100;
-      
+
       // Check 4: Missing day_of_week
       const missingDayCount = allSales.filter(s => !s.dayOfWeek || s.dayOfWeek.trim() === '').length;
-      
+
       const difference = Math.round((ytdRounded - daySum) * 100) / 100;
       const isValid = Math.abs(difference) < 0.02 && missingDayCount === 0 && rowErrors.length === 0;
-      
+
       // Build checks array for UI display
       const checks = [
         {
           name: 'Row-level totals',
           description: 'totalSales = netSales + otherSales for each record',
           passed: rowErrors.length === 0,
-          detail: rowErrors.length === 0 
-            ? `All ${allSales.length} records verified` 
+          detail: rowErrors.length === 0
+            ? `All ${allSales.length} records verified`
             : `${rowErrors.length} record(s) have mismatched totals`,
           errors: rowErrors.slice(0, 10), // cap at 10 for display
         },
@@ -3466,22 +3509,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: 'Day-of-week coverage',
           description: 'All records have a day assigned',
           passed: missingDayCount === 0,
-          detail: missingDayCount === 0 
-            ? 'All records have day-of-week' 
+          detail: missingDayCount === 0
+            ? 'All records have day-of-week'
             : `${missingDayCount} records missing day-of-week`,
         },
         {
           name: 'Day totals vs YTD',
           description: 'Sum of all days equals YTD total',
           passed: Math.abs(difference) < 0.02,
-          detail: Math.abs(difference) < 0.02 
-            ? `Days ฿${daySum.toLocaleString('en-US', { minimumFractionDigits: 2 })} = YTD ฿${ytdRounded.toLocaleString('en-US', { minimumFractionDigits: 2 })}` 
+          detail: Math.abs(difference) < 0.02
+            ? `Days ฿${daySum.toLocaleString('en-US', { minimumFractionDigits: 2 })} = YTD ฿${ytdRounded.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
             : `Gap of ฿${difference.toLocaleString('en-US', { minimumFractionDigits: 2 })} (Days ฿${daySum.toLocaleString()} vs YTD ฿${ytdRounded.toLocaleString()})`,
         },
       ];
-      
+
       console.log(`✅ YTD: ฿${ytdRounded}, Day Sum: ฿${daySum}, Diff: ฿${difference}, Missing: ${missingDayCount}, Row errors: ${rowErrors.length}`);
-      
+
       res.json({
         success: true,
         isValid,
@@ -3493,16 +3536,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dayBreakdown,
         checks,
         rowErrors: rowErrors.slice(0, 10),
-        message: isValid 
+        message: isValid
           ? `All ${allSales.length} records passed all checks. YTD ฿${ytdRounded.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
           : checks.filter(c => !c.passed).map(c => c.detail).join(' | ')
       });
     } catch (error: any) {
       console.error("Error validating totals:", error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "Failed to validate totals",
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -3515,14 +3558,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recordsToFix = await db.select()
         .from(dailySales)
         .where(sql`${dailySales.dayOfWeek} IS NULL OR ${dailySales.dayOfWeek} = ''`);
-      
+
       console.log(`📊 Found ${recordsToFix.length} records with missing day_of_week`);
-      
+
       if (recordsToFix.length === 0) {
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           message: "No records need fixing - all day_of_week values are already set!",
-          fixed: 0 
+          fixed: 0
         });
       }
 
@@ -3535,12 +3578,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const date = new Date(record.date + 'T00:00:00Z');
           const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
           const normalizedDay = normalizeDayOfWeek(dayOfWeek);
-          
+
           // Update the record
           await db.update(dailySales)
             .set({ dayOfWeek: normalizedDay })
             .where(eq(dailySales.id, record.id));
-          
+
           fixedCount++;
         } catch (err: any) {
           errors.push(`Failed to fix record ${record.id}: ${err.message}`);
@@ -3548,9 +3591,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`✅ Fixed ${fixedCount} records`);
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: `Successfully fixed ${fixedCount} of ${recordsToFix.length} records`,
         fixed: fixedCount,
         total: recordsToFix.length,
@@ -3558,10 +3601,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error fixing day_of_week:", error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "Failed to fix day_of_week values",
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -3570,7 +3613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/import-sales-excel', isAuthenticated, isAdmin, upload.single('file'), async (req, res) => {
     console.log('📊 Excel import request received');
     console.log('📁 File info:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'No file');
-    
+
     try {
       if (!req.file) {
         console.error('❌ No file uploaded');
@@ -3630,7 +3673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const dateValue = rawRow['Date'] || rawRow['date'] || rawRow['__EMPTY_1'];
             const orderChannel = (rawRow['Order Channel'] || rawRow['order_channel'] || rawRow['__EMPTY_2'] || '').toString().trim();
             const rawDayOfWeek = (rawRow['Day'] || rawRow['day'] || rawRow['__EMPTY'] || rawRow[''] || '').toString().trim();
-            
+
             // Skip weekly total rows (they don't have a date in proper format)
             // ExcelJS parses date cells as Date objects; fall back to serial-number handling for safety.
             if (!dateValue || (typeof dateValue !== 'number' && !(dateValue instanceof Date))) {
@@ -3648,18 +3691,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const jsDate = new Date(excelEpoch.getTime() + (dateValue * 86400000));
               date = jsDate.toISOString().split('T')[0];
             }
-            
+
             // Extract data - handle both __EMPTY columns and named columns
             const dayOfWeek = normalizeDayOfWeek(rawDayOfWeek);
-            
+
             // Net Sales can be in __EMPTY_3 or __EMPTY_4 (there are duplicate columns)
             const netSalesRaw = rawRow['Net Sales'] || rawRow['net_sales'] || rawRow['__EMPTY_3'] || rawRow['__EMPTY_4'] || 0;
             const netSales = parseNumeric(netSalesRaw);
-            
+
             // Total Sales is in __EMPTY_5
             const totalSalesRaw = rawRow['Total Sales'] || rawRow['total_sales'] || rawRow['__EMPTY_5'] || 0;
             const totalSales = parseNumeric(totalSalesRaw);
-            
+
             // Grab Fee if available
             const grabFee = parseNumeric(rawRow['Grab Fee'] || rawRow['grab_fee'] || rawRow['grab'] || 0);
 
@@ -3773,22 +3816,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const personalizedHtmlContent = htmlContent
             ? htmlContent
-                .replace(/{name}/g, customer.name)
-                .replace(/\{\{name\}\}/g, customer.name)
-                .replace(/{points}/g, customer.points.toString())
-                .replace(/\{\{points\}\}/g, customer.points.toString())
-                .replace(/{tier}/g, customer.tier)
-                .replace(/\{\{tier\}\}/g, customer.tier)
+              .replace(/{name}/g, customer.name)
+              .replace(/\{\{name\}\}/g, customer.name)
+              .replace(/{points}/g, customer.points.toString())
+              .replace(/\{\{points\}\}/g, customer.points.toString())
+              .replace(/{tier}/g, customer.tier)
+              .replace(/\{\{tier\}\}/g, customer.tier)
             : null;
 
           const personalizedSubject = subject
             ? subject
-                .replace(/{name}/g, customer.name)
-                .replace(/\{\{name\}\}/g, customer.name)
-                .replace(/{points}/g, customer.points.toString())
-                .replace(/\{\{points\}\}/g, customer.points.toString())
-                .replace(/{tier}/g, customer.tier)
-                .replace(/\{\{tier\}\}/g, customer.tier)
+              .replace(/{name}/g, customer.name)
+              .replace(/\{\{name\}\}/g, customer.name)
+              .replace(/{points}/g, customer.points.toString())
+              .replace(/\{\{points\}\}/g, customer.points.toString())
+              .replace(/{tier}/g, customer.tier)
+              .replace(/\{\{tier\}\}/g, customer.tier)
             : 'Message from Yens Thai Ice Cream';
 
           emailsToSend.push({
@@ -3841,7 +3884,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           try {
             const smsResult = await sendSMS(customer.phone, personalizedMessage);
-            
+
             if (smsResult.success) {
               smsSent++;
             } else {
@@ -3910,7 +3953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Product API Endpoints ============
-  
+
   // Get all products
   app.get('/api/products', async (req, res) => {
     try {
@@ -4017,7 +4060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/products/import', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { products } = req.body;
-      
+
       if (!Array.isArray(products) || products.length === 0) {
         return res.status(400).json({ message: "Products array is required" });
       }
@@ -4086,7 +4129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
-      
+
       const filename = req.file.filename;
       const publicUrl = `${env.APP_PUBLIC_URL}/uploads/product-images/${filename}`;
       res.status(200).json({ url: publicUrl });
@@ -4206,7 +4249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/customers/import', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { customers: customerData } = req.body;
-      
+
       if (!Array.isArray(customerData) || customerData.length === 0) {
         return res.status(400).json({ message: "Customers array is required" });
       }
@@ -4220,7 +4263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Validate against Zod schema first
           const validationResult = insertCustomerCSVSchema.safeParse(customer);
-          
+
           if (!validationResult.success) {
             const errorMessages = validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
             throw new Error(`Validation failed: ${errorMessages}`);
@@ -4237,7 +4280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Optional fields from validated data
           if (validData.email?.trim()) normalized.email = validData.email.trim();
           if (validData.gender?.trim()) normalized.gender = validData.gender.trim();
-          
+
           // Normalize birthday to MM-DD format (month-day only)
           if (validData.birthday?.trim()) {
             try {
@@ -4245,7 +4288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               let month: number;
               let day: number;
               let year: number | null = null;
-              
+
               // Handle DD/MM/YYYY format (Thai format with /)
               if (birthdayStr.includes('/')) {
                 const parts = birthdayStr.split('/');
@@ -4275,19 +4318,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
               } else {
                 throw new Error(`Invalid birthday format: ${birthdayStr}`);
               }
-              
+
               // Validate month and day ranges
               if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
                 throw new Error(`Invalid month/day values: ${birthdayStr}`);
               }
-              
+
               // Handle Thai Buddhist Era (B.E.) years - convert to Gregorian
               const currentYear = new Date().getFullYear();
               if (year !== null && !isNaN(year) && year > currentYear + 100) {
                 // Likely Buddhist Era year (B.E. = C.E. + 543)
                 year = year - 543;
               }
-              
+
               // Filter out future dates (invalid birthdays from CSV import errors)
               if (year !== null && !isNaN(year)) {
                 const birthDate = new Date(year, month - 1, day);
@@ -4296,7 +4339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   throw new Error(`Birthday cannot be in the future: ${birthdayStr}`);
                 }
               }
-              
+
               // Normalize to MM-DD format (zero-padded)
               const monthStr = month.toString().padStart(2, '0');
               const dayStr = day.toString().padStart(2, '0');
@@ -4306,7 +4349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Skip invalid birthday - don't store it
             }
           }
-          
+
           if (validData.tag?.trim()) normalized.tag = validData.tag.trim();
           if (validData.lineUid?.trim()) normalized.lineUid = validData.lineUid.trim();
           if (validData.registerBranch?.trim()) normalized.registerBranch = validData.registerBranch.trim();
@@ -4340,10 +4383,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Normalize tier (case insensitive) with validation and mapping
           if (validData.tier?.trim()) {
             const tierValue = validData.tier.toLowerCase().trim();
-            
+
             // Valid tier values
             const validTiers = ['bronze', 'silver', 'gold', 'platinum'];
-            
+
             // Map common CSV tier names to valid tiers
             const tierMappings: Record<string, string> = {
               'member': 'bronze',
@@ -4354,7 +4397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               'vip': 'gold',
               'premium': 'platinum',
             };
-            
+
             if (validTiers.includes(tierValue)) {
               normalized.tier = tierValue;
             } else if (tierMappings[tierValue]) {
@@ -4398,13 +4441,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const year = parseInt(parts[2]);
                 let hour = 0;
                 let minute = 0;
-                
+
                 if (parts.length > 3 && parts[3].includes(':')) {
                   const timeParts = parts[3].split(':');
                   hour = parseInt(timeParts[0]) || 0;
                   minute = parseInt(timeParts[1]) || 0;
                 }
-                
+
                 // Use Date.UTC for consistent parsing
                 const date = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
                 if (!isNaN(date.getTime())) {
@@ -4418,7 +4461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Upsert customer by phone
           const result = await storage.upsertCustomerByPhone(normalized);
-          
+
           if (result.action === 'insert') {
             imported.push(result.customer);
           } else {
@@ -4510,7 +4553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE email IN ('Male', 'Female', 'male', 'female', 'Anonymous')
         OR (email IS NOT NULL AND email != '' AND email NOT LIKE '%@%')
       `);
-      
+
       res.json({
         success: true,
         message: "Email cleanup completed",
@@ -4521,7 +4564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to clean up emails" });
     }
   });
-  
+
   // Get all message templates
   app.get('/api/admin/message-templates', isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -4565,7 +4608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
-      
+
       const templates = await storage.getMessageTemplatesByChannel(req.params.channel);
       res.json(templates);
     } catch (error) {
@@ -4635,9 +4678,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasBirthdayTemplates = existingTemplates.some(t => t.type === 'birthday');
 
       if (hasBirthdayTemplates) {
-        return res.json({ 
-          message: "Default templates already exist", 
-          created: 0 
+        return res.json({
+          message: "Default templates already exist",
+          created: 0
         });
       }
 
@@ -4689,8 +4732,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         templates.map(template => storage.createMessageTemplate(template))
       );
 
-      res.json({ 
-        message: "Default birthday templates created successfully", 
+      res.json({
+        message: "Default birthday templates created successfully",
         created: created.length,
         templates: created
       });
@@ -4701,12 +4744,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Birthday Message Sending Endpoints (Admin Only) ============
-  
+
   // Send birthday messages to specific customers
   app.post('/api/admin/send-birthday-messages', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { customerIds, templateId } = req.body;
-      
+
       if (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0) {
         return res.status(400).json({ message: "Customer IDs required" });
       }
@@ -4734,12 +4777,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let i = 0; i < validCustomers.length; i++) {
         const customer = validCustomers[i];
         if (!customer) continue;
-        
+
         // Add delay between messages to avoid rate limiting (250ms)
         if (i > 0) {
           await new Promise(resolve => setTimeout(resolve, 250));
         }
-        
+
         // Replace placeholders in template
         const personalizedMessage = template.message
           .replace(/{name}/g, customer.name)
@@ -4748,9 +4791,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const personalizedSubject = template.subject
           ? template.subject
-              .replace(/{name}/g, customer.name)
-              .replace(/{points}/g, customer.points.toString())
-              .replace(/{tier}/g, customer.tier)
+            .replace(/{name}/g, customer.name)
+            .replace(/{points}/g, customer.points.toString())
+            .replace(/{tier}/g, customer.tier)
           : null;
 
         // Send via SMS if channel includes SMS
@@ -4758,7 +4801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (template.channel === 'sms' || template.channel === 'both') {
           if (customer.phone) {
             smsResult = await sendSMS(customer.phone, personalizedMessage);
-            
+
             await storage.createMessageLog({
               customerId: customer.id,
               templateId: template.id,
@@ -4777,21 +4820,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let emailResult = null;
         if (template.channel === 'email' || template.channel === 'both') {
           if (customer.email && personalizedSubject) {
-            const emailContent = template.htmlContent 
+            const emailContent = template.htmlContent
               ? template.htmlContent
-                  .replace(/\{\{customerName\}\}/g, customer.name)
-                  .replace(/\{\{name\}\}/g, customer.name)
-                  .replace(/\{name\}/g, customer.name)
-                  .replace(/\{\{points\}\}/g, customer.points.toString())
-                  .replace(/\{points\}/g, customer.points.toString())
-                  .replace(/\{\{tier\}\}/g, customer.tier)
-                  .replace(/\{tier\}/g, customer.tier)
+                .replace(/\{\{customerName\}\}/g, customer.name)
+                .replace(/\{\{name\}\}/g, customer.name)
+                .replace(/\{name\}/g, customer.name)
+                .replace(/\{\{points\}\}/g, customer.points.toString())
+                .replace(/\{points\}/g, customer.points.toString())
+                .replace(/\{\{tier\}\}/g, customer.tier)
+                .replace(/\{tier\}/g, customer.tier)
               : personalizedMessage;
-            
+
             emailResult = template.htmlContent
               ? await sendHtmlEmail(customer.email, personalizedSubject, emailContent)
               : await sendEmail(customer.email, personalizedSubject, emailContent);
-            
+
             await storage.createMessageLog({
               customerId: customer.id,
               templateId: template.id,
@@ -4836,7 +4879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/messages', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const logs = await storage.getMessageLogs();
-      
+
       // Enrich with customer names
       const enrichedLogs = await Promise.all(
         logs.map(async (log) => {
@@ -4859,7 +4902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/messages/stats', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const logs = await storage.getMessageLogs();
-      
+
       // Calculate today's stats (Bangkok timezone)
       const now = new Date();
       const bangkokOffset = 7 * 60 * 60 * 1000; // UTC+7
@@ -4867,12 +4910,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const todayStart = new Date(bangkokNow);
       todayStart.setHours(0, 0, 0, 0);
       const todayStartUTC = new Date(todayStart.getTime() - bangkokOffset);
-      
+
       const todayLogs = logs.filter(l => {
         const sentAt = l.sentAt ? new Date(l.sentAt) : new Date(l.createdAt);
         return sentAt >= todayStartUTC;
       });
-      
+
       const stats = {
         total: logs.length,
         sent: logs.filter(l => l.status === 'sent').length,
@@ -4909,7 +4952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get target customers based on recipient type
       let targetCustomers: any[] = [];
-      
+
       if (recipientType === 'all') {
         targetCustomers = await storage.getAllCustomers();
       } else if (recipientType === 'tier' && tier) {
@@ -4927,7 +4970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         today.setHours(0, 0, 0, 0);
         const todayMonth = today.getMonth() + 1;
         const todayDay = today.getDate();
-        
+
         // Week range calculation
         const dayOfWeek = today.getDay();
         const weekStart = new Date(today);
@@ -4936,14 +4979,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         weekEnd.setHours(23, 59, 59, 999);
-        
+
         targetCustomers = allCustomers.filter(customer => {
           if (!customer.birthday) return false;
-          
+
           try {
             const birthdayStr = customer.birthday.toString().trim();
             let birthMonth: number = 0, birthDay: number = 0;
-            
+
             if (birthdayStr.includes('-')) {
               const parts = birthdayStr.split('-');
               if (parts.length === 2) {
@@ -4972,9 +5015,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               birthMonth = parsedDate.getMonth() + 1;
               birthDay = parsedDate.getDate();
             }
-            
+
             if (!birthMonth || !birthDay || isNaN(birthMonth) || isNaN(birthDay)) return false;
-            
+
             if (recipientType === 'birthday_today') {
               return birthMonth === todayMonth && birthDay === todayDay;
             } else {
@@ -5043,12 +5086,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const personalizedSubject = subject
               ? subject
-                  .replace(/\{\{name\}\}/g, customer.name)
-                  .replace(/\{\{points\}\}/g, customer.points.toString())
-                  .replace(/\{\{tier\}\}/g, customer.tier)
-                  .replace(/\{name\}/g, customer.name)
-                  .replace(/\{points\}/g, customer.points.toString())
-                  .replace(/\{tier\}/g, customer.tier)
+                .replace(/\{\{name\}\}/g, customer.name)
+                .replace(/\{\{points\}\}/g, customer.points.toString())
+                .replace(/\{\{tier\}\}/g, customer.tier)
+                .replace(/\{name\}/g, customer.name)
+                .replace(/\{points\}/g, customer.points.toString())
+                .replace(/\{tier\}/g, customer.tier)
               : 'Message from Yens Thai Ice Cream';
 
             const isHtmlContent = personalizedMessage.trim().startsWith('<') ||
@@ -5149,12 +5192,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const personalizedSubject = subject
                 ? subject
-                    .replace(/\{\{name\}\}/g, customer.name)
-                    .replace(/\{\{points\}\}/g, customer.points.toString())
-                    .replace(/\{\{tier\}\}/g, customer.tier)
-                    .replace(/\{name\}/g, customer.name)
-                    .replace(/\{points\}/g, customer.points.toString())
-                    .replace(/\{tier\}/g, customer.tier)
+                  .replace(/\{\{name\}\}/g, customer.name)
+                  .replace(/\{\{points\}\}/g, customer.points.toString())
+                  .replace(/\{\{tier\}\}/g, customer.tier)
+                  .replace(/\{name\}/g, customer.name)
+                  .replace(/\{points\}/g, customer.points.toString())
+                  .replace(/\{tier\}/g, customer.tier)
                 : null;
 
               if (channel === 'app') {
@@ -5343,7 +5386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (messageLog.channel === 'sms') {
         try {
           const twilioResult = await sendSMS(messageLog.recipient, messageLog.message);
-          
+
           if (twilioResult.success && twilioResult.messageId) {
             await storage.updateMessageLogStatus(
               id,
@@ -5373,15 +5416,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (messageLog.channel === 'email') {
         try {
           const subject = messageLog.subject || 'Message from Yens Thai Ice Cream';
-          
+
           // Detect if message contains HTML
-          const isHtmlContent = messageLog.message.trim().startsWith('<') || 
+          const isHtmlContent = messageLog.message.trim().startsWith('<') ||
             /<(div|table|html|body|head|style|img|a|span|p|br|h[1-6]|ul|ol|li)\b/i.test(messageLog.message);
-          
+
           const emailResult = isHtmlContent
             ? await sendHtmlEmail(messageLog.recipient, subject, messageLog.message)
             : await sendEmail(messageLog.recipient, subject, messageLog.message);
-          
+
           if (emailResult.success && emailResult.messageId) {
             await storage.updateMessageLogStatus(
               id,
@@ -5428,7 +5471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let targetCustomers: any[] = [];
-      
+
       if (recipientType === 'all') {
         targetCustomers = await storage.getAllCustomers();
       } else if (recipientType === 'tier' && tier) {
@@ -5474,7 +5517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const lineResult = imageUrl
               ? await sendLineImageMessage(customer.lineUid, imageUrl, message)
               : await sendLineMessage(customer.lineUid, message);
-            
+
             await storage.createMessageLog({
               customerId: customer.id,
               templateId: null,
@@ -5589,12 +5632,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/messages/scheduled/:id/cancel', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       const existingMessage = await storage.getScheduledMessage(id);
       if (!existingMessage) {
         return res.status(404).json({ message: "Scheduled message not found" });
       }
-      
+
       if (existingMessage.status !== 'pending') {
         return res.status(400).json({ message: "Can only cancel pending messages" });
       }
@@ -5776,8 +5819,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LINE Webhook test endpoint (for debugging)
   app.get('/api/line/webhook', (req, res) => {
     console.log('🔍 LINE webhook GET test accessed');
-    res.json({ 
-      status: 'ok', 
+    res.json({
+      status: 'ok',
       message: 'LINE webhook endpoint is reachable',
       timestamp: new Date().toISOString()
     });
@@ -5787,19 +5830,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/line/webhook', async (req, res) => {
     try {
       console.log(`📥 LINE webhook received at ${new Date().toISOString()}`);
-      
+
       const body = req.body as LineWebhookBody;
-      
+
       // Handle LINE verification request (empty events array) - respond 200 OK immediately
       // LINE sends this to verify the webhook URL is working
       if (!body.events || body.events.length === 0) {
         console.log('✅ LINE webhook verification - empty events, responding OK');
         return res.status(200).json({ message: 'OK' });
       }
-      
+
       // For actual events, verify signature
       const signature = req.headers['x-line-signature'] as string;
-      
+
       if (!signature) {
         console.warn('⚠️ LINE webhook: Missing signature');
         return res.status(401).json({ message: 'Missing signature' });
@@ -5807,13 +5850,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get raw body - try multiple sources
       let rawBody = (req as any).rawBody;
-      
+
       // Fallback: if rawBody not captured, use stringified body
       if (!rawBody && req.body) {
         rawBody = JSON.stringify(req.body);
         console.log('📝 Using stringified body as fallback');
       }
-      
+
       if (!rawBody) {
         console.error('❌ LINE webhook: Raw body not captured');
         return res.status(500).json({ message: 'Raw body not available' });
@@ -5832,7 +5875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process each event
       for (const event of body.events) {
         const lineUserId = event.source?.userId;
-        
+
         if (!lineUserId) {
           console.log('⚠️ Event without userId, skipping');
           continue;
@@ -5858,7 +5901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             if (existingByLine) {
               console.log(`✅ Customer already linked: ${existingByLine.name}`);
-              
+
               // Send beautiful welcome back Flex Message
               if ('replyToken' in event && event.replyToken) {
                 await replyLineTemplatedMessage(
@@ -5887,14 +5930,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Handle message event (customer sends a message)
         if (event.type === 'message' && event.message.type === 'text') {
           const messageText = event.message.text.trim();
-          
+
           // Check if message is a linking code (format: LINK-XXXX)
           const linkCodeMatch = messageText.toUpperCase().match(/^LINK-([A-Z0-9]{4})$/);
-          
+
           if (linkCodeMatch) {
             const fullCode = `LINK-${linkCodeMatch[1]}`;
             const customerId = await validateLinkingCode(fullCode);
-            
+
             if (customerId) {
               try {
                 const customer = await storage.getCustomer(customerId);
@@ -5938,12 +5981,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   });
 
                   console.log(`✨ BOUTIQUE ALERT: Member ${customer.name || customer.id} has re-entered the Registry.`);
-                  
+
                   // Consume the code so it can't be reused
                   await consumeLinkingCode(fullCode);
-                  
+
                   console.log(`✅ Linked ${customer.name} to LINE via code ${fullCode}: ${lineUserId}${wasNotLinked ? ` (+${LINE_BONUS_POINTS} bonus points!)` : ''}`);
-                  
+
                   // Send beautiful Flex Message for account linked
                   if ('replyToken' in event && event.replyToken) {
                     await replyLineTemplatedMessage(
@@ -5977,7 +6020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             continue; // Don't process further for this event
           }
-          
+
           // Unrecognized message — guide the user to use the secure LINK-XXXX code from the app.
           // Phone-number based linking has been removed: knowing a phone number alone is not
           // sufficient proof of account ownership and could allow account hijacking.
@@ -6079,42 +6122,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/sites/seed-defaults', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const existingSites = await storage.getAllSites();
-      
+
       // Only seed if there are fewer than 5 sites (to avoid duplicates)
       if (existingSites.length >= 5) {
-        return res.status(400).json({ 
-          message: "Sites already exist. Delete existing sites first if you want to reseed." 
+        return res.status(400).json({
+          message: "Sites already exist. Delete existing sites first if you want to reseed."
         });
       }
 
       const defaultSites = [
-        { name: 'Yens Head Office', channelName: 'SHOP', type: 'stall' as const, isActive: true, location: 'Head Office Location', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '09:00', closeTime: '21:00' },
-        { name: 'Supalai Location', channelName: 'SUPALAI', type: 'stall' as const, isActive: true, location: 'Supalai', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
-        { name: 'Balloon Event', channelName: 'BALLOON', type: 'mobile_van' as const, isActive: true, location: 'Various', operatingDays: ['saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
-        { name: 'Box Location', channelName: 'BOX', type: 'stall' as const, isActive: true, location: 'Box Area', operatingDays: ['monday','tuesday','wednesday','thursday','friday'], openTime: '09:00', closeTime: '18:00' },
-        { name: 'River Market', channelName: 'RIVER', type: 'mobile_van' as const, isActive: true, location: 'River', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
-        { name: 'Army Base', channelName: 'ARMY', type: 'stall' as const, isActive: true, location: 'Army Location', operatingDays: ['monday','tuesday','wednesday','thursday','friday'], openTime: '08:00', closeTime: '17:00' },
-        { name: 'Lamp Area', channelName: 'LAMP', type: 'stall' as const, isActive: true, location: 'Lamp', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '22:00' },
-        { name: 'CNY Events', channelName: 'CNY', type: 'mobile_van' as const, isActive: true, location: 'Various CNY Locations', operatingDays: ['saturday','sunday'], openTime: '09:00', closeTime: '21:00' },
-        { name: 'University Campus', channelName: 'UNIVERSITY', type: 'stall' as const, isActive: true, location: 'University', operatingDays: ['monday','tuesday','wednesday','thursday','friday'], openTime: '08:00', closeTime: '18:00' },
-        { name: 'Grab Delivery', channelName: 'GRAB', type: 'stall' as const, isActive: true, location: 'Online - Grab Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
-        { name: 'FoodPanda Delivery', channelName: 'FOODPANDA', type: 'stall' as const, isActive: true, location: 'Online - FoodPanda Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
-        { name: 'LINE MAN Delivery', channelName: 'LINEMAN', type: 'stall' as const, isActive: true, location: 'Online - LINE MAN Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
-        { name: 'Shopee Food', channelName: 'SHOPEE', type: 'stall' as const, isActive: true, location: 'Online - Shopee Platform', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
-        { name: 'Shopzy Platform', channelName: 'SHOPZY', type: 'stall' as const, isActive: true, location: 'Online - Shopzy', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '00:00', closeTime: '23:59' },
-        { name: 'G2 Location', channelName: 'G2', type: 'stall' as const, isActive: true, location: 'G2 Area', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '10:00', closeTime: '20:00' },
-        { name: 'Caravan Truck', channelName: 'CARAVAN TRUCK', type: 'mobile_van' as const, isActive: true, location: 'Various', operatingDays: ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'], openTime: '09:00', closeTime: '21:00' },
+        { name: 'Yens Head Office', channelName: 'SHOP', type: 'stall' as const, isActive: true, location: 'Head Office Location', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '09:00', closeTime: '21:00' },
+        { name: 'Supalai Location', channelName: 'SUPALAI', type: 'stall' as const, isActive: true, location: 'Supalai', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Balloon Event', channelName: 'BALLOON', type: 'mobile_van' as const, isActive: true, location: 'Various', operatingDays: ['saturday', 'sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Box Location', channelName: 'BOX', type: 'stall' as const, isActive: true, location: 'Box Area', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: '09:00', closeTime: '18:00' },
+        { name: 'River Market', channelName: 'RIVER', type: 'mobile_van' as const, isActive: true, location: 'River', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Army Base', channelName: 'ARMY', type: 'stall' as const, isActive: true, location: 'Army Location', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: '08:00', closeTime: '17:00' },
+        { name: 'Lamp Area', channelName: 'LAMP', type: 'stall' as const, isActive: true, location: 'Lamp', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '10:00', closeTime: '22:00' },
+        { name: 'CNY Events', channelName: 'CNY', type: 'mobile_van' as const, isActive: true, location: 'Various CNY Locations', operatingDays: ['saturday', 'sunday'], openTime: '09:00', closeTime: '21:00' },
+        { name: 'University Campus', channelName: 'UNIVERSITY', type: 'stall' as const, isActive: true, location: 'University', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], openTime: '08:00', closeTime: '18:00' },
+        { name: 'Grab Delivery', channelName: 'GRAB', type: 'stall' as const, isActive: true, location: 'Online - Grab Platform', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'FoodPanda Delivery', channelName: 'FOODPANDA', type: 'stall' as const, isActive: true, location: 'Online - FoodPanda Platform', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'LINE MAN Delivery', channelName: 'LINEMAN', type: 'stall' as const, isActive: true, location: 'Online - LINE MAN Platform', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'Shopee Food', channelName: 'SHOPEE', type: 'stall' as const, isActive: true, location: 'Online - Shopee Platform', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'Shopzy Platform', channelName: 'SHOPZY', type: 'stall' as const, isActive: true, location: 'Online - Shopzy', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '00:00', closeTime: '23:59' },
+        { name: 'G2 Location', channelName: 'G2', type: 'stall' as const, isActive: true, location: 'G2 Area', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '10:00', closeTime: '20:00' },
+        { name: 'Caravan Truck', channelName: 'CARAVAN TRUCK', type: 'mobile_van' as const, isActive: true, location: 'Various', operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], openTime: '09:00', closeTime: '21:00' },
       ];
 
       // Validate all data before inserting to ensure data integrity
       const validatedSites = defaultSites.map(siteData => insertSiteSchema.parse(siteData));
-      
+
       // Use storage layer's bulk create method for atomic transaction
       const createdSites = await storage.bulkCreateSites(validatedSites);
 
-      res.status(201).json({ 
-        message: `Successfully created ${createdSites.length} default sites`, 
-        sites: createdSites 
+      res.status(201).json({
+        message: `Successfully created ${createdSites.length} default sites`,
+        sites: createdSites
       });
     } catch (error) {
       console.error("Error seeding default sites:", error);
@@ -6128,7 +6171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate update data using partial of insertSiteSchema to preserve channelName validation
       const updateSiteSchema = insertSiteSchema.partial();
       const validatedData = updateSiteSchema.parse(req.body);
-      
+
       const site = await storage.updateSite(req.params.id, validatedData);
       if (!site) {
         return res.status(404).json({ message: "Site not found" });
@@ -6155,7 +6198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Barista Time Tracking Routes ============
-  
+
   // Get current user's active time entry (currently clocked in)
   app.get('/api/barista/time-entry/current', isAuthenticated, async (req, res) => {
     try {
@@ -6191,9 +6234,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error clocking in:", error);
       // Return 400 for validation errors (already clocked in, invalid site, etc.)
-      if (error.message?.includes("already clocked in") || 
-          error.message?.includes("Invalid site") || 
-          error.message?.includes("inactive site")) {
+      if (error.message?.includes("already clocked in") ||
+        error.message?.includes("Invalid site") ||
+        error.message?.includes("inactive site")) {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to clock in" });
@@ -6238,12 +6281,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Barista Customer Search ============
-  
+
   // Search customers by phone (for Baristas)
   app.get('/api/barista/customers/search', isAuthenticated, async (req, res) => {
     try {
       const { phone } = req.query;
-      
+
       if (!phone || typeof phone !== 'string') {
         return res.status(400).json({ message: "Phone number query parameter is required" });
       }
@@ -6279,7 +6322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Barista Work Schedule Routes ============
-  
+
   // Get work schedules for current user
   app.get('/api/barista/schedules', isAuthenticated, async (req, res) => {
     try {
@@ -6302,7 +6345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Barista Announcements Routes ============
-  
+
   // Get active barista announcements
   app.get('/api/barista/announcements', isAuthenticated, async (req, res) => {
     try {
@@ -6315,7 +6358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Admin Work Schedule Routes ============
-  
+
   // Get all work schedules
   // Admin: all time entries (clock in/out log)
   app.get('/api/admin/time-entries', isAuthenticated, isAdmin, async (req, res) => {
@@ -6388,11 +6431,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/work-schedules', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { mode, ...data } = req.body;
-      
+
       // Weekly mode: create series with multiple schedules
       if (mode === 'weekly') {
         const { weekStartDate, daysOfWeek, repeatWeeks, userId, siteId, startTime, endTime, notes } = data;
-        
+
         // Validation
         if (!userId || !siteId) {
           return res.status(400).json({ message: "Weekly mode requires userId and siteId" });
@@ -6410,7 +6453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isNaN(weeks) || weeks < 1 || weeks > 52) {
           return res.status(400).json({ message: "Repeat weeks must be between 1 and 52" });
         }
-        
+
         const createdBy = (req.user as any)?.id;
         const result = await storage.createWorkScheduleSeries(
           {
@@ -6425,7 +6468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           createdBy
         );
-        
+
         res.json({
           mode: 'weekly',
           seriesId: result.series.id,
@@ -6489,7 +6532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ Admin Barista Announcements Routes ============
-  
+
   // Get all barista announcements (including inactive)
   app.get('/api/admin/barista-announcements', isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -6587,7 +6630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // === WEEKLY SPECIALS - ADMIN ROUTES ===
-  
+
   // Get all weekly specials
   app.get('/api/admin/weekly-specials', isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -6644,7 +6687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // === WEEKLY SPECIALS - BARISTA ROUTES ===
-  
+
   // Get active weekly special
   app.get('/api/weekly-special/active', isAuthenticated, async (req, res) => {
     try {
@@ -6657,7 +6700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // === BARISTA PERFORMANCE ROUTES ===
-  
+
   // Get weekly leaderboard
   app.get('/api/barista/leaderboard', isAuthenticated, async (req, res) => {
     try {
@@ -6781,31 +6824,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // === DATA DOWNLOADS ROUTE ===
-  
+
   // Download export files (admin only)
   app.get('/api/admin/downloads/:filename', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { filename } = req.params;
       const fs = await import('fs');
       const path = await import('path');
-      
+
       // Security: only allow specific filenames
       const allowedFiles = ['failed_customers_export.csv'];
       if (!allowedFiles.includes(filename)) {
         return res.status(404).json({ message: "File not found" });
       }
-      
+
       const filePath = path.join(process.cwd(), 'public', 'downloads', filename);
-      
+
       // Check if file exists
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ message: "File not found" });
       }
-      
+
       // Set headers for file download
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      
+
       // Stream the file
       const fileStream = fs.createReadStream(filePath);
       fileStream.pipe(res);
@@ -6818,7 +6861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Customer Reviews API
   // ============================================
-  
+
   // Submit a customer review — requires an active customer session and the customerId in
   // the body must match the session owner to prevent forged reviews on behalf of others.
   app.post('/api/reviews', async (req, res) => {
@@ -6842,9 +6885,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comment: reviewData.comment || null,
         googlePlaceId: reviewData.googlePlaceId || null,
       }).returning();
-      
+
       console.log(`⭐ New review submitted: ${reviewData.rating} stars`);
-      
+
       res.json(newReview);
     } catch (error) {
       console.error("Error submitting review:", error);
@@ -6854,7 +6897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to submit review" });
     }
   });
-  
+
   // Get all reviews (admin)
   app.get('/api/reviews', isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -6891,7 +6934,7 @@ function getMondayString(date: Date): string {
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d.setDate(diff));
-  
+
   const year = monday.getFullYear();
   const month = String(monday.getMonth() + 1).padStart(2, '0');
   const dayStr = String(monday.getDate()).padStart(2, '0');
@@ -6907,16 +6950,16 @@ async function updateBaristaPerformanceAfterTransaction(
   weeklySpecialBonusPoints: number = 0
 ) {
   const weekStart = getMondayString(new Date());
-  
+
   // Get existing performance for this week
   const existing = await storage.getBaristaPerformance(baristaId, weekStart);
-  
+
   // Calculate points: 1 point per transaction + special offer bonus + new customer bonus
   const basePoints = 1; // 1 point per transaction
   const specialOfferPoints = isSpecialOffer ? weeklySpecialBonusPoints : 0;
   const newCustomerPoints = isNewCustomerSignup ? 2 : 0; // 2 bonus points for new customer
   const totalNewPoints = basePoints + specialOfferPoints + newCustomerPoints;
-  
+
   const performanceData = {
     userId: baristaId,
     weekStart,
@@ -6926,6 +6969,6 @@ async function updateBaristaPerformanceAfterTransaction(
     totalPoints: (existing?.totalPoints || 0) + totalNewPoints,
     weeklyRank: existing?.weeklyRank || null,
   };
-  
+
   await storage.updateBaristaPerformance(performanceData);
 }

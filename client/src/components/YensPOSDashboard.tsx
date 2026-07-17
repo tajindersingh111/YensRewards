@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
@@ -14,12 +15,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, Activity, Download, DollarSign, Calendar, MapPin, 
-  Filter, HelpCircle, ArrowUpRight, BarChart3, FileText
+  Filter, HelpCircle, ArrowUpRight, BarChart3, FileText,
+  Trash2, Pencil, Loader2, ArrowRight
 } from "lucide-react";
 import { 
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface POSMetrics {
   pos: {
@@ -49,6 +60,105 @@ export default function YensPOSDashboard() {
   const [timeframe, setTimeframe] = useState<string>("30"); // 7, 30, 90, all
   const { data, isLoading, error } = useQuery<POSMetrics>({
     queryKey: ["/api/admin/pos-metrics"],
+  });
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [selectedDetail, setSelectedDetail] = useState<{ type: "site" | "date"; value: string } | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<any | null>(null);
+  const [editingManualSale, setEditingManualSale] = useState<any | null>(null);
+
+  // Mutation to delete a POS transaction
+  const deleteTxMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/transactions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pos-metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sales-overview"] });
+      toast({
+        title: "Transaction Deleted",
+        description: "The transaction has been deleted and loyalty balance recalculated.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Deletion Failed",
+        description: err.message || "Failed to delete transaction.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to update a POS transaction
+  const updateTxMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      await apiRequest("PATCH", `/api/admin/transactions/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pos-metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sales-overview"] });
+      setEditingTransaction(null);
+      toast({
+        title: "Transaction Updated",
+        description: "The transaction details have been updated successfully.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Update Failed",
+        description: err.message || "Failed to update transaction.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to delete a Manual Sale
+  const deleteManualSaleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/sales/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pos-metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sales-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sales-tracker-metrics"] });
+      toast({
+        title: "Manual Sale Deleted",
+        description: "The manual sale entry has been deleted successfully.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Deletion Failed",
+        description: err.message || "Failed to delete manual sale.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to update a Manual Sale
+  const updateManualSaleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      await apiRequest("PATCH", `/api/admin/sales/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pos-metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sales-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sales-tracker-metrics"] });
+      setEditingManualSale(null);
+      toast({
+        title: "Manual Sale Updated",
+        description: "The manual sale details have been updated successfully.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Update Failed",
+        description: err.message || "Failed to update manual sale.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (error) {
@@ -606,10 +716,14 @@ export default function YensPOSDashboard() {
             ) : (
               <div className="divide-y divide-slate-100">
                 {data.pos.siteBreakdown.map((row) => (
-                  <div key={row.site} className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+                  <div 
+                    key={row.site} 
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedDetail({ type: 'site', value: row.site })}
+                  >
                     <div>
                       <p className="text-xs font-black text-blue-900 uppercase tracking-tight">{row.site}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{row.count} Sales</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{row.count} Sales (Click to manage)</p>
                     </div>
                     <span className="text-xs font-bold text-blue-900">{fmtCurrency(row.amount)}</span>
                   </div>
@@ -651,8 +765,12 @@ export default function YensPOSDashboard() {
                     </tr>
                   ) : (
                     filteredDataForTable.map((row) => (
-                      <tr key={row.date} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 text-xs font-bold text-slate-600">{row.date}</td>
+                      <tr 
+                        key={row.date} 
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedDetail({ type: 'date', value: row.date })}
+                      >
+                        <td className="p-4 text-xs font-bold text-slate-600">{row.date} (Click to manage)</td>
                         <td className="p-4 text-xs font-bold text-slate-600 text-right">{fmtCurrency(row.posSales)}</td>
                         <td className="p-4 text-xs font-bold text-slate-600 text-right">{fmtCurrency(row.manualSales)}</td>
                         <td className="p-4 text-xs font-black text-blue-900 text-right">{fmtCurrency(row.grandTotal)}</td>
@@ -666,6 +784,273 @@ export default function YensPOSDashboard() {
         </Card>
 
       </div>
+
+      {/* TRANSACTION DETAILS DIALOG */}
+      <Dialog open={!!selectedDetail} onOpenChange={(open) => !open && setSelectedDetail(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-[2rem] border-none p-6 bg-white shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-black uppercase tracking-wider text-blue-900">
+              Details for {selectedDetail?.type === 'site' ? `Site: ${selectedDetail.value}` : `Date: ${selectedDetail?.value}`}
+            </DialogTitle>
+            <DialogDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Manage and audit POS transactions and manual sales ledger entries
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* POS TRANSACTIONS LIST */}
+            <div>
+              <h3 className="text-xs font-black uppercase text-blue-900 tracking-wider mb-3">POS Transactions</h3>
+              {data.transactions.filter(tx => {
+                if (selectedDetail?.type === 'site') return (tx.location || 'Unknown') === selectedDetail.value;
+                return (tx.createdAt ? tx.createdAt.substring(0, 10) : '') === selectedDetail?.value;
+              }).length === 0 ? (
+                <p className="text-xs text-slate-400 italic">No POS transactions logged for this selection.</p>
+              ) : (
+                <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200">
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500">Customer</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500">Location</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Amount</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Points</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {data.transactions.filter(tx => {
+                        if (selectedDetail?.type === 'site') return (tx.location || 'Unknown') === selectedDetail.value;
+                        return (tx.createdAt ? tx.createdAt.substring(0, 10) : '') === selectedDetail?.value;
+                      }).map((tx) => (
+                        <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-3">
+                            <p className="text-xs font-bold text-slate-700">{tx.customerName || 'Guest Member'}</p>
+                            <p className="text-[9px] text-slate-400">{tx.customerPhone}</p>
+                          </td>
+                          <td className="p-3 text-xs font-medium text-slate-600">
+                            {editingTransaction?.id === tx.id ? (
+                              <Input
+                                value={editingTransaction.location}
+                                onChange={(e) => setEditingTransaction({ ...editingTransaction, location: e.target.value })}
+                                className="h-8 text-xs rounded-xl border-slate-200"
+                              />
+                            ) : (
+                              tx.location
+                            )}
+                          </td>
+                          <td className="p-3 text-xs font-bold text-slate-600 text-right">
+                            {editingTransaction?.id === tx.id ? (
+                              <Input
+                                type="number"
+                                value={editingTransaction.amount}
+                                onChange={(e) => setEditingTransaction({ ...editingTransaction, amount: e.target.value })}
+                                className="h-8 text-xs text-right rounded-xl border-slate-200"
+                              />
+                            ) : (
+                              fmtCurrency(parseFloat(tx.amount))
+                            )}
+                          </td>
+                          <td className="p-3 text-xs font-bold text-slate-600 text-right">
+                            {editingTransaction?.id === tx.id ? (
+                              <Input
+                                type="number"
+                                value={editingTransaction.points}
+                                onChange={(e) => setEditingTransaction({ ...editingTransaction, points: parseInt(e.target.value) || 0 })}
+                                className="h-8 text-xs text-right rounded-xl border-slate-200"
+                              />
+                            ) : (
+                              tx.points
+                            )}
+                          </td>
+                          <td className="p-3 text-center">
+                            {editingTransaction?.id === tx.id ? (
+                              <div className="flex justify-center gap-1.5">
+                                <Button
+                                  onClick={() => updateTxMutation.mutate({
+                                    id: tx.id,
+                                    data: {
+                                      location: editingTransaction.location,
+                                      amount: editingTransaction.amount,
+                                      points: editingTransaction.points,
+                                    }
+                                  })}
+                                  disabled={updateTxMutation.isPending}
+                                  className="h-7 text-[9px] font-black uppercase rounded-lg px-2"
+                                >
+                                  {updateTxMutation.isPending ? "Saving..." : "Save"}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setEditingTransaction(null)}
+                                  className="h-7 text-[9px] font-black uppercase rounded-lg px-2 border-slate-200"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => setEditingTransaction({ ...tx })}
+                                  className="h-7 w-7 text-blue-900 hover:bg-blue-50 rounded-lg p-0"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to delete this POS transaction? This will permanently deduct customer points.")) {
+                                      deleteTxMutation.mutate(tx.id);
+                                    }
+                                  }}
+                                  className="h-7 w-7 text-red-500 hover:bg-red-50 rounded-lg p-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* MANUAL SALES LIST */}
+            <div>
+              <h3 className="text-xs font-black uppercase text-blue-900 tracking-wider mb-3">Manual Sales Records</h3>
+              {data.manualSales.filter(sale => {
+                if (selectedDetail?.type === 'site') return sale.orderChannel === selectedDetail.value;
+                return sale.date === selectedDetail?.value;
+              }).length === 0 ? (
+                <p className="text-xs text-slate-400 italic">No manual sales records logged for this selection.</p>
+              ) : (
+                <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200">
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500">Date</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500">Channel / Site</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Net Sales</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Other Sales</th>
+                        <th className="p-3 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {data.manualSales.filter(sale => {
+                        if (selectedDetail?.type === 'site') return sale.orderChannel === selectedDetail.value;
+                        return sale.date === selectedDetail?.value;
+                      }).map((sale) => (
+                        <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-3 text-xs font-medium text-slate-600">
+                            {editingManualSale?.id === sale.id ? (
+                              <Input
+                                value={editingManualSale.date}
+                                onChange={(e) => setEditingManualSale({ ...editingManualSale, date: e.target.value })}
+                                className="h-8 text-xs rounded-xl border-slate-200"
+                              />
+                            ) : (
+                              sale.date
+                            )}
+                          </td>
+                          <td className="p-3 text-xs font-medium text-slate-600">
+                            {editingManualSale?.id === sale.id ? (
+                              <Input
+                                value={editingManualSale.orderChannel}
+                                onChange={(e) => setEditingManualSale({ ...editingManualSale, orderChannel: e.target.value })}
+                                className="h-8 text-xs rounded-xl border-slate-200"
+                              />
+                            ) : (
+                              sale.orderChannel
+                            )}
+                          </td>
+                          <td className="p-3 text-xs font-bold text-slate-600 text-right">
+                            {editingManualSale?.id === sale.id ? (
+                              <Input
+                                type="number"
+                                value={editingManualSale.netSales}
+                                onChange={(e) => setEditingManualSale({ ...editingManualSale, netSales: e.target.value })}
+                                className="h-8 text-xs text-right rounded-xl border-slate-200"
+                              />
+                            ) : (
+                              fmtCurrency(parseFloat(sale.netSales))
+                            )}
+                          </td>
+                          <td className="p-3 text-xs font-bold text-slate-600 text-right">
+                            {editingManualSale?.id === sale.id ? (
+                              <Input
+                                type="number"
+                                value={editingManualSale.otherSales}
+                                onChange={(e) => setEditingManualSale({ ...editingManualSale, otherSales: e.target.value })}
+                                className="h-8 text-xs text-right rounded-xl border-slate-200"
+                              />
+                            ) : (
+                              fmtCurrency(parseFloat(sale.otherSales || "0"))
+                            )}
+                          </td>
+                          <td className="p-3 text-center">
+                            {editingManualSale?.id === sale.id ? (
+                              <div className="flex justify-center gap-1.5">
+                                <Button
+                                  onClick={() => updateManualSaleMutation.mutate({
+                                    id: sale.id,
+                                    data: {
+                                      date: editingManualSale.date,
+                                      orderChannel: editingManualSale.orderChannel,
+                                      netSales: editingManualSale.netSales,
+                                      otherSales: editingManualSale.otherSales,
+                                    }
+                                  })}
+                                  disabled={updateManualSaleMutation.isPending}
+                                  className="h-7 text-[9px] font-black uppercase rounded-lg px-2"
+                                >
+                                  {updateManualSaleMutation.isPending ? "Saving..." : "Save"}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setEditingManualSale(null)}
+                                  className="h-7 text-[9px] font-black uppercase rounded-lg px-2 border-slate-200"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => setEditingManualSale({ ...sale })}
+                                  className="h-7 w-7 text-blue-900 hover:bg-blue-50 rounded-lg p-0"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to delete this manual sales record?")) {
+                                      deleteManualSaleMutation.mutate(sale.id);
+                                    }
+                                  }}
+                                  className="h-7 w-7 text-red-500 hover:bg-red-50 rounded-lg p-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

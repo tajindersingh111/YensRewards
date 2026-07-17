@@ -17,6 +17,15 @@ const JWT_REFRESH_SECRET = env.JWT_REFRESH_SECRET;
 const ACCESS_TOKEN_EXPIRY = "1h";
 const REFRESH_TOKEN_EXPIRY = "7d";
 
+// Customer app JWT (long-lived, separate secret from staff tokens)
+const CUSTOMER_JWT_SECRET = `${env.JWT_SECRET}_customer_app`;
+const CUSTOMER_TOKEN_EXPIRY = "30d";
+
+/** Signs a long-lived JWT for a customer app session. */
+export function signCustomerToken(customerId: string): string {
+  return jwt.sign({ customerId, type: 'customer' }, CUSTOMER_JWT_SECRET, { expiresIn: CUSTOMER_TOKEN_EXPIRY });
+}
+
 export interface SessionUser extends User {
   accessToken?: string;
   refreshToken?: string;
@@ -214,6 +223,19 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1];
+
+    // 1. Try customer JWT first (customer app)
+    try {
+      const payload = jwt.verify(token, CUSTOMER_JWT_SECRET) as { customerId: string; type?: string };
+      if (payload.type === 'customer' && payload.customerId) {
+        (req as any).customerId = payload.customerId;
+        return next();
+      }
+    } catch {
+      // Not a customer token — fall through to staff JWT check
+    }
+
+    // 2. Try staff JWT
     try {
       const payload = jwt.verify(token, JWT_ACCESS_SECRET) as { userId: string; role?: string; app_id?: string };
       // Attach user to request for downstream middlewares

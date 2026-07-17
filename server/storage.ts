@@ -110,6 +110,8 @@ export interface IStorage {
   getTransaction(id: string): Promise<Transaction | undefined>;
   getCustomerTransactions(customerId: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction | undefined>;
+  deleteTransaction(id: string): Promise<Transaction | undefined>;
 
   // Promotion methods
   createPromotion(promotion: InsertPromotion): Promise<Promotion>;
@@ -860,6 +862,114 @@ export class DbStorage implements IStorage {
         .returning();
 
       return newTransaction;
+    });
+  }
+
+  async updateTransaction(id: string, updateData: Partial<InsertTransaction>): Promise<Transaction | undefined> {
+    const oldTx = await this.getTransaction(id);
+    if (!oldTx) return undefined;
+
+    return await db.transaction(async (tx) => {
+      // 1. Update the transaction in database
+      const [updatedTransaction] = await tx
+        .update(transactions)
+        .set(updateData)
+        .where(eq(transactions.id, id))
+        .returning();
+
+      if (!updatedTransaction) return undefined;
+
+      // Calculate difference
+      const oldPoints = oldTx.points;
+      const oldAmount = parseFloat(oldTx.amount);
+      const newPoints = updateData.points !== undefined ? updateData.points : oldTx.points;
+      const newAmount = updateData.amount !== undefined ? parseFloat(updateData.amount) : parseFloat(oldTx.amount);
+
+      const pointsChange = newPoints - oldPoints;
+      const amountChange = newAmount - oldAmount;
+
+      const targetCustomerId = updateData.customerId || oldTx.customerId;
+
+      if (targetCustomerId === oldTx.customerId) {
+        // Same customer, update points & totalSpent atomically
+        await tx
+          .update(customers)
+          .set({
+            points: sql`GREATEST(0, ${customers.points} + ${pointsChange})`,
+            totalSpent: sql`GREATEST(0.00, ${customers.totalSpent} + ${amountChange})`,
+            tier: sql`CASE 
+              WHEN GREATEST(0, ${customers.points} + ${pointsChange}) >= 1000 THEN 'gold'
+              WHEN GREATEST(0, ${customers.points} + ${pointsChange}) >= 500 THEN 'silver'
+              ELSE 'bronze'
+            END`,
+          })
+          .where(eq(customers.id, oldTx.customerId));
+      } else {
+        // Customer changed
+        // Deduct from old customer
+        await tx
+          .update(customers)
+          .set({
+            points: sql`GREATEST(0, ${customers.points} - ${oldPoints})`,
+            totalSpent: sql`GREATEST(0.00, ${customers.totalSpent} - ${oldAmount})`,
+            tier: sql`CASE 
+              WHEN GREATEST(0, ${customers.points} - ${oldPoints}) >= 1000 THEN 'gold'
+              WHEN GREATEST(0, ${customers.points} - ${oldPoints}) >= 500 THEN 'silver'
+              ELSE 'bronze'
+            END`,
+          })
+          .where(eq(customers.id, oldTx.customerId));
+
+        // Add to new customer
+        await tx
+          .update(customers)
+          .set({
+            points: sql`${customers.points} + ${newPoints}`,
+            totalSpent: sql`${customers.totalSpent} + ${newAmount}`,
+            tier: sql`CASE 
+              WHEN ${customers.points} + ${newPoints} >= 1000 THEN 'gold'
+              WHEN ${customers.points} + ${newPoints} >= 500 THEN 'silver'
+              ELSE 'bronze'
+            END`,
+          })
+          .where(eq(customers.id, targetCustomerId));
+      }
+
+      return updatedTransaction;
+    });
+  }
+
+  async deleteTransaction(id: string): Promise<Transaction | undefined> {
+    const txRecord = await this.getTransaction(id);
+    if (!txRecord) return undefined;
+
+    return await db.transaction(async (tx) => {
+      // 1. Delete transaction
+      const [deletedTransaction] = await tx
+        .delete(transactions)
+        .where(eq(transactions.id, id))
+        .returning();
+
+      if (!deletedTransaction) return undefined;
+
+      // 2. Deduct points and amount from customer profile
+      const pointsDeduction = -txRecord.points;
+      const amountDeduction = -parseFloat(txRecord.amount);
+
+      await tx
+        .update(customers)
+        .set({
+          points: sql`GREATEST(0, ${customers.points} + ${pointsDeduction})`,
+          totalSpent: sql`GREATEST(0.00, ${customers.totalSpent} + ${amountDeduction})`,
+          tier: sql`CASE 
+            WHEN GREATEST(0, ${customers.points} + ${pointsDeduction}) >= 1000 THEN 'gold'
+            WHEN GREATEST(0, ${customers.points} + ${pointsDeduction}) >= 500 THEN 'silver'
+            ELSE 'bronze'
+          END`,
+        })
+        .where(eq(customers.id, txRecord.customerId));
+
+      return deletedTransaction;
     });
   }
 
