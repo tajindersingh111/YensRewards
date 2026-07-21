@@ -44,16 +44,34 @@ export function ProductCard({
     }
   };
 
+  const getDisplayImageUrl = (url: string | null | undefined): string => {
+    if (!url) return '';
+    if (url.includes('application.yensthai.com/uploads/product-images/')) {
+      const filename = url.split('/uploads/product-images/')[1];
+      return `/uploads/product-images/${filename}`;
+    }
+    return url;
+  };
+
   return (
     <Card className={`overflow-hidden hover-elevate h-full flex flex-col ${product.promoFocus ? 'ring-2 ring-orange-400 ring-offset-2' : ''}`} data-testid={`card-product-${product.id}`}>
       {/* Image Container - Fixed Aspect Ratio */}
       <div className="relative w-full bg-muted" style={{ paddingBottom: "75%" }}>
         {product.imageUrl ? (
           <img
-            src={product.imageUrl}
+            src={getDisplayImageUrl(product.imageUrl)}
             alt={product.name}
             className="absolute inset-0 w-full h-full object-contain"
             data-testid={`img-product-${product.id}`}
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (product.imageUrl && !target.dataset.retried) {
+                target.dataset.retried = 'true';
+                if (!target.src.startsWith('https://application.yensthai.com')) {
+                  target.src = product.imageUrl.startsWith('http') ? product.imageUrl : `https://application.yensthai.com${product.imageUrl}`;
+                }
+              }
+            }}
           />
         ) : variant === "management" && onQuickPhoto ? (
           <button

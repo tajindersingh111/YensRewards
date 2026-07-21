@@ -21,6 +21,7 @@ import MessagesPage from "@/components/MessagesPage";
 import BulkMessageComposer from "@/components/BulkMessageComposer";
 import UsersPage from "@/pages/admin/UsersPage";
 import YensPOSDashboard from "@/components/YensPOSDashboard";
+import YensCustomerHub from "@/components/YensCustomerHub";
 import SitesManager from "@/components/SitesManager";
 import { SchedulesManager } from "@/components/SchedulesManager";
 import BaristaManager from "@/components/BaristaManager";
@@ -29,6 +30,7 @@ import AutomationsManager from "@/components/AutomationsManager";
 import ShopCalendar from "@/components/ShopCalendar";
 import SettingsPage from "@/components/SettingsPage";
 import MessageTemplates from "@/components/MessageTemplates";
+import { CustomerAppPromotions } from "@/components/CustomerAppPromotions";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,10 +47,13 @@ import type { Customer } from "@shared/schema";
 
 const NAV_GROUPS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, subs: [{ id: 'overview', label: 'Overview', testId: 'tab-overview' }] },
-  { id: 'pos', label: 'Yens POS', icon: Award, subs: [{ id: 'posOverview', label: 'POS Overview', testId: 'tab-pos-overview' }] },
+  { id: 'pos', label: 'Yens POS', icon: Award, subs: [
+    { id: 'posOverview', label: 'POS Overview', testId: 'tab-pos-overview' },
+    { id: 'executionHub', label: 'Yens Customer', testId: 'tab-execution-hub' }
+  ] },
   { id: 'sales', label: 'Sales', icon: TrendingUp, subs: [{ id: 'salesTracker', label: 'Sales Tracker', testId: 'tab-sales-tracker' }, { id: 'analytics', label: 'Analytics', testId: 'tab-analytics' }] },
   { id: 'customers', label: 'Customers', icon: Users, subs: [{ id: 'customers', label: 'Customer List', testId: 'tab-customers' }, { id: 'loyalty', label: 'Loyalty', testId: 'tab-loyalty' }] },
-  { id: 'marketing', label: 'Marketing', icon: Megaphone, subs: [{ id: 'messages', label: 'Messages', testId: 'tab-messages' }, { id: 'promotions', label: 'Promotions', testId: 'tab-promotions' }, { id: 'specials', label: 'Weekly Specials', testId: 'tab-specials' }, { id: 'automations', label: 'Automations', testId: 'tab-automations' }] },
+  { id: 'marketing', label: 'Marketing', icon: Megaphone, subs: [{ id: 'messages', label: 'Messages', testId: 'tab-messages' }, { id: 'promotions', label: 'Promotions', testId: 'tab-promotions' }, { id: 'customerApp', label: 'Customer App', testId: 'tab-customer-app' }, { id: 'specials', label: 'Weekly Specials', testId: 'tab-specials' }, { id: 'automations', label: 'Automations', testId: 'tab-automations' }] },
   { id: 'operations', label: 'Operations', icon: Wrench, subs: [{ id: 'products', label: 'Products', testId: 'tab-products' }, { id: 'sites', label: 'Sites', testId: 'tab-sites' }, { id: 'schedules', label: 'Schedules', testId: 'tab-schedules' }, { id: 'barista', label: 'Barista', testId: 'tab-barista' }] },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays, subs: [{ id: 'shopCalendar', label: 'Events', testId: 'tab-shop-calendar' }] },
   { id: 'admin', label: 'Admin', icon: ShieldCheck, subs: [{ id: 'users', label: 'Users', testId: 'tab-users' }, { id: 'settings', label: 'Settings', testId: 'tab-settings' }] },
@@ -411,6 +416,7 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-700">
         {activeTab === 'overview' && <AdminOverview key="overview" onNavigate={navigate} />}
         {activeTab === 'posOverview' && <YensPOSDashboard key="posOverview" />}
+        {activeTab === 'executionHub' && <YensCustomerHub key="executionHub" />}
         {activeTab === 'salesTracker' && <SalesTrackerDashboard key="salesTracker" />}
         {activeTab === 'analytics' && <AnalyticsDashboard key="analytics" />}
         {activeTab === 'customers' && (
@@ -433,6 +439,7 @@ export default function AdminDashboard() {
           </div>
         )}
         {activeTab === 'messages' && <MessagesPage key="messages" />}
+        {activeTab === 'customerApp' && <CustomerAppPromotions key="customerApp" />}
         {activeTab === 'promotions' && (
           <div key="promotions" className="grid gap-6">
             <div className="max-w-2xl">

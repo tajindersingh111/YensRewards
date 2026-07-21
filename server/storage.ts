@@ -39,9 +39,13 @@ import {
   type InsertShopEvent,
   type RefreshToken,
   type InsertRefreshToken,
+  type Order,
+  type InsertOrder,
+  type CustomerAppPromotion,
+  type InsertCustomerAppPromotion,
 } from "@shared/schema";
 import { db } from "./db";
-import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents, dailySales, refreshTokens } from "@shared/schema";
+import { customers, transactions, promotions, users, customerNotifications, products, messageTemplates, messageLog, scheduledMessages, sites, timeEntries, workSchedules, workScheduleSeries, baristaAnnouncements, weeklySpecials, baristaPerformance, automations, automationRuns, shopEvents, dailySales, refreshTokens, orders, customerAppPromotions } from "@shared/schema";
 import { eq, desc, sql, and, asc, gte, lte, inArray } from "drizzle-orm";
 import bcryptjs from "bcryptjs";
 
@@ -112,6 +116,13 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction | undefined>;
   deleteTransaction(id: string): Promise<Transaction | undefined>;
+
+  // Order methods
+  createOrder(order: InsertOrder): Promise<Order>;
+  getOrder(id: string): Promise<Order | undefined>;
+  getOrdersBySite(siteId: string): Promise<Order[]>;
+  getOrdersByCustomer(customerId: string): Promise<Order[]>;
+  updateOrderStatus(id: string, status: string, paymentStatus?: string): Promise<Order | undefined>;
 
   // Promotion methods
   createPromotion(promotion: InsertPromotion): Promise<Promotion>;
@@ -971,6 +982,55 @@ export class DbStorage implements IStorage {
 
       return deletedTransaction;
     });
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [newOrder] = await db
+      .insert(orders)
+      .values(insertOrder)
+      .returning();
+    return newOrder;
+  }
+
+  async getOrder(id: string): Promise<Order | undefined> {
+    const [record] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id));
+    return record;
+  }
+
+  async getOrdersBySite(siteId: string): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.siteId, siteId))
+      .orderBy(desc(orders.createdAt));
+  }
+
+  async getOrdersByCustomer(customerId: string): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.customerId, customerId))
+      .orderBy(desc(orders.createdAt));
+  }
+
+  async updateOrderStatus(id: string, status: string, paymentStatus?: string): Promise<Order | undefined> {
+    const updateFields: any = {
+      status,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    };
+    if (paymentStatus) {
+      updateFields.paymentStatus = paymentStatus;
+    }
+
+    const [updatedOrder] = await db
+      .update(orders)
+      .set(updateFields)
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
   }
 
   // Promotion methods
@@ -2377,6 +2437,83 @@ export class DbStorage implements IStorage {
     const crypto = await import("crypto");
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
     await db.delete(refreshTokens).where(eq(refreshTokens.token, hashedToken));
+  }
+
+  // Customer App Promotions implementation
+  async getAllCustomerAppPromotions(): Promise<CustomerAppPromotion[]> {
+    const list = await db.select().from(customerAppPromotions).orderBy(asc(customerAppPromotions.blockIndex));
+    if (list.length === 0) {
+      // Seed initial 3 promotional blocks
+      const seeded = await db.insert(customerAppPromotions).values([
+        {
+          blockIndex: 1,
+          title: "Free Size Upgrade",
+          subtitle: "New members get one free upsize on any cold drink",
+          artworkUrl: "",
+          buttonText: "Explore Now",
+          destinationLink: "/menu",
+          badgeText: "MEMBERSHIP",
+          status: "published",
+        },
+        {
+          blockIndex: 2,
+          title: "Thai Tea Sundae Special",
+          subtitle: "Authentic Thai Tea soft serve paired with sweet pearls",
+          artworkUrl: "",
+          buttonText: "Order Now",
+          destinationLink: "/menu",
+          badgeText: "SPECIAL",
+          status: "published",
+        },
+        {
+          blockIndex: 3,
+          title: "Strawberry Soft Serve",
+          subtitle: "Crafted with fresh strawberries and rich milk cream",
+          artworkUrl: "",
+          buttonText: "View Offer",
+          destinationLink: "/rewards",
+          badgeText: "FEATURED",
+          status: "published",
+        },
+      ]).returning();
+      return seeded;
+    }
+    return list;
+  }
+
+  async getPublishedCustomerAppPromotions(): Promise<CustomerAppPromotion[]> {
+    const all = await this.getAllCustomerAppPromotions();
+    return all.filter((p) => p.status === "published");
+  }
+
+  async upsertCustomerAppPromotion(data: Partial<InsertCustomerAppPromotion> & { blockIndex: number }): Promise<CustomerAppPromotion> {
+    const existing = await db.select().from(customerAppPromotions).where(eq(customerAppPromotions.blockIndex, data.blockIndex)).limit(1);
+    if (existing.length > 0) {
+      const updated = await db.update(customerAppPromotions)
+        .set({
+          ...data,
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        })
+        .where(eq(customerAppPromotions.blockIndex, data.blockIndex))
+        .returning();
+      return updated[0];
+    } else {
+      const created = await db.insert(customerAppPromotions)
+        .values({
+          title: data.title || `Promotion Block #${data.blockIndex}`,
+          subtitle: data.subtitle || 'Promotional description',
+          blockIndex: data.blockIndex,
+          artworkUrl: data.artworkUrl || '',
+          buttonText: data.buttonText || 'Explore Now',
+          destinationLink: data.destinationLink || '/menu',
+          badgeText: data.badgeText || 'PROMOTION',
+          startDate: data.startDate || null,
+          endDate: data.endDate || null,
+          status: data.status || 'published',
+        })
+        .returning();
+      return created[0];
+    }
   }
 }
 

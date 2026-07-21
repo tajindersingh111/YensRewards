@@ -9,9 +9,10 @@ const useSSL = !env.DATABASE_URL.includes("localhost") && !env.DATABASE_URL.incl
 export const pool = new pg.Pool({
   connectionString: env.DATABASE_URL,
   ssl: useSSL ? { rejectUnauthorized: false } : undefined,
-  max: isProduction ? 15 : 3,
+  max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 10000,
+  keepAlive: true,
 });
 
 pool.on('error', (err) => {

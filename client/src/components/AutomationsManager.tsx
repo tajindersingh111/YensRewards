@@ -87,7 +87,7 @@ const CHANNEL_OPTIONS = [
   { value: "line",  label: "LINE",     icon: MessageSquare, cls: "bg-emerald-50 text-emerald-700 border-emerald-100", disabled: false },
   { value: "sms",   label: "SMS",      icon: Hash,          cls: "bg-slate-50 text-slate-700 border-slate-100",       disabled: false },
   { value: "email", label: "Email",    icon: Mail,          cls: "bg-indigo-50 text-indigo-700 border-indigo-100",    disabled: false },
-  { value: "app",   label: "App Push", icon: Smartphone,    cls: "bg-slate-50 text-slate-400 border-slate-100",       disabled: true  },
+  { value: "app",   label: "App Push", icon: Smartphone,    cls: "bg-indigo-50 text-indigo-700 border-indigo-100",    disabled: false },
 ] as const;
 
 const FILTER_OPTIONS = [

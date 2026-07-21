@@ -88,6 +88,7 @@ export const transactions = pgTable("transactions", {
 (table) => [
   index("idx_transactions_customer_id").on(table.customerId),
   index("idx_transactions_created_at").on(table.createdAt),
+  index("idx_transactions_type_location").on(table.type, table.location),
 ]);
 
 // Promotions table - SMS campaigns
@@ -671,3 +672,52 @@ export const appSettings = pgTable("app_settings", {
 });
 
 export type AppSetting = typeof appSettings.$inferSelect;
+
+// Orders table - customer orders routed to specific branch POS sites
+export const orders = pgTable("orders", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  customerId: text("customer_id").notNull().references(() => customers.id),
+  siteId: text("site_id").notNull().references(() => sites.id),
+  totalAmount: numeric("total_amount").notNull(),
+  status: text("status").notNull().default("pending"), // pending, preparing, ready, completed, cancelled
+  items: text("items").notNull(), // stringified json array of ordered items
+  paymentStatus: text("payment_status").notNull().default("unpaid"), // unpaid, paid, refunded
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+
+// Customer App Promotions table - manage 3 promotional blocks pushed to Customer App carousel
+export const customerAppPromotions = pgTable("customer_app_promotions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  blockIndex: integer("block_index").notNull(), // 1, 2, or 3
+  title: text("title").notNull(), // Heading
+  subtitle: text("subtitle").notNull(), // Supporting copy
+  artworkUrl: text("artwork_url"), // Artwork image URL
+  buttonText: text("button_text").notNull().default("Explore Now"),
+  destinationLink: text("destination_link").notNull().default("/menu"),
+  badgeText: text("badge_text").notNull().default("PROMOTION"),
+  startDate: text("start_date"), // YYYY-MM-DD
+  endDate: text("end_date"), // YYYY-MM-DD
+  status: text("status").notNull().default("published"), // 'published' | 'draft' | 'inactive'
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const insertCustomerAppPromotionSchema = createInsertSchema(customerAppPromotions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CustomerAppPromotion = typeof customerAppPromotions.$inferSelect;
+export type InsertCustomerAppPromotion = z.infer<typeof insertCustomerAppPromotionSchema>;
+

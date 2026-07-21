@@ -3,7 +3,7 @@ import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, requireSameOrigin, resolveDbUser, signCustomerToken } from "./auth";
-import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products, transactions as transactionsTable, refreshTokens } from "@shared/schema";
+import { insertCustomerSchema, publicInsertCustomerSchema, insertCustomerCSVSchema, insertTransactionSchema, insertPromotionSchema, insertProductSchema, insertMessageTemplateSchema, insertSiteSchema, insertWorkScheduleSchema, insertBaristaAnnouncementSchema, insertWeeklySpecialSchema, insertDailySalesSchema, users, dailySales, sites, lineLinkingCodes, customerReviews, insertCustomerReviewSchema, insertAutomationSchema, insertShopEventSchema, customers as customersTable, appSettings, products, transactions as transactionsTable, refreshTokens, orders } from "@shared/schema";
 import { calculateNextRunAt, processAutomation, triggerBackupNow } from "./scheduler";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
@@ -21,6 +21,7 @@ import * as fs from "fs";
 import * as path from "path";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import sharp from "sharp";
 
 // ============ In-memory rate limiter for auth endpoints ============
 // Tracks failed login attempts per IP address.
@@ -491,25 +492,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve public product images from object storage / Railway Volume
-  app.get("/products/:filePath(*)", async (req, res) => {
-    const filePath = req.params.filePath;
-    try {
-      const localPath = path.join("/data/uploads/product-images", filePath);
-      if (fs.existsSync(localPath)) {
-        return res.sendFile(localPath);
+  // Serve public product images from object storage / Railway Volume with smart UUID matching
+  app.get(["/uploads/product-images/:filePath(*)", "/products/:filePath(*)"], async (req, res) => {
+    const filePath = req.params.filePath || "";
+    const uploadDirs = [
+      "/data/uploads/product-images",
+      path.resolve("./server/assets"),
+    ];
+
+    for (const uploadDir of uploadDirs) {
+      if (!fs.existsSync(uploadDir)) continue;
+
+      // 1. Direct match
+      const directPath = path.join(uploadDir, filePath);
+      if (fs.existsSync(directPath)) {
+        return res.sendFile(directPath);
       }
-      const fallbackPath = path.resolve("./server/assets", filePath);
-      if (fs.existsSync(fallbackPath)) {
-        return res.sendFile(fallbackPath);
-      }
-      return res.status(404).json({ error: "Image not found" });
-    } catch (error) {
-      console.error("Error serving product image:", error);
-      if (!res.headersSent) {
-        return res.status(500).json({ error: "Failed to serve image" });
-      }
+
+      // 2. Try raw latin1 / utf8 conversion
+      try {
+        const latin1Path = path.join(uploadDir, Buffer.from(filePath, 'utf8').toString('latin1'));
+        if (fs.existsSync(latin1Path)) {
+          return res.sendFile(latin1Path);
+        }
+      } catch (_) {}
+
+      // 3. UUID prefix match (for filenames like bd8ea2db-4c93... with Thai titles)
+      try {
+        const uuidPrefix = filePath.split('-')[0];
+        if (uuidPrefix && uuidPrefix.length >= 8) {
+          const files = fs.readdirSync(uploadDir);
+          const matchedFile = files.find(f => f.startsWith(uuidPrefix));
+          if (matchedFile) {
+            return res.sendFile(path.join(uploadDir, matchedFile));
+          }
+        }
+      } catch (_) {}
     }
+
+    return res.status(404).json({ error: "Image not found" });
   });
 
   // Setup authentication
@@ -4093,47 +4114,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Direct product image upload (admin only)
-  const productImageDiskStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, "/data/uploads/product-images");
-    },
-    filename: (req, file, cb) => {
-      const uniqueName = `${crypto.randomUUID()}-${file.originalname}`;
-      cb(null, uniqueName);
+  // Helper function to compress and convert images to WebP with target size 150-200KB
+  const compressProductImageToWebP = async (inputBuffer: Buffer): Promise<{
+    buffer: Buffer;
+    qualityUsed: number;
+    finalSizeKB: number;
+  }> => {
+    const TARGET_MAX_BYTES = 200 * 1024; // 200 KB target
+    const MIN_QUALITY = 50;
+    let quality = 80;
+
+    let outputBuffer = await sharp(inputBuffer)
+      .resize(1200, 1200, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .webp({ quality })
+      .toBuffer();
+
+    while (outputBuffer.length > TARGET_MAX_BYTES && quality > MIN_QUALITY) {
+      quality -= 5;
+      outputBuffer = await sharp(inputBuffer)
+        .resize(1200, 1200, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality })
+        .toBuffer();
     }
-  });
+
+    const finalSizeKB = Number((outputBuffer.length / 1024).toFixed(1));
+    if (outputBuffer.length > TARGET_MAX_BYTES) {
+      console.log(`[ImageCompressor] Reached quality floor ${MIN_QUALITY}%. Final size: ${finalSizeKB}KB`);
+    } else {
+      console.log(`[ImageCompressor] Successfully compressed image to ${finalSizeKB}KB at quality ${quality}%`);
+    }
+
+    return { buffer: outputBuffer, qualityUsed: quality, finalSizeKB };
+  };
 
   const productImageUpload = multer({
-    storage: productImageDiskStorage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit for raw image before compression
     fileFilter: (req, file, cb) => {
-      const allowedTypes = /jpeg|jpg|png|webp/;
-      const mimeType = allowedTypes.test(file.mimetype);
-      const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-      if (mimeType && extName) {
-        cb(null, true);
-      } else {
-        cb(new Error("Only images (jpeg, jpg, png, webp) are allowed."));
+      if (!file.mimetype.startsWith('image/')) {
+        return cb(new Error("Only image files are allowed."));
       }
+      cb(null, true);
     }
   });
 
   app.post('/api/admin/product-images/upload', isAuthenticated, isAdmin, (req, res) => {
-    productImageUpload.single('image')(req, res, (err) => {
+    productImageUpload.single('image')(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ message: `Upload error: ${err.message}` });
       } else if (err) {
         return res.status(400).json({ message: err.message });
       }
-      if (!req.file) {
+      if (!req.file || !req.file.buffer) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const filename = req.file.filename;
-      const publicUrl = `${env.APP_PUBLIC_URL}/uploads/product-images/${filename}`;
-      res.status(200).json({ url: publicUrl });
+      if (!req.file.mimetype.startsWith('image/')) {
+        return res.status(400).json({ message: "Invalid file type. Please upload an image." });
+      }
+
+      try {
+        const { buffer: compressedBuffer } = await compressProductImageToWebP(req.file.buffer);
+
+        const uploadDir = "/data/uploads/product-images";
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const filename = `${crypto.randomUUID()}.webp`;
+        const filePath = path.join(uploadDir, filename);
+
+        await fs.promises.writeFile(filePath, compressedBuffer);
+
+        const publicUrl = `${env.APP_PUBLIC_URL}/uploads/product-images/${filename}`;
+        res.status(200).json({ url: publicUrl });
+      } catch (error: any) {
+        console.error("Error processing product image:", error);
+        res.status(500).json({ message: `Failed to process image: ${error.message}` });
+      }
     });
+  });
+
+  // ============================================
+  // CUSTOMER APP PROMOTIONS ROUTES
+  // ============================================
+
+  // Get customer app promotions (published for public/customer app, all for admin)
+  app.get('/api/customer-app-promotions', async (req, res) => {
+    try {
+      const mode = req.query.mode?.toString();
+      if (mode === 'admin') {
+        const promotions = await storage.getAllCustomerAppPromotions();
+        return res.json(promotions);
+      }
+      const promotions = await storage.getPublishedCustomerAppPromotions();
+      res.json(promotions);
+    } catch (error) {
+      console.error("Error fetching customer app promotions:", error);
+      res.status(500).json({ message: "Failed to fetch customer app promotions" });
+    }
+  });
+
+  // Admin: Update/Publish a customer app promotion block (blocks 1, 2, or 3)
+  app.post('/api/admin/customer-app-promotions', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { blockIndex, title, subtitle, artworkUrl, buttonText, destinationLink, badgeText, startDate, endDate, status } = req.body;
+      if (!blockIndex || blockIndex < 1 || blockIndex > 3) {
+        return res.status(400).json({ message: "Invalid blockIndex. Must be 1, 2, or 3." });
+      }
+
+      const updated = await storage.upsertCustomerAppPromotion({
+        blockIndex: Number(blockIndex),
+        title,
+        subtitle,
+        artworkUrl,
+        buttonText,
+        destinationLink,
+        badgeText,
+        startDate,
+        endDate,
+        status,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating customer app promotion:", error);
+      res.status(500).json({ message: "Failed to update customer app promotion" });
+    }
   });
 
   // ============================================
@@ -6921,6 +7034,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error running backup:", error);
       res.status(500).json({ success: false, message: "Backup failed unexpectedly" });
+    }
+  });
+
+  // ================= ORDERS MODULE =================
+
+  // 1. Submit a customer order from Yensss app
+  app.post('/api/orders', isAuthenticated, async (req, res) => {
+    try {
+      const customerId = (req as any).customerId;
+      if (!customerId) {
+        return res.status(401).json({ message: "Authentication required as customer" });
+      }
+
+      const { siteId, totalAmount, items, paymentStatus } = req.body;
+      if (!siteId || !totalAmount || !items) {
+        return res.status(400).json({ message: "Missing required order fields" });
+      }
+
+      const newOrder = await storage.createOrder({
+        customerId,
+        siteId,
+        totalAmount: parseFloat(totalAmount).toFixed(2),
+        items: typeof items === 'string' ? items : JSON.stringify(items),
+        status: 'pending',
+        paymentStatus: paymentStatus || 'unpaid',
+      });
+
+      res.json(newOrder);
+    } catch (error) {
+      console.error("Error creating customer order:", error);
+      res.status(500).json({ message: "Failed to submit order" });
+    }
+  });
+
+  // 2. Get order history for customer
+  app.get('/api/orders/customer', isAuthenticated, async (req, res) => {
+    try {
+      const customerId = (req as any).customerId;
+      if (!customerId) {
+        return res.status(401).json({ message: "Authentication required as customer" });
+      }
+
+      const list = await storage.getOrdersByCustomer(customerId);
+      res.json(list);
+    } catch (error) {
+      console.error("Error getting customer order history:", error);
+      res.status(500).json({ message: "Failed to fetch order history" });
+    }
+  });
+
+  // 3. Get all orders (for Admin Dashboard)
+  app.get('/api/admin/orders', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const list = await db
+        .select({
+          id: orders.id,
+          customerId: orders.customerId,
+          siteId: orders.siteId,
+          totalAmount: orders.totalAmount,
+          status: orders.status,
+          items: orders.items,
+          paymentStatus: orders.paymentStatus,
+          createdAt: orders.createdAt,
+          customerName: customersTable.name,
+          customerPhone: customersTable.phone,
+        })
+        .from(orders)
+        .leftJoin(customersTable, eq(orders.customerId, customersTable.id))
+        .orderBy(desc(orders.createdAt));
+
+      res.json(list);
+    } catch (error) {
+      console.error("Error fetching admin orders list:", error);
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  // 4. Get orders by site (polling endpoint for branch POS/barista apps)
+  app.get('/api/admin/orders/site/:siteId', isAuthenticated, async (req, res) => {
+    try {
+      const { siteId } = req.params;
+      const list = await db
+        .select({
+          id: orders.id,
+          customerId: orders.customerId,
+          siteId: orders.siteId,
+          totalAmount: orders.totalAmount,
+          status: orders.status,
+          items: orders.items,
+          paymentStatus: orders.paymentStatus,
+          createdAt: orders.createdAt,
+          customerName: customersTable.name,
+          customerPhone: customersTable.phone,
+        })
+        .from(orders)
+        .leftJoin(customersTable, eq(orders.customerId, customersTable.id))
+        .where(eq(orders.siteId, siteId))
+        .orderBy(desc(orders.createdAt));
+
+      res.json(list);
+    } catch (error) {
+      console.error("Error fetching branch orders:", error);
+      res.status(500).json({ message: "Failed to fetch branch orders" });
+    }
+  });
+
+  // 5. Update order preparation/fulfillment status
+  app.patch('/api/admin/orders/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, paymentStatus } = req.body;
+
+      if (!status) {
+        return res.status(400).json({ message: "Status parameter is required" });
+      }
+
+      const updated = await storage.updateOrderStatus(id, status, paymentStatus);
+      if (!updated) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(500).json({ message: "Failed to update order status" });
     }
   });
 
