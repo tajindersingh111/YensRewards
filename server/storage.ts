@@ -527,7 +527,11 @@ export class DbStorage implements IStorage {
 
     const result = await db
       .insert(customers)
-      .values({ ...insertCustomer, referralCode })
+      .values({ 
+        ...insertCustomer, 
+        referralCode,
+        points: 10 // Award 10 welcome points to new members
+      })
       .returning();
 
     return result[0];

@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yen's Rewards - Customer Registration</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-blue: #1e3a8a;
+            --primary-blue-dark: #172554;
+            --brand-yellow: #fbbf24;
+            --brand-yellow-hover: #f59e0b;
+            --brand-green: #5ca345;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --bg-light: #f8fafc;
+            --border-light: #e2e8f0;
+            --card-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .font-outfit {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Background Decorative Elements */
+        .bg-glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-glow-2 {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(30, 58, 138, 0.08) 0%, transparent 70%);
+            bottom: -100px;
+            left: -100px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Container & Card */
+        .wrapper {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-banner {
+            background-color: var(--primary-blue-dark);
+            background-image: radial-gradient(circle at top right, rgba(251, 191, 36, 0.15), transparent);
+            padding: 48px 24px 72px 24px;
+            text-align: center;
+            border-radius: 2rem 2rem 0 0;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.05), transparent);
+            pointer-events: none;
+        }
+
+        .logo-container {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            border: 4px solid var(--primary-blue-dark);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            animation: pulse-border 3s infinite;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .logo-fallback {
+            width: 100%;
+            height: 100%;
+            background-color: var(--brand-yellow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 28px;
+            color: var(--primary-blue);
+        }
+
+        .hero-title {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hero-subtitle {
+            color: #93c5fd;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .hero-divider {
+            height: 1px;
+            width: 24px;
+            background-color: rgba(251, 191, 36, 0.3);
+        }
+
+        /* Form Card overlaying banner */
+        .form-card {
+            background-color: #ffffff;
+            border-radius: 2rem;
+            padding: 32px;
+            margin-top: -48px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            z-index: 20;
+            transition: var(--transition-smooth);
+        }
+
+        /* Language Switcher */
+        .lang-switch {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 30;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition-smooth);
+        }
+
+        .lang-switch:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Sections states */
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Header within Form Card */
+        .section-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .section-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Inputs & Labels */
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+            transition: var(--transition-smooth);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            font-size: 15px;
+            color: var(--text-primary);
+            background-color: var(--bg-light);
+            border: 1.5px solid var(--border-light);
+            border-radius: 12px;
+            outline: none;
+            transition: var(--transition-smooth);
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-blue);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.08);
+        }
+
+        .form-control:focus + .input-icon {
+            color: var(--primary-blue);
+        }
+
+        /* OTP Code grid */
+        .otp-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .otp-input {
+            width: 100%;
+            height: 52px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-blue);
+            background-color: var(--bg-light);
+            border: 1.5px solid var(--border-light);
+            border-radius: 12px;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .otp-input:focus {
+            border-color: var(--primary-blue);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.08);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-yellow {
+            background-color: var(--brand-yellow);
+            color: var(--primary-blue-dark);
+            box-shadow: 0 4px 6px -1px rgba(251, 191, 36, 0.2);
+        }
+
+        .btn-yellow:hover {
+            background-color: var(--brand-yellow-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-yellow:active {
+            transform: translateY(0);
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1.5px solid var(--border-light);
+            margin-top: 10px;
+        }
+
+        .btn-ghost:hover {
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        /* LINE login button styling */
+        .btn-line {
+            background-color: #06c755;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn-line:hover {
+            background-color: #05b04b;
+        }
+
+        .line-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Success Card elements */
+        .success-illustration {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(92, 163, 69, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px auto;
+            color: var(--brand-green);
+        }
+
+        .success-tick {
+            width: 40px;
+            height: 40px;
+            stroke-width: 3;
+        }
+
+        .points-badge {
+            background-color: rgba(251, 191, 36, 0.1);
+            color: var(--brand-yellow-hover);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            margin: 15px 0;
+            animation: bounce 2s infinite;
+        }
+
+        .points-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .info-card {
+            background-color: var(--bg-light);
+            border: 1.5px dashed var(--border-light);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .info-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-card-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Footer info */
+        .footer-support {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        /* Animations */
+        @keyframes pulse-border {
+            0% {
+                box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+            }
+        }
+
+        @keyframes slide-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        /* Confetti effect */
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--brand-yellow);
+            border-radius: 50%;
+            z-index: 5;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(300px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+    <div class="bg-glow-2"></div>
+
+    <div class="wrapper">
+        <!-- Hero Banner Header -->
+        <div class="hero-banner">
+            <button class="lang-switch" onclick="toggleLanguage()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span id="lang-label">TH | EN</span>
+            </button>
+
+            <div class="logo-container">
+                <!-- SVG Yen's Logo Placeholder -->
+                <div class="logo-fallback">Yens</div>
+            </div>
+
+            <h1 class="hero-title" id="banner-title">Yen's Rewards</h1>
+            <div class="hero-subtitle">
+                <span class="hero-divider"></span>
+                <span id="banner-subtitle">Loyalty & Membership</span>
+                <span class="hero-divider"></span>
+            </div>
+        </div>
+
+        <!-- Form Card Container -->
+        <div class="form-card">
+
+            <!-- STATE 1: Enter Phone Number -->
+            <div id="step-phone" class="form-section active">
+                <div class="section-header">
+                    <h2 class="section-title" id="title-phone">Welcome Back</h2>
+                    <p class="section-desc" id="desc-phone">Experience the finest Thai Soft Serve with exclusive member benefits.</p>
+                </div>
+
+                <form onsubmit="submitPhone(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="input-phone-field" id="label-phone">Phone Number</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            <input class="form-control" type="tel" id="input-phone-field" placeholder="0812345678" required>
+                        </div>
+                    </div>
+
+                    <div id="phone-error" class="error-message"></div>
+
+                    <button type="submit" class="btn btn-yellow" id="btn-phone-submit">Access Rewards</button>
+                    <button type="button" class="btn btn-ghost" onclick="goToSignup()" id="btn-phone-new">New Customer</button>
+                </form>
+
+                <!-- LINE integration section -->
+                <button type="button" class="btn btn-line" onclick="loginWithLine()">
+                    <svg class="line-icon" viewBox="0 0 24 24">
+                        <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738s-12 4.369-12 9.738c0 4.814 4.269 8.846 10.036 9.586.39.084.922.258 1.058.592.12.3.08 1.02.04 1.411-.12.8-.57 2.66-.63 2.9-.07.3-.3 1.1 1.2.6 1.5-.5 8.1-4.8 11.0-8.2 2.1-2.4 3.3-4.8 3.3-6.9zm-15.6 3.196h-1.9c-.3 0-.5-.2-.5-.5v-4.4c0-.3.2-.5.5-.5h1.9c.3 0 .5.2.5.5v.5c0 .3-.2.5-.5.5h-1.4v1.1h1.4c.3 0 .5.2.5.5v.5c0 .3-.2.5-.5.5h-1.4v1.2h1.4c.3 0 .5.2.5.5v.5c-.1.3-.3.5-.5.5zm4.7 0h-.5c-.3 0-.5-.2-.5-.5v-3.3l-2.0-2.0c-.1-.1-.1-.3-.1-.4v-.7c0-.3.2-.5.5-.5h.5c.3 0 .5.2.5.5v2.8l2.0 2.0c.1.1.1.3.1.4v.7c0 .3-.2.5-.5.5zm3.7 0h-1.9c-.3 0-.5-.2-.5-.5v-4.4c0-.3.2-.5.5-.5h1.9c.3 0 .5.2.5.5v.5c0 .3-.2.5-.5.5h-1.4v3.4h1.4c.3 0 .5.2.5.5v.5c0 .3-.2.5-.5.5zm5.0 0h-1.9c-.3 0-.5-.2-.5-.5v-4.4c0-.3.2-.5.5-.5h1.9c.3 0 .5.2.5.5v.5c0 .3-.2.5-.5.5h-1.4v1.1h1.4c.3 0 .5.2.5.5v.5c0 .3-.2.5-.5.5h-1.4v1.2h1.4c.3 0 .5.2.5.5v.5c0 .3-.2.5-.5.5z"/>
+                    </svg>
+                    <span id="btn-line-text">Sign in with LINE</span>
+                </button>
+            </div>
+
+            <!-- STATE 2: Verify OTP -->
+            <div id="step-otp" class="form-section">
+                <div class="section-header">
+                    <h2 class="section-title" id="title-otp">Verify Your Identity</h2>
+                    <p class="section-desc" id="desc-otp">We've sent a 6-digit verification code to <strong id="otp-phone-display">0812345678</strong>.</p>
+                </div>
+
+                <form onsubmit="submitOtp(event)">
+                    <div class="otp-grid">
+                        <input class="otp-input" type="text" pattern="[0-9]*" inputmode="numeric" maxlength="1" onkeyup="moveOtpFocus(this, 'next')" onkeydown="moveOtpFocus(this, 'prev')">
+                        <input class="otp-input" type="text" pattern="[0-9]*" inputmode="numeric" maxlength="1" onkeyup="moveOtpFocus(this, 'next')" onkeydown="moveOtpFocus(this, 'prev')">
+                        <input class="otp-input" type="text" pattern="[0-9]*" inputmode="numeric" maxlength="1" onkeyup="moveOtpFocus(this, 'next')" onkeydown="moveOtpFocus(this, 'prev')">
+                        <input class="otp-input" type="text" pattern="[0-9]*" inputmode="numeric" maxlength="1" onkeyup="moveOtpFocus(this, 'next')" onkeydown="moveOtpFocus(this, 'prev')">
+                        <input class="otp-input" type="text" pattern="[0-9]*" inputmode="numeric" maxlength="1" onkeyup="moveOtpFocus(this, 'next')" onkeydown="moveOtpFocus(this, 'prev')">
+                        <input class="otp-input" type="text" pattern="[0-9]*" inputmode="numeric" maxlength="1" onkeyup="moveOtpFocus(this, 'next')" onkeydown="moveOtpFocus(this, 'prev')">
+                    </div>
+
+                    <div id="otp-error" class="error-message"></div>
+
+                    <button type="submit" class="btn btn-yellow" id="btn-otp-submit">Verify Code</button>
+                    <button type="button" class="btn btn-ghost" onclick="resendOtp()" id="btn-otp-resend">Resend OTP (60s)</button>
+                    <button type="button" class="btn btn-ghost" onclick="goBack()" id="btn-otp-back">Back</button>
+                </form>
+            </div>
+
+            <!-- STATE 3: Complete Signup -->
+            <div id="step-signup" class="form-section">
+                <div class="section-header">
+                    <h2 class="section-title" id="title-signup">Create Account</h2>
+                    <p class="section-desc" id="desc-signup">Join the Yen's Family to start earning reward points.</p>
+                </div>
+
+                <form onsubmit="submitSignup(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="input-name" id="label-name">Full Name *</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <input class="form-control" type="text" id="input-name" required placeholder="John Doe">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="input-email" id="label-email">Email Address (Optional)</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            <input class="form-control" type="email" id="input-email" placeholder="john@example.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="input-birthday" id="label-birthday">Birthday (Optional)</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <input class="form-control" type="date" id="input-birthday">
+                        </div>
+                    </div>
+
+                    <div id="signup-error" class="error-message"></div>
+
+                    <button type="submit" class="btn btn-yellow" id="btn-signup-submit">Submit Details</button>
+                    <button type="button" class="btn btn-ghost" onclick="goBack()" id="btn-signup-back">Back</button>
+                </form>
+            </div>
+
+            <!-- STATE 4: Success / Welcome Dashboard -->
+            <div id="step-success" class="form-section">
+                <div class="success-illustration">
+                    <svg class="success-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+
+                <div class="section-header">
+                    <h2 class="section-title" id="title-success">Registration Complete!</h2>
+                    <p class="section-desc" id="desc-success">Welcome to the Yen's Family membership program.</p>
+                </div>
+
+                <div style="text-align: center;">
+                    <div class="points-badge">
+                        <svg class="points-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <span>+50 Welcome Points</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <span id="card-security-title">Bronze Tier Member</span>
+                    </div>
+                    <p class="info-card-text" id="card-security-text">Present your linked phone number to the barista during checkout at any Yen's store to collect points and claim free sundaes or float drinks!</p>
+                </div>
+
+                <button class="btn btn-yellow" style="margin-top: 24px;" onclick="goToApp()" id="btn-success-go">Launch Rewards App</button>
+            </div>
+
+        </div>
+
+        <p class="footer-support">Nakhon Sawan · Established 2024</p>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        let userPhone = '';
+        let timerSeconds = 60;
+        let resendTimerInterval = null;
+
+        const translations = {
+            en: {
+                bannerTitle: "Yen's Rewards",
+                bannerSubtitle: "Loyalty & Membership",
+                titlePhone: "Welcome Back",
+                descPhone: "Experience the finest Thai Soft Serve with exclusive member benefits.",
+                labelPhone: "Phone Number",
+                btnPhoneSubmit: "Access Rewards",
+                btnPhoneNew: "New Customer",
+                btnLineText: "Sign in with LINE",
+                titleOtp: "Verify Your Identity",
+                descOtp: "We've sent a 6-digit verification code to ",
+                btnOtpSubmit: "Verify Code",
+                btnOtpResend: "Resend OTP",
+                btnOtpBack: "Back",
+                titleSignup: "Create Account",
+                descSignup: "Join the Yen's Family to start earning reward points.",
+                labelName: "Full Name *",
+                labelEmail: "Email Address (Optional)",
+                labelBirthday: "Birthday (Optional)",
+                btnSignupSubmit: "Submit Details",
+                btnSignupBack: "Back",
+                titleSuccess: "Registration Complete!",
+                descSuccess: "Welcome to the Yen's Family membership program.",
+                cardSecurityTitle: "Bronze Tier Member",
+                cardSecurityText: "Present your linked phone number to the barista during checkout at any Yen's store to collect points and claim free sundaes or float drinks!",
+                btnSuccessGo: "Launch Rewards App"
+            },
+            th: {
+                bannerTitle: "Yen's Rewards",
+                bannerSubtitle: "ระบบสมาชิกและคะแนนสะสม",
+                titlePhone: "ยินดีต้อนรับกลับมา",
+                descPhone: "สัมผัสประสบการณ์ซอฟต์เสิร์ฟสไตล์ไทยระดับพรีเมียมพร้อมสิทธิประโยชน์พิเศษสำหรับสมาชิก",
+                labelPhone: "หมายเลขโทรศัพท์",
+                btnPhoneSubmit: "เข้าสู่ระบบสมาชิก",
+                btnPhoneNew: "สมัครสมาชิกใหม่",
+                btnLineText: "เข้าสู่ระบบด้วย LINE",
+                titleOtp: "ยืนยันตัวตนของคุณ",
+                descOtp: "เราได้ส่งรหัสยืนยัน 6 หลักไปที่เบอร์ ",
+                btnOtpSubmit: "ยืนยันรหัส OTP",
+                btnOtpResend: "ส่งรหัสอีกครั้ง",
+                btnOtpBack: "ย้อนกลับ",
+                titleSignup: "สร้างบัญชีสมาชิก",
+                descSignup: "เข้าร่วมเป็นครอบครัว Yen's เพื่อเริ่มสะสมคะแนนแลกของรางวัลพิเศษ",
+                labelName: "ชื่อ-นามสกุล *",
+                labelEmail: "อีเมล (ไม่บังคับ)",
+                labelBirthday: "วันเกิด (ไม่บังคับ)",
+                btnSignupSubmit: "ลงทะเบียนรายละเอียด",
+                btnSignupBack: "ย้อนกลับ",
+                titleSuccess: "การลงทะเบียนเสร็จสมบูรณ์!",
+                descSuccess: "ยินดีต้อนรับเข้าสู่โปรแกรมสมาชิกของครอบครัว Yen's",
+                cardSecurityTitle: "สมาชิก ระดับ Bronze",
+                cardSecurityText: "แสดงหมายเลขโทรศัพท์ที่ลงทะเบียนกับพนักงานบาริสต้าตอนชำระเงินเพื่อสะสมคะแนนหรือแลกรับไอศกรีมซันเดและเครื่องดื่มโฟลตฟรี!",
+                btnSuccessGo: "เปิดหน้าแอปสะสมแต้ม"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'th' : 'en';
+            document.getElementById('lang-label').innerText = currentLang === 'en' ? 'TH | EN' : 'EN | TH';
+            updateUIStrings();
+        }
+
+        function updateUIStrings() {
+            const strings = translations[currentLang];
+            document.getElementById('banner-title').innerText = strings.bannerTitle;
+            document.getElementById('banner-subtitle').innerText = strings.bannerSubtitle;
+            document.getElementById('title-phone').innerText = strings.titlePhone;
+            document.getElementById('desc-phone').innerText = strings.descPhone;
+            document.getElementById('label-phone').innerText = strings.labelPhone;
+            document.getElementById('btn-phone-submit').innerText = strings.btnPhoneSubmit;
+            document.getElementById('btn-phone-new').innerText = strings.btnPhoneNew;
+            document.getElementById('btn-line-text').innerText = strings.btnLineText;
+            document.getElementById('title-otp').innerText = strings.titleOtp;
+            
+            const otpDisplayLabel = document.getElementById('otp-phone-display').innerText;
+            document.getElementById('desc-otp').innerHTML = strings.descOtp + `<strong id="otp-phone-display">${otpDisplayLabel}</strong>.`;
+            
+            document.getElementById('btn-otp-submit').innerText = strings.btnOtpSubmit;
+            document.getElementById('btn-otp-back').innerText = strings.btnOtpBack;
+            document.getElementById('title-signup').innerText = strings.titleSignup;
+            document.getElementById('desc-signup').innerText = strings.descSignup;
+            document.getElementById('label-name').innerText = strings.labelName;
+            document.getElementById('label-email').innerText = strings.labelEmail;
+            document.getElementById('label-birthday').innerText = strings.labelBirthday;
+            document.getElementById('btn-signup-submit').innerText = strings.btnSignupSubmit;
+            document.getElementById('btn-signup-back').innerText = strings.btnSignupBack;
+            document.getElementById('title-success').innerText = strings.titleSuccess;
+            document.getElementById('desc-success').innerText = strings.descSuccess;
+            document.getElementById('card-security-title').innerText = strings.cardSecurityTitle;
+            document.getElementById('card-security-text').innerText = strings.cardSecurityText;
+            document.getElementById('btn-success-go').innerText = strings.btnSuccessGo;
+            
+            updateResendTimerUI();
+        }
+
+        function switchStep(stepId) {
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function submitPhone(event) {
+            event.preventDefault();
+            const phoneField = document.getElementById('input-phone-field');
+            const errorField = document.getElementById('phone-error');
+            
+            userPhone = phoneField.value.trim();
+            if (!/^[0-9]{9,10}$/.test(userPhone)) {
+                errorField.innerText = currentLang === 'en' 
+                    ? "Please enter a valid Thai mobile number (9-10 digits)" 
+                    : "กรุณากรอกหมายเลขโทรศัพท์ 9-10 หลักที่ถูกต้อง";
+                errorField.style.display = 'block';
+                return;
+            }
+            
+            errorField.style.display = 'none';
+            document.getElementById('otp-phone-display').innerText = userPhone;
+            
+            // Simulating API request trigger
+            switchStep('step-otp');
+            startResendTimer();
+        }
+
+        function goToSignup() {
+            switchStep('step-signup');
+        }
+
+        function goBack() {
+            switchStep('step-phone');
+            clearInterval(resendTimerInterval);
+        }
+
+        function moveOtpFocus(input, direction) {
+            const val = input.value;
+            if (direction === 'next' && val.length >= 1) {
+                const next = input.nextElementSibling;
+                if (next && next.classList.contains('otp-input')) {
+                    next.focus();
+                }
+            } else if (direction === 'prev' && val.length === 0) {
+                // Focus previous on backspace if handled by keydown
+                const prev = input.previousElementSibling;
+                if (prev && prev.classList.contains('otp-input')) {
+                    prev.focus();
+                }
+            }
+        }
+
+        // Handle backspace specifically for empty fields to focus previous
+        document.querySelectorAll('.otp-input').forEach(input => {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value.length === 0) {
+                    const prev = this.previousElementSibling;
+                    if (prev && prev.classList.contains('otp-input')) {
+                        prev.focus();
+                        prev.value = '';
+                    }
+                }
+            });
+        });
+
+        function startResendTimer() {
+            timerSeconds = 60;
+            updateResendTimerUI();
+            clearInterval(resendTimerInterval);
+            resendTimerInterval = setInterval(() => {
+                timerSeconds--;
+                updateResendTimerUI();
+                if (timerSeconds <= 0) {
+                    clearInterval(resendTimerInterval);
+                }
+            }, 1000);
+        }
+
+        function updateResendTimerUI() {
+            const btn = document.getElementById('btn-otp-resend');
+            if (!btn) return;
+            
+            const label = translations[currentLang].btnOtpResend;
+            if (timerSeconds > 0) {
+                btn.innerText = `${label} (${timerSeconds}s)`;
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
+            } else {
+                btn.innerText = label;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        }
+
+        function resendOtp() {
+            if (timerSeconds > 0) return;
+            startResendTimer();
+            alert(currentLang === 'en' ? "Verification code resent!" : "ส่งรหัสยืนยันอีกครั้งแล้ว!");
+        }
+
+        function submitOtp(event) {
+            event.preventDefault();
+            const inputs = document.querySelectorAll('.otp-input');
+            const errorField = document.getElementById('otp-error');
+            let otp = '';
+            inputs.forEach(input => otp += input.value);
+
+            if (otp.length < 6) {
+                errorField.innerText = currentLang === 'en' 
+                    ? "Please enter the complete 6-digit code" 
+                    : "กรุณากรอกรหัส OTP ให้ครบ 6 หลัก";
+                errorField.style.display = 'block';
+                return;
+            }
+
+            // Mock verification: code is '123456'
+            if (otp === '123456' || otp === '000000') {
+                errorField.style.display = 'none';
+                triggerCelebration();
+                switchStep('step-success');
+            } else {
+                errorField.innerText = currentLang === 'en' 
+                    ? "Invalid verification code. Use '123456' for test demo." 
+                    : "รหัส OTP ไม่ถูกต้อง ใช้รหัส '123456' สำหรับการทดสอบตัวอย่าง";
+                errorField.style.display = 'block';
+            }
+        }
+
+        function submitSignup(event) {
+            event.preventDefault();
+            const name = document.getElementById('input-name').value.trim();
+            const errorField = document.getElementById('signup-error');
+
+            if (!name) {
+                errorField.innerText = currentLang === 'en' 
+                    ? "Name is required" 
+                    : "จำเป็นต้องระบุชื่อ";
+                errorField.style.display = 'block';
+                return;
+            }
+
+            errorField.style.display = 'none';
+            triggerCelebration();
+            switchStep('step-success');
+        }
+
+        function loginWithLine() {
+            alert(currentLang === 'en' 
+                ? "Redirecting to LINE login..." 
+                : "กำลังนำคุณไปที่หน้าเข้าสู่ระบบของ LINE...");
+            triggerCelebration();
+            switchStep('step-success');
+        }
+
+        function triggerCelebration() {
+            // Confetti animation
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = '-10px';
+                confetti.style.backgroundColor = ['#fbbf24', '#1e3a8a', '#5ca345', '#ef4444'][Math.floor(Math.random() * 4)];
+                confetti.style.width = Math.random() * 8 + 6 + 'px';
+                confetti.style.height = confetti.style.width;
+                confetti.style.animationDuration = Math.random() * 2 + 1.5 + 's';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 3500);
+            }
+        }
+
+        function goToApp() {
+            alert(currentLang === 'en' 
+                ? "Opening loyalty card home screen..." 
+                : "กำลังเปิดหน้าแรกบัตรสะสมแต้มของคุณ...");
+        }
+
+        // Initialize translations
+        updateUIStrings();
+    </script>
+</body>
+</html>

@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yen's Thai - Member Registration</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-blue: #084CA5; /* Royal Blue from wonkai_pos */
+            --primary-blue-dark: #063B82;
+            --brand-yellow: #F8D01B; /* Bright Yellow from wonkai_pos */
+            --brand-yellow-hover: #C49A00;
+            --brand-green: #2ECC71; /* Success Green from wonkai_pos */
+            --text-primary: #0F172A; /* Slate-900 */
+            --text-secondary: #475569; /* Slate-600 */
+            --text-muted: #94A3B8; /* Slate-400 */
+            --bg-light: #F0F4F8; /* Order Panel Bg from wonkai_pos */
+            --border-light: #E2E8F0; /* Slate-200 */
+            --border-medium: #CBD5E1; /* Slate-300 */
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        h1, h2, h3, .font-outfit {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Container & Card */
+        .wrapper {
+            width: 100%;
+            max-width: 480px;
+            padding: 16px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Top Flat Header Bar mimicking POS App top bar */
+        .pos-header {
+            background-color: #ffffff;
+            border-bottom: 2px solid var(--border-light);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+            box-shadow: var(--card-shadow);
+        }
+
+        .logo-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2.2px solid var(--brand-yellow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+
+        .logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .header-title-group {
+            margin-left: 12px;
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .header-main-title {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--text-primary);
+        }
+
+        .header-sub-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--brand-yellow-hover);
+        }
+
+        /* Language Switch Button */
+        .lang-switch {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-medium);
+            padding: 6px 12px;
+            border-radius: 16px;
+            color: var(--primary-blue);
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition-smooth);
+        }
+
+        .lang-switch:hover {
+            background-color: var(--border-light);
+        }
+
+        /* Form Card */
+        .form-card {
+            background-color: #ffffff;
+            border-radius: 0 0 20px 20px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            z-index: 20;
+            transition: var(--transition-smooth);
+        }
+
+        /* Section Headings */
+        .section-header {
+            margin-bottom: 20px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .section-header-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .section-star {
+            color: var(--brand-yellow-hover);
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--text-primary);
+        }
+
+        .section-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-blue);
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+            transition: var(--transition-smooth);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            background-color: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            outline: none;
+            transition: var(--transition-smooth);
+            font-family: inherit;
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-blue);
+            border-width: 2px;
+            box-shadow: 0 0 0 4px rgba(8, 76, 165, 0.06);
+        }
+
+        /* Dropdown custom style matching inputDecorationTheme */
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23084ca5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 16px;
+        }
+
+        /* Gender chips style mimicking wonkai_pos chip selection */
+        .gender-chips-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .gender-chip-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px;
+            background-color: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-secondary);
+            transition: var(--transition-smooth);
+            font-family: inherit;
+        }
+
+        .gender-chip-btn:hover {
+            background-color: var(--bg-light);
+        }
+
+        .gender-chip-btn.active {
+            border-color: var(--primary-blue);
+            border-width: 2px;
+            background-color: rgba(8, 76, 165, 0.05);
+            color: var(--primary-blue);
+        }
+
+        .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot-blue { background-color: #3b82f6; }
+        .dot-pink { background-color: #ec4899; }
+        .dot-yellow { background-color: var(--brand-yellow-hover); }
+
+        /* Birthday row containing simplified Day & Month selectors */
+        .dob-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .dob-col-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        /* Action Button */
+        .btn-submit {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            background-color: var(--primary-blue);
+            color: #ffffff;
+            margin-top: 12px;
+            box-shadow: 0 4px 6px -1px rgba(8, 76, 165, 0.2);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background-color: var(--primary-blue-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:disabled {
+            background-color: var(--border-medium);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Warnings and alerts */
+        .alert-card {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .alert-card-info {
+            background-color: rgba(248, 208, 27, 0.08);
+            border: 1px solid rgba(248, 208, 27, 0.35);
+            color: var(--brand-yellow-hover);
+        }
+
+        .alert-card-danger {
+            background-color: rgba(231, 76, 60, 0.05);
+            border: 1px solid rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .alert-icon {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Success screen layout matching wonkai_pos styling */
+        .success-illustration {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(46, 204, 113, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px auto 20px auto;
+            color: var(--brand-green);
+        }
+
+        .success-tick {
+            width: 40px;
+            height: 40px;
+            stroke-width: 3;
+        }
+
+        .points-badge {
+            background-color: rgba(248, 208, 27, 0.15);
+            color: var(--brand-yellow-hover);
+            border: 1px solid rgba(248, 208, 27, 0.35);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 13px;
+            margin: 8px 0;
+            animation: bounce 2s infinite;
+        }
+
+        .points-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .info-card {
+            background-color: #ffffff;
+            border: 1.5px dashed var(--border-medium);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .info-card-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-card-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .footer-support {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        /* Animations */
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <!-- Top flat bar header -->
+        <div class="pos-header">
+            <div class="logo-badge">
+                <img class="logo-img" src="/logo.png" alt="Logo">
+            </div>
+            <div class="header-title-group">
+                <div class="header-main-title" id="lbl-pos-title">Create Member</div>
+                <div class="header-sub-title">Yens Thai Loyalty</div>
+            </div>
+            <button class="lang-switch" onclick="toggleLanguage()">
+                <span id="lang-label">TH | EN</span>
+            </button>
+        </div>
+
+        <!-- Form Card Content -->
+        <div class="form-card">
+            
+            <!-- STEP 1: Registration Form -->
+            <div id="section-register" class="form-section active">
+                <div class="section-header">
+                    <div class="section-header-row">
+                        <span class="section-star">✦ </span>
+                        <h2 class="section-title" id="title-register">Create Member Profile</h2>
+                    </div>
+                    <p class="section-desc" id="desc-register">Fill in details to register a new member account.</p>
+                </div>
+
+                <!-- Warnings and Alert banners -->
+                <div id="alert-duplicate" class="alert-card alert-card-info">
+                    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span id="text-duplicate">You are already registered! Simply present your phone number at checkout.</span>
+                </div>
+
+                <div id="alert-error" class="alert-card alert-card-danger">
+                    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span id="text-error">Something went wrong. Please check your details and try again.</span>
+                </div>
+
+                <form id="register-form" onsubmit="submitForm(event)">
+                    
+                    <!-- Phone Input -->
+                    <div class="form-group">
+                        <label class="form-label" for="phone" id="label-phone">Phone Number *</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            <input class="form-control" type="tel" id="phone" placeholder="0812345678" required onblur="checkPhoneNumber()" oninput="onPhoneInput()">
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="form-group">
+                        <label class="form-label" for="name" id="label-name">Full Name *</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <input class="form-control" type="text" id="name" required placeholder="Name Surname">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label class="form-label" for="email" id="label-email">Email (Optional)</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            <input class="form-control" type="email" id="email" placeholder="email@domain.com">
+                        </div>
+                    </div>
+
+                    <!-- Gender Chips (mimicking wonkai_pos chips layout) -->
+                    <div class="form-group">
+                        <label class="form-label" id="label-gender">Gender</label>
+                        <div class="gender-chips-row">
+                            <button type="button" class="gender-chip-btn active" id="chip-male" onclick="selectGender('male')">
+                                <span class="chip-dot dot-blue"></span>
+                                <span id="lbl-male">Male</span>
+                            </button>
+                            <button type="button" class="gender-chip-btn" id="chip-female" onclick="selectGender('female')">
+                                <span class="chip-dot dot-pink"></span>
+                                <span id="lbl-female">Female</span>
+                            </button>
+                            <button type="button" class="gender-chip-btn" id="chip-other" onclick="selectGender('other')">
+                                <span class="chip-dot dot-yellow"></span>
+                                <span id="lbl-other">Other</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="gender" value="male">
+                    </div>
+
+                    <!-- DOB Selectors (mimicking wonkai_pos selectors row) -->
+                    <div class="form-group">
+                        <label class="form-label" id="label-birthday">Birthday (Optional)</label>
+                        <div class="dob-grid">
+                            <div>
+                                <div class="dob-col-label" id="lbl-day-tag">Day</div>
+                                <select class="form-control" id="dob-day">
+                                    <option value="">--</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div class="dob-col-label" id="lbl-month-tag">Month</div>
+                                <select class="form-control" id="dob-month">
+                                    <option value="">--</option>
+                                    <option value="01" id="m-01">January</option>
+                                    <option value="02" id="m-02">February</option>
+                                    <option value="03" id="m-03">March</option>
+                                    <option value="04" id="m-04">April</option>
+                                    <option value="05" id="m-05">May</option>
+                                    <option value="06" id="m-06">June</option>
+                                    <option value="07" id="m-07">July</option>
+                                    <option value="08" id="m-08">August</option>
+                                    <option value="09" id="m-09">September</option>
+                                    <option value="10" id="m-10">October</option>
+                                    <option value="11" id="m-11">November</option>
+                                    <option value="12" id="m-12">December</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btn-submit">Submit Registration</button>
+                </form>
+            </div>
+
+            <!-- STEP 2: Success Screen -->
+            <div id="section-success" class="form-section">
+                <div class="success-illustration">
+                    <svg class="success-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+
+                <div class="section-header" style="text-align: center; display: block;">
+                    <h2 class="section-title" id="title-success" style="text-align: center;">Registration Complete!</h2>
+                    <p class="section-desc" id="desc-success" style="text-align: center; margin-top: 4px;">Welcome to the Yen's Family membership program.</p>
+                </div>
+
+                <div style="text-align: center;">
+                    <div class="points-badge">
+                        <svg class="points-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <span id="text-points">+10 Welcome Points</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <span id="card-tier-title">Bronze Tier Member</span>
+                    </div>
+                    <p class="info-card-text" id="card-tier-text">Simply present your phone number to the barista at checkout at any store to collect points and claim rewards!</p>
+                </div>
+            </div>
+
+        </div>
+
+        <p class="footer-support">Nakhon Sawan · Established 2024</p>
+    </div>
+
+    <!-- Confetti canvas overlay -->
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
+    <script>
+        let currentLang = 'en';
+        let isPhoneChecked = false;
+        let isPhoneDuplicate = false;
+
+        const translations = {
+            en: {
+                posTitle: "Create Member",
+                bannerSubtitle: "Yens Thai Loyalty",
+                titleRegister: "Create Member Profile",
+                descRegister: "Fill in details to register a new member account.",
+                labelPhone: "Phone Number *",
+                labelName: "Full Name *",
+                labelEmail: "Email (Optional)",
+                labelBirthday: "Birthday (Optional)",
+                labelGender: "Gender",
+                lblMale: "Male",
+                lblFemale: "Female",
+                lblOther: "Other",
+                lblDayTag: "Day",
+                lblMonthTag: "Month",
+                btnSubmit: "Submit Registration",
+                textDuplicate: "You are already registered! Simply present your phone number at checkout.",
+                textError: "Something went wrong. Please check your details and try again.",
+                titleSuccess: "Registration Complete!",
+                descSuccess: "Welcome to the Yen's Family membership program.",
+                textPoints: "+10 Welcome Points",
+                cardTierTitle: "Bronze Tier Member",
+                cardTierText: "Simply present your phone number to the barista at checkout at any store to collect points and claim rewards!"
+            },
+            th: {
+                posTitle: "สร้างสมาชิกใหม่",
+                bannerSubtitle: "ระบบสะสมแต้ม Yen's Thai",
+                titleRegister: "ข้อมูลลงทะเบียนสมาชิก",
+                descRegister: "กรอกข้อมูลด้านล่างเพื่อสร้างบัญชีสมาชิกสะสมแต้มใหม่",
+                labelPhone: "หมายเลขโทรศัพท์ *",
+                labelName: "ชื่อ-นามสกุล *",
+                labelEmail: "อีเมล (ไม่บังคับ)",
+                labelBirthday: "วันเกิด (ไม่บังคับ)",
+                labelGender: "เพศ",
+                lblMale: "ชาย",
+                lblFemale: "หญิง",
+                lblOther: "อื่น ๆ",
+                lblDayTag: "วัน",
+                lblMonthTag: "เดือน",
+                btnSubmit: "ลงทะเบียนข้อมูล",
+                textDuplicate: "คุณลงทะเบียนเรียบร้อยแล้ว! สามารถบอกเบอร์โทรศัพท์ตอนชำระเงินได้ทันที",
+                textError: "เกิดข้อผิดพลาด กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง",
+                titleSuccess: "ลงทะเบียนเสร็จสมบูรณ์!",
+                descSuccess: "ยินดีต้อนรับเข้าสู่โปรแกรมสมาชิกของครอบครัว Yen's",
+                textPoints: "+10 คะแนนสะสมแรกเข้า",
+                cardTierTitle: "สมาชิกระดับ Bronze",
+                cardTierText: "เพียงแสดงเบอร์โทรศัพท์ที่จุดชำระเงินกับพนักงานบาริสต้าของร้าน Yen's ทุกสาขา เพื่อสะสมแต้มและแลกรับของรางวัล!"
+            }
+        };
+
+        // Populate Day Selector (1 to 31)
+        const daySelect = document.getElementById('dob-day');
+        for (let i = 1; i <= 31; i++) {
+            const opt = document.createElement('option');
+            opt.value = String(i).padStart(2, '0');
+            opt.innerText = i;
+            daySelect.appendChild(opt);
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'th' : 'en';
+            document.getElementById('lang-label').innerText = currentLang === 'en' ? 'TH | EN' : 'EN | TH';
+            updateUIStrings();
+        }
+
+        function updateUIStrings() {
+            const strings = translations[currentLang];
+            document.getElementById('lbl-pos-title').innerText = strings.posTitle;
+            document.getElementById('title-register').innerText = strings.titleRegister;
+            document.getElementById('desc-register').innerText = strings.descRegister;
+            document.getElementById('label-phone').innerText = strings.labelPhone;
+            document.getElementById('label-name').innerText = strings.labelName;
+            document.getElementById('label-email').innerText = strings.labelEmail;
+            document.getElementById('label-birthday').innerText = strings.labelBirthday;
+            document.getElementById('label-gender').innerText = strings.labelGender;
+            document.getElementById('lbl-male').innerText = strings.lblMale;
+            document.getElementById('lbl-female').innerText = strings.lblFemale;
+            document.getElementById('lbl-other').innerText = strings.lblOther;
+            document.getElementById('lbl-day-tag').innerText = strings.lblDayTag;
+            document.getElementById('lbl-month-tag').innerText = strings.lblMonthTag;
+            document.getElementById('btn-submit').innerText = strings.btnSubmit;
+            document.getElementById('text-duplicate').innerText = strings.textDuplicate;
+            document.getElementById('text-error').innerText = strings.textError;
+            document.getElementById('title-success').innerText = strings.titleSuccess;
+            document.getElementById('desc-success').innerText = strings.descSuccess;
+            document.getElementById('text-points').innerText = strings.textPoints;
+            document.getElementById('card-tier-title').innerText = strings.cardTierTitle;
+            document.getElementById('card-tier-text').innerText = strings.cardTierText;
+
+            // Month text localization
+            const monthsEn = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const monthsTh = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            const months = currentLang === 'en' ? monthsEn : monthsTh;
+            for (let i = 1; i <= 12; i++) {
+                const id = 'm-' + String(i).padStart(2, '0');
+                document.getElementById(id).innerText = months[i];
+            }
+        }
+
+        function selectGender(genderVal) {
+            document.getElementById('gender').value = genderVal;
+            document.querySelectorAll('.gender-chip-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('chip-' + genderVal).classList.add('active');
+        }
+
+        function onPhoneInput() {
+            document.getElementById('alert-duplicate').style.display = 'none';
+            document.getElementById('alert-error').style.display = 'none';
+            document.getElementById('btn-submit').disabled = false;
+            isPhoneChecked = false;
+            isPhoneDuplicate = false;
+        }
+
+        async function checkPhoneNumber() {
+            const phoneInput = document.getElementById('phone').value.trim();
+            if (phoneInput.length < 9) return;
+
+            try {
+                const res = await fetch(`/api/customers/check-phone/${encodeURIComponent(phoneInput)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.exists) {
+                        isPhoneDuplicate = true;
+                        document.getElementById('alert-duplicate').style.display = 'flex';
+                        document.getElementById('btn-submit').disabled = true;
+                    } else {
+                        isPhoneDuplicate = false;
+                        document.getElementById('alert-duplicate').style.display = 'none';
+                        document.getElementById('btn-submit').disabled = false;
+                    }
+                    isPhoneChecked = true;
+                }
+            } catch (err) {
+                console.error("Error checking phone number:", err);
+            }
+        }
+
+        async function submitForm(event) {
+            event.preventDefault();
+            
+            document.getElementById('alert-error').style.display = 'none';
+            
+            const phone = document.getElementById('phone').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim() || null;
+            const gender = document.getElementById('gender').value;
+            
+            const dobDay = document.getElementById('dob-day').value;
+            const dobMonth = document.getElementById('dob-month').value;
+            let birthday = null;
+            if (dobDay && dobMonth) {
+                birthday = `2000-${dobMonth}-${dobDay}`;
+            }
+
+            if (!name) {
+                showError("Name is required");
+                return;
+            }
+
+            const cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.length < 9 || cleanPhone.length > 15) {
+                showError(currentLang === 'en' ? "Please enter a valid phone number" : "กรุณากรอกหมายเลขโทรศัพท์ที่ถูกต้อง");
+                return;
+            }
+
+            if (isPhoneDuplicate) {
+                document.getElementById('alert-duplicate').style.display = 'flex';
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit');
+            submitBtn.disabled = true;
+            submitBtn.innerText = currentLang === 'en' ? "Registering..." : "กำลังลงทะเบียน...";
+
+            try {
+                const response = await fetch('/api/customers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, email, birthday, gender })
+                });
+
+                if (response.status === 201) {
+                    transitionToSuccess();
+                } else if (response.status === 409) {
+                    isPhoneDuplicate = true;
+                    document.getElementById('alert-duplicate').style.display = 'flex';
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = translations[currentLang].btnSubmit;
+                } else {
+                    const data = await response.json();
+                    showError(data.message || (currentLang === 'en' ? "Registration failed" : "การลงทะเบียนล้มเหลว"));
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = translations[currentLang].btnSubmit;
+                }
+            } catch (err) {
+                console.error("Submission error:", err);
+                showError(currentLang === 'en' ? "Connection error. Please try again." : "ข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
+                submitBtn.disabled = false;
+                submitBtn.innerText = translations[currentLang].btnSubmit;
+            }
+        }
+
+        function showError(msg) {
+            const errorAlert = document.getElementById('alert-error');
+            document.getElementById('text-error').innerText = msg;
+            errorAlert.style.display = 'flex';
+            errorAlert.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function transitionToSuccess() {
+            document.getElementById('section-register').classList.remove('active');
+            document.getElementById('section-success').classList.add('active');
+            triggerConfetti();
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            const colors = ['#F8D01B', '#084CA5', '#2ECC71', '#e74c3c', '#3498db'];
+            const confetti = [];
+
+            for (let i = 0; i < 100; i++) {
+                confetti.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            let animationFrame;
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let remaining = false;
+
+                confetti.forEach((c, idx) => {
+                    c.tiltAngle += c.tiltAngleIncremental;
+                    c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
+                    c.x += Math.sin(c.tiltAngle);
+                    c.tilt = Math.sin(c.tiltAngle - idx/3) * 15;
+
+                    if (c.y <= canvas.height) {
+                        remaining = true;
+                    }
+
+                    ctx.beginPath();
+                    ctx.lineWidth = c.r;
+                    ctx.strokeStyle = c.color;
+                    ctx.moveTo(c.x + c.tilt + c.r / 2, c.y);
+                    ctx.lineTo(c.x + c.tilt, c.y + c.tilt + c.r / 2);
+                    ctx.stroke();
+                });
+
+                if (remaining) {
+                    animationFrame = requestAnimationFrame(draw);
+                } else {
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+
+            draw();
+        }
+
+        updateUIStrings();
+    </script>
+</body>
+</html>

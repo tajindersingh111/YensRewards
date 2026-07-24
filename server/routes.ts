@@ -22,6 +22,7 @@ import * as path from "path";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import sharp from "sharp";
+import QRCode from "qrcode";
 
 // ============ In-memory rate limiter for auth endpoints ============
 // Tracks failed login attempts per IP address.
@@ -480,7 +481,79 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+async function generateRegistrationQRCode() {
+  try {
+    const publicUrl = process.env.PUBLIC_URL || "http://localhost:5000";
+    const registrationUrl = `${publicUrl}/register.html`;
+    console.log(`Generating branded QR code for registration URL: ${registrationUrl}`);
+
+    // Generate base QR code in memory as a buffer (Blue pixels on Yellow background)
+    // We use a high error correction level (H) to support the logo overlay in the center!
+    const qrBuffer = await QRCode.toBuffer(registrationUrl, {
+      width: 512,
+      margin: 2,
+      errorCorrectionLevel: "H",
+      color: {
+        dark: "#084CA5",  // Royal Blue from wonkai_pos!
+        light: "#F8D01B", // Brand Yellow from wonkai_pos!
+      }
+    });
+
+    const logoPath = path.resolve(process.cwd(), "client/public/logo.png");
+    let finalBuffer = qrBuffer;
+
+    if (fs.existsSync(logoPath)) {
+      console.log(`Adding Yen's logo to the center of the QR code...`);
+      // Resize logo to 96px, and add an 8px solid white border around it (making it 112px overall)
+      // This protects scanning capability and makes the logo pop out!
+      const logoCardBuffer = await sharp(logoPath)
+        .resize(96, 96)
+        .extend({
+          top: 8,
+          bottom: 8,
+          left: 8,
+          right: 8,
+          background: { r: 255, g: 255, b: 255, alpha: 1 }
+        })
+        .png()
+        .toBuffer();
+
+      // Composite logo card onto center of the blue-and-yellow QR code
+      finalBuffer = await sharp(qrBuffer)
+        .composite([{ input: logoCardBuffer, gravity: "center" }])
+        .png()
+        .toBuffer();
+    } else {
+      console.warn(`Yen's logo file not found at ${logoPath}. Generating standard QR code instead.`);
+    }
+
+    // Path 1: client/public/registration_qr.png
+    const clientPublicPath = path.resolve(process.cwd(), "client/public");
+    if (!fs.existsSync(clientPublicPath)) {
+      fs.mkdirSync(clientPublicPath, { recursive: true });
+    }
+    const devQrPath = path.resolve(clientPublicPath, "registration_qr.png");
+    await sharp(finalBuffer).toFile(devQrPath);
+    console.log(`Branded QR Code generated at: ${devQrPath}`);
+
+    // Path 2: dist/public/registration_qr.png (production)
+    const distPublicPath = path.resolve(process.cwd(), "dist/public");
+    if (fs.existsSync(distPublicPath)) {
+      const prodQrPath = path.resolve(distPublicPath, "registration_qr.png");
+      await sharp(finalBuffer).toFile(prodQrPath);
+      console.log(`Branded QR Code generated at: ${prodQrPath}`);
+    }
+  } catch (error) {
+    console.error("Failed to generate registration QR code:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Generate registration QR code on startup
+  generateRegistrationQRCode().catch(err => {
+    console.error("Error generating QR code on startup:", err);
+  });
+
   // Health check endpoint - verifies server sanity and database connectivity
   app.get('/api/health', async (req, res) => {
     try {
@@ -1733,6 +1806,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       lineLinked: !!customer.lineUid, // boolean only — never expose the raw UID
     };
   }
+
+  // Public endpoint to check if phone exists (for registration form lookup)
+  // Secure by design: only returns { exists: boolean }, no PII or customer data
+  app.get('/api/customers/check-phone/:phone', async (req, res) => {
+    try {
+      const phone = req.params.phone.trim();
+      const customer = await storage.getCustomerByPhone(phone);
+      res.json({ exists: !!customer });
+    } catch (error) {
+      console.error("Error checking phone:", error);
+      res.status(500).json({ message: "Failed to check phone number" });
+    }
+  });
 
   // Get customer by phone — requires either a matching customer session or staff auth.
   // Prevents unauthenticated loyalty-balance and account data disclosure by phone lookup.

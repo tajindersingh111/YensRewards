@@ -12,7 +12,7 @@ async function getCredentials(useCache: boolean = false) {
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Yens Thai <rewards@yensthai.com>';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Yens Thai <rewards@application.yensthai.com>';
 
   if (!apiKey) {
     throw new Error('RESEND_API_KEY not found in environment');
