@@ -483,7 +483,10 @@ const upload = multer({
 
 async function generateRegistrationQRCode() {
   try {
-    const publicUrl = process.env.PUBLIC_URL || "http://localhost:5000";
+    const defaultUrl = process.env.NODE_ENV === "production" 
+      ? "https://application.yensthai.com" 
+      : "http://localhost:5000";
+    const publicUrl = process.env.PUBLIC_URL || defaultUrl;
     const registrationUrl = `${publicUrl}/register.html`;
     console.log(`Generating branded QR code for registration URL: ${registrationUrl}`);
 
