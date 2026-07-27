@@ -1794,6 +1794,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pre-sync all customers for offline caching on POS
+  app.get('/api/customers/sync', isAuthenticated, async (req, res) => {
+    try {
+      const all = await storage.getAllCustomers();
+      // Map to safe fields to minimize payload
+      const mapped = all.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email || '',
+        birthday: c.birthday || '',
+        points: c.points,
+        gender: c.gender || 'other',
+      }));
+      res.json(mapped);
+    } catch (error) {
+      console.error("Error syncing customers:", error);
+      res.status(500).json({ message: "Failed to sync customers" });
+    }
+  });
+
   // Minimal public DTO — only the fields a customer needs to view their own loyalty card.
   // Sensitive internal/PII fields (lineUid, tag, email, phone, birthday, totalSpent,
   // registerDate, registerBranch, lastUse, gender) are intentionally excluded so that
